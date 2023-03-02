@@ -1,3 +1,3 @@
 # ExponentialFamily
 
-[![Build Status](https://github.com/ismailsenoz/ExponentialFamily.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/ismailsenoz/ExponentialFamily.jl/actions/workflows/CI.yml?query=branch%3Amain)
+``ExponentialFamily.jl`` is a package that collets exponential family distributions from ``Distributions.j`` and customized implementations of some while augmenting them with exponential family-specific functionalities. It defines analytic products of distributions belonging to the same exponential family that can be used for conjugate computations in inference algorithms.
