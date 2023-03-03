@@ -1,4 +1,4 @@
-export Exponential
+export Exponential, ExponentialNaturalParameters
 
 import Distributions: Exponential, params
 import SpecialFunctions: digamma, logbeta
@@ -20,4 +20,16 @@ end
 
 function mean(::typeof(log), dist::Exponential)
    return -log(rate(dist)) - MathConstants.eulergamma
+end
+
+struct ExponentialNaturalParameters{T <: Real} <: NaturalParameters
+    rate :: T
+end
+
+function naturalparams(dist :: Exponential)
+    return ExponentialNaturalParameters(inv(dist.θ))
+end
+
+function Distributions.logpdf(dist::ExponentialNaturalParameters, x)
+    return log(dist.rate) - dist.rate * x
 end

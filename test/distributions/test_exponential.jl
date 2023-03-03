@@ -32,6 +32,24 @@ import ExponentialFamily: mirrorlog
         @test mean(log, Exponential(0.1)) ≈ -2.8798007578955787
     end
 
+    @testset "Constructor(::ExponentialNaturalParameters)" begin
+        @test naturalparams(Exponential(5)) == ExponentialNaturalParameters(0.2)
+        @test naturalparams(Exponential(1e12)) == ExponentialNaturalParameters(1e-12)
+    end
+
+    @testset "logpdf(::ExponentialNaturalParameters)" begin
+        distribution = Exponential(5)
+        @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
+        distribution = Exponential(10)
+        @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
+        distribution = Exponential(0.1)
+        @test logpdf(distribution, 0) ≈ logpdf(naturalparams(distribution), 0)
+        distribution = Exponential(1)
+        @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
+        distribution = Exponential(1)
+        @test logpdf(distribution, 2) ≈ logpdf(naturalparams(distribution), 2)
+    end
+
 end
 
 end
