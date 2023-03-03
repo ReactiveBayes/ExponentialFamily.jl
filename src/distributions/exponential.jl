@@ -23,13 +23,13 @@ function mean(::typeof(log), dist::Exponential)
 end
 
 struct ExponentialNaturalParameters{T <: Real} <: NaturalParameters
-    rate :: T
+    minus_rate :: T
 end
 
 function naturalparams(dist :: Exponential)
-    return ExponentialNaturalParameters(inv(dist.θ))
+    return ExponentialNaturalParameters(-inv(dist.θ))
 end
 
 function Distributions.logpdf(dist::ExponentialNaturalParameters, x)
-    return log(dist.rate) - dist.rate * x
+    return log(-dist.rate) + dist.rate * x
 end
