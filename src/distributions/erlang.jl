@@ -10,8 +10,6 @@ function mean(::typeof(log), dist::Erlang)
     return digamma(k) + log(θ)
 end
 
-Erlang(a::Real, b::Real) = Erlang(Int(a), b, check_args=true)
-
 # TODO: check
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
@@ -21,14 +19,6 @@ prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ProdAnalyticalRuleAva
 
 function Base.prod(::ProdAnalytical, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
-end
-
-# TODO: check
-function compute_logscale(new_dist::Erlang, left_dist::Erlang, right_dist::Erlang)
-    ay, by = shape(new_dist), rate(new_dist)
-    ax, bx = shape(left_dist), rate(left_dist)
-    az, bz = shape(right_dist), rate(right_dist)
-    return logfactorial(ay) - logfactorial(ax) - logfactorial(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
 
 ## Friendly functions

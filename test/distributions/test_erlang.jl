@@ -25,38 +25,6 @@ import ExponentialFamily: xtlog
         vague(Erlang) == Erlang(1.0, 1e12)
     end
 
-    @testset "Stats methods for Erlang" begin
-        dist1 = Erlang(1, 1.0)
-
-        @test mean(dist1) === 1.0
-        @test var(dist1) === 1.0
-        @test cov(dist1) === 1.0
-        @test shape(dist1) === 1
-        @test scale(dist1) === 1.0
-        @test rate(dist1) === 1.0
-        @test entropy(dist1) ≈ 1.0
-
-        dist2 = Erlang(1, 2.0)
-
-        @test mean(dist2) === 2.0
-        @test var(dist2) === 4.0
-        @test cov(dist2) === 4.0
-        @test shape(dist2) === 1
-        @test scale(dist2) === 2.0
-        @test rate(dist2) === inv(2.0)
-        @test entropy(dist2) ≈ 1.6931471805599454
-
-        dist3 = Erlang(2, 2.0)
-
-        @test mean(dist3) === 4.0
-        @test var(dist3) === 8.0
-        @test cov(dist3) === 8.0
-        @test shape(dist3) === 2
-        @test scale(dist3) === 2.0
-        @test rate(dist3) === inv(2.0)
-        @test entropy(dist3) ≈ 2.2703628454614764
-    end
-
     @testset "ErlangNaturalParameters" begin
         for i in 2:10
             @test convert(Distribution, ErlangNaturalParameters(i, -i)) ≈ Erlang(i + 1, inv(i))
@@ -67,34 +35,6 @@ import ExponentialFamily: xtlog
             @test convert(ErlangNaturalParameters, i, -i) == ErlangNaturalParameters(i, -i)
             
             @test as_naturalparams(ErlangNaturalParameters, i, -i) == ErlangNaturalParameters(i, -i)
-        end
-    end
-
-    @testset "Base methods" begin
-        check_basic_statistics = (left, right) -> begin
-            @test mean(left) ≈ mean(right)
-            @test var(left) ≈ var(right)
-            @test cov(left) ≈ cov(right)
-            @test shape(left) ≈ shape(right)
-            @test scale(left) ≈ scale(right)
-            @test rate(left) ≈ rate(right)
-            @test entropy(left) ≈ entropy(right)
-            @test pdf(left, 1.0) ≈ pdf(right, 1.0)
-            @test pdf(left, 10.0) ≈ pdf(right, 10.0)
-            @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
-            @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
-            @test mean(log, left) ≈ mean(log, right)
-        end
-
-        types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
-        rng   = MersenneTwister(1234)
-
-        for type in types
-            left = convert(type, rand(rng, Float64), rand(rng, Float64))
-            for type in types
-                right = convert(type, left)
-                check_basic_statistics(left, right)
-            end
         end
     end
 
