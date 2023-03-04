@@ -19,6 +19,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TinyHugeNumbers = "783c9a47-75a3-44ac-a16b-f1ab7b3acf04"
 
 [compat]
+LoopVectorization = "0.12"
 julia = "1.6"
 
 [extras]
