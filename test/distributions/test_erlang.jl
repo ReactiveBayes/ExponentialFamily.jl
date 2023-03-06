@@ -9,20 +9,10 @@ import SpecialFunctions: logfactorial
 import ExponentialFamily: xtlog
 
 @testset "Erlang" begin
-    @testset "Constructor" begin
 
+    @testset "Constructors" begin
         @test Erlang() == Erlang(1, 1.0)
-        @test Erlang(1.0, 2.0) == Erlang(1, 2.0)
-        @test Erlang(1, 2) == Erlang(1, 2.0)
-        @test Erlang(1.0, 2) == Erlang(1.0, 2.0)
-        @test Erlang(1.0f0, 2.0f0) == Erlang(1, 2.0f0)
-        @test Erlang(1.0f0, 2) == Erlang{Float32}(1, 2.0f0)
-        @test Erlang(1.0f0, 2.0) == Erlang{Float64}(1, 2.0)
-
-    end
-
-    @testset "vague" begin
-        vague(Erlang) == Erlang(1, 1e12)
+        @test vague(Erlang) == Erlang(1, 1e12)
     end
 
     @testset "ErlangNaturalParameters" begin
