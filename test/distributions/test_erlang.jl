@@ -22,7 +22,7 @@ import ExponentialFamily: xtlog
     end
 
     @testset "vague" begin
-        vague(Erlang) == Erlang(1.0, 1e12)
+        vague(Erlang) == Erlang(1, 1e12)
     end
 
     @testset "ErlangNaturalParameters" begin
@@ -46,7 +46,18 @@ import ExponentialFamily: xtlog
         @test prod(ProdAnalytical(), Erlang(2, 2), Erlang(2, 2)) == Erlang(3, 1)
     end
 
-    # TODO: lognormalizer etc
+    @testset "Base operations" begin
+        @test ErlangNaturalParameters(1.0, 2.0) - ErlangNaturalParameters(2.0, 3.0) == ErlangNaturalParameters(-1, -1.0)
+        @test ErlangNaturalParameters(4, 2.0) + ErlangNaturalParameters(2.0, 3.0) == ErlangNaturalParameters(6, 5.0)
+    end
+
+    @testset "Natural parameterization tests" begin
+        @test naturalparams(Erlang(2, 5.0)) == ErlangNaturalParameters(1, -1/5.0)
+        @test naturalparams(Erlang(3, 10)) == ErlangNaturalParameters(2, -0.1)
+        @test convert(Erlang, ErlangNaturalParameters(1.0, -0.2)) == Erlang(2, 5.0)
+        @test logpdf(Erlang(10, 4.0), 1.0) ≈ logpdf(naturalparams(Erlang(10, 4.0)), 1.0)
+        @test logpdf(Erlang(5, 2.0), 1.0) ≈ logpdf(naturalparams(Erlang(5, 2.0)), 1.0)
+    end
 end
 
 end

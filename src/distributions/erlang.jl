@@ -10,7 +10,6 @@ function mean(::typeof(log), dist::Erlang)
     return digamma(k) + log(θ)
 end
 
-# TODO: check
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
 # Extensions of prod methods
@@ -44,21 +43,18 @@ function ErlangNaturalParameters(vec::AbstractVector)
     return ErlangNaturalParameters(vec[1], vec[2])
 end
 
+as_naturalparams(::Type{T}, args...) where {T <: ErlangNaturalParameters} = convert(ErlangNaturalParameters, args...)
+naturalparams(dist::Erlang) = ErlangNaturalParameters(shape(dist) - 1, -rate(dist))
+
 Base.convert(::Type{ErlangNaturalParameters}, a::Real, b::Real) = ErlangNaturalParameters(convert(Int, a), b)
 
 function Base.:(==)(left::ErlangNaturalParameters, right::ErlangNaturalParameters)
     return left.a == right.a && left.b == right.b
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: ErlangNaturalParameters} = convert(ErlangNaturalParameters, args...)
-
 function Base.convert(::Type{Distribution}, params::ErlangNaturalParameters)
     return Erlang(params.a + 1, -1/params.b)
 end
-
-naturalparams(dist::Erlang) = ErlangNaturalParameters(shape(dist) - 1, -1/rate(dist))
-
-# Natural parameters to standard dist. type
 
 function Base.vec(params::ErlangNaturalParameters)
     return [params.a, params.b]
