@@ -8,11 +8,11 @@ using Random
 @testset "Contingency" begin
     @testset "common" begin
         @test Contingency <: Distribution
-        @test Contingency <: ContinuousDistribution
-        @test Contingency <: MatrixDistribution
+        @test Contingency <: DiscreteDistribution
+        @test Contingency <: MultivariateDistribution
 
-        @test value_support(Contingency) === Continuous
-        @test variate_form(Contingency) === Matrixvariate
+        @test value_support(Contingency) === Discrete
+        @test variate_form(Contingency) === Multivariate
     end
 
     @testset "contingency_matrix" begin
@@ -36,6 +36,36 @@ using Random
 
         @test typeof(d2) <: Contingency
         @test ExponentialFamily.contingency_matrix(d2) ≈ ones(4, 4) ./ 16
+    end
+
+    @testset "pdf" begin
+        d1 = vague(Contingency, 3)
+        d2 = Contingency(ones(3, 3), Val(true))
+        d3 = vague(Contingency, 2)
+        @test_throws MethodError pdf(d1, 1)
+        @test_throws AssertionError pdf(d1, [1,2,3,4])
+        @test_throws AssertionError pdf(d1, [1.1 ])
+        @test pdf(d1, [1, 2] ) == ExponentialFamily.contingency_matrix(d1)[1,2]
+        @test pdf(d1, [true false false ; false true false] ) == pdf(d1, [1,2])
+        @test logpdf(d1, [1, 2] )  == log(ExponentialFamily.contingency_matrix(d1)[1,2])
+        @test logpdf(d1, [true false false ; false true false]) == logpdf(d1, [1,2])
+        @test logpdf(d2, [2 ,3] )  == log(ExponentialFamily.contingency_matrix(d2)[2,3])
+        @test mean(d3)             == [3/2, 3/2]
+
+        @test cov(d3)              == [0.25 0; 0 0.25]
+        @test var(d3)              == [0.25, 0.25]
+    end
+
+    @testset "NaturalParameters" begin
+        d1           = vague(Contingency,2)
+        d2           = vague(Contingency,2)
+        ηcontingency = ContingencyNaturalParameters(log.([0.1 0.7; 0.05 0.15]))
+        @test ηcontingency.logcontingency == log.([0.1 0.7; 0.05 0.15])
+        @test convert(ContingencyNaturalParameters, log.([0.1 0.7; 0.05 0.15])) == ContingencyNaturalParameters(log.([0.1 0.7; 0.05 0.15]))
+        @test d1 == d2
+        @test naturalparams(d1)     == ContingencyNaturalParameters(log.([1/4 1/4; 1/4 1/4]))
+        @test convert(Contingency, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
+        @test ηcontingency + ηcontingency == ContingencyNaturalParameters(2log.([0.1 0.7; 0.05 0.15]))
     end
 
     @testset "entropy" begin

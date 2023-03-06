@@ -1,4 +1,4 @@
-export Contingency
+export Contingency, ContingencyNaturalParameters, naturalparams, as_naturalparams
 
 using LinearAlgebra
 
@@ -6,7 +6,9 @@ using LinearAlgebra
     Contingency(P, renormalize = Val(true))
 
 The contingency distribution is a multivariate generalization of the categorical distribution. As a bivariate distribution, the 
-contingency distribution defines the joint probability over two unit vectors `v1` and `v2`. The parameter `P` encodes a contingency matrix that specifies the probability of co-occurrence.
+contingency distribution defines the joint probability over two unit vectors `v1` and `v2` with one hot encoding. Or it can be thought of
+as the joint distribution of two categoricals with supports `v1 ={ 1,2,...,N}` and `v2 ={ 1,2,...,N}`. 
+The parameter `P` encodes a contingency matrix that specifies the probability of co-occurrence.
 
     v1 ∈ {0, 1}^d1 where Σ_j v1_j = 1
     v2 ∈ {0, 1}^d2 where Σ_k v2_k = 1
@@ -22,7 +24,7 @@ A `Contingency` distribution over more than two variables requires higher-order 
 - `renormalize`, optional, supports either `Val(true)` or `Val(false)`, specifies whether matrix `P` must be automatically renormalized. Does not modify the original `P` and allocates a new one for the renormalized version. If set to `false` the contingency matrix `P` **must** be normalized by hand, otherwise the result of related calculations might be wrong
 
 """
-struct Contingency{T, P <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+struct Contingency{T, P <: AbstractMatrix{T}} <: DiscreteMultivariateDistribution
     p::P
 
     Contingency{T, P}(A::AbstractMatrix) where {T, P <: AbstractMatrix{T}} = new(A)
@@ -38,7 +40,124 @@ vague(::Type{<:Contingency}, dims::Int) = Contingency(ones(dims, dims) ./ abs2(d
 
 convert_eltype(::Type{Contingency}, ::Type{T}, distribution::Contingency{R}) where {T <: Real, R <: Real} = Contingency(convert(AbstractArray{T}, contingency_matrix(distribution)))
 
+## dispatch support is regular {1,2,..., N}
+function pdf_contingency(distribution::Contingency, x::AbstractArray, T) 
+    @assert length(x) === 2  "$(x) should be length 2 vector with the entries corresponding to elements of the contingency matrix of $(distribution)"
+    contingencymatrix = contingency_matrix(distribution)
+    dim               = getindex(size(contingencymatrix),1)
+    support           = collect(1:getindex(size(contingencymatrix),1))
+    idx1              = searchsortedfirst(support, x[1])
+    idx2              = searchsortedfirst(support, x[2])
+    if idx1 <= dim && support[idx1] == x[1] && idx2 <= dim && support[idx2] == x[2]
+        return contingencymatrix[idx1, idx2]
+    else
+        return zero(eltype(contingencymatrix))
+    end
+end
+
+## dispatch when support is one hot coded
+function pdf_contingency(distribution::Contingency, x::AbstractArray,T::Type{Bool}) 
+    contingencymatrix = contingency_matrix(distribution)
+    dim               = getindex(size(contingencymatrix),1)
+    @assert eltype(x) === Bool "Entries of one hot encoded vector should be boolean"
+    @assert size(x)   === (2, dim) "one hot encoded $(x) should be of same length with the entries corresponding to elements of the contingency matrix of $(distribution)"
+    @assert all(map(sum, eachrow(x)) .=== 1) "Entries of one hot encoded vector should sum to 1"
+    xconverted        = [first(indexin(true,x[1,:])), first(indexin(true,x[2,:]))]
+    return pdf(distribution, xconverted)
+end
+
+Distributions.pdf(distribution::Contingency, x::AbstractArray{T}) where T<:Real = pdf_contingency(distribution, x, eltype(x))
+
+function Distributions.logpdf(distribution::Contingency, x::AbstractArray{T}) where {T <: Real} 
+    return log(Distributions.pdf(distribution,x))
+end
+
+function Distributions.mean(distribution::Contingency)
+    contingency = contingency_matrix(distribution)
+    support     = collect(1:length(contingency))
+    return sum(collect(x) .* pdf(distribution,collect(x)) for x in Iterators.product(support,support))
+end
+
+function Distributions.cov(distribution::Contingency) 
+
+    contingencymatrix = contingency_matrix(distribution)
+    dim         = getindex(size(contingencymatrix),1)
+    support     = collect(1:dim)
+    return sum((collect(x)-mean(distribution))*(collect(x)-mean(distribution))' .* pdf(distribution,collect(x)) for x in Iterators.product(support,support))
+end
+
+Distributions.var(distribution::Contingency) = diag(cov(distribution))
+
+
 function entropy(distribution::Contingency)
     P = contingency_matrix(distribution)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
+struct ContingencyNaturalParameters{T <: Real} <: NaturalParameters
+    logcontingency::AbstractMatrix{T}
+end
+
+function ContingencyNaturalParameters(logcontingency::AbstractMatrix{<:Real})
+    T = promote_type(eltype(logcontingency))
+    return ContingencyNaturalParameters(convert(AbstractArray{T}, logcontingency))
+end
+
+function ContingencyNaturalParameters(logcontingency::AbstractMatrix{<:Integer})
+    return ContingencyNaturalParameters(float.(logcontingency))
+end
+
+function ContingencyNaturalParameters(logcontingency::AbstractMatrix{T}) where T
+    return ContingencyNaturalParameters{T}(logcontingency)
+end
+
+
+Base.convert(::Type{ContingencyNaturalParameters}, logcontingency::AbstractMatrix) =
+    convert(ContingencyNaturalParameters{promote_type(eltype(logcontingency))}, logcontingency)
+
+Base.convert(::Type{ContingencyNaturalParameters{T}}, logcontingency::AbstractMatrix) where {T} =
+    ContingencyNaturalParameters(convert(AbstractMatrix{T}, logcontingency))
+
+Base.convert(::Type{ContingencyNaturalParameters}, vector::AbstractMatrix) = convert(ContingencyNaturalParameters{eltype(vector)}, vector)
+
+Base.convert(::Type{ContingencyNaturalParameters{T}}, vector::AbstractMatrix) where {T} = ContingencyNaturalParameters(convert(AbstractMatrix{T}, vector))
+
+function Base.:(==)(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
+    return left.logcontingency == right.logcontingency 
+end
+
+as_naturalparams(::Type{T}, args...) where {T <: ContingencyNaturalParameters} = convert(ContingencyNaturalParameters, args...)
+
+
+
+# Standard parameters to natural parameters
+function naturalparams(dist::Contingency)
+    logcontingency = log.(contingency_matrix(dist))
+    return ContingencyNaturalParameters(logcontingency)
+end
+
+
+function convert(::Type{Distribution}, η::ContingencyNaturalParameters)
+    return Contingency(softmax(η.logcontingency))
+end
+
+
+function Base.:+(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
+    return ContingencyNaturalParameters(left.logcontingency .+ right.logcontingency)
+end
+
+
+function Base.:-(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
+    return ContingencyNaturalParameters(left.logcontingency .- right.logcontingency)
+end
+
+
+function lognormalizer(::ContingencyNaturalParameters)
+    return 0.0
+end
+
+
+function Distributions.logpdf(η::ContingencyNaturalParameters, x)
+    return Distributions.logpdf(convert(Contingency,η),x)
+end
+
+isproper(params::ContingencyNaturalParameters) = true
