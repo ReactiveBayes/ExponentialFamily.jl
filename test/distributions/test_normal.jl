@@ -85,6 +85,7 @@ using StableRNGs
                     @test pdf(left, value) ≈ pdf(right, value)
                     @test logpdf(left, value) ≈ logpdf(right, value)
                     @test all(isapprox.(ForwardDiff.gradient((x) -> logpdf(left, x), value), ForwardDiff.gradient((x) -> logpdf(right, x), value), atol = 1e-14))
+                    # TODO: test fails
                     @test all(isapprox.(ForwardDiff.hessian((x) -> logpdf(left, x), value), ForwardDiff.hessian((x) -> logpdf(right, x), value), atol = 1e-14))
                 end
 
@@ -215,11 +216,9 @@ using StableRNGs
                 μ = randn(rng, n)
                 L = randn(rng, n, n)
                 W = L * L'
-
-                d = convert(MvNormalMeanPrecision{T}, μ, W)
-
+                d = convert(MvNormalMeanCovariance{T}, μ, W)
                 @test typeof(rand(d)) <: Vector{T}
-
+                
                 samples = eachcol(rand(rng, d, nsamples))
                 weights = fill(1 / nsamples, nsamples)
 
