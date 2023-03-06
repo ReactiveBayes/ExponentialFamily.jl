@@ -7,6 +7,7 @@ using Distributions
 using ForwardDiff
 using Random
 using StableRNGs
+using TestSetExtensions
 
 
 @testset "Normal" begin
@@ -198,24 +199,20 @@ using StableRNGs
     @testset "Sampling multivariate" begin
         rng = MersenneTwister(1234)
         for n in (2, 3), T in (Float64,), nsamples in (10_000,)
-            let # MvNormalMeanCovariance
                 μ = randn(rng, n)
                 L = randn(rng, n, n)
                 Σ = L * L'
 
                 d = convert(MvNormalMeanCovariance{T}, μ, Σ)
-                @show ExponentialFamily.rand(d)
-                @test typeof(ExponentialFamily.rand(d)) <: Vector{T}
+                @test typeof(rand(d)) <: Vector{T}
                 
-                samples = ExponentialFamily.rand(rng, d, nsamples),
+                samples = eachcol(rand(rng, d, nsamples))
                 weights = fill(1 / nsamples, nsamples)
 
 
                 @test isapprox(sum(sample for sample in samples)/nsamples, mean(d), atol = n * 0.5)
                 @test isapprox(sum((sample - mean(d))*(sample - mean(d))' for sample in samples)/nsamples, cov(d), atol = n * 0.5)
-            end
 
-            let # MvNormalMeanPrecision
                 μ = randn(rng, n)
                 L = randn(rng, n, n)
                 W = L * L'
@@ -224,15 +221,13 @@ using StableRNGs
 
                 @test typeof(rand(d)) <: Vector{T}
 
-                samples = rand(rng, d, nsamples),
+                samples = eachcol(rand(rng, d, nsamples))
                 weights = fill(1 / nsamples, nsamples)
 
 
                 @test isapprox(sum(sample for sample in samples)/nsamples, mean(d), atol = n * 0.5)
                 @test isapprox(sum((sample - mean(d))*(sample - mean(d))' for sample in samples)/nsamples, cov(d), atol = n * 0.5)
-            end
 
-            let # MvNormalWeightedMeanPrecision
                 ξ = randn(rng, n)
                 L = randn(rng, n, n)
                 W = L * L'
@@ -241,13 +236,12 @@ using StableRNGs
 
                 @test typeof(rand(d)) <: Vector{T}
 
-                samples = rand(rng, d, nsamples),
+                samples = eachcol(rand(rng, d, nsamples))
                 weights = fill(1 / nsamples, nsamples)
 
 
                 @test isapprox(sum(sample for sample in samples)/nsamples, mean(d), atol = n * 0.5)
                 @test isapprox(sum((sample - mean(d))*(sample - mean(d))' for sample in samples)/nsamples, cov(d), atol = n * 0.5)
-            end
         end
     end
 
