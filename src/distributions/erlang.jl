@@ -13,23 +13,20 @@ end
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
 # Extensions of prod methods
-
 prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
-## Friendly functions
-
+# Friendly function
 function logpdf_sample_friendly(dist::Erlang)
     k, λ = params(dist)
     friendly = Erlang(k, λ)
     return (friendly, friendly)
 end
 
-## Natural parameters for the Erlang distribution
-
+# Natural parameters for the Erlang distribution
 struct ErlangNaturalParameters <: NaturalParameters
     a::Integer
     b::Real
