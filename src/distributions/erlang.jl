@@ -53,7 +53,7 @@ function Base.:(==)(left::ErlangNaturalParameters, right::ErlangNaturalParameter
 end
 
 function Base.convert(::Type{Distribution}, params::ErlangNaturalParameters)
-    return Erlang(params.a + 1, -1/params.b)
+    return Erlang(params.a + 1, -1 / params.b)
 end
 
 function Base.vec(params::ErlangNaturalParameters)
