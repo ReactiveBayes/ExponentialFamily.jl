@@ -52,6 +52,7 @@ using Random
         @test logpdf(ηcat, 1) == logpdf(dist,1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5) 
 
+        @test logpdf_sample_friendly(dist) == (dist,dist)
     end
 end
 

@@ -1,5 +1,5 @@
 export Categorical
-export CategoricalNaturalParameters, lognormalizer, naturalparams
+export CategoricalNaturalParameters, lognormalizer, naturalparams, logpdf_sample_friendly
 
 import Distributions: Categorical, probs
 
@@ -95,6 +95,12 @@ end
 
 isproper(params::CategoricalNaturalParameters) = true
 
+
+function logpdf_sample_friendly(dist::Categorical)
+    p = probvec(dist)
+    friendly = Categorical(p)
+    return (friendly, friendly)
+end
 
 
 
