@@ -33,8 +33,8 @@ import ExponentialFamily: mirrorlog
     end
 
     @testset "Constructor(::ExponentialNaturalParameters)" begin
-        @test naturalparams(Exponential(5)) == ExponentialNaturalParameters(0.2)
-        @test naturalparams(Exponential(1e12)) == ExponentialNaturalParameters(1e-12)
+        @test naturalparams(Exponential(5)) == ExponentialNaturalParameters(-0.2)
+        @test naturalparams(Exponential(1e12)) == ExponentialNaturalParameters(-1e-12)
     end
 
     @testset "logpdf(::ExponentialNaturalParameters)" begin
@@ -48,6 +48,47 @@ import ExponentialFamily: mirrorlog
         @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
         distribution = Exponential(1)
         @test logpdf(distribution, 2) ≈ logpdf(naturalparams(distribution), 2)
+    end
+
+    @testset "lognormalizer(::ExponentialNaturalParameters)" begin
+        distribution = Exponential(5)
+        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        distribution = Exponential(10)
+        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        distribution = Exponential(0.1)
+        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        distribution = Exponential(1)
+        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        distribution = Exponential(1)
+        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+    end
+
+    @testset ":+(::ExponentialNaturalParameters, ::ExponentialNaturalParameters)" begin
+        left = naturalparams(Exponential(4))
+        right = naturalparams(Exponential(3))
+        @test (left + right).minus_rate ≈ -0.5833333333333333
+
+        left = naturalparams(Exponential(4))
+        right = naturalparams(Exponential(5))
+        @test (left + right).minus_rate ≈ -0.45
+
+        left = naturalparams(Exponential(1))
+        right = naturalparams(Exponential(1))
+        @test (left + right).minus_rate ≈ -2
+    end
+
+    @testset ":-(::ExponentialNaturalParameters, ::ExponentialNaturalParameters)" begin
+        left = naturalparams(Exponential(1))
+        right = naturalparams(Exponential(4))
+        @test (left - right).minus_rate ≈ -0.75
+
+        left = naturalparams(Exponential(4))
+        right = naturalparams(Exponential(5))
+        @test (left - right).minus_rate ≈ -0.05
+
+        left = naturalparams(Exponential(1))
+        right = naturalparams(Exponential(1))
+        @test (left - right).minus_rate ≈ 0
     end
 
 end

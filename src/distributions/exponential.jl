@@ -13,13 +13,13 @@ function Base.prod(::ProdAnalytical, left::Exponential, right::Exponential)
     return Exponential(inv(inv(θ_left) + inv(θ_right)))
 end
 
-function compute_logscale(new_dist::Exponential, left_dist::Exponential, right_dist::Exponential)
-    return log(inv(new_dist.θ)) - log(inv(left_dist.θ)) - log(inv(right_dist.θ)) 
-end
-
 
 function mean(::typeof(log), dist::Exponential)
    return -log(rate(dist)) - MathConstants.eulergamma
+end
+
+function lognormalizer(dist::Exponential)
+    return -log(rate(dist))
 end
 
 struct ExponentialNaturalParameters{T <: Real} <: NaturalParameters
@@ -31,5 +31,17 @@ function naturalparams(dist :: Exponential)
 end
 
 function Distributions.logpdf(dist::ExponentialNaturalParameters, x)
-    return log(-dist.rate) + dist.rate * x
+    return log(-dist.minus_rate) + dist.minus_rate * x
+end
+
+function Base.:+(left::ExponentialNaturalParameters, right::ExponentialNaturalParameters)
+    return ExponentialNaturalParameters(left.minus_rate + right.minus_rate)
+end
+
+function Base.:-(left::ExponentialNaturalParameters, right::ExponentialNaturalParameters)
+    return ExponentialNaturalParameters(left.minus_rate - right.minus_rate)
+end
+
+function lognormalizer(η::ExponentialNaturalParameters)
+    return -log(-η.minus_rate)
 end
