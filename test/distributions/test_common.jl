@@ -16,10 +16,14 @@ using Random
         # We use probvec instead
         import ExponentialFamily: probvec
 
-        @test probvec(prod(ProdAnalytical(), Bernoulli(0.5), Categorical([0.5, 0.5]))) ≈ probvec(Categorical([0.5, 0.5]))
-        @test probvec(prod(ProdAnalytical(), Bernoulli(0.1), Categorical(0.4, 0.6))) ≈ probvec(Categorical([1 - 0.14285714285714285, 0.14285714285714285]))
-        @test probvec(prod(ProdAnalytical(), Bernoulli(0.78), Categorical([0.95, 0.05]))) ≈ probvec(Categorical([1 - 0.1572580645161291, 0.1572580645161291]))
-        @test probvec(prod(ProdAnalytical(), Bernoulli(0.5), Categorical([0.3, 0.3, 0.4]))) ≈ probvec(Categorical([0.5, 0.5, 0]))
+        @test probvec(prod(ProdAnalytical(), Bernoulli(0.5), Categorical([0.5, 0.5]))) ≈
+              probvec(Categorical([0.5, 0.5]))
+        @test probvec(prod(ProdAnalytical(), Bernoulli(0.1), Categorical(0.4, 0.6))) ≈
+              probvec(Categorical([1 - 0.14285714285714285, 0.14285714285714285]))
+        @test probvec(prod(ProdAnalytical(), Bernoulli(0.78), Categorical([0.95, 0.05]))) ≈
+              probvec(Categorical([1 - 0.1572580645161291, 0.1572580645161291]))
+        @test probvec(prod(ProdAnalytical(), Bernoulli(0.5), Categorical([0.3, 0.3, 0.4]))) ≈
+              probvec(Categorical([0.5, 0.5, 0]))
         @test probvec(prod(ProdAnalytical(), Bernoulli(0.5), Categorical([1.0]))) ≈ probvec(Categorical([1.0, 0]))
     end
 end

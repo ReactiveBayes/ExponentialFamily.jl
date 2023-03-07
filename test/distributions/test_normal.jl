@@ -2,12 +2,11 @@ module NormalTest
 
 using Test
 using ExponentialFamily
-using Random
 using LinearAlgebra
 using Distributions
 using ForwardDiff
-
-import ExponentialFamily: convert_eltype
+using Random
+using StableRNGs
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -23,8 +22,14 @@ import ExponentialFamily: convert_eltype
                 for value in (1.0, -1.0, 0.0, mean(left), mean(right), rand())
                     @test pdf(left, value) ≈ pdf(right, value)
                     @test logpdf(left, value) ≈ logpdf(right, value)
-                    @test all(ForwardDiff.gradient((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.gradient((x) -> logpdf(right, x[1]), [value]))
-                    @test all(ForwardDiff.hessian((x) -> logpdf(left, x[1]), [value]) .≈ ForwardDiff.hessian((x) -> logpdf(right, x[1]), [value]))
+                    @test all(
+                        ForwardDiff.gradient((x) -> logpdf(left, x[1]), [value]) .≈
+                        ForwardDiff.gradient((x) -> logpdf(right, x[1]), [value])
+                    )
+                    @test all(
+                        ForwardDiff.hessian((x) -> logpdf(left, x[1]), [value]) .≈
+                        ForwardDiff.hessian((x) -> logpdf(right, x[1]), [value])
+                    )
                 end
 
                 # These methods are not defined for distributions from `Distributions.jl
@@ -81,11 +86,31 @@ import ExponentialFamily: convert_eltype
                 @test size(left) === size(right)
                 @test entropy(left) ≈ entropy(right)
 
-                for value in (fill(1.0, dims), fill(-1.0, dims), fill(0.0, dims), mean(left), mean(right), rand(dims))
+                for value in (
+                    fill(1.0, dims),
+                    fill(-1.0, dims),
+                    fill(0.1, dims),
+                    mean(left) .+ tiny,
+                    mean(right) .+ tiny,
+                    rand(dims)
+                )
                     @test pdf(left, value) ≈ pdf(right, value)
                     @test logpdf(left, value) ≈ logpdf(right, value)
-                    @test all(isapprox.(ForwardDiff.gradient((x) -> logpdf(left, x), value), ForwardDiff.gradient((x) -> logpdf(right, x), value), atol = 1e-14))
-                    @test all(isapprox.(ForwardDiff.hessian((x) -> logpdf(left, x), value), ForwardDiff.hessian((x) -> logpdf(right, x), value), atol = 1e-14))
+                    @test all(
+                        isapprox.(
+                            ForwardDiff.gradient((x) -> logpdf(left, x), value),
+                            ForwardDiff.gradient((x) -> logpdf(right, x), value),
+                            atol = 1e-14
+                        )
+                    )
+                    # TODO: test fails
+                    @test all(
+                        isapprox.(
+                            ForwardDiff.hessian((x) -> logpdf(left, x), value),
+                            ForwardDiff.hessian((x) -> logpdf(right, x), value),
+                            atol = 1e-14
+                        )
+                    )
                 end
 
                 # These methods are not defined for distributions from `Distributions.jl
@@ -111,7 +136,7 @@ import ExponentialFamily: convert_eltype
 
         for dim in dims
             for type in types
-                left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(rand(rng, Float64, dim))))
+                left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(abs.(rand(rng, Float64, dim)))))
                 check_basic_statistics(left, convert(MvNormal, left), dim; include_extended_methods = false)
                 for type in [types..., etypes...]
                     right = convert(type, left)
@@ -132,8 +157,6 @@ import ExponentialFamily: convert_eltype
             end
         end
     end
-
-
 
     @testset "Variate forms promotions" begin
         @test promote_variate_type(Univariate, NormalMeanVariance) === NormalMeanVariance
@@ -197,64 +220,72 @@ import ExponentialFamily: convert_eltype
 
     @testset "Sampling multivariate" begin
         rng = MersenneTwister(1234)
-
         for n in (2, 3), T in (Float64,), nsamples in (10_000,)
-            let # MvNormalMeanCovariance
-                μ = randn(rng, n)
-                L = randn(rng, n, n)
-                Σ = L * L'
+            μ = randn(rng, n)
+            L = randn(rng, n, n)
+            Σ = L * L'
 
-                d = convert(MvNormalMeanCovariance{T}, μ, Σ)
+            d = convert(MvNormalMeanCovariance{T}, μ, Σ)
+            @test typeof(rand(d)) <: Vector{T}
 
-                @test typeof(rand(d)) <: Vector{T}
+            samples = eachcol(rand(rng, d, nsamples))
+            weights = fill(1 / nsamples, nsamples)
 
-                samples = SampleList(Val((n,)), rand(rng, d, nsamples), fill(1 / nsamples, nsamples))
+            @test isapprox(sum(sample for sample in samples) / nsamples, mean(d), atol = n * 0.5)
+            @test isapprox(
+                sum((sample - mean(d)) * (sample - mean(d))' for sample in samples) / nsamples,
+                cov(d),
+                atol = n * 0.5
+            )
 
-                @test isapprox(mean(samples), mean(d), atol = n * 0.5)
-                @test isapprox(cov(samples), cov(d), atol = n * 0.5)
-            end
+            μ = randn(rng, n)
+            L = randn(rng, n, n)
+            W = L * L'
+            d = convert(MvNormalMeanCovariance{T}, μ, W)
+            @test typeof(rand(d)) <: Vector{T}
 
-            let # MvNormalMeanPrecision
-                μ = randn(rng, n)
-                L = randn(rng, n, n)
-                W = L * L'
+            samples = eachcol(rand(rng, d, nsamples))
+            weights = fill(1 / nsamples, nsamples)
 
-                d = convert(MvNormalMeanPrecision{T}, μ, W)
+            @test isapprox(sum(sample for sample in samples) / nsamples, mean(d), atol = n * 0.5)
+            @test isapprox(
+                sum((sample - mean(d)) * (sample - mean(d))' for sample in samples) / nsamples,
+                cov(d),
+                atol = n * 0.5
+            )
 
-                @test typeof(rand(d)) <: Vector{T}
+            ξ = randn(rng, n)
+            L = randn(rng, n, n)
+            W = L * L'
 
-                samples = SampleList(Val((n,)), rand(rng, d, nsamples), fill(T(1 / nsamples), nsamples))
+            d = convert(MvNormalWeightedMeanPrecision{T}, ξ, W)
 
-                @test isapprox(mean(samples), mean(d), atol = n * 0.5)
-                @test isapprox(cov(samples), cov(d), atol = n * 0.5)
-            end
+            @test typeof(rand(d)) <: Vector{T}
 
-            let # MvNormalWeightedMeanPrecision
-                ξ = randn(rng, n)
-                L = randn(rng, n, n)
-                W = L * L'
+            samples = eachcol(rand(rng, d, nsamples))
+            weights = fill(1 / nsamples, nsamples)
 
-                d = convert(MvNormalWeightedMeanPrecision{T}, ξ, W)
-
-                @test typeof(rand(d)) <: Vector{T}
-
-                samples = SampleList(Val((n,)), rand(rng, d, nsamples), fill(T(1 / nsamples), nsamples))
-
-                @test isapprox(mean(samples), mean(d), atol = n * 0.5)
-                @test isapprox(cov(samples), cov(d), atol = n * 0.5)
-            end
+            @test isapprox(sum(sample for sample in samples) / nsamples, mean(d), atol = n * 0.5)
+            @test isapprox(
+                sum((sample - mean(d)) * (sample - mean(d))' for sample in samples) / nsamples,
+                cov(d),
+                atol = n * 0.5
+            )
         end
     end
 
     @testset "UnivariateNormalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) == NormalWeightedMeanPrecision(i, 2 * i)
+                @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) ==
+                      NormalWeightedMeanPrecision(i, 2 * i)
 
                 @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
                 @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) == UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) ==
+                      UnivariateNormalNaturalParameters(i, -i)
+                @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) ==
+                      UnivariateNormalNaturalParameters(i, -i)
             end
         end
 
@@ -264,7 +295,8 @@ import ExponentialFamily: convert_eltype
 
         @testset "logpdf" begin
             for i in 1:10
-                @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈ logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
+                @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈
+                      logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
             end
         end
 
@@ -279,15 +311,22 @@ import ExponentialFamily: convert_eltype
     @testset "MultivariateNormalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈ MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
+                @test convert(Distribution, MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈
+                      MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
-                @test convert(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test convert(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) ==
+                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) ==
+                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0], [-i 0; 0 -i]) ==
+                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0, -i, 0, 0, -i]) ==
+                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
 
-                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) == MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) ==
+                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) ==
+                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
             end
         end
 

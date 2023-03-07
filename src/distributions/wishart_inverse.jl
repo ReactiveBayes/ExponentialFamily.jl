@@ -48,7 +48,8 @@ end
 function Distributions.entropy(dist::InverseWishartDistributionsFamily)
     d = size(dist, 1)
     ν, S = params(dist)
-    d * (d - 1) / 4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i) / 2), +, 1:d) + ν / 2 * d + (d + 1) / 2 * (logdet(S) - log(2)) -
+    d * (d - 1) / 4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i) / 2), +, 1:d) + ν / 2 * d +
+    (d + 1) / 2 * (logdet(S) - log(2)) -
     (ν + d + 1) / 2 * mapreduce(i -> digamma((ν - d + i) / 2), +, 1:d)
 end
 
@@ -89,7 +90,7 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage
         if singular
             r = rank(S)
             randn!(rng, view(A, :, axes2[1:r]))
-            fill!(view(A, :, axes2[(r + 1):end]), zero(eltype(A)))
+            fill!(view(A, :, axes2[(r+1):end]), zero(eltype(A)))
         else
             Distributions._wishart_genA!(rng, A, df)
         end
@@ -105,7 +106,11 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage
     return x
 end
 
-function Distributions.pdf!(out::AbstractArray{<:Real}, distribution::InverseWishartMessage, samples::AbstractArray{<:AbstractMatrix{<:Real}, O}) where {O}
+function Distributions.pdf!(
+    out::AbstractArray{<:Real},
+    distribution::InverseWishartMessage,
+    samples::AbstractArray{<:AbstractMatrix{<:Real}, O}
+) where {O}
     @assert length(out) === length(samples) "Invalid dimensions in pdf!"
 
     p = size(distribution, 1)

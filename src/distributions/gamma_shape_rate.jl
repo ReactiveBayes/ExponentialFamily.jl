@@ -5,7 +5,6 @@ import SpecialFunctions: loggamma, digamma, gamma
 import StatsFuns: log2π
 import Random: rand
 
-
 struct GammaShapeRate{T <: Real} <: ContinuousUnivariateDistribution
     a::T
     b::T
@@ -27,7 +26,8 @@ Distributions.mean(dist::GammaShapeRate)   = shape(dist) / rate(dist)
 Distributions.var(dist::GammaShapeRate)    = shape(dist) / abs2(rate(dist))
 Distributions.params(dist::GammaShapeRate) = (shape(dist), rate(dist))
 
-Distributions.mode(d::GammaShapeRate) = shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))
+Distributions.mode(d::GammaShapeRate) =
+    shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))
 
 function Distributions.entropy(dist::GammaShapeRate)
     a, b = params(dist)
@@ -51,7 +51,8 @@ end
 
 Base.eltype(::GammaShapeRate{T}) where {T} = T
 
-Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} = GammaShapeRate(convert(T, a), convert(T, b))
+Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} =
+    GammaShapeRate(convert(T, a), convert(T, b))
 
 vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
 

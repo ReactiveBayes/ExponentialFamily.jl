@@ -69,7 +69,8 @@ function compute_logscale(new_dist::Categorical, left_dist::Bernoulli, right_dis
     return log(Z)
 end
 
-compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) = compute_logscale(new_dist, right_dist, left_dist)
+compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
+    compute_logscale(new_dist, right_dist, left_dist)
 
 struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
     η::T
@@ -88,15 +89,18 @@ Base.convert(::Type{BernoulliNaturalParameters}, η::Real) = convert(BernoulliNa
 
 Base.convert(::Type{BernoulliNaturalParameters{T}}, η::Real) where {T} = BernoulliNaturalParameters(convert(T, η))
 
-Base.convert(::Type{BernoulliNaturalParameters}, vec::AbstractVector) = convert(BernoulliNaturalParameters{eltype(vec)}, vec)
+Base.convert(::Type{BernoulliNaturalParameters}, vec::AbstractVector) =
+    convert(BernoulliNaturalParameters{eltype(vec)}, vec)
 
-Base.convert(::Type{BernoulliNaturalParameters{T}}, vec::AbstractVector) where {T} = BernoulliNaturalParameters(convert(AbstractVector{T}, vec))
+Base.convert(::Type{BernoulliNaturalParameters{T}}, vec::AbstractVector) where {T} =
+    BernoulliNaturalParameters(convert(AbstractVector{T}, vec))
 
 function Base.:(==)(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
     return left.η == right.η
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: BernoulliNaturalParameters} = convert(BernoulliNaturalParameters, args...)
+as_naturalparams(::Type{T}, args...) where {T <: BernoulliNaturalParameters} =
+    convert(BernoulliNaturalParameters, args...)
 
 function Base.:+(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
     return BernoulliNaturalParameters(left.η + right.η)
