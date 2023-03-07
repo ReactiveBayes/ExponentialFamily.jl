@@ -4,3 +4,5 @@
 /Manifest.toml
 /docs/build/
 .DS_Store
+
+scripts/Manifest.toml

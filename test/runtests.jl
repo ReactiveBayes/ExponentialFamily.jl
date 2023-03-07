@@ -2,7 +2,6 @@ using ExponentialFamily
 using Test
 
 @testset "ExponentialFamily" begin
- 
     include("test_distributions.jl")
     include("distributions/test_common.jl")
     include("distributions/test_bernoulli.jl")

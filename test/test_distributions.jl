@@ -6,7 +6,8 @@ using Distributions
 using StaticArrays
 using StableRNGs
 
-import ExponentialFamily: convert_eltype, deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype
+import ExponentialFamily:
+    convert_eltype, deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype
 import ExponentialFamily: FactorizedJoint
 
 @testset "Distributions" begin
@@ -58,7 +59,10 @@ import ExponentialFamily: FactorizedJoint
         combinations = [
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Univariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
-            Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate))
+            Iterators.product(
+                fixture_various_distributions(Matrixvariate),
+                fixture_various_distributions(Matrixvariate)
+            )
         ]
         for combination in combinations
             for distributions in combination
@@ -84,15 +88,26 @@ import ExponentialFamily: FactorizedJoint
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Univariate)),
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
-            Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Matrixvariate)),
-            Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
-            Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate))
+            Iterators.product(
+                fixture_various_distributions(Multivariate),
+                fixture_various_distributions(Matrixvariate)
+            ),
+            Iterators.product(
+                fixture_various_distributions(Matrixvariate),
+                fixture_various_distributions(Matrixvariate)
+            ),
+            Iterators.product(
+                fixture_various_distributions(Univariate),
+                fixture_various_distributions(Matrixvariate),
+                fixture_various_distributions(Matrixvariate)
+            )
         ]
         for combination in combinations
             for distributions in combination
                 samples = rand.(distributions)
                 @static if VERSION >= v"1.8"
-                    @test @inferred(promote_samplefloattype(distributions...)) === promote_type(deep_eltype.(typeof.(samples))...)
+                    @test @inferred(promote_samplefloattype(distributions...)) ===
+                          promote_type(deep_eltype.(typeof.(samples))...)
                 else
                     @test promote_samplefloattype(distributions...) === promote_type(deep_eltype.(typeof.(samples))...)
                 end
@@ -101,7 +116,11 @@ import ExponentialFamily: FactorizedJoint
     end
 
     @testset "FactorizedJoint" begin
-        vmultipliers = [(NormalMeanPrecision(),), (NormalMeanVariance(), Beta(1.0, 1.0)), (Normal(), Gamma(), MvNormal(zeros(2), diageye(2)))]
+        vmultipliers = [
+            (NormalMeanPrecision(),),
+            (NormalMeanVariance(), Beta(1.0, 1.0)),
+            (Normal(), Gamma(), MvNormal(zeros(2), diageye(2)))
+        ]
 
         @testset "getindex" begin
             for multipliers in vmultipliers
@@ -124,9 +143,16 @@ import ExponentialFamily: FactorizedJoint
             @test FactorizedJoint((NormalMeanVariance(),)) ≈ FactorizedJoint((NormalMeanVariance(),))
             @test !(FactorizedJoint((NormalMeanVariance(),)) ≈ FactorizedJoint((NormalMeanVariance(1, 1),)))
 
-            @test FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈ FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001))) atol = 1e-5
-            @test !(FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈ FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 5.0000000001))))
-            @test !(FactorizedJoint((Gamma(1.0, 2.0), NormalMeanVariance(0.0, 1.0))) ≈ FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001))))
+            @test FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈
+                  FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001))) atol = 1e-5
+            @test !(
+                FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈
+                FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 5.0000000001)))
+            )
+            @test !(
+                FactorizedJoint((Gamma(1.0, 2.0), NormalMeanVariance(0.0, 1.0))) ≈
+                FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001)))
+            )
         end
     end
 end
