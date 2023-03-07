@@ -8,14 +8,13 @@ vague(::Type{<:Exponential}) = Exponential(1e12)
 prod_analytical_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::Exponential, right::Exponential)
-    θ_left              = left.θ
-    θ_right             = right.θ
+    θ_left  = left.θ
+    θ_right = right.θ
     return Exponential(inv(inv(θ_left) + inv(θ_right)))
 end
 
-
 function mean(::typeof(log), dist::Exponential)
-   return -log(rate(dist)) - MathConstants.eulergamma
+    return -log(rate(dist)) - MathConstants.eulergamma
 end
 
 function lognormalizer(dist::Exponential)
@@ -23,10 +22,10 @@ function lognormalizer(dist::Exponential)
 end
 
 struct ExponentialNaturalParameters{T <: Real} <: NaturalParameters
-    minus_rate :: T
+    minus_rate::T
 end
 
-function naturalparams(dist :: Exponential)
+function naturalparams(dist::Exponential)
     return ExponentialNaturalParameters(-inv(dist.θ))
 end
 

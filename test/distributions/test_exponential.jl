@@ -17,12 +17,12 @@ import ExponentialFamily: mirrorlog
 
         @test typeof(d) <: Exponential
         @test mean(d) === 1e12
-        @test params(d) === (1e12, )
+        @test params(d) === (1e12,)
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), Exponential(5), Exponential(4)) ≈ Exponential(1/0.45)
-        @test prod(ProdAnalytical(), Exponential(1), Exponential(1)) ≈ Exponential(1/2)
+        @test prod(ProdAnalytical(), Exponential(5), Exponential(4)) ≈ Exponential(1 / 0.45)
+        @test prod(ProdAnalytical(), Exponential(1), Exponential(1)) ≈ Exponential(1 / 2)
         @test prod(ProdAnalytical(), Exponential(0.1), Exponential(0.1)) ≈ Exponential(0.05)
     end
 
@@ -90,7 +90,6 @@ import ExponentialFamily: mirrorlog
         right = naturalparams(Exponential(1))
         @test (left - right).minus_rate ≈ 0
     end
-
 end
 
 end
