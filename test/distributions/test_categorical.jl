@@ -38,6 +38,24 @@ using Random
         @test probvec(Categorical([1 / 3, 1 / 3, 1 / 3])) == [1 / 3, 1 / 3, 1 / 3]
         @test probvec(Categorical([0.8, 0.1, 0.1])) == [0.8, 0.1, 0.1]
     end
+
+    @testset "EF related Categorical" begin
+        ηcat = CategoricalNaturalParameters([log(0.5), log(0.5)])
+        dist = Categorical([0.5, 0.5])
+        η1   = CategoricalNaturalParameters([log(0.5), log(0.5)])
+        η2   = CategoricalNaturalParameters([log(0.5), log(0.5)])
+
+        @test convert(Categorical, ηcat) == dist
+        @test as_naturalparams(CategoricalNaturalParameters, log.([0.5, 0.5])) == ηcat
+        @test naturalparams(dist) == CategoricalNaturalParameters(log.([0.5, 0.5]))
+        @test η1 + η2 == CategoricalNaturalParameters([2log(0.5), 2log(0.5)])
+        @test η1 - η2 == CategoricalNaturalParameters([0.0, 0.0])
+
+        @test logpdf(ηcat, 1) == logpdf(dist, 1)
+        @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
+
+        @test logpdf_sample_friendly(dist) == (dist, dist)
+    end
 end
 
 end
