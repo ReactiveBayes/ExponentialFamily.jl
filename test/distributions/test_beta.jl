@@ -39,7 +39,6 @@ import SpecialFunctions: loggamma
         @test mean(mirrorlog, Beta(4.5, 0.3)) ≈ -4.963371962929249
     end
 
-
     @testset "BetaNaturalParameters" begin
         @testset "Constructor" begin
             for i in 0:10, j in 0:10
