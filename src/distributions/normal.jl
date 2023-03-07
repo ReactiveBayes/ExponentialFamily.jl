@@ -73,8 +73,8 @@ function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
     start = 1
     @inbounds for (index, size) in enumerate(sizes)
         dm, dc = first(dist)[index], last(dist)[index]
-        μ[start:(start + size - 1)] .= dm
-        Σ[start:(start + size - 1), start:(start + size - 1)] .= dc
+        μ[start:(start+size-1)] .= dm
+        Σ[start:(start+size-1), start:(start+size-1)] .= dc
         start += size
     end
 
@@ -96,7 +96,8 @@ Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
-convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} = convert_eltype(JointNormal, T, joint, joint.dist)
+convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} =
+    convert_eltype(JointNormal, T, joint, joint.dist)
 
 function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
     μ, Σ  = map(e -> convert_eltype(T, e), mean_cov(dist))
@@ -145,7 +146,7 @@ end
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
-    start = sum(prod.(ds[1:(index - 1)]); init = 0) + 1
+    start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     len   = first(sz)
     stop  = start + len - 1
     μ, Σ  = mean_cov(dist)
@@ -156,7 +157,7 @@ end
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
 function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
-    start = sum(prod.(ds[1:(index - 1)]); init = 0) + 1
+    start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     μ, Σ = mean_cov(dist)
     # Return the slice of the original `MvNormalMeanCovariance`
     return NormalMeanVariance(μ[start], Σ[start, start])
@@ -173,7 +174,8 @@ function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tu
 end
 
 # comparing JointNormals - similar to src/distributions/pointmass.jl
-Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) = isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
+Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) =
+    isapprox(left.dist, right.dist; kwargs...) && left.ds == right.ds
 
 """An alias for the [`JointNormal`](@ref)."""
 const JointGaussian = JointNormal
@@ -207,11 +209,17 @@ function Base.convert(::Type{MvNormalMeanCovariance{T}}, dist::MultivariateNorma
     return convert(MvNormalMeanCovariance{T, AbstractArray{T, 1}}, dist)
 end
 
-function Base.convert(::Type{MvNormalMeanCovariance{T, M}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real, M <: AbstractArray{T}}
+function Base.convert(
+    ::Type{MvNormalMeanCovariance{T, M}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, M <: AbstractArray{T}}
     return convert(MvNormalMeanCovariance{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
 end
 
-function Base.convert(::Type{MvNormalMeanCovariance{T, M, P}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
+function Base.convert(
+    ::Type{MvNormalMeanCovariance{T, M, P}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
     mean, cov = mean_cov(dist)
     return MvNormalMeanCovariance(convert(M, mean), convert(P, cov))
 end
@@ -235,11 +243,17 @@ function Base.convert(::Type{MvNormalMeanPrecision{T}}, dist::MultivariateNormal
     return convert(MvNormalMeanPrecision{T, AbstractArray{T, 1}}, dist)
 end
 
-function Base.convert(::Type{MvNormalMeanPrecision{T, M}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real, M <: AbstractArray{T}}
+function Base.convert(
+    ::Type{MvNormalMeanPrecision{T, M}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, M <: AbstractArray{T}}
     return convert(MvNormalMeanPrecision{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
 end
 
-function Base.convert(::Type{MvNormalMeanPrecision{T, M, P}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
+function Base.convert(
+    ::Type{MvNormalMeanPrecision{T, M, P}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
     mean, precision = mean_precision(dist)
     return MvNormalMeanPrecision(convert(M, mean), convert(P, precision))
 end
@@ -254,37 +268,60 @@ end
 
 # Conversion to weighted mean - precision parametrisation
 
-function Base.convert(::Type{NormalWeightedMeanPrecision{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
+function Base.convert(
+    ::Type{NormalWeightedMeanPrecision{T}},
+    dist::UnivariateNormalDistributionsFamily
+) where {T <: Real}
     weightedmean, precision = weightedmean_precision(dist)
     return NormalWeightedMeanPrecision(convert(T, weightedmean), convert(T, precision))
 end
 
-function Base.convert(::Type{MvNormalWeightedMeanPrecision{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
+function Base.convert(
+    ::Type{MvNormalWeightedMeanPrecision{T}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real}
     return convert(MvNormalWeightedMeanPrecision{T, AbstractArray{T, 1}}, dist)
 end
 
-function Base.convert(::Type{MvNormalWeightedMeanPrecision{T, M}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real, M <: AbstractArray{T}}
+function Base.convert(
+    ::Type{MvNormalWeightedMeanPrecision{T, M}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, M <: AbstractArray{T}}
     return convert(MvNormalWeightedMeanPrecision{T, AbstractArray{T, 1}, AbstractArray{T, 2}}, dist)
 end
 
-function Base.convert(::Type{MvNormalWeightedMeanPrecision{T, M, P}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
+function Base.convert(
+    ::Type{MvNormalWeightedMeanPrecision{T, M, P}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
     weightedmean, precision = weightedmean_precision(dist)
     return MvNormalWeightedMeanPrecision(convert(M, weightedmean), convert(P, precision))
 end
 
-function Base.convert(::Type{NormalWeightedMeanPrecision}, dist::UnivariateNormalDistributionsFamily{T}) where {T <: Real}
+function Base.convert(
+    ::Type{NormalWeightedMeanPrecision},
+    dist::UnivariateNormalDistributionsFamily{T}
+) where {T <: Real}
     return convert(NormalWeightedMeanPrecision{T}, dist)
 end
 
-function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MultivariateNormalDistributionsFamily{T}) where {T <: Real}
+function Base.convert(
+    ::Type{MvNormalWeightedMeanPrecision},
+    dist::MultivariateNormalDistributionsFamily{T}
+) where {T <: Real}
     return convert(MvNormalWeightedMeanPrecision{T}, dist)
 end
 
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
-prod_analytical_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    ProdAnalyticalRuleAvailable()
 
-function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
+function Base.prod(
+    ::ProdAnalytical,
+    left::L,
+    right::R
+) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
     return prod(ProdAnalytical(), wleft, wright)
@@ -292,7 +329,11 @@ end
 
 function compute_logscale(
     ::N, left::L, right::R
-) where {N <: UnivariateNormalDistributionsFamily, L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
+) where {
+    N <: UnivariateNormalDistributionsFamily,
+    L <: UnivariateNormalDistributionsFamily,
+    R <: UnivariateNormalDistributionsFamily
+}
     m_left, v_left   = mean_cov(left)
     m_right, v_right = mean_cov(right)
     v                = v_left + v_right
@@ -300,9 +341,14 @@ function compute_logscale(
     return -(logdet(v) + log2π) / 2 - m^2 / v / 2
 end
 
-prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
+    ProdAnalyticalRuleAvailable()
 
-function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
+function Base.prod(
+    ::ProdAnalytical,
+    left::L,
+    right::R
+) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(ProdAnalytical(), wleft, wright)
@@ -310,7 +356,11 @@ end
 
 function compute_logscale(
     ::N, left::L, right::R
-) where {N <: MultivariateNormalDistributionsFamily, L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
+) where {
+    N <: MultivariateNormalDistributionsFamily,
+    L <: MultivariateNormalDistributionsFamily,
+    R <: MultivariateNormalDistributionsFamily
+}
     m_left, v_left   = mean_cov(left)
     m_right, v_right = mean_cov(right)
     v                = v_left + v_right
@@ -351,7 +401,11 @@ function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily
     return rand!(rng, dist, container)
 end
 
-function Random.rand!(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily, container::AbstractArray{T}) where {T <: Real}
+function Random.rand!(
+    rng::AbstractRNG,
+    dist::UnivariateNormalDistributionsFamily,
+    container::AbstractArray{T}
+) where {T <: Real}
     randn!(rng, container)
     μ, σ = mean_std(dist)
     @turbo for i in eachindex(container)
@@ -372,7 +426,11 @@ function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFami
     return rand!(rng, dist, container)
 end
 
-function Random.rand!(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily, container::AbstractArray{T}) where {T <: Real}
+function Random.rand!(
+    rng::AbstractRNG,
+    dist::MultivariateNormalDistributionsFamily,
+    container::AbstractArray{T}
+) where {T <: Real}
     preallocated = similar(container)
     randn!(rng, reshape(preallocated, length(preallocated)))
     μ, L = mean_std(dist)
@@ -401,42 +459,68 @@ function UnivariateNormalNaturalParameters(v::AbstractVector{T}) where {T <: Rea
 end
 
 Base.convert(::Type{UnivariateNormalNaturalParameters}, weighted_mean::Real, minus_half_precision::Real) =
-    convert(UnivariateNormalNaturalParameters{promote_type(typeof(weighted_mean), typeof(minus_half_precision))}, weighted_mean, minus_half_precision)
+    convert(
+        UnivariateNormalNaturalParameters{promote_type(typeof(weighted_mean), typeof(minus_half_precision))},
+        weighted_mean,
+        minus_half_precision
+    )
 
 Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, weighted_mean::Real, minus_half_precision::Real) where {T} =
     UnivariateNormalNaturalParameters(convert(T, weighted_mean), convert(T, minus_half_precision))
 
-Base.convert(::Type{UnivariateNormalNaturalParameters}, vector::AbstractVector) = convert(UnivariateNormalNaturalParameters{eltype(vector)}, vector)
+Base.convert(::Type{UnivariateNormalNaturalParameters}, vector::AbstractVector) =
+    convert(UnivariateNormalNaturalParameters{eltype(vector)}, vector)
 
-Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} = UnivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
+Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} =
+    UnivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
 
 function Base.:(==)(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
     return left.weighted_mean == right.weighted_mean && left.minus_half_precision == right.minus_half_precision
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: UnivariateNormalNaturalParameters} = convert(UnivariateNormalNaturalParameters, args...)
+as_naturalparams(::Type{T}, args...) where {T <: UnivariateNormalNaturalParameters} =
+    convert(UnivariateNormalNaturalParameters, args...)
 
 ### Multivariate case
 
-struct MultivariateNormalNaturalParameters{T <: Real, M <: AbstractArray{T}, P <: AbstractMatrix{T}} <: NaturalParameters
+struct MultivariateNormalNaturalParameters{T <: Real, M <: AbstractArray{T}, P <: AbstractMatrix{T}} <:
+       NaturalParameters
     weighted_mean::M
     minus_half_precision_matrix::P
 end
 
-function MultivariateNormalNaturalParameters(weighted_mean::AbstractVector{<:Real}, minus_half_precision_matrix::AbstractMatrix{<:Real})
+function MultivariateNormalNaturalParameters(
+    weighted_mean::AbstractVector{<:Real},
+    minus_half_precision_matrix::AbstractMatrix{<:Real}
+)
     T = promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))
-    return MultivariateNormalNaturalParameters(convert(AbstractArray{T}, weighted_mean), convert(AbstractArray{T}, minus_half_precision_matrix))
+    return MultivariateNormalNaturalParameters(
+        convert(AbstractArray{T}, weighted_mean),
+        convert(AbstractArray{T}, minus_half_precision_matrix)
+    )
 end
 
-function MultivariateNormalNaturalParameters(weighted_mean::AbstractVector{<:Integer}, minus_half_precision_matrix::AbstractMatrix{<:Integer})
+function MultivariateNormalNaturalParameters(
+    weighted_mean::AbstractVector{<:Integer},
+    minus_half_precision_matrix::AbstractMatrix{<:Integer}
+)
     return MultivariateNormalNaturalParameters(float.(weighted_mean), float.(minus_half_precision_matrix))
 end
 
-function MultivariateNormalNaturalParameters(weighted_mean::AbstractVector{T}, minus_half_precision_matrix::AbstractMatrix{T}) where {T <: Real}
-    if (length(weighted_mean) !== size(minus_half_precision_matrix, 1)) || (length(weighted_mean) !== size(minus_half_precision_matrix, 2))
-        error("`MvNormalNaturalParameters` can not be created from shapes: mean `$(size(weighted_mean))` and matrix `$(size(minus_half_precision_matrix))`.")
+function MultivariateNormalNaturalParameters(
+    weighted_mean::AbstractVector{T},
+    minus_half_precision_matrix::AbstractMatrix{T}
+) where {T <: Real}
+    if (length(weighted_mean) !== size(minus_half_precision_matrix, 1)) ||
+       (length(weighted_mean) !== size(minus_half_precision_matrix, 2))
+        error(
+            "`MvNormalNaturalParameters` can not be created from shapes: mean `$(size(weighted_mean))` and matrix `$(size(minus_half_precision_matrix))`."
+        )
     end
-    return MultivariateNormalNaturalParameters{T, typeof(weighted_mean), typeof(minus_half_precision_matrix)}(weighted_mean, minus_half_precision_matrix)
+    return MultivariateNormalNaturalParameters{T, typeof(weighted_mean), typeof(minus_half_precision_matrix)}(
+        weighted_mean,
+        minus_half_precision_matrix
+    )
 end
 
 function MultivariateNormalNaturalParameters(v::AbstractVector{T}) where {T}
@@ -445,24 +529,46 @@ function MultivariateNormalNaturalParameters(v::AbstractVector{T}) where {T}
 
     @assert (d^2 + d) === k "Vector dimensionality constraints are not fullfiled"
 
-    return MultivariateNormalNaturalParameters(collect(view(v, 1:d)), collect(reshape(view(v, (d + 1):lastindex(v)), d, d)))
+    return MultivariateNormalNaturalParameters(
+        collect(view(v, 1:d)),
+        collect(reshape(view(v, (d+1):lastindex(v)), d, d))
+    )
 end
 
-Base.convert(::Type{MultivariateNormalNaturalParameters}, weighted_mean::AbstractVector, minus_half_precision_matrix::AbstractMatrix) =
-    convert(MultivariateNormalNaturalParameters{promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))}, weighted_mean, minus_half_precision_matrix)
+Base.convert(
+    ::Type{MultivariateNormalNaturalParameters},
+    weighted_mean::AbstractVector,
+    minus_half_precision_matrix::AbstractMatrix
+) =
+    convert(
+        MultivariateNormalNaturalParameters{promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))},
+        weighted_mean,
+        minus_half_precision_matrix
+    )
 
-Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, weighted_mean::AbstractVector, minus_half_precision_matrix::AbstractMatrix) where {T} =
-    MultivariateNormalNaturalParameters(convert(AbstractVector{T}, weighted_mean), convert(AbstractMatrix{T}, minus_half_precision_matrix))
+Base.convert(
+    ::Type{MultivariateNormalNaturalParameters{T}},
+    weighted_mean::AbstractVector,
+    minus_half_precision_matrix::AbstractMatrix
+) where {T} =
+    MultivariateNormalNaturalParameters(
+        convert(AbstractVector{T}, weighted_mean),
+        convert(AbstractMatrix{T}, minus_half_precision_matrix)
+    )
 
-Base.convert(::Type{MultivariateNormalNaturalParameters}, vector::AbstractVector) = convert(MultivariateNormalNaturalParameters{eltype(vector)}, vector)
+Base.convert(::Type{MultivariateNormalNaturalParameters}, vector::AbstractVector) =
+    convert(MultivariateNormalNaturalParameters{eltype(vector)}, vector)
 
-Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} = MultivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
+Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} =
+    MultivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
 
 function Base.:(==)(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
-    return left.weighted_mean == right.weighted_mean && left.minus_half_precision_matrix == right.minus_half_precision_matrix
+    return left.weighted_mean == right.weighted_mean &&
+           left.minus_half_precision_matrix == right.minus_half_precision_matrix
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: MultivariateNormalNaturalParameters} = convert(MultivariateNormalNaturalParameters, args...)
+as_naturalparams(::Type{T}, args...) where {T <: MultivariateNormalNaturalParameters} =
+    convert(MultivariateNormalNaturalParameters, args...)
 
 function Base.vec(p::UnivariateNormalNaturalParameters)
     return [p.weighted_mean, p.minus_half_precision]
@@ -492,19 +598,31 @@ function convert(::Type{Distribution}, η::MultivariateNormalNaturalParameters)
 end
 
 function Base.:+(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
-    return UnivariateNormalNaturalParameters(left.weighted_mean + right.weighted_mean, left.minus_half_precision + right.minus_half_precision)
+    return UnivariateNormalNaturalParameters(
+        left.weighted_mean + right.weighted_mean,
+        left.minus_half_precision + right.minus_half_precision
+    )
 end
 
 function Base.:+(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
-    return MultivariateNormalNaturalParameters(left.weighted_mean .+ right.weighted_mean, left.minus_half_precision_matrix .+ right.minus_half_precision_matrix)
+    return MultivariateNormalNaturalParameters(
+        left.weighted_mean .+ right.weighted_mean,
+        left.minus_half_precision_matrix .+ right.minus_half_precision_matrix
+    )
 end
 
 function Base.:-(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
-    return UnivariateNormalNaturalParameters(left.weighted_mean - right.weighted_mean, left.minus_half_precision - right.minus_half_precision)
+    return UnivariateNormalNaturalParameters(
+        left.weighted_mean - right.weighted_mean,
+        left.minus_half_precision - right.minus_half_precision
+    )
 end
 
 function Base.:-(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
-    return MultivariateNormalNaturalParameters(left.weighted_mean .- right.weighted_mean, left.minus_half_precision_matrix .- right.minus_half_precision_matrix)
+    return MultivariateNormalNaturalParameters(
+        left.weighted_mean .- right.weighted_mean,
+        left.minus_half_precision_matrix .- right.minus_half_precision_matrix
+    )
 end
 
 function lognormalizer(η::UnivariateNormalNaturalParameters)
@@ -512,7 +630,8 @@ function lognormalizer(η::UnivariateNormalNaturalParameters)
 end
 
 function lognormalizer(η::MultivariateNormalNaturalParameters)
-    return -η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) / 4 - logdet(-2 * η.minus_half_precision_matrix) / 2
+    return -η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) / 4 -
+           logdet(-2 * η.minus_half_precision_matrix) / 2
 end
 
 # Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
@@ -530,7 +649,3 @@ end
 isproper(params::UnivariateNormalNaturalParameters) = params.minus_half_precision < 0
 
 isproper(params::MultivariateNormalNaturalParameters) = isposdef(-params.minus_half_precision_matrix)
-
-
-
-
