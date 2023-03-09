@@ -169,6 +169,7 @@ function Distributions.cdf(d::Contingency, x::AbstractArray{T};support=nothing) 
     else
         s = sum(contingencymatrix[1:stop_idx,1:stop_idy])
     end
+    # s = sum(contingencymatrix[1:stop_idx,1:stop_idy])
     return s
 end
 
@@ -184,8 +185,8 @@ function icdf(dist::Contingency,probability::Float64; support=nothing)
             cdfmatrix[i,j] = cdf(dist,[s1,s2];support=support)
         end
     end
-    probvector1 = sum(contingencymatrix,dims=2)
-    probvector2 = sum(contingencymatrix,dims=1)
+    probvector1 = vec(sum(contingencymatrix,dims=2))
+    probvector2 = vec(sum(contingencymatrix,dims=1))
     ### infimum over finite set is minimum
     cartesianind = findall(x -> x == Base.minimum(filter(d -> !isless(d, probability), cdfmatrix)), cdfmatrix)
     if length(cartesianind) > 1 
@@ -195,7 +196,7 @@ function icdf(dist::Contingency,probability::Float64; support=nothing)
             return [rand(Categorical(probvector1)), rand(Categorical(probvector2))]
        else
             uniqueindex = indexin(Base.minimum(equidistantcdf),cdfmatrix)
-            return [cartesianind[uniqueindex][1], cartesianind[uniqueindex][2]]
+            return [uniqueindex[1][1], uniqueindex[1][2]]
        end
     else
         return [cartesianind[1][1],cartesianind[1][2]] 
