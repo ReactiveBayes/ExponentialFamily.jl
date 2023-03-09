@@ -4,6 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using StatsFuns
 
 @testset "Contingency" begin
     @testset "common" begin
@@ -77,6 +78,45 @@ using Random
         @test entropy(Contingency(10.0 * [0.09 0.00; 0.00 0.91])) ≈ 0.30253782309749805
         @test !isnan(entropy(Contingency([0.0 1.0; 1.0 0.0])))
         @test !isinf(entropy(Contingency([0.0 1.0; 1.0 0.0])))
+    end
+    @testset "cdf" begin
+        dist1 = Contingency([0.2 0.3; 0.4 0.1])
+        dist2  = Contingency(softmax(rand(3,3)))
+        @test cdf(dist1,[1.0,2.0]) ≈ 0.5
+        @test cdf(dist2,[1,3])     == sum(dist2.p[1,1:3])
+        @test cdf(dist2,[0.5, 0.5]) == 0.0
+        @test cdf(dist2,[0.5, 0.5]) == 0.0
+        @test cdf(dist2,[3,3])      == 1.0
+        @test cdf(dist2,[0,0])      == 0.0
+        @test cdf(dist2,[3/2,2])    == cdf(dist2,[1,2])
+        @test cdf(dist1,[3.2,0.1])  == 0.0
+        @test cdf(dist1, [3,6])     ≈ 1.0
+
+        @test icdf(dist2, 0.1)       == [1,1]
+        @test icdf(dist2, 1.0)       == [3,3]
+        @test icdf(dist2, 0.01)      == [1,1]
+        @test icdf(dist2, 0.99)      == [3,3]
+        @test icdf(dist1, 0.5)       == [2,1]
+
+        dist = Contingency([0.1 0.2; 0.5 0.2])
+        @test icdf(dist, 0.1) == [1,1]
+        @test icdf(dist, 0.2) == [1,2]
+        @test icdf(dist, 0.4) == [2,1]
+        @test icdf(dist, 0.5) == [2,1]
+        @test icdf(dist, 0.7) == [2,2]
+    end
+
+    @testset "rand" begin
+      
+        @test rand(Contingency([0.999 0.0005; 0.0005 0])) == [1,1]
+     
+        dist = Contingency([0.3 0.2; 0.5 0.0])
+        nsamples = 1000
+        samples  = eachcol(rand((MersenneTwister(1235)),dist,nsamples)) 
+        mestimated = mean(samples)
+        
+        @test isapprox(mestimated , mean(dist), atol= 1e-1)
+        @test isapprox(sum((sample-mestimated)*(sample-mestimated)' for sample in samples)/(nsamples), cov(dist), atol= 1e-1)
     end
 end
 
