@@ -25,15 +25,36 @@ using Random
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) == Categorical([0.1, 0.4, 0.5])
-        @test prod(ProdAnalytical(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) == Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ProdAnalytical(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) == Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
+        @test prod(ProdAnalytical(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
+              Categorical([0.1, 0.4, 0.5])
+        @test prod(ProdAnalytical(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
+              Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
+        @test prod(ProdAnalytical(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ==
+              Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
     end
 
     @testset "probvec" begin
         @test probvec(Categorical([0.1, 0.4, 0.5])) == [0.1, 0.4, 0.5]
         @test probvec(Categorical([1 / 3, 1 / 3, 1 / 3])) == [1 / 3, 1 / 3, 1 / 3]
         @test probvec(Categorical([0.8, 0.1, 0.1])) == [0.8, 0.1, 0.1]
+    end
+
+    @testset "EF related Categorical" begin
+        ηcat = CategoricalNaturalParameters([log(0.5), log(0.5)])
+        dist = Categorical([0.5, 0.5])
+        η1   = CategoricalNaturalParameters([log(0.5), log(0.5)])
+        η2   = CategoricalNaturalParameters([log(0.5), log(0.5)])
+
+        @test convert(Categorical, ηcat) == dist
+        @test as_naturalparams(CategoricalNaturalParameters, log.([0.5, 0.5])) == ηcat
+        @test naturalparams(dist) == CategoricalNaturalParameters(log.([0.5, 0.5]))
+        @test η1 + η2 == CategoricalNaturalParameters([2log(0.5), 2log(0.5)])
+        @test η1 - η2 == CategoricalNaturalParameters([0.0, 0.0])
+
+        @test logpdf(ηcat, 1) == logpdf(dist, 1)
+        @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
+
+        @test logpdf_sample_friendly(dist) == (dist, dist)
     end
 end
 

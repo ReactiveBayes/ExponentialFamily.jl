@@ -56,7 +56,8 @@ using ExponentialFamily: compute_logscale
             @test convert(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
 
             @test as_naturalparams(BernoulliNaturalParameters, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
-            @test as_naturalparams(BernoulliNaturalParameters{Float64}, i / 10.0) == BernoulliNaturalParameters(i / 10.0)
+            @test as_naturalparams(BernoulliNaturalParameters{Float64}, i / 10.0) ==
+                  BernoulliNaturalParameters(i / 10.0)
             @test prod(ProdAnalytical(), convert(Distribution, naturalparams(b_99) - bnp), b) ≈ b_99
         end
         @test isproper(BernoulliNaturalParameters(10)) === true

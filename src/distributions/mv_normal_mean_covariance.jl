@@ -70,7 +70,8 @@ function Base.convert(::Type{<:MvNormalMeanCovariance{T}}, μ::AbstractVector, �
     return MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 
-vague(::Type{<:MvNormalMeanCovariance}, dims::Int) = MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
+vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
+    MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
 prod_analytical_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ProdAnalyticalRuleAvailable()
 
@@ -88,7 +89,11 @@ function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance, right::MvNorm
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance{T1}, right::MvNormalMeanCovariance{T2}) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
+function Base.prod(
+    ::ProdAnalytical,
+    left::MvNormalMeanCovariance{T1},
+    right::MvNormalMeanCovariance{T2}
+) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
 
     # start with parameters of left
     xi, W = weightedmean_precision(left)

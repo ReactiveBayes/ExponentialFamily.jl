@@ -1,6 +1,7 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std, weightedmean_invcov, weightedmean_precision
+export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
+    weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
 export variate_form, value_support, promote_variate_type, convert_eltype
 export naturalparams, as_naturalparams, lognormalizer, NaturalParameters
@@ -10,7 +11,7 @@ using Distributions, Random
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
 import Distributions: VariateForm, ValueSupport, Distribution, Univariate, Multivariate, Matrixvariate
 
-import Base: prod,convert
+import Base: prod, convert
 
 """
     vague(distribution_type, [ dims... ])
@@ -99,7 +100,8 @@ promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_t
 
 Converts (if possible) the `distribution` to be of type `D{E}`.
 """
-convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} = convert(D{E}, distribution)
+convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} =
+    convert(D{E}, distribution)
 
 """
     convert_eltype(::Type{E}, container)
@@ -222,11 +224,11 @@ Base.getindex(joint::FactorizedJoint, i::Int) = getindex(getmultipliers(joint), 
 Base.length(joint::FactorizedJoint) = length(joint.multipliers)
 
 function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
-    length(x) === length(y) && all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
+    length(x) === length(y) &&
+        all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))
-
 
 export ProdAnalytical
 
@@ -285,12 +287,13 @@ end
 function Base.showerror(io::IO, err::NoAnalyticalProdException)
     print(io, "NoAnalyticalProdException: ")
     print(io, "  No analytical rule available to compute a product of $(err.left) and $(err.right).")
-    print(io, "  Possible fix: implement `prod(::ProdAnalytical, left::$(typeof(err.left)), right::$(typeof(err.right))) = ...`")
+    print(
+        io,
+        "  Possible fix: implement `prod(::ProdAnalytical, left::$(typeof(err.left)), right::$(typeof(err.right))) = ...`"
+    )
 end
 
-
 export ProdPreserveType, ProdPreserveTypeLeft, ProdPreserveTypeRight
-
 
 """
     ProdPreserveType{T}
@@ -312,7 +315,7 @@ By default it fallbacks to a `ProdPreserveType` strategy and converts an output 
 for better performance.
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeRight`](@ref)
 """
-struct ProdPreserveTypeLeft  end
+struct ProdPreserveTypeLeft end
 
 prod(::ProdPreserveTypeLeft, left::L, right) where {L} = prod(ProdPreserveType(L), left, right)
 

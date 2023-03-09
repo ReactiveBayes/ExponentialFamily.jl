@@ -2,7 +2,6 @@ using ExponentialFamily
 using Test
 
 @testset "ExponentialFamily" begin
- 
     include("test_distributions.jl")
     include("distributions/test_common.jl")
     include("distributions/test_bernoulli.jl")
@@ -11,6 +10,7 @@ using Test
     include("distributions/test_contingency.jl")
     include("distributions/test_dirichlet_matrix.jl")
     include("distributions/test_dirichlet.jl")
+    include("distributions/test_exponential.jl")
     include("distributions/test_gamma.jl")
     include("distributions/test_gamma_inverse.jl")
     include("distributions/test_mv_normal_mean_covariance.jl")
@@ -22,5 +22,5 @@ using Test
     include("distributions/test_normal.jl")
     include("distributions/test_wishart.jl")
     include("distributions/test_wishart_inverse.jl")
-
+    include("distributions/test_erlang.jl")
 end

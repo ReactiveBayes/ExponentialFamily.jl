@@ -1,9 +1,8 @@
-module ExponentialFamily 
-    using TinyHugeNumbers
+module ExponentialFamily
+using TinyHugeNumbers
 
-    # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
-    export tiny, huge
-
+# Reexport `tiny` and `huge` from the `TinyHugeNumbers`
+export tiny, huge
     include("helpers/fixes.jl")
     include("helpers/algebra/cholesky.jl")
     include("helpers/algebra/common.jl")
@@ -29,4 +28,6 @@ module ExponentialFamily
     include("distributions/wishart.jl")
     include("distributions/wishart_inverse.jl")
     include("distributions/contingency.jl")
+    include("distributions/erlang.jl")
+    include("distributions/exponential.jl")
 end

@@ -5,4 +5,8 @@
 /docs/build/
 .DS_Store
 
+/.vscode
+
+
 scripts/Manifest.toml
+
