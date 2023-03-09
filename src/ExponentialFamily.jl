@@ -4,6 +4,7 @@ module ExponentialFamily
     # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
     export tiny, huge
 
+    include("helpers/fixes.jl")
     include("helpers/algebra/cholesky.jl")
     include("helpers/algebra/common.jl")
     include("helpers/algebra/correction.jl")
