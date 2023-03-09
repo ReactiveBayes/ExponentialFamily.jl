@@ -86,12 +86,13 @@ using StableRNGs
                 @test size(left) === size(right)
                 @test entropy(left) ≈ entropy(right)
 
+
                 for value in (
                     fill(1.0, dims),
                     fill(-1.0, dims),
                     fill(0.1, dims),
-                    mean(left) .+ tiny,
-                    mean(right) .+ tiny,
+                    mean(left),
+                    mean(right),
                     rand(dims)
                 )
                     @test pdf(left, value) ≈ pdf(right, value)
