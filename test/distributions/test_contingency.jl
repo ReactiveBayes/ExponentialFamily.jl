@@ -110,8 +110,8 @@ using StatsFuns
       
         @test rand(Contingency([0.999 0.0005; 0.0005 0])) == [1,1]
      
-        dist = Contingency([0.3 0.2; 0.5 0.0])
-        nsamples = 1000
+        dist = Contingency([0.3 0.2; 0.1 0.4])
+        nsamples = 100
         samples  = eachcol(rand((MersenneTwister(1235)),dist,nsamples)) 
         mestimated = mean(samples)
         

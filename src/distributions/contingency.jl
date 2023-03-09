@@ -143,16 +143,13 @@ function Distributions.logpdf(η::ContingencyNaturalParameters, x)
 end
 
 
-function Distributions.cdf(d::Contingency, x::AbstractArray{T};support=nothing) where T
+function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where T
     @assert length(x) === 2  "$(x) should be length 2 vector "
     contingencymatrix = contingency_matrix(d)
     P = float(eltype(contingencymatrix))
-    if support === nothing
-        n = first(size(contingencymatrix))
-        support = collect(T, 1:n)
-    end
+    n = first(size(contingencymatrix))
+    support = collect(T, 1:n)
     s = zero(P)
-    n = length(support)
 
     x[1] < Base.minimum(support) && return zero(P)
     x[2] < Base.minimum(support) && return zero(P)
@@ -169,20 +166,17 @@ function Distributions.cdf(d::Contingency, x::AbstractArray{T};support=nothing) 
     else
         s = sum(contingencymatrix[1:stop_idx,1:stop_idy])
     end
-    # s = sum(contingencymatrix[1:stop_idx,1:stop_idy])
     return s
 end
 
-function icdf(dist::Contingency,probability::Float64; support=nothing)
+function icdf(dist::Contingency,probability::Float64)
     @assert  0 <= probability <= 1 "probability should be between 0 and 1."
     contingencymatrix = contingency_matrix(dist)
-    if support === nothing
-        support = collect(1:first(size(contingencymatrix)))
-    end
+    support = collect(1:first(size(contingencymatrix)))
     cdfmatrix = zeros(length(support),length(support))
     @inbounds for (s1,i) in zip(support,collect(1:length(support)))
         @inbounds for (s2,j) in zip(support,collect(1:length(support)))
-            cdfmatrix[i,j] = cdf(dist,[s1,s2];support=support)
+            cdfmatrix[i,j] = cdf(dist,[s1,s2])
         end
     end
     probvector1 = vec(sum(contingencymatrix,dims=2))
@@ -200,15 +194,16 @@ function icdf(dist::Contingency,probability::Float64; support=nothing)
        end
     else
         return [cartesianind[1][1],cartesianind[1][2]] 
-    end
-    
+    end  
 end
 
 isproper(params::ContingencyNaturalParameters) = true
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T} 
-    u1 = rand(rng)
-    return icdf(dist,u1)
+    probvector   = vec(contingency_matrix(dist))
+    sampleindex  = rand(rng,Categorical(probvector))
+    cartesianind = indexin(probvector[sampleindex],contingency_matrix(dist))
+    return [cartesianind[1][1],cartesianind[1][2]]
 end
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}, size::Int64) where {T}
