@@ -93,7 +93,7 @@ import ExponentialFamily: NaturalParameters, get_params
         @test cdf(dist1,[3.2,0.1])  == 0.0
         @test cdf(dist1, [3,6])     == 1.0
 
-        @test icdf(dist2, 0.1)       == [1,1]
+        @test icdf(dist2, 0.0001)    == [1,1]
         @test icdf(dist2, 1.0)       == [3,3]
         @test icdf(dist2, 0.01)      == [1,1]
         @test icdf(dist2, 0.99)      == [3,3]

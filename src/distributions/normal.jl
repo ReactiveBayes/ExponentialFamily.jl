@@ -471,8 +471,8 @@ end
 
 function lognormalizer(params::NaturalParameters{<:NormalDistributionsFamily})
     η = get_params(params)
-    @show weightedmean = first(η)
-    @show minushalfprecision = getindex(η,2)
+    weightedmean = first(η)
+    minushalfprecision = getindex(η,2)
     variateform = variate_form(first(typeof(params).parameters))
     if variateform == Univariate
         return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) / 2
