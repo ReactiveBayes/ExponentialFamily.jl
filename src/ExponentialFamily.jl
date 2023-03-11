@@ -15,7 +15,7 @@ export tiny, huge
     # include("distributions/gamma.jl")
     # include("distributions/gamma_inverse.jl")
     # include("distributions/gamma_shape_likelihood.jl")
-    # include("distributions/categorical.jl")
+    include("distributions/categorical.jl")
     # include("distributions/matrix_dirichlet.jl")
     # include("distributions/dirichlet.jl")
     # include("distributions/beta.jl")

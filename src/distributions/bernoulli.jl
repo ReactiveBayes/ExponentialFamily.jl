@@ -88,7 +88,4 @@ end
 
 isproper(params::NaturalParameters{Bernoulli}) = true
 
-function check_valid_natural(::Type{<:Bernoulli}, params)
-    @assert length(params) === 1 "`Natural parameters of Bernoulli` must accept a vector of length `1`."
-    return true
-end
+check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
