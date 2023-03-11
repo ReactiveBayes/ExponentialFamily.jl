@@ -441,17 +441,17 @@ function Random.rand!(
 end
 
 ## Natural parameters for the Normal distribution
-function check_valid_natural(::Type{<:NormalDistributionsFamily},params)
-    if length(params) == 2 
+function check_valid_natural(::Type{<:NormalDistributionsFamily}, params)
+    if length(params) == 2
         return true
     else
         return false
     end
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::NormalDistributionsFamily)  
+function Base.convert(::Type{NaturalParameters}, dist::NormalDistributionsFamily)
     weightedmean, precision = weightedmean_precision(dist)
-    return NaturalParameters(typeof(dist), [weightedmean,  -precision / 2])
+    return NaturalParameters(typeof(dist), [weightedmean, -precision / 2])
 end
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{<:NormalDistributionsFamily})
@@ -464,23 +464,22 @@ function Base.convert(::Type{Distribution}, params::NaturalParameters{<:NormalDi
     elseif variateform == Multivariate
         return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
     else
-        error("The variate form $(variateform) is not supported for Normals" )
+        error("The variate form $(variateform) is not supported for Normals")
     end
 end
-
 
 function lognormalizer(params::NaturalParameters{<:NormalDistributionsFamily})
     η = get_params(params)
     weightedmean = first(η)
-    minushalfprecision = getindex(η,2)
+    minushalfprecision = getindex(η, 2)
     variateform = variate_form(first(typeof(params).parameters))
     if variateform == Univariate
         return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) / 2
     elseif variateform == Multivariate
         return -weightedmean' * (minushalfprecision \ weightedmean) / 4 -
-            logdet(-2 * minushalfprecision) / 2
+               logdet(-2 * minushalfprecision) / 2
     else
-        error("The variate form $(variateform) is not supported for Normals" )
+        error("The variate form $(variateform) is not supported for Normals")
     end
 end
 
@@ -496,5 +495,4 @@ end
 # #     return -length(η.weighted_mean) * log2π / 2 + transpose(ϕx) * vec(η) - lognormalizer(η)
 # # end
 
-
-isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-getindex(get_params(params),2))
+isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-getindex(get_params(params), 2))

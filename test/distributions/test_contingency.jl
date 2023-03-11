@@ -45,27 +45,28 @@ import ExponentialFamily: NaturalParameters, get_params
         d2 = Contingency(ones(3, 3), Val(true))
         d3 = vague(Contingency, 2)
         @test_throws MethodError pdf(d1, 1)
-        @test_throws AssertionError pdf(d1, [1,2,3,4])
-        @test_throws AssertionError pdf(d1, [1.1 ])
-        @test pdf(d1, [1, 2] ) == ExponentialFamily.contingency_matrix(d1)[1,2]
-        @test pdf(d1, [true false false ; false true false] ) == pdf(d1, [1,2])
-        @test logpdf(d1, [1, 2] )  == log(ExponentialFamily.contingency_matrix(d1)[1,2])
-        @test logpdf(d1, [true false false ; false true false]) == logpdf(d1, [1,2])
-        @test logpdf(d2, [2 ,3] )  == log(ExponentialFamily.contingency_matrix(d2)[2,3])
-        @test mean(d3)             == [3/2, 3/2]
+        @test_throws AssertionError pdf(d1, [1, 2, 3, 4])
+        @test_throws AssertionError pdf(d1, [1.1])
+        @test pdf(d1, [1, 2]) == ExponentialFamily.contingency_matrix(d1)[1, 2]
+        @test pdf(d1, [true false false; false true false]) == pdf(d1, [1, 2])
+        @test logpdf(d1, [1, 2]) == log(ExponentialFamily.contingency_matrix(d1)[1, 2])
+        @test logpdf(d1, [true false false; false true false]) == logpdf(d1, [1, 2])
+        @test logpdf(d2, [2, 3]) == log(ExponentialFamily.contingency_matrix(d2)[2, 3])
+        @test mean(d3) == [3 / 2, 3 / 2]
 
-        @test cov(d3)              == [0.25 0; 0 0.25]
-        @test var(d3)              == [0.25, 0.25]
+        @test cov(d3) == [0.25 0; 0 0.25]
+        @test var(d3) == [0.25, 0.25]
     end
 
     @testset "NaturalParameters" begin
-        d1           = vague(Contingency,2)
-        d2           = vague(Contingency,2)
+        d1           = vague(Contingency, 2)
+        d2           = vague(Contingency, 2)
         ηcontingency = NaturalParameters(Contingency, log.([0.1 0.7; 0.05 0.15]))
         @test get_params(ηcontingency) == log.([0.1 0.7; 0.05 0.15])
-        @test convert(NaturalParameters, Contingency([0.1 0.7; 0.05 0.15])) == NaturalParameters(Contingency,log.([0.1 0.7; 0.05 0.15]))
+        @test convert(NaturalParameters, Contingency([0.1 0.7; 0.05 0.15])) ==
+              NaturalParameters(Contingency, log.([0.1 0.7; 0.05 0.15]))
         @test d1 == d2
-        @test convert(NaturalParameters, d1)     == NaturalParameters(Contingency, log.([1/4 1/4; 1/4 1/4]))
+        @test convert(NaturalParameters, d1) == NaturalParameters(Contingency, log.([1/4 1/4; 1/4 1/4]))
         @test convert(Distribution, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
         @test ηcontingency + ηcontingency == NaturalParameters(Contingency, 2log.([0.1 0.7; 0.05 0.15]))
     end
@@ -82,41 +83,45 @@ import ExponentialFamily: NaturalParameters, get_params
     end
     @testset "cdf" begin
         dist1 = Contingency([0.2 0.3; 0.4 0.1])
-        dist2  = Contingency(softmax(rand(3,3)))
-        @test cdf(dist1,[1.0,2.0]) ≈ 0.5
-        @test cdf(dist2,[1,3])     == sum(dist2.p[1,1:3])
-        @test cdf(dist2,[0.5, 0.5]) == 0.0
-        @test cdf(dist2,[0.5, 0.5]) == 0.0
-        @test cdf(dist2,[3,3])      == 1.0
-        @test cdf(dist2,[0,0])      == 0.0
-        @test cdf(dist2,[3/2,2])    == cdf(dist2,[1,2])
-        @test cdf(dist1,[3.2,0.1])  == 0.0
-        @test cdf(dist1, [3,6])     == 1.0
+        dist2 = Contingency(softmax(rand(3, 3)))
+        @test cdf(dist1, [1.0, 2.0]) ≈ 0.5
+        @test cdf(dist2, [1, 3]) == sum(dist2.p[1, 1:3])
+        @test cdf(dist2, [0.5, 0.5]) == 0.0
+        @test cdf(dist2, [0.5, 0.5]) == 0.0
+        @test cdf(dist2, [3, 3]) == 1.0
+        @test cdf(dist2, [0, 0]) == 0.0
+        @test cdf(dist2, [3 / 2, 2]) == cdf(dist2, [1, 2])
+        @test cdf(dist1, [3.2, 0.1]) == 0.0
+        @test cdf(dist1, [3, 6]) == 1.0
 
-        @test icdf(dist2, 0.0001)    == [1,1]
-        @test icdf(dist2, 1.0)       == [3,3]
-        @test icdf(dist2, 0.01)      == [1,1]
-        @test icdf(dist2, 0.99)      == [3,3]
-        @test icdf(dist1, 0.5)       == [2,1]
+        @test icdf(dist2, 0.0001) == [1, 1]
+        @test icdf(dist2, 1.0) == [3, 3]
+        @test icdf(dist2, 0.01) == [1, 1]
+        @test icdf(dist2, 0.99) == [3, 3]
+        @test icdf(dist1, 0.5) == [2, 1]
 
         dist = Contingency([0.1 0.2; 0.5 0.2])
-        @test icdf(dist, 0.1) == [1,1]
-        @test icdf(dist, 0.2) == [1,2]
-        @test icdf(dist, 0.4) == [2,1]
-        @test icdf(dist, 0.5) == [2,1]
-        @test icdf(dist, 0.7) == [2,2]
+        @test icdf(dist, 0.1) == [1, 1]
+        @test icdf(dist, 0.2) == [1, 2]
+        @test icdf(dist, 0.4) == [2, 1]
+        @test icdf(dist, 0.5) == [2, 1]
+        @test icdf(dist, 0.7) == [2, 2]
     end
 
-    @testset "rand" begin 
+    @testset "rand" begin
         dist = Contingency([0.3 0.2; 0.1 0.4])
         nsamples = 1000
         rng = collect(1:100)
-        for i=1:100
-            samples  = eachcol(rand(MersenneTwister(rng[i]),dist,nsamples)) 
+        for i in 1:100
+            samples = eachcol(rand(MersenneTwister(rng[i]), dist, nsamples))
             mestimated = mean(samples)
-            
-            @test isapprox(mestimated , mean(dist), atol= 1e-1)
-            @test isapprox(sum((sample-mestimated)*(sample-mestimated)' for sample in samples)/(nsamples), cov(dist), atol= 1e-1)
+
+            @test isapprox(mestimated, mean(dist), atol = 1e-1)
+            @test isapprox(
+                sum((sample - mestimated) * (sample - mestimated)' for sample in samples) / (nsamples),
+                cov(dist),
+                atol = 1e-1
+            )
         end
     end
 end

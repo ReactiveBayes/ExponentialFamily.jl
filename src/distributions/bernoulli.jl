@@ -77,13 +77,13 @@ function lognormalizer(params::NaturalParameters{Bernoulli})
 end
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{Bernoulli})
-    logprobability = getindex(get_params(params),1)
+    logprobability = getindex(get_params(params), 1)
     return Bernoulli(exp(logprobability) / (1 + exp(logprobability)))
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Bernoulli) 
+function Base.convert(::Type{NaturalParameters}, dist::Bernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-     NaturalParameters(Bernoulli,[log(succprob(dist) / (1 - succprob(dist)))])
+    NaturalParameters(Bernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
 end
 
 isproper(params::NaturalParameters{Bernoulli}) = true

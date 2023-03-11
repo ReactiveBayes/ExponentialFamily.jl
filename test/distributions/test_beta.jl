@@ -42,9 +42,9 @@ import SpecialFunctions: loggamma
     @testset "BetaNaturalParameters" begin
         @testset "Constructor" begin
             for i in 0:10, j in 0:10
-                @test convert(Distribution, NaturalParameters(Beta,[i, j])) == Beta(i + 1, j + 1)
+                @test convert(Distribution, NaturalParameters(Beta, [i, j])) == Beta(i + 1, j + 1)
 
-                @test convert(NaturalParameters, Beta(i+1, j+1)) == NaturalParameters(Beta,[i, j])
+                @test convert(NaturalParameters, Beta(i + 1, j + 1)) == NaturalParameters(Beta, [i, j])
             end
         end
 
@@ -55,17 +55,17 @@ import SpecialFunctions: loggamma
 
         @testset "logpdf" begin
             for i in 0:10, j in 0:10
-                @test logpdf(NaturalParameters(Beta,[i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
-                @test logpdf(NaturalParameters(Beta,[i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
+                @test logpdf(NaturalParameters(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
+                @test logpdf(NaturalParameters(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
             end
         end
 
         @testset "isproper" begin
             for i in 0:10
-                @test isproper(NaturalParameters(Beta,[i, i])) === true
+                @test isproper(NaturalParameters(Beta, [i, i])) === true
             end
             for i in 1:10
-                @test isproper(NaturalParameters(Beta,[-i, -i])) === false
+                @test isproper(NaturalParameters(Beta, [-i, -i])) === false
             end
         end
     end

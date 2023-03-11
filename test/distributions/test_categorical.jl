@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters,get_params
+import ExponentialFamily: NaturalParameters, get_params
 
 @testset "Categorical" begin
 
@@ -47,9 +47,9 @@ import ExponentialFamily: NaturalParameters,get_params
         η2   = NaturalParameters(Categorical, [log(0.5), log(0.5)])
 
         @test convert(Distribution, ηcat) == dist
-        @test convert(NaturalParameters,dist) == NaturalParameters(Categorical,log.([0.5, 0.5]))
-        @test η1 + η2 == NaturalParameters(Categorical,[2log(0.5), 2log(0.5)])
-        @test η1 - η2 == NaturalParameters(Categorical,[0.0, 0.0])
+        @test convert(NaturalParameters, dist) == NaturalParameters(Categorical, log.([0.5, 0.5]))
+        @test η1 + η2 == NaturalParameters(Categorical, [2log(0.5), 2log(0.5)])
+        @test η1 - η2 == NaturalParameters(Categorical, [0.0, 0.0])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)

@@ -95,27 +95,28 @@ end
 ## Natural parameters for the Gamma family of distributions
 check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDistributionsFamily}) 
+function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDistributionsFamily})
     η = get_params(params)
     a = first(η)
-    b = getindex(η,2)
+    b = getindex(η, 2)
     return GammaShapeRate(a + 1, -b)
 end
 
-Base.convert(::Type{NaturalParameters}, dist::Type{<:GammaDistributionsFamily}) = NaturalParameters(typeof(dist),[shape(dist) - 1, -rate(dist)])
+Base.convert(::Type{NaturalParameters}, dist::Type{<:GammaDistributionsFamily}) =
+    NaturalParameters(typeof(dist), [shape(dist) - 1, -rate(dist)])
 
 # Natural parameters to standard dist. type
 
-function lognormalizer(params::NaturalParameters{<:GammaDistributionsFamily}) 
+function lognormalizer(params::NaturalParameters{<:GammaDistributionsFamily})
     η = get_params(params)
     a = first(η)
-    b = getindex(η,2)
+    b = getindex(η, 2)
     return loggamma(a + 1) - (a + 1) * log(-b)
 end
 
-function isproper(params::NaturalParameters{<:GammaDistributionsFamily}) 
+function isproper(params::NaturalParameters{<:GammaDistributionsFamily})
     η = get_params(params)
     a = first(η)
-    b = getindex(η,2)
+    b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end

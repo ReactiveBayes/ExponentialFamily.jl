@@ -30,29 +30,30 @@ function mean(::typeof(mirrorlog), dist::Beta)
 end
 
 function isproper(params::NaturalParameters{Beta})
-    αm1    = first(get_params(params))
-    βm1    = getindex(get_params(params),2)
+    αm1 = first(get_params(params))
+    βm1 = getindex(get_params(params), 2)
     return ((αm1 + 1) > 0) && ((βm1 + 1) > 0)
 end
 
-function Base.convert(::Type{NaturalParameters},dist::Beta)
-    a,b = params(dist)
-    NaturalParameters(Beta,[a-1,b-1])
+function Base.convert(::Type{NaturalParameters}, dist::Beta)
+    a, b = params(dist)
+    NaturalParameters(Beta, [a - 1, b - 1])
 end
 
 function Base.convert(::Type{Distribution}, η::NaturalParameters{Beta})
     params = get_params(η)
     αm1    = first(params)
-    βm1    = getindex(params,2)
+    βm1    = getindex(params, 2)
     return Beta(αm1 + 1, βm1 + 1, check_args = false)
 end
 
-function check_valid_natural(::Type{<:Beta},v)
+function check_valid_natural(::Type{<:Beta}, v)
     if length(v) == 2
         return true
     else
-        return false   
-    end   
+        return false
+    end
 end
 
-lognormalizer(params::NaturalParameters{Beta}) = logbeta(first(get_params(params))+ 1, getindex(get_params(params),2) + 1)
+lognormalizer(params::NaturalParameters{Beta}) =
+    logbeta(first(get_params(params)) + 1, getindex(get_params(params), 2) + 1)

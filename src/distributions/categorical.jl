@@ -24,9 +24,9 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
 end
 
 # Standard parameters to natural parameters
-function  Base.convert(::Type{NaturalParameters}, dist::Categorical) 
+function Base.convert(::Type{NaturalParameters}, dist::Categorical)
     logprobabilities = log.(probvec(dist))
-    return NaturalParameters(Categorical,logprobabilities)
+    return NaturalParameters(Categorical, logprobabilities)
 end
 
 function Base.convert(::Type{Distribution}, η::NaturalParameters{Categorical})
