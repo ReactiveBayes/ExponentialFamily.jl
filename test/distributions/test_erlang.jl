@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import SpecialFunctions: logfactorial
-import ExponentialFamily: xtlog
+import ExponentialFamily: xtlog, NaturalParameters, get_params
 
 @testset "Erlang" begin
     @testset "Constructors" begin
@@ -16,15 +16,14 @@ import ExponentialFamily: xtlog
 
     @testset "ErlangNaturalParameters" begin
         for i in 2:10
-            @test convert(Distribution, ErlangNaturalParameters(i, -i)) ≈ Erlang(i + 1, inv(i))
-            @test Distributions.logpdf(ErlangNaturalParameters(i, -i), 10) ≈
+            @test convert(Distribution, NaturalParameters(Erlang,[i, -i])) ≈ Erlang(i + 1, inv(i))
+            @test Distributions.logpdf(NaturalParameters(Erlang,[i, -i]), 10) ≈
                   Distributions.logpdf(Erlang(i + 1, inv(i)), 10)
-            @test isproper(ErlangNaturalParameters(i, -i)) === true
-            @test isproper(ErlangNaturalParameters(-i, i)) === false
+            @test isproper(NaturalParameters(Erlang,[i, -i])) === true
+            @test isproper(NaturalParameters(Erlang,[-i, i])) === false
 
-            @test convert(ErlangNaturalParameters, i, -i) == ErlangNaturalParameters(i, -i)
+            @test convert(NaturalParameters, Erlang(i + 1, inv(i))) == NaturalParameters(Erlang,[i, -i])
 
-            @test as_naturalparams(ErlangNaturalParameters, i, -i) == ErlangNaturalParameters(i, -i)
         end
     end
 
@@ -37,16 +36,13 @@ import ExponentialFamily: xtlog
     end
 
     @testset "Base operations" begin
-        @test ErlangNaturalParameters(1.0, 2.0) - ErlangNaturalParameters(2.0, 3.0) == ErlangNaturalParameters(-1, -1.0)
-        @test ErlangNaturalParameters(4, 2.0) + ErlangNaturalParameters(2.0, 3.0) == ErlangNaturalParameters(6, 5.0)
+        @test NaturalParameters(Erlang,[1, 2.0]) - NaturalParameters(Erlang,[2, 3.0]) == NaturalParameters(Erlang,[-1, -1.0])
+        @test NaturalParameters(Erlang,[4, 2.0]) + NaturalParameters(Erlang,[2, 3.0]) == NaturalParameters(Erlang,[6, 5.0])
     end
 
     @testset "Natural parameterization tests" begin
-        @test naturalparams(Erlang(2, 5.0)) == ErlangNaturalParameters(1, -1 / 5.0)
-        @test naturalparams(Erlang(3, 10)) == ErlangNaturalParameters(2, -0.1)
-        @test convert(Erlang, ErlangNaturalParameters(1.0, -0.2)) == Erlang(2, 5.0)
-        @test logpdf(Erlang(10, 4.0), 1.0) ≈ logpdf(naturalparams(Erlang(10, 4.0)), 1.0)
-        @test logpdf(Erlang(5, 2.0), 1.0) ≈ logpdf(naturalparams(Erlang(5, 2.0)), 1.0)
+        @test Distributions.logpdf(Erlang(10, 4.0), 1.0) ≈ Distributions.logpdf(convert(NaturalParameters,Erlang(10, 4.0)), 1.0)
+        @test Distributions.logpdf(Erlang(5, 2.0), 1.0) ≈ Distributions.logpdf(convert(NaturalParameters,Erlang(5, 2.0)), 1.0)
     end
 end
 

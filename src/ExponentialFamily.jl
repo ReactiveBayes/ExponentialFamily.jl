@@ -30,7 +30,7 @@ export tiny, huge
     # include("distributions/wishart.jl")
     # include("distributions/wishart_inverse.jl")
     include("distributions/contingency.jl")
-    # include("distributions/erlang.jl")
+    include("distributions/erlang.jl")
     # include("distributions/exponential.jl")
 
 end
