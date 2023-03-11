@@ -31,6 +31,6 @@ export tiny, huge
     # include("distributions/wishart_inverse.jl")
     include("distributions/contingency.jl")
     include("distributions/erlang.jl")
-    # include("distributions/exponential.jl")
+    include("distributions/exponential.jl")
 
 end

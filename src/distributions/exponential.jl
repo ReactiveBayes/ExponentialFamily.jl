@@ -1,4 +1,4 @@
-export Exponential, ExponentialNaturalParameters
+export Exponential
 
 import Distributions: Exponential, params
 import SpecialFunctions: digamma, logbeta
@@ -21,26 +21,22 @@ function lognormalizer(dist::Exponential)
     return -log(rate(dist))
 end
 
-struct ExponentialNaturalParameters{T <: Real} <: NaturalParameters
-    minus_rate::T
+function check_valid_natural(::Type{<:Exponential}, params) 
+    if (length(params) == 1) && (first(params) <= 0)
+        true
+    else
+        false
+    end
 end
 
-function naturalparams(dist::Exponential)
-    return ExponentialNaturalParameters(-inv(dist.θ))
+function Base.convert(::Type{NaturalParameters},dist::Exponential)
+    return NaturalParameters(Exponential, [-inv(dist.θ)])
 end
 
-function Distributions.logpdf(dist::ExponentialNaturalParameters, x)
-    return log(-dist.minus_rate) + dist.minus_rate * x
+function Base.convert(::Type{Distribution}, params::NaturalParameters{Exponential})
+    return Exponential(-inv(first(get_params(params))))
 end
 
-function Base.:+(left::ExponentialNaturalParameters, right::ExponentialNaturalParameters)
-    return ExponentialNaturalParameters(left.minus_rate + right.minus_rate)
-end
-
-function Base.:-(left::ExponentialNaturalParameters, right::ExponentialNaturalParameters)
-    return ExponentialNaturalParameters(left.minus_rate - right.minus_rate)
-end
-
-function lognormalizer(η::ExponentialNaturalParameters)
-    return -log(-η.minus_rate)
+function lognormalizer(η::NaturalParameters{Exponential})
+    return -log(-first(get_params(η)))
 end

@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog
+import ExponentialFamily: mirrorlog, NaturalParameters, get_params
 
 @testset "Exponential" begin
 
@@ -33,62 +33,62 @@ import ExponentialFamily: mirrorlog
     end
 
     @testset "Constructor(::ExponentialNaturalParameters)" begin
-        @test naturalparams(Exponential(5)) == ExponentialNaturalParameters(-0.2)
-        @test naturalparams(Exponential(1e12)) == ExponentialNaturalParameters(-1e-12)
+        @test convert(NaturalParameters,Exponential(5)) == NaturalParameters(Exponential,[-0.2])
+        @test convert(NaturalParameters,Exponential(1e12)) == NaturalParameters(Exponential,[-1e-12])
     end
 
     @testset "logpdf(::ExponentialNaturalParameters)" begin
         distribution = Exponential(5)
-        @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
+        @test logpdf(distribution, 1) ≈ logpdf(convert(NaturalParameters,distribution), 1)
         distribution = Exponential(10)
-        @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
+        @test logpdf(distribution, 1) ≈ logpdf(convert(NaturalParameters,distribution), 1)
         distribution = Exponential(0.1)
-        @test logpdf(distribution, 0) ≈ logpdf(naturalparams(distribution), 0)
+        @test logpdf(distribution, 0) ≈ logpdf(convert(NaturalParameters,distribution), 0)
         distribution = Exponential(1)
-        @test logpdf(distribution, 1) ≈ logpdf(naturalparams(distribution), 1)
+        @test logpdf(distribution, 1) ≈ logpdf(convert(NaturalParameters,distribution), 1)
         distribution = Exponential(1)
-        @test logpdf(distribution, 2) ≈ logpdf(naturalparams(distribution), 2)
+        @test logpdf(distribution, 2) ≈ logpdf(convert(NaturalParameters,distribution), 2)
     end
 
     @testset "lognormalizer(::ExponentialNaturalParameters)" begin
         distribution = Exponential(5)
-        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        @test lognormalizer(distribution) ≈ lognormalizer(convert(NaturalParameters,distribution))
         distribution = Exponential(10)
-        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        @test lognormalizer(distribution) ≈ lognormalizer(convert(NaturalParameters,distribution))
         distribution = Exponential(0.1)
-        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        @test lognormalizer(distribution) ≈ lognormalizer(convert(NaturalParameters,distribution))
         distribution = Exponential(1)
-        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        @test lognormalizer(distribution) ≈ lognormalizer(convert(NaturalParameters,distribution))
         distribution = Exponential(1)
-        @test lognormalizer(distribution) ≈ lognormalizer(naturalparams(distribution))
+        @test lognormalizer(distribution) ≈ lognormalizer(convert(NaturalParameters,distribution))
     end
 
     @testset ":+(::ExponentialNaturalParameters, ::ExponentialNaturalParameters)" begin
-        left = naturalparams(Exponential(4))
-        right = naturalparams(Exponential(3))
-        @test (left + right).minus_rate ≈ -0.5833333333333333
+        left = convert(NaturalParameters,Exponential(4))
+        right = convert(NaturalParameters,Exponential(3))
+        @test get_params(left + right) ≈ [-0.5833333333333333]
 
-        left = naturalparams(Exponential(4))
-        right = naturalparams(Exponential(5))
-        @test (left + right).minus_rate ≈ -0.45
+        left = convert(NaturalParameters,Exponential(4))
+        right = convert(NaturalParameters,Exponential(5))
+        @test get_params(left + right) ≈ [-0.45]
 
-        left = naturalparams(Exponential(1))
-        right = naturalparams(Exponential(1))
-        @test (left + right).minus_rate ≈ -2
+        left = convert(NaturalParameters,Exponential(1))
+        right = convert(NaturalParameters,Exponential(1))
+        @test get_params(left + right) ≈ [-2]
     end
 
     @testset ":-(::ExponentialNaturalParameters, ::ExponentialNaturalParameters)" begin
-        left = naturalparams(Exponential(1))
-        right = naturalparams(Exponential(4))
-        @test (left - right).minus_rate ≈ -0.75
+        left = convert(NaturalParameters,Exponential(1))
+        right = convert(NaturalParameters,Exponential(4))
+        @test get_params(left - right) ≈ [-0.75]
 
-        left = naturalparams(Exponential(4))
-        right = naturalparams(Exponential(5))
-        @test (left - right).minus_rate ≈ -0.05
+        left = convert(NaturalParameters,Exponential(4))
+        right = convert(NaturalParameters,Exponential(5))
+        @test get_params(left - right) ≈ [-0.05]
 
-        left = naturalparams(Exponential(1))
-        right = naturalparams(Exponential(1))
-        @test (left - right).minus_rate ≈ 0
+        left = convert(NaturalParameters,Exponential(1))
+        right = convert(NaturalParameters,Exponential(1))
+        @test get_params(left - right) ≈ [0]
     end
 end
 
