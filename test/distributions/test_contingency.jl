@@ -5,6 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
+import ExponentialFamily: NaturalParameters, get_params
 
 @testset "Contingency" begin
     @testset "common" begin
@@ -60,13 +61,13 @@ using StatsFuns
     @testset "NaturalParameters" begin
         d1           = vague(Contingency,2)
         d2           = vague(Contingency,2)
-        ηcontingency = ContingencyNaturalParameters(log.([0.1 0.7; 0.05 0.15]))
-        @test ηcontingency.logcontingency == log.([0.1 0.7; 0.05 0.15])
-        @test convert(ContingencyNaturalParameters, log.([0.1 0.7; 0.05 0.15])) == ContingencyNaturalParameters(log.([0.1 0.7; 0.05 0.15]))
+        ηcontingency = NaturalParameters(Contingency, log.([0.1 0.7; 0.05 0.15]))
+        @test get_params(ηcontingency) == log.([0.1 0.7; 0.05 0.15])
+        @test convert(NaturalParameters, Contingency([0.1 0.7; 0.05 0.15])) == NaturalParameters(Contingency,log.([0.1 0.7; 0.05 0.15]))
         @test d1 == d2
-        @test naturalparams(d1)     == ContingencyNaturalParameters(log.([1/4 1/4; 1/4 1/4]))
-        @test convert(Contingency, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
-        @test ηcontingency + ηcontingency == ContingencyNaturalParameters(2log.([0.1 0.7; 0.05 0.15]))
+        @test convert(NaturalParameters, d1)     == NaturalParameters(Contingency, log.([1/4 1/4; 1/4 1/4]))
+        @test convert(Distribution, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
+        @test ηcontingency + ηcontingency == NaturalParameters(Contingency, 2log.([0.1 0.7; 0.05 0.15]))
     end
 
     @testset "entropy" begin
@@ -90,7 +91,7 @@ using StatsFuns
         @test cdf(dist2,[0,0])      == 0.0
         @test cdf(dist2,[3/2,2])    == cdf(dist2,[1,2])
         @test cdf(dist1,[3.2,0.1])  == 0.0
-        @test cdf(dist1, [3,6])     ≈ 1.0
+        @test cdf(dist1, [3,6])     == 1.0
 
         @test icdf(dist2, 0.1)       == [1,1]
         @test icdf(dist2, 1.0)       == [3,3]
@@ -106,17 +107,17 @@ using StatsFuns
         @test icdf(dist, 0.7) == [2,2]
     end
 
-    @testset "rand" begin
-      
-        @test rand(Contingency([0.999 0.0005; 0.0005 0])) == [1,1]
-     
+    @testset "rand" begin 
         dist = Contingency([0.3 0.2; 0.1 0.4])
-        nsamples = 100
-        samples  = eachcol(rand((MersenneTwister(1235)),dist,nsamples)) 
-        mestimated = mean(samples)
-        
-        @test isapprox(mestimated , mean(dist), atol= 1e-1)
-        @test isapprox(sum((sample-mestimated)*(sample-mestimated)' for sample in samples)/(nsamples), cov(dist), atol= 1e-1)
+        nsamples = 1000
+        rng = collect(1:100)
+        for i=1:100
+            samples  = eachcol(rand(MersenneTwister(rng[i]),dist,nsamples)) 
+            mestimated = mean(samples)
+            
+            @test isapprox(mestimated , mean(dist), atol= 1e-1)
+            @test isapprox(sum((sample-mestimated)*(sample-mestimated)' for sample in samples)/(nsamples), cov(dist), atol= 1e-1)
+        end
     end
 end
 

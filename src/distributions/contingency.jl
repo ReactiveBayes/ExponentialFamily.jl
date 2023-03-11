@@ -1,4 +1,4 @@
-export Contingency, ContingencyNaturalParameters, naturalparams, as_naturalparams, icdf
+export Contingency, icdf
 
 using LinearAlgebra
 using Random
@@ -97,63 +97,43 @@ function entropy(distribution::Contingency)
     P = contingency_matrix(distribution)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
-struct ContingencyNaturalParameters{T <: Real} <: NaturalParameters
-    logcontingency::AbstractMatrix{T}
-end
-
-Base.convert(::Type{ContingencyNaturalParameters}, logcontingency::AbstractMatrix) =
-    convert(ContingencyNaturalParameters{promote_type(eltype(logcontingency))}, logcontingency)
-
-Base.convert(::Type{ContingencyNaturalParameters{T}}, vector::AbstractMatrix) where {T} = ContingencyNaturalParameters(convert(AbstractMatrix{T}, vector))
-
-function Base.:(==)(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
-    return left.logcontingency == right.logcontingency 
-end
-
-as_naturalparams(::Type{T}, args...) where {T <: ContingencyNaturalParameters} = convert(ContingencyNaturalParameters, args...)
 
 # Standard parameters to natural parameters
-function naturalparams(dist::Contingency)
+function Base.convert(::Type{NaturalParameters}, dist::Contingency)
     logcontingency = log.(contingency_matrix(dist))
-    return ContingencyNaturalParameters(logcontingency)
+    return NaturalParameters(Contingency, logcontingency)
 end
 
-
-function convert(::Type{Distribution}, η::ContingencyNaturalParameters)
-    return Contingency(softmax(η.logcontingency))
+function Base.convert(::Type{Distribution}, η::NaturalParameters{Contingency})
+    return Contingency(softmax(get_params(η)))
 end
 
-
-function Base.:+(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
-    return ContingencyNaturalParameters(left.logcontingency .+ right.logcontingency)
-end
-
-
-function Base.:-(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
-    return ContingencyNaturalParameters(left.logcontingency .- right.logcontingency)
-end
-
-
-function lognormalizer(::ContingencyNaturalParameters)
+function lognormalizer(::NaturalParameters{Contingency})
     return 0.0
 end
 
-
-function Distributions.logpdf(η::ContingencyNaturalParameters, x)
-    return Distributions.logpdf(convert(Contingency,η),x)
+function check_valid_natural(::Type{<:Contingency}, v)
+    if first(size(v)) > 1 && getindex(size(v),2) > 1
+        true
+    else
+        false
+    end
 end
-
 
 function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where T
     @assert length(x) === 2  "$(x) should be length 2 vector "
     contingencymatrix = contingency_matrix(d)
     P = float(eltype(contingencymatrix))
     n = first(size(contingencymatrix))
-    support = collect(T, 1:n)
+    support = collect(1:n)
     s = zero(P)
 
     x[1] < Base.minimum(support) && return zero(P)
     x[2] < Base.minimum(support) && return zero(P)
+
+    if x[1] >= Base.maximum(support) && x[2] >=Base.maximum(support)
+        return one(P)
+    end
 
     stop_idx = searchsortedlast(support, x[1])
     stop_idy = searchsortedlast(support, x[2])
@@ -180,25 +160,12 @@ function icdf(dist::Contingency,probability::Float64)
             cdfmatrix[i,j] = cdf(dist,[s1,s2])
         end
     end
-    probvector1 = vec(sum(contingencymatrix,dims=2))
-    probvector2 = vec(sum(contingencymatrix,dims=1))
-    ### infimum over finite set is minimum
     cartesianind = findall(x -> x == Base.minimum(filter(d -> !isless(d, probability), cdfmatrix)), cdfmatrix)
-    if length(cartesianind) > 1 
-       equidistantcdf = map(d -> cdfmatrix[d], cartesianind)
-       if sum(isequal.(0.5,equidistantcdf)) == length(cartesianind)
-            uniqueindex = rand(collect(1:length(cartesianind)))
-            return [rand(Categorical(probvector1)), rand(Categorical(probvector2))]
-       else
-            uniqueindex = indexin(Base.minimum(equidistantcdf),cdfmatrix)
-            return [uniqueindex[1][1], uniqueindex[1][2]]
-       end
-    else
-        return [cartesianind[1][1],cartesianind[1][2]] 
-    end  
+
+    return [cartesianind[1][1],cartesianind[1][2]] 
 end
 
-isproper(params::ContingencyNaturalParameters) = true
+isproper(params::NaturalParameters{Contingency}) = true
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T} 
     probvector   = vec(contingency_matrix(dist))
