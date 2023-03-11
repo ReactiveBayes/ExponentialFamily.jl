@@ -1,4 +1,4 @@
-export Bernoulli, BernoulliNaturalParameters
+export Bernoulli
 
 import Distributions: Bernoulli, Distribution, succprob, failprob, logpdf
 import StatsFuns: logistic
@@ -72,59 +72,23 @@ end
 compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
     compute_logscale(new_dist, right_dist, left_dist)
 
-struct BernoulliNaturalParameters{T <: Real} <: NaturalParameters
-    η::T
+function lognormalizer(params::NaturalParameters{Bernoulli})
+    return -log(logistic(-first(get_params(params))))
 end
 
-function Base.vec(p::BernoulliNaturalParameters)
-    return [p.η]
+function Base.convert(::Type{Bernoulli}, params::NaturalParameters{Bernoulli})
+    logprobability = getindex(get_params(params),1)
+    return Bernoulli(exp(logprobability) / (1 + exp(logprobability)))
 end
 
-function BernoulliNaturalParameters(v::AbstractVector)
-    @assert length(v) === 1 "`BernoulliNaturalParameters` must accept a vector of length `1`."
-    return BernoulliNaturalParameters(v[1])
-end
-
-Base.convert(::Type{BernoulliNaturalParameters}, η::Real) = convert(BernoulliNaturalParameters{typeof(η)}, η)
-
-Base.convert(::Type{BernoulliNaturalParameters{T}}, η::Real) where {T} = BernoulliNaturalParameters(convert(T, η))
-
-Base.convert(::Type{BernoulliNaturalParameters}, vec::AbstractVector) =
-    convert(BernoulliNaturalParameters{eltype(vec)}, vec)
-
-Base.convert(::Type{BernoulliNaturalParameters{T}}, vec::AbstractVector) where {T} =
-    BernoulliNaturalParameters(convert(AbstractVector{T}, vec))
-
-function Base.:(==)(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
-    return left.η == right.η
-end
-
-as_naturalparams(::Type{T}, args...) where {T <: BernoulliNaturalParameters} =
-    convert(BernoulliNaturalParameters, args...)
-
-function Base.:+(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
-    return BernoulliNaturalParameters(left.η + right.η)
-end
-
-function Base.:-(left::BernoulliNaturalParameters, right::BernoulliNaturalParameters)
-    return BernoulliNaturalParameters(left.η - right.η)
-end
-
-function lognormalizer(params::BernoulliNaturalParameters)
-    return -log(logistic(-params.η))
-end
-
-function Distributions.logpdf(params::BernoulliNaturalParameters, x)
-    return x * params.η - lognormalizer(params)
-end
-
-function convert(::Type{<:Distribution}, params::BernoulliNaturalParameters)
-    return Bernoulli(exp(params.η) / (1 + exp(params.η)))
-end
-
-function naturalparams(dist::Bernoulli)
+function Base.convert(::Type{NaturalParameters}, dist::Bernoulli) 
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    return BernoulliNaturalParameters(log(succprob(dist) / (1 - succprob(dist))))
+     NaturalParameters(Bernoulli,[log(succprob(dist) / (1 - succprob(dist)))])
 end
 
-isproper(params::BernoulliNaturalParameters) = true
+isproper(params::NaturalParameters{Bernoulli}) = true
+
+function check_valid_natural(::Type{<:Bernoulli}, params)
+    @assert length(params) === 1 "`Natural parameters of Bernoulli` must accept a vector of length `1`."
+    return true
+end
