@@ -3,7 +3,6 @@ export MvGaussianMeanCovariance, MvGaussianMeanPrecision, MvGaussianWeightedMean
 export UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily, NormalDistributionsFamily
 export UnivariateGaussianDistributionsFamily, MultivariateGaussianDistributionsFamily, GaussianDistributionsFamily
 export JointNormal, JointGaussian
-export UnivariateNormalNaturalParameters, MultivariateNormalNaturalParameters
 
 const GaussianMeanVariance            = NormalMeanVariance
 const GaussianMeanPrecision           = NormalMeanPrecision
@@ -442,210 +441,60 @@ function Random.rand!(
 end
 
 ## Natural parameters for the Normal distribution
-
-### Univariate case
-
-struct UnivariateNormalNaturalParameters{T <: Real} <: NaturalParameters
-    weighted_mean::T
-    minus_half_precision::T
-end
-
-UnivariateNormalNaturalParameters(weighted_mean::Real, minus_half_precision::Real)       = UnivariateNormalNaturalParameters(promote(weighted_mean, minus_half_precision)...)
-UnivariateNormalNaturalParameters(weighted_mean::Integer, minus_half_precision::Integer) = UnivariateNormalNaturalParameters(float(weighted_mean), float(minus_half_precision))
-
-function UnivariateNormalNaturalParameters(v::AbstractVector{T}) where {T <: Real}
-    @assert length(v) === 2 "`NormalNaturalParameters` must accept a vector of length `2`."
-    return UnivariateNormalNaturalParameters(v[1], v[2])
-end
-
-Base.convert(::Type{UnivariateNormalNaturalParameters}, weighted_mean::Real, minus_half_precision::Real) =
-    convert(
-        UnivariateNormalNaturalParameters{promote_type(typeof(weighted_mean), typeof(minus_half_precision))},
-        weighted_mean,
-        minus_half_precision
-    )
-
-Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, weighted_mean::Real, minus_half_precision::Real) where {T} =
-    UnivariateNormalNaturalParameters(convert(T, weighted_mean), convert(T, minus_half_precision))
-
-Base.convert(::Type{UnivariateNormalNaturalParameters}, vector::AbstractVector) =
-    convert(UnivariateNormalNaturalParameters{eltype(vector)}, vector)
-
-Base.convert(::Type{UnivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} =
-    UnivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
-
-function Base.:(==)(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
-    return left.weighted_mean == right.weighted_mean && left.minus_half_precision == right.minus_half_precision
-end
-
-as_naturalparams(::Type{T}, args...) where {T <: UnivariateNormalNaturalParameters} =
-    convert(UnivariateNormalNaturalParameters, args...)
-
-### Multivariate case
-
-struct MultivariateNormalNaturalParameters{T <: Real, M <: AbstractArray{T}, P <: AbstractMatrix{T}} <:
-       NaturalParameters
-    weighted_mean::M
-    minus_half_precision_matrix::P
-end
-
-function MultivariateNormalNaturalParameters(
-    weighted_mean::AbstractVector{<:Real},
-    minus_half_precision_matrix::AbstractMatrix{<:Real}
-)
-    T = promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))
-    return MultivariateNormalNaturalParameters(
-        convert(AbstractArray{T}, weighted_mean),
-        convert(AbstractArray{T}, minus_half_precision_matrix)
-    )
-end
-
-function MultivariateNormalNaturalParameters(
-    weighted_mean::AbstractVector{<:Integer},
-    minus_half_precision_matrix::AbstractMatrix{<:Integer}
-)
-    return MultivariateNormalNaturalParameters(float.(weighted_mean), float.(minus_half_precision_matrix))
-end
-
-function MultivariateNormalNaturalParameters(
-    weighted_mean::AbstractVector{T},
-    minus_half_precision_matrix::AbstractMatrix{T}
-) where {T <: Real}
-    if (length(weighted_mean) !== size(minus_half_precision_matrix, 1)) ||
-       (length(weighted_mean) !== size(minus_half_precision_matrix, 2))
-        error(
-            "`MvNormalNaturalParameters` can not be created from shapes: mean `$(size(weighted_mean))` and matrix `$(size(minus_half_precision_matrix))`."
-        )
+function check_valid_natural(::Type{<:NormalDistributionsFamily},params)
+    if length(params) == 2 
+        return true
+    else
+        return false
     end
-    return MultivariateNormalNaturalParameters{T, typeof(weighted_mean), typeof(minus_half_precision_matrix)}(
-        weighted_mean,
-        minus_half_precision_matrix
-    )
 end
 
-function MultivariateNormalNaturalParameters(v::AbstractVector{T}) where {T}
-    k = length(v)
-    d = convert(Int, (-1 + sqrt(4 * k + 1)) / 2)
-
-    @assert (d^2 + d) === k "Vector dimensionality constraints are not fullfiled"
-
-    return MultivariateNormalNaturalParameters(
-        collect(view(v, 1:d)),
-        collect(reshape(view(v, (d+1):lastindex(v)), d, d))
-    )
+function Base.convert(::Type{NaturalParameters}, dist::NormalDistributionsFamily)  
+    weightedmean, precision = weightedmean_precision(dist)
+    return NaturalParameters(typeof(dist), [weightedmean,  -precision / 2])
 end
 
-Base.convert(
-    ::Type{MultivariateNormalNaturalParameters},
-    weighted_mean::AbstractVector,
-    minus_half_precision_matrix::AbstractMatrix
-) =
-    convert(
-        MultivariateNormalNaturalParameters{promote_type(eltype(weighted_mean), eltype(minus_half_precision_matrix))},
-        weighted_mean,
-        minus_half_precision_matrix
-    )
-
-Base.convert(
-    ::Type{MultivariateNormalNaturalParameters{T}},
-    weighted_mean::AbstractVector,
-    minus_half_precision_matrix::AbstractMatrix
-) where {T} =
-    MultivariateNormalNaturalParameters(
-        convert(AbstractVector{T}, weighted_mean),
-        convert(AbstractMatrix{T}, minus_half_precision_matrix)
-    )
-
-Base.convert(::Type{MultivariateNormalNaturalParameters}, vector::AbstractVector) =
-    convert(MultivariateNormalNaturalParameters{eltype(vector)}, vector)
-
-Base.convert(::Type{MultivariateNormalNaturalParameters{T}}, vector::AbstractVector) where {T} =
-    MultivariateNormalNaturalParameters(convert(AbstractVector{T}, vector))
-
-function Base.:(==)(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
-    return left.weighted_mean == right.weighted_mean &&
-           left.minus_half_precision_matrix == right.minus_half_precision_matrix
+function Base.convert(::Type{Distribution}, params::NaturalParameters{<:NormalDistributionsFamily})
+    variateform = variate_form(first(typeof(params).parameters))
+    η = get_params(params)
+    weightedmean = getindex(η, 1)
+    minushalfprecision = getindex(η, 2)
+    if variateform == Univariate
+        return NormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
+    elseif variateform == Multivariate
+        return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
+    else
+        error("The variate form $(variateform) is not supported for Normals" )
+    end
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: MultivariateNormalNaturalParameters} =
-    convert(MultivariateNormalNaturalParameters, args...)
 
-function Base.vec(p::UnivariateNormalNaturalParameters)
-    return [p.weighted_mean, p.minus_half_precision]
+function lognormalizer(params::NaturalParameters{<:NormalDistributionsFamily})
+    η = get_params(params)
+    @show weightedmean = first(η)
+    @show minushalfprecision = getindex(η,2)
+    variateform = variate_form(first(typeof(params).parameters))
+    if variateform == Univariate
+        return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) / 2
+    elseif variateform == Multivariate
+        return -weightedmean' * (minushalfprecision \ weightedmean) / 4 -
+            logdet(-2 * minushalfprecision) / 2
+    else
+        error("The variate form $(variateform) is not supported for Normals" )
+    end
 end
 
-function Base.vec(p::MultivariateNormalNaturalParameters)
-    return vcat(p.weighted_mean, vec(p.minus_half_precision_matrix))
-end
+# # # Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
+# # # precludes the usage of logPdf functions previously defined. Below function is
+# # # meant to be used with Zygote.
+# # function Distributions.logpdf(η::UnivariateNormalNaturalParameters, x)
+# #     return -log2π / 2 + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
+# # end
 
-# Standard parameters to natural parameters
-function naturalparams(dist::UnivariateNormalDistributionsFamily)
-    weighted_mean, precision = weightedmean_precision(dist)
-    return UnivariateNormalNaturalParameters(weighted_mean, -precision / 2)
-end
+# # function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
+# #     ϕx = vcat(x, vec(x * transpose(x)))
+# #     return -length(η.weighted_mean) * log2π / 2 + transpose(ϕx) * vec(η) - lognormalizer(η)
+# # end
 
-function naturalparams(dist::MultivariateGaussianDistributionsFamily)
-    weighted_mean, precision = weightedmean_precision(dist)
-    return MultivariateNormalNaturalParameters(weighted_mean, -precision / 2)
-end
 
-function convert(::Type{Distribution}, η::UnivariateNormalNaturalParameters)
-    return NormalWeightedMeanPrecision(η.weighted_mean, -2 * η.minus_half_precision)
-end
-
-function convert(::Type{Distribution}, η::MultivariateNormalNaturalParameters)
-    return MvNormalWeightedMeanPrecision(η.weighted_mean, -2 * η.minus_half_precision_matrix)
-end
-
-function Base.:+(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
-    return UnivariateNormalNaturalParameters(
-        left.weighted_mean + right.weighted_mean,
-        left.minus_half_precision + right.minus_half_precision
-    )
-end
-
-function Base.:+(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
-    return MultivariateNormalNaturalParameters(
-        left.weighted_mean .+ right.weighted_mean,
-        left.minus_half_precision_matrix .+ right.minus_half_precision_matrix
-    )
-end
-
-function Base.:-(left::UnivariateNormalNaturalParameters, right::UnivariateNormalNaturalParameters)
-    return UnivariateNormalNaturalParameters(
-        left.weighted_mean - right.weighted_mean,
-        left.minus_half_precision - right.minus_half_precision
-    )
-end
-
-function Base.:-(left::MultivariateNormalNaturalParameters, right::MultivariateNormalNaturalParameters)
-    return MultivariateNormalNaturalParameters(
-        left.weighted_mean .- right.weighted_mean,
-        left.minus_half_precision_matrix .- right.minus_half_precision_matrix
-    )
-end
-
-function lognormalizer(η::UnivariateNormalNaturalParameters)
-    return -η.weighted_mean^2 / (4 * η.minus_half_precision) - log(-2 * η.minus_half_precision) / 2
-end
-
-function lognormalizer(η::MultivariateNormalNaturalParameters)
-    return -η.weighted_mean' * (η.minus_half_precision_matrix \ η.weighted_mean) / 4 -
-           logdet(-2 * η.minus_half_precision_matrix) / 2
-end
-
-# Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
-# precludes the usage of logPdf functions previously defined. Below function is
-# meant to be used with Zygote.
-function Distributions.logpdf(η::UnivariateNormalNaturalParameters, x)
-    return -log2π / 2 + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
-end
-
-function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
-    ϕx = vcat(x, vec(x * transpose(x)))
-    return -length(η.weighted_mean) * log2π / 2 + transpose(ϕx) * vec(η) - lognormalizer(η)
-end
-
-isproper(params::UnivariateNormalNaturalParameters) = params.minus_half_precision < 0
-
-isproper(params::MultivariateNormalNaturalParameters) = isposdef(-params.minus_half_precision_matrix)
+isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-getindex(get_params(params),2))

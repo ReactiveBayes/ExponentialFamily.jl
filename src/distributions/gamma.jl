@@ -106,14 +106,14 @@ Base.convert(::Type{NaturalParameters}, dist::Type{<:GammaDistributionsFamily}) 
 
 # Natural parameters to standard dist. type
 
-function lognormalizer(params::NaturalParameters{GammaDistributionsFamily}) 
+function lognormalizer(params::NaturalParameters{<:GammaDistributionsFamily}) 
     η = get_params(params)
     a = first(η)
     b = getindex(η,2)
     return loggamma(a + 1) - (a + 1) * log(-b)
 end
 
-function isproper(params::NaturalParameters{GammaDistributionsFamily}) 
+function isproper(params::NaturalParameters{<:GammaDistributionsFamily}) 
     η = get_params(params)
     a = first(η)
     b = getindex(η,2)

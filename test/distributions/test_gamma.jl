@@ -119,10 +119,10 @@ import ExponentialFamily: xtlog, NaturalParameters, get_params
     @testset "GammaShapeRateNaturalParameters" begin
         for i in 2:10
             @test convert(Distribution, NaturalParameters(GammaShapeRate,[i,-i])) ≈ GammaShapeRate(i + 1, i)
-            # @test Distributions.logpdf(NaturalParameters(GammaShapeRate,[i,-i]), 10) ≈
-            #       Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
-            # @test isproper(NaturalParameters(Gamma,[i,-i])) === true
-            # @test isproper(NaturalParameters(Gamma,[-i, i])) === false
+            @test Distributions.logpdf(NaturalParameters(GammaShapeRate,[i,-i]), 10) ≈
+                  Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
+            @test isproper(NaturalParameters(Gamma,[i,-i])) === true
+            @test isproper(NaturalParameters(Gamma,[-i, i])) === false
         end
     end
 

@@ -34,7 +34,7 @@ function Base.convert(::Type{Distribution}, η::NaturalParameters{Categorical})
 end
 
 function check_valid_natural(::Type{<:Categorical}, params)
-    if length(params) > 1 && typeof(params) <: AbstractArray
+    if length(params) >= 2
         return true
     else
         return false
