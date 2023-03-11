@@ -76,7 +76,7 @@ function lognormalizer(params::NaturalParameters{Bernoulli})
     return -log(logistic(-first(get_params(params))))
 end
 
-function Base.convert(::Type{Bernoulli}, params::NaturalParameters{Bernoulli})
+function Base.convert(::Type{Distribution}, params::NaturalParameters{Bernoulli})
     logprobability = getindex(get_params(params),1)
     return Bernoulli(exp(logprobability) / (1 + exp(logprobability)))
 end
