@@ -1,7 +1,7 @@
-export Gamma, GammaShapeScale, GammaDistributionsFamily, GammaNaturalParameters
+export Gamma, GammaShapeScale, GammaDistributionsFamily
 
 import SpecialFunctions: loggamma, digamma
-import Distributions: Gamma, shape, scale, cov
+import Distributions: shape, scale, cov
 import StatsFuns: log2π
 
 const GammaShapeScale             = Gamma
@@ -93,65 +93,29 @@ function logpdf_sample_friendly(dist::GammaDistributionsFamily)
 end
 
 ## Natural parameters for the Gamma family of distributions
+check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
-struct GammaNaturalParameters{T <: Real} <: NaturalParameters
-    a::T
-    b::T
+function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDistributionsFamily}) 
+    η = get_params(params)
+    a = first(η)
+    b = getindex(η,2)
+    return GammaShapeRate(a + 1, -b)
 end
 
-GammaNaturalParameters(a::Real, b::Real)       = GammaNaturalParameters(promote(a, b)...)
-GammaNaturalParameters(a::Integer, b::Integer) = GammaNaturalParameters(float(a), float(b))
-
-function GammaNaturalParameters(vec::AbstractVector)
-    @assert length(vec) === 2 "`GammaNaturalParameters` must accept a vector of length `2`."
-    return GammaNaturalParameters(vec[1], vec[2])
-end
-
-Base.convert(::Type{GammaNaturalParameters}, a::Real, b::Real) =
-    convert(GammaNaturalParameters{promote_type(typeof(a), typeof(b))}, a, b)
-
-Base.convert(::Type{GammaNaturalParameters{T}}, a::Real, b::Real) where {T} =
-    GammaNaturalParameters(convert(T, a), convert(T, b))
-
-Base.convert(::Type{GammaNaturalParameters}, vec::AbstractVector) = convert(GammaNaturalParameters{eltype(vec)}, vec)
-
-Base.convert(::Type{GammaNaturalParameters{T}}, vec::AbstractVector) where {T} =
-    GammaNaturalParameters(convert(AbstractVector{T}, vec))
-
-function Base.:(==)(left::GammaNaturalParameters, right::GammaNaturalParameters)
-    return left.a == right.a && left.b == right.b
-end
-
-as_naturalparams(::Type{T}, args...) where {T <: GammaNaturalParameters} = convert(GammaNaturalParameters, args...)
-
-function Base.convert(::Type{Distribution}, η::GammaNaturalParameters)
-    return GammaShapeRate(η.a + 1, -η.b)
-end
-
-naturalparams(dist::GammaDistributionsFamily) = GammaNaturalParameters(shape(dist) - 1, -rate(dist))
+Base.convert(::Type{NaturalParameters}, dist::Type{<:GammaDistributionsFamily}) = NaturalParameters(typeof(dist),[shape(dist) - 1, -rate(dist)])
 
 # Natural parameters to standard dist. type
 
-function Base.vec(p::GammaNaturalParameters)
-    return [p.a, p.b]
+function lognormalizer(params::NaturalParameters{GammaDistributionsFamily}) 
+    η = get_params(params)
+    a = first(η)
+    b = getindex(η,2)
+    return loggamma(a + 1) - (a + 1) * log(-b)
 end
 
-function Base.:+(left::GammaNaturalParameters, right::GammaNaturalParameters)
-    return GammaNaturalParameters(left.a + right.a, left.b + right.b)
-end
-
-function Base.:-(left::GammaNaturalParameters, right::GammaNaturalParameters)
-    return GammaNaturalParameters(left.a - right.a, left.b - right.b)
-end
-
-function lognormalizer(η::GammaNaturalParameters)
-    return loggamma(η.a + 1) - (η.a + 1) * log(-η.b)
-end
-
-function Distributions.logpdf(η::GammaNaturalParameters, x)
-    return log(x) * η.a + x * η.b - lognormalizer(η)
-end
-
-function isproper(params::GammaNaturalParameters)
-    return (params.a >= tiny - 1) && (-params.b >= tiny)
+function isproper(params::NaturalParameters{GammaDistributionsFamily}) 
+    η = get_params(params)
+    a = first(η)
+    b = getindex(η,2)
+    return (a >= tiny - 1) && (-b >= tiny)
 end
