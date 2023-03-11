@@ -1,4 +1,4 @@
-export Beta, naturalparams, BetaNaturalParameters, as_naturalparams
+export Beta
 
 import Distributions: Beta, params
 import SpecialFunctions: digamma, logbeta, loggamma
@@ -29,49 +29,30 @@ function mean(::typeof(mirrorlog), dist::Beta)
     return digamma(b) - digamma(a + b)
 end
 
-struct BetaNaturalParameters{T <: Real} <: NaturalParameters
-    αm1::T
-    βm1::T
+function isproper(params::NaturalParameters{Beta})
+    αm1    = first(get_params(params))
+    βm1    = getindex(get_params(params),2)
+    return ((αm1 + 1) > 0) && ((βm1 + 1) > 0)
 end
 
-BetaNaturalParameters(αm1::Real, βm1::Real)       = BetaNaturalParameters(promote(αm1, βm1)...)
-BetaNaturalParameters(αm1::Integer, βm1::Integer) = BetaNaturalParameters(float(αm1), float(βm1))
-
-Base.convert(::Type{BetaNaturalParameters}, a::Real, b::Real) =
-    convert(BetaNaturalParameters{promote_type(typeof(a), typeof(b))}, a, b)
-
-Base.convert(::Type{BetaNaturalParameters{T}}, a::Real, b::Real) where {T} =
-    BetaNaturalParameters(convert(T, a), convert(T, b))
-
-Base.convert(::Type{BetaNaturalParameters}, vec::AbstractVector) = convert(BetaNaturalParameters{eltype(vec)}, vec)
-
-Base.convert(::Type{BetaNaturalParameters{T}}, vec::AbstractVector) where {T} =
-    BetaNaturalParameters(convert(AbstractVector{T}, vec))
-
-function isproper(params::BetaNaturalParameters)
-    return ((params.αm1 + 1) > 0) && ((params.βm1 + 1) > 0)
+function Base.convert(::Type{NaturalParameters},dist::Beta)
+    a,b = params(dist)
+    NaturalParameters(Beta,[a-1,b-1])
 end
 
-naturalparams(dist::Beta) = BetaNaturalParameters(dist.α - 1, dist.β - 1)
-
-function Base.convert(::Type{Distribution}, η::BetaNaturalParameters)
-    return Beta(η.αm1 + 1, η.βm1 + 1, check_args = false)
+function Base.convert(::Type{Distribution}, η::NaturalParameters{Beta})
+    params = get_params(η)
+    αm1    = first(params)
+    βm1    = getindex(params,2)
+    return Beta(αm1 + 1, βm1 + 1, check_args = false)
 end
 
-function Base.vec(p::BetaNaturalParameters)
-    return [p.αm1, p.βm1]
+function check_valid_natural(::Type{<:Beta},v)
+    if length(v) == 2
+        return true
+    else
+        return false   
+    end   
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: BetaNaturalParameters} = convert(BetaNaturalParameters, args...)
-
-function BetaNaturalParameters(v::AbstractVector{T}) where {T <: Real}
-    @assert length(v) === 2 "`BetaNaturalParameters` must accept a vector of length `2`."
-    return BetaNaturalParameters(v[1], v[2])
-end
-
-lognormalizer(params::BetaNaturalParameters) = logbeta(params.αm1 + 1, params.βm1 + 1)
-logpdf(params::BetaNaturalParameters, x) = betalogpdf(params.αm1 + 1, params.βm1 + 1, x)
-
-function Base.:-(left::BetaNaturalParameters, right::BetaNaturalParameters)
-    return BetaNaturalParameters(left.αm1 - right.αm1, left.βm1 - right.βm1)
-end
+lognormalizer(params::NaturalParameters{Beta}) = logbeta(first(get_params(params))+ 1, getindex(get_params(params),2) + 1)

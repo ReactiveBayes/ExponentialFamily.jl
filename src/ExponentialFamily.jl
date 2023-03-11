@@ -18,7 +18,7 @@ export tiny, huge
     include("distributions/categorical.jl")
     # include("distributions/matrix_dirichlet.jl")
     # include("distributions/dirichlet.jl")
-    # include("distributions/beta.jl")
+    include("distributions/beta.jl")
     include("distributions/bernoulli.jl")
     # include("distributions/normal_mean_variance.jl")
     # include("distributions/normal_mean_precision.jl")
