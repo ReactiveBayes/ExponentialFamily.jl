@@ -47,13 +47,7 @@ function Base.convert(::Type{Distribution}, η::NaturalParameters{Beta})
     return Beta(αm1 + 1, βm1 + 1, check_args = false)
 end
 
-function check_valid_natural(::Type{<:Beta}, v)
-    if length(v) == 2
-        return true
-    else
-        return false
-    end
-end
+check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 
 lognormalizer(params::NaturalParameters{Beta}) =
     logbeta(first(get_params(params)) + 1, getindex(get_params(params), 2) + 1)

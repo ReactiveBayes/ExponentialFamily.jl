@@ -113,13 +113,7 @@ function lognormalizer(::NaturalParameters{Contingency})
     return 0.0
 end
 
-function check_valid_natural(::Type{<:Contingency}, v)
-    if first(size(v)) > 1 && getindex(size(v), 2) > 1
-        true
-    else
-        false
-    end
-end
+check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > 1) && (getindex(size(v), 2) > 1)
 
 function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where {T}
     @assert length(x) === 2 "$(x) should be length 2 vector "

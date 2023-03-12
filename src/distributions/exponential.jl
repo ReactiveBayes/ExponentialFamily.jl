@@ -21,13 +21,7 @@ function lognormalizer(dist::Exponential)
     return -log(rate(dist))
 end
 
-function check_valid_natural(::Type{<:Exponential}, params)
-    if (length(params) == 1) && (first(params) <= 0)
-        true
-    else
-        false
-    end
-end
+check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
 function Base.convert(::Type{NaturalParameters}, dist::Exponential)
     return NaturalParameters(Exponential, [-inv(dist.θ)])
@@ -40,3 +34,5 @@ end
 function lognormalizer(η::NaturalParameters{Exponential})
     return -log(-first(get_params(η)))
 end
+
+isproper(::Type{<:Exponential}, parms) = (first(params) <= 0)

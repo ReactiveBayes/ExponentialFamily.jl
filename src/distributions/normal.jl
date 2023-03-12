@@ -441,13 +441,7 @@ function Random.rand!(
 end
 
 ## Natural parameters for the Normal distribution
-function check_valid_natural(::Type{<:NormalDistributionsFamily}, params)
-    if length(params) == 2
-        return true
-    else
-        return false
-    end
-end
+check_valid_natural(::Type{<:NormalDistributionsFamily}, params) = length(params) === 2
 
 function Base.convert(::Type{NaturalParameters}, dist::NormalDistributionsFamily)
     weightedmean, precision = weightedmean_precision(dist)

@@ -27,13 +27,8 @@ function logpdf_sample_friendly(dist::Erlang)
 end
 
 # Natural parameters for the Erlang distribution
-function check_valid_natural(::Type{<:Erlang}, params)
-    if (length(params) == 2)
-        true
-    else
-        false
-    end
-end
+check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
+
 Base.convert(::Type{NaturalParameters}, dist::Erlang) = NaturalParameters(Erlang, [(shape(dist) - 1), -rate(dist)])
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{Erlang})

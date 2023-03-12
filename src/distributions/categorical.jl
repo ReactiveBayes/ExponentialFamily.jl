@@ -33,13 +33,7 @@ function Base.convert(::Type{Distribution}, η::NaturalParameters{Categorical})
     return Categorical(softmax(get_params(η)))
 end
 
-function check_valid_natural(::Type{<:Categorical}, params)
-    if length(params) >= 2
-        return true
-    else
-        return false
-    end
-end
+check_valid_natural(::Type{<:Categorical}, params) = length(params) >= 2
 
 function lognormalizer(::NaturalParameters{Categorical})
     return 0.0
