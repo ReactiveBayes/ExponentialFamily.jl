@@ -116,3 +116,52 @@ function Base.prod(::ProdAnalytical, left::WishartMessage, right::WishartMessage
 
     return WishartMessage(df, invV)
 end
+
+check_valid_natural(::Type{<:Union{WishartMessage,Wishart}}, params) = length(params) === 2
+
+function Base.convert(::Type{NaturalParameters}, dist::Union{WishartMessage,Wishart})
+    dof = dist.ν
+    T = typeof(dist)
+    
+    if T <: Wishart && isproper(dist)
+        invscale = cholinv(dist.S)  
+    else
+        invscale = dist.invS
+    end
+    p = first(size(invscale))
+    return NaturalParameters(T, [(dof-p-1)/2, -invscale / 2])
+end
+
+function Base.convert(::Type{Distribution}, params::NaturalParameters{<:Union{WishartMessage,Wishart}})
+    η = get_params(params)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    p = first(size(η2))
+    T = first(typeof(params).parameters)
+    if T <: WishartMessage
+        return WishartMessage(2*η1+p+1,0.5cholinv(-η2))
+    else
+        return Wishart(2*η1+p+1,0.5cholinv(-η2))
+    end
+  
+end
+
+function lognormalizer(params::NaturalParameters{<:Union{WishartMessage,Wishart}})
+    η = get_params(params)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    p = first(size(η2))
+
+    term1 = - (η1+(p+1)/2)*logdet(-η2)
+    term2 = logmvgamma(p,η1+(p+1)/2)
+    return term1 + term2 
+
+end
+
+function isproper(params::NaturalParameters{<:Union{WishartMessage,Wishart}}) 
+    η = get_params(params)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+
+    isposdef(-η2) && (0 < η1)
+end

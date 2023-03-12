@@ -5,8 +5,10 @@ using ExponentialFamily
 using Distributions
 using Random
 using LinearAlgebra
+using PDMats
 
-import ExponentialFamily: WishartMessage
+import ExponentialFamily: WishartMessage, NaturalParameters, get_params
+import StatsFuns: logmvgamma
 
 @testset "Wishart" begin
 
@@ -65,6 +67,45 @@ import ExponentialFamily: WishartMessage
         @test ndims(vague(Wishart, 3)) === 3
         @test ndims(vague(Wishart, 4)) === 4
         @test ndims(vague(Wishart, 5)) === 5
+    end
+
+    @testset "WishartNaturalParameters" begin
+        @testset "Constructor" begin
+            for i in 1:10
+                @test convert(
+                    Distribution,
+                    NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])
+                ) ≈
+                      Wishart(9.0, -0.5*inv([-i 0.0; 0.0 -i]))
+                @test convert(
+                        Distribution,
+                        NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                    ) ≈
+                          WishartMessage(9.0, -0.5*inv([-i 0.0; 0.0 -i]))
+            end
+        end
+
+        @testset "logpdf" begin
+            for i in 1:10
+                wishart_np = NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])
+                distribution = Wishart(9.0, -0.5*inv([-i 0.0; 0.0 -i]))
+                @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0;0.0 1.0])
+                @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
+                @test logpdf(distribution, [1.0 -0.1;-0.1 3.0]) ≈ logpdf(wishart_np, [1.0 -0.1;-0.1 3.0])
+            end
+        end
+
+        @testset "lognormalizer" begin
+            @test lognormalizer(NaturalParameters(Wishart, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈ logmvgamma(2,3.0+(2+1)/2)
+        end
+
+        @testset "isproper" begin
+            for i in 1:10
+                @test isproper(NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])) === true
+                @test isproper(NaturalParameters(Wishart, [3.0, [i 0.0; 0.0 -i]])) === false
+                @test isproper(NaturalParameters(Wishart, [-1.0, [-i 0.0; 0.0 -i]])) === false
+            end
+        end
     end
 end
 
