@@ -88,12 +88,14 @@ import ExponentialFamily: NaturalParameters, get_params
     end
 
     @testset "NaturalParameters" begin
-        @test convert(NaturalParameters, MatrixDirichlet([0.6 0.7; 1.0 2.0 ])) == NaturalParameters(MatrixDirichlet,[0.6 0.7; 1.0 2.0 ] .- 1)
+        @test convert(NaturalParameters, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
+              NaturalParameters(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
         b_01 = MatrixDirichlet([10.0 10.0; 10.0 10.0])
         nb_01 = convert(NaturalParameters, b_01)
-        @test lognormalizer(nb_01) == mapreduce(d -> lognormalizer(NaturalParameters(Dirichlet,d)),+,eachrow(get_params(nb_01))) 
+        @test lognormalizer(nb_01) ==
+              mapreduce(d -> lognormalizer(NaturalParameters(Dirichlet, d)), +, eachrow(get_params(nb_01)))
         for i in 1:9
-            b = MatrixDirichlet([i / 10.0 i/20; i/5 i])
+            b = MatrixDirichlet([i/10.0 i/20; i/5 i])
             bnp = convert(NaturalParameters, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])

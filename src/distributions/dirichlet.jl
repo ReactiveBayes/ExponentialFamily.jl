@@ -1,7 +1,7 @@
 export Dirichlet
 
 import Distributions: Dirichlet
-import SpecialFunctions: digamma,loggamma
+import SpecialFunctions: digamma, loggamma
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
@@ -33,9 +33,9 @@ end
 
 function lognormalizer(params::NaturalParameters{Dirichlet})
     η = get_params(params)
-    firstterm = mapreduce(x -> loggamma(x+1),+,η)
-    secondterm = loggamma(sum( η .+ 1))
-    return firstterm - secondterm 
+    firstterm = mapreduce(x -> loggamma(x + 1), +, η)
+    secondterm = loggamma(sum(η .+ 1))
+    return firstterm - secondterm
 end
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{Dirichlet})
@@ -47,6 +47,6 @@ function Base.convert(::Type{NaturalParameters}, dist::Dirichlet)
     NaturalParameters(Dirichlet, probvec(dist) .- 1)
 end
 
-isproper(params::NaturalParameters{<:Dirichlet}) = all(isless.(-1,get_params(params)))
+isproper(params::NaturalParameters{<:Dirichlet}) = all(isless.(-1, get_params(params)))
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
