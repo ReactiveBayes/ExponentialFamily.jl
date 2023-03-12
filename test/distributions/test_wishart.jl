@@ -5,7 +5,6 @@ using ExponentialFamily
 using Distributions
 using Random
 using LinearAlgebra
-using PDMats
 
 import ExponentialFamily: WishartMessage, NaturalParameters, get_params
 import StatsFuns: logmvgamma
