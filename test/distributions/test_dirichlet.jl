@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 import ExponentialFamily: NaturalParameters, get_params
-
+import SpecialFunctions: loggamma
 @testset "Dirichlet" begin
 
     # Dirichlet comes from Distributions.jl and most of the things should be covered there
@@ -59,6 +59,8 @@ import ExponentialFamily: NaturalParameters, get_params
     @testset "NaturalParameters" begin
         @test convert(NaturalParameters, Dirichlet([0.6, 0.7 ])) == NaturalParameters(Dirichlet,[0.6, 0.7 ] .- 1)
         b_01 = Dirichlet([10.0, 10.0, 10.0])
+        @test lognormalizer(convert(NaturalParameters, Dirichlet([1, 1]))) ≈ 2loggamma(2)
+        @test lognormalizer(convert(NaturalParameters, Dirichlet([0.1, 0.2]))) ≈ loggamma(0.1)+loggamma(0.2) - loggamma(0.3)
         for i in 1:9
             b = Dirichlet([i / 10.0, i/5, i])
             bnp = convert(NaturalParameters, b)
