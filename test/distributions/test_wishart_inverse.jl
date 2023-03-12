@@ -7,8 +7,9 @@ using Random
 using LinearAlgebra
 using StableRNGs
 
-import ExponentialFamily: InverseWishartMessage
+import ExponentialFamily: InverseWishartMessage, NaturalParameters, get_params
 import Distributions: pdf!
+import StatsFuns: logmvgamma
 
 @testset "InverseWishartMessage" begin
     @testset "common" begin
@@ -151,6 +152,44 @@ import Distributions: pdf!
             result = zeros(n)
 
             @test all(pdf(InverseWishart(v, S), samples) .≈ pdf!(result, InverseWishartMessage(v, S), samples))
+        end
+    end
+
+    @testset "InverseWishartNaturalParameters" begin
+        @testset "Constructor" begin
+            for i in 1:10
+                @test convert(
+                    Distribution,
+                    NaturalParameters(InverseWishart, [-3.0, [-i 0.0; 0.0 -i]])
+                ) ≈
+                      InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
+                @test convert(
+                        Distribution,
+                        NaturalParameters(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
+                    ) ≈ InverseWishartMessage(3.0, -2([-i 0.0; 0.0 -i]))
+            end
+        end
+
+        @testset "logpdf" begin
+            for i in 1:10
+                wishart_np = NaturalParameters(InverseWishart, [-3.0, [-i 0.0; 0.0 -i]])
+                distribution = InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
+                @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0;0.0 1.0])
+                @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
+                @test logpdf(distribution, [1.0 -0.1;-0.1 3.0]) ≈ logpdf(wishart_np, [1.0 -0.1;-0.1 3.0])
+            end
+        end
+
+        @testset "lognormalizer" begin
+            @test lognormalizer(NaturalParameters(InverseWishart, [-3.0, [-1.0 0.0; 0.0 -1.0]])) ≈ logmvgamma(2,1.5)
+        end
+
+        @testset "isproper" begin
+            for i in 1:10
+                @test isproper(NaturalParameters(InverseWishart, [3.0, [-i 0.0; 0.0 -i]])) === false
+                @test isproper(NaturalParameters(InverseWishart, [3.0, [i 0.0; 0.0 -i]])) === false
+                @test isproper(NaturalParameters(InverseWishart, [-1.0, [-i 0.0; 0.0 -i]])) === true
+            end
         end
     end
 end

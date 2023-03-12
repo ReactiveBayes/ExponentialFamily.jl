@@ -12,7 +12,7 @@ Same as `Wishart` from `Distributions.jl`, but does not check input arguments an
 For model creation use `Wishart` from `Distributions.jl`. Regular user should never interact with `WishartMessage`.
 
 Note that internally `WishartMessage` stores (and creates with) inverse of its-scale matrix, but (for backward compatibility) `params()` function returns the scale matrix itself. 
-This is done for better stability in the message passing update rules.
+This is done for better stability in the message passing update rules for `ReactiveMP.jl`.
 """
 struct WishartMessage{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν    :: T
