@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog, BetaNaturalParameters
+import ExponentialFamily: mirrorlog, NaturalParameters, get_params, lognormalizer, basemeasure
 import SpecialFunctions: loggamma
 
 @testset "Beta" begin
@@ -42,31 +42,37 @@ import SpecialFunctions: loggamma
     @testset "BetaNaturalParameters" begin
         @testset "Constructor" begin
             for i in 0:10, j in 0:10
-                @test convert(Distribution, BetaNaturalParameters(i, j)) == Beta(i + 1, j + 1)
+                @test convert(Distribution, NaturalParameters(Beta, [i, j])) == Beta(i + 1, j + 1)
 
-                @test convert(BetaNaturalParameters, i, j) == BetaNaturalParameters(i, j)
-                @test convert(BetaNaturalParameters, [i, j]) == BetaNaturalParameters(i, j)
+                @test convert(NaturalParameters, Beta(i + 1, j + 1)) == NaturalParameters(Beta, [i, j])
             end
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(BetaNaturalParameters(0, 0)) ≈ 0
-            @test lognormalizer(BetaNaturalParameters(1, 1)) ≈ -loggamma(4)
+            @test lognormalizer(NaturalParameters(Beta, [0, 0])) ≈ 0
+            @test lognormalizer(NaturalParameters(Beta, [1, 1])) ≈ -loggamma(4)
         end
 
         @testset "logpdf" begin
             for i in 0:10, j in 0:10
-                @test logpdf(BetaNaturalParameters(i, j), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
-                @test logpdf(BetaNaturalParameters(i, j), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
+                @test logpdf(NaturalParameters(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
+                @test logpdf(NaturalParameters(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
             end
         end
 
         @testset "isproper" begin
             for i in 0:10
-                @test isproper(BetaNaturalParameters(i, i)) === true
+                @test isproper(NaturalParameters(Beta, [i, i])) === true
             end
             for i in 1:10
-                @test isproper(BetaNaturalParameters(-i, -i)) === false
+                @test isproper(NaturalParameters(Beta, [-i, -i])) === false
+            end
+        end
+
+        @testset "basemeasure" begin
+            for (i, j) in (1:10, 1:10)
+                @test basemeasure(NaturalParameters(Beta, [i, j]), rand()) == 1.0
+                @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
             end
         end
     end

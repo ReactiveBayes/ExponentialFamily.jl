@@ -8,6 +8,8 @@ using ForwardDiff
 using Random
 using StableRNGs
 
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
+
 @testset "Normal" begin
     @testset "Univariate conversions" begin
         check_basic_statistics =
@@ -85,7 +87,6 @@ using StableRNGs
                 @test length(left) === length(right)
                 @test size(left) === size(right)
                 @test entropy(left) ≈ entropy(right)
-
 
                 for value in (
                     fill(1.0, dims),
@@ -278,33 +279,30 @@ using StableRNGs
     @testset "UnivariateNormalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, UnivariateNormalNaturalParameters(i, -i)) ==
+                @test convert(Distribution, NaturalParameters(NormalWeightedMeanPrecision, [i, -i])) ==
                       NormalWeightedMeanPrecision(i, 2 * i)
-
-                @test convert(UnivariateNormalNaturalParameters, i, -i) == UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters, [i, -i]) == UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters{Float64}, i, -i) ==
-                      UnivariateNormalNaturalParameters(i, -i)
-                @test convert(UnivariateNormalNaturalParameters{Float64}, [i, -i]) ==
-                      UnivariateNormalNaturalParameters(i, -i)
+                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ==
+                      NaturalParameters(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
+                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ==
+                      NaturalParameters(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
             end
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(UnivariateNormalNaturalParameters(1, -2)) ≈ -(log(2) - 1 / 8)
+            @test lognormalizer(NaturalParameters(NormalMeanVariance, [1, -2])) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                @test logpdf(UnivariateNormalNaturalParameters(i, -i), 0) ≈
+                @test logpdf(NaturalParameters(NormalWeightedMeanPrecision, [i, -i]), 0) ≈
                       logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
             end
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(UnivariateNormalNaturalParameters(i, -i)) === true
-                @test isproper(UnivariateNormalNaturalParameters(i, i)) === false
+                @test isproper(NaturalParameters(NormalMeanVariance, [i, -i])) === true
+                @test isproper(NaturalParameters(NormalMeanPrecision, [i, i])) === false
             end
         end
     end
@@ -312,28 +310,23 @@ using StableRNGs
     @testset "MultivariateNormalNaturalParameters" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) ≈
+                @test convert(
+                    Distribution,
+                    NaturalParameters(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
+                ) ==
                       MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
-                @test convert(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) ==
-                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test convert(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) ==
-                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0], [-i 0; 0 -i]) ==
-                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test convert(MultivariateNormalNaturalParameters{Float64}, [i, 0, -i, 0, 0, -i]) ==
-                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-
-                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0], [-i 0; 0 -i]) ==
-                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
-                @test as_naturalparams(MultivariateNormalNaturalParameters, [i, 0, -i, 0, 0, -i]) ==
-                      MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                @test convert(NaturalParameters, MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])) ==
+                      NaturalParameters(
+                    MvGaussianWeightedMeanPrecision{Float64, Vector{Float64}, Matrix{Float64}},
+                    [float([i, 0]), float([-i 0; 0 -i])]
+                )
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                mv_np = MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])
+                mv_np = NaturalParameters(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
                 distribution = MvGaussianWeightedMeanPrecision([i, 0.0], [2*i -0.0; -0.0 2*i])
                 @test logpdf(distribution, [0.0, 0.0]) ≈ logpdf(mv_np, [0.0, 0.0])
                 @test logpdf(distribution, [1.0, 0.0]) ≈ logpdf(mv_np, [1.0, 0.0])
@@ -342,14 +335,20 @@ using StableRNGs
         end
 
         @testset "lognormalizer" begin
-            mt = zeros(Float64, 1, 1) .- 2.0
-            @test lognormalizer(MultivariateNormalNaturalParameters([1], mt)) ≈ -(log(2) - 1 / 8)
+            @test lognormalizer(NaturalParameters(NormalMeanVariance, [1, -2])) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(MultivariateNormalNaturalParameters([i, 0], [-i 0; 0 -i])) === true
-                @test isproper(MultivariateNormalNaturalParameters([i, 0], [i 0; 0 i])) === false
+                @test isproper(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]])) === true
+                @test isproper(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [i 0; 0 i]])) === false
+            end
+        end
+
+        @testset "basemeasure" begin
+            for i in 1:10
+                @test basemeasure(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]]), rand(2)) ==
+                      1 / (2pi)
             end
         end
     end

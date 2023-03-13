@@ -1,4 +1,4 @@
-export Erlang, ErlangNaturalParameters
+export Erlang
 
 import SpecialFunctions: logfactorial, digamma
 import Distributions: Erlang, shape, scale, cov
@@ -27,52 +27,30 @@ function logpdf_sample_friendly(dist::Erlang)
 end
 
 # Natural parameters for the Erlang distribution
-struct ErlangNaturalParameters <: NaturalParameters
-    a::Integer
-    b::Real
+check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
+
+Base.convert(::Type{NaturalParameters}, dist::Erlang) = NaturalParameters(Erlang, [(shape(dist) - 1), -rate(dist)])
+
+function Base.convert(::Type{Distribution}, params::NaturalParameters{Erlang})
+    η = get_params(params)
+    a = first(η)
+    b = getindex(η, 2)
+    return Erlang(Int64(a + 1), -1 / b)
 end
 
-ErlangNaturalParameters(a::Real, b::Real)       = ErlangNaturalParameters(Int(a), b)
-ErlangNaturalParameters(a::Integer, b::Integer) = ErlangNaturalParameters(a, float(b))
-
-function ErlangNaturalParameters(vec::AbstractVector)
-    @assert length(vec) === 2 "`ErlangNaturalParameters` must accept a vector of length `2`."
-    return ErlangNaturalParameters(vec[1], vec[2])
+function lognormalizer(params::NaturalParameters{Erlang})
+    η = get_params(params)
+    a = first(η)
+    b = getindex(η, 2)
+    return logfactorial(a) - (a + 1) * log(-b)
 end
 
-as_naturalparams(::Type{T}, args...) where {T <: ErlangNaturalParameters} = convert(ErlangNaturalParameters, args...)
-naturalparams(dist::Erlang) = ErlangNaturalParameters(shape(dist) - 1, -rate(dist))
-
-Base.convert(::Type{ErlangNaturalParameters}, a::Real, b::Real) = ErlangNaturalParameters(convert(Int, a), b)
-
-function Base.:(==)(left::ErlangNaturalParameters, right::ErlangNaturalParameters)
-    return left.a == right.a && left.b == right.b
+function isproper(params::NaturalParameters{Erlang})
+    η = get_params(params)
+    a = first(η)
+    b = getindex(η, 2)
+    return (a >= tiny - 1) && (-b >= tiny)
 end
 
-function Base.convert(::Type{Distribution}, params::ErlangNaturalParameters)
-    return Erlang(params.a + 1, -1 / params.b)
-end
-
-function Base.vec(params::ErlangNaturalParameters)
-    return [params.a, params.b]
-end
-
-function Base.:+(left::ErlangNaturalParameters, right::ErlangNaturalParameters)
-    return ErlangNaturalParameters(left.a + right.a, left.b + right.b)
-end
-
-function Base.:-(left::ErlangNaturalParameters, right::ErlangNaturalParameters)
-    return ErlangNaturalParameters(left.a - right.a, left.b - right.b)
-end
-
-function lognormalizer(params::ErlangNaturalParameters)
-    return logfactorial(params.a) - (params.a + 1) * log(-params.b)
-end
-
-function Distributions.logpdf(params::ErlangNaturalParameters, x)
-    return log(x) * params.a + x * params.b - lognormalizer(params)
-end
-
-function isproper(params::ErlangNaturalParameters)
-    return (params.a >= tiny - 1) && (-params.b >= tiny)
-end
+#due to our parameterization 
+basemeasure(::Union{<:NaturalParameters{Erlang}, <:Erlang}, x) = 1.0

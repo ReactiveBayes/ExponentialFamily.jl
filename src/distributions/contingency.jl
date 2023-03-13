@@ -1,8 +1,7 @@
-export Contingency, ContingencyNaturalParameters, naturalparams, as_naturalparams, icdf
+export Contingency, icdf
 
 using LinearAlgebra
 using Random
-
 
 """
     Contingency(P, renormalize = Val(true))
@@ -44,11 +43,11 @@ convert_eltype(::Type{Contingency}, ::Type{T}, distribution::Contingency{R}) whe
     Contingency(convert(AbstractArray{T}, contingency_matrix(distribution)))
 
 ## dispatch support is regular {1,2,..., N}
-function pdf_contingency(distribution::Contingency, x::AbstractArray, T) 
-    @assert length(x) === 2  "$(x) should be length 2 vector with the entries corresponding to elements of the contingency matrix of $(distribution)"
+function pdf_contingency(distribution::Contingency, x::AbstractArray, T)
+    @assert length(x) === 2 "$(x) should be length 2 vector with the entries corresponding to elements of the contingency matrix of $(distribution)"
     contingencymatrix = contingency_matrix(distribution)
-    dim               = getindex(size(contingencymatrix),1)
-    support           = collect(1:getindex(size(contingencymatrix),1))
+    dim               = getindex(size(contingencymatrix), 1)
+    support           = collect(1:getindex(size(contingencymatrix), 1))
     idx1              = searchsortedfirst(support, x[1])
     idx2              = searchsortedfirst(support, x[2])
     if idx1 <= dim && support[idx1] == x[1] && idx2 <= dim && support[idx2] == x[2]
@@ -59,164 +58,128 @@ function pdf_contingency(distribution::Contingency, x::AbstractArray, T)
 end
 
 ## dispatch when support is one hot coded
-function pdf_contingency(distribution::Contingency, x::AbstractArray,T::Type{Bool}) 
+function pdf_contingency(distribution::Contingency, x::AbstractArray, T::Type{Bool})
     contingencymatrix = contingency_matrix(distribution)
-    dim               = getindex(size(contingencymatrix),1)
+    dim               = getindex(size(contingencymatrix), 1)
     @assert eltype(x) === Bool "Entries of one hot encoded vector should be boolean"
-    @assert size(x)   === (2, dim) "one hot encoded $(x) should be of same length with the entries corresponding to elements of the contingency matrix of $(distribution)"
+    @assert size(x) === (2, dim) "one hot encoded $(x) should be of same length with the entries corresponding to elements of the contingency matrix of $(distribution)"
     @assert all(map(sum, eachrow(x)) .=== 1) "Entries of one hot encoded vector should sum to 1"
-    xconverted        = [first(indexin(true,x[1,:])), first(indexin(true,x[2,:]))]
+    xconverted = [first(indexin(true, x[1, :])), first(indexin(true, x[2, :]))]
     return pdf(distribution, xconverted)
 end
 
-Distributions.pdf(distribution::Contingency, x::AbstractArray{T}) where T<:Real = pdf_contingency(distribution, x, eltype(x))
+Distributions.pdf(distribution::Contingency, x::AbstractArray{T}) where {T <: Real} =
+    pdf_contingency(distribution, x, eltype(x))
 
-function Distributions.logpdf(distribution::Contingency, x::AbstractArray{T}) where {T <: Real} 
-    return log(Distributions.pdf(distribution,x))
+function Distributions.logpdf(distribution::Contingency, x::AbstractArray{T}) where {T <: Real}
+    return log(Distributions.pdf(distribution, x))
 end
 
 function Distributions.mean(distribution::Contingency)
     contingency = contingency_matrix(distribution)
     support     = collect(1:length(contingency))
 
-    return sum(collect(x) .* pdf(distribution,collect(x)) for x in Iterators.product(support,support))
+    return sum(collect(x) .* pdf(distribution, collect(x)) for x in Iterators.product(support, support))
 end
 
-function Distributions.cov(distribution::Contingency) 
-
+function Distributions.cov(distribution::Contingency)
     contingencymatrix = contingency_matrix(distribution)
-    dim         = getindex(size(contingencymatrix),1)
-    support     = collect(1:dim)
-    return sum((collect(x)-mean(distribution))*(collect(x)-mean(distribution))' .* pdf(distribution,collect(x)) for x in Iterators.product(support,support))
+    dim = getindex(size(contingencymatrix), 1)
+    support = collect(1:dim)
+    return sum(
+        (collect(x) - mean(distribution)) * (collect(x) - mean(distribution))' .* pdf(distribution, collect(x)) for
+        x in Iterators.product(support, support)
+    )
 end
 
 Distributions.var(distribution::Contingency) = diag(cov(distribution))
-
 
 function entropy(distribution::Contingency)
     P = contingency_matrix(distribution)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
-struct ContingencyNaturalParameters{T <: Real} <: NaturalParameters
-    logcontingency::AbstractMatrix{T}
-end
-
-Base.convert(::Type{ContingencyNaturalParameters}, logcontingency::AbstractMatrix) =
-    convert(ContingencyNaturalParameters{promote_type(eltype(logcontingency))}, logcontingency)
-
-Base.convert(::Type{ContingencyNaturalParameters{T}}, vector::AbstractMatrix) where {T} = ContingencyNaturalParameters(convert(AbstractMatrix{T}, vector))
-
-function Base.:(==)(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
-    return left.logcontingency == right.logcontingency 
-end
-
-as_naturalparams(::Type{T}, args...) where {T <: ContingencyNaturalParameters} = convert(ContingencyNaturalParameters, args...)
 
 # Standard parameters to natural parameters
-function naturalparams(dist::Contingency)
+function Base.convert(::Type{NaturalParameters}, dist::Contingency)
     logcontingency = log.(contingency_matrix(dist))
-    return ContingencyNaturalParameters(logcontingency)
+    return NaturalParameters(Contingency, logcontingency)
 end
 
-
-function convert(::Type{Distribution}, η::ContingencyNaturalParameters)
-    return Contingency(softmax(η.logcontingency))
+function Base.convert(::Type{Distribution}, η::NaturalParameters{Contingency})
+    return Contingency(softmax(get_params(η)))
 end
 
-
-function Base.:+(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
-    return ContingencyNaturalParameters(left.logcontingency .+ right.logcontingency)
-end
-
-
-function Base.:-(left::ContingencyNaturalParameters, right::ContingencyNaturalParameters)
-    return ContingencyNaturalParameters(left.logcontingency .- right.logcontingency)
-end
-
-
-function lognormalizer(::ContingencyNaturalParameters)
+function lognormalizer(::NaturalParameters{Contingency})
     return 0.0
 end
 
+check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > 1) && (getindex(size(v), 2) > 1)
 
-function Distributions.logpdf(η::ContingencyNaturalParameters, x)
-    return Distributions.logpdf(convert(Contingency,η),x)
-end
-
-
-function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where T
-    @assert length(x) === 2  "$(x) should be length 2 vector "
+function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where {T}
+    @assert length(x) === 2 "$(x) should be length 2 vector "
     contingencymatrix = contingency_matrix(d)
     P = float(eltype(contingencymatrix))
     n = first(size(contingencymatrix))
-    support = collect(T, 1:n)
+    support = collect(1:n)
     s = zero(P)
 
     x[1] < Base.minimum(support) && return zero(P)
     x[2] < Base.minimum(support) && return zero(P)
 
+    if x[1] >= Base.maximum(support) && x[2] >= Base.maximum(support)
+        return one(P)
+    end
+
     stop_idx = searchsortedlast(support, x[1])
     stop_idy = searchsortedlast(support, x[2])
-    
+
     if iszero(stop_idx) && !iszero(stop_idy)
-        s = sum(contingencymatrix[1,1:stop_idy])
+        s = sum(contingencymatrix[1, 1:stop_idy])
     elseif iszero(stop_idx) && iszero(stop_idy)
-        s = contingencymatrix[1,1]
+        s = contingencymatrix[1, 1]
     elseif !iszero(stop_idx) && iszero(stop_idy)
-        s = sum(contingencymatrix[1:stop_idx,1])
+        s = sum(contingencymatrix[1:stop_idx, 1])
     else
-        s = sum(contingencymatrix[1:stop_idx,1:stop_idy])
+        s = sum(contingencymatrix[1:stop_idx, 1:stop_idy])
     end
     return s
 end
 
-function icdf(dist::Contingency,probability::Float64)
-    @assert  0 <= probability <= 1 "probability should be between 0 and 1."
+function icdf(dist::Contingency, probability::Float64)
+    @assert 0 <= probability <= 1 "probability should be between 0 and 1."
     contingencymatrix = contingency_matrix(dist)
     support = collect(1:first(size(contingencymatrix)))
-    cdfmatrix = zeros(length(support),length(support))
-    @inbounds for (s1,i) in zip(support,collect(1:length(support)))
-        @inbounds for (s2,j) in zip(support,collect(1:length(support)))
-            cdfmatrix[i,j] = cdf(dist,[s1,s2])
+    cdfmatrix = zeros(length(support), length(support))
+    @inbounds for (s1, i) in zip(support, collect(1:length(support)))
+        @inbounds for (s2, j) in zip(support, collect(1:length(support)))
+            cdfmatrix[i, j] = cdf(dist, [s1, s2])
         end
     end
-    probvector1 = vec(sum(contingencymatrix,dims=2))
-    probvector2 = vec(sum(contingencymatrix,dims=1))
-    ### infimum over finite set is minimum
     cartesianind = findall(x -> x == Base.minimum(filter(d -> !isless(d, probability), cdfmatrix)), cdfmatrix)
-    if length(cartesianind) > 1 
-       equidistantcdf = map(d -> cdfmatrix[d], cartesianind)
-       if sum(isequal.(0.5,equidistantcdf)) == length(cartesianind)
-            uniqueindex = rand(collect(1:length(cartesianind)))
-            return [rand(Categorical(probvector1)), rand(Categorical(probvector2))]
-       else
-            uniqueindex = indexin(Base.minimum(equidistantcdf),cdfmatrix)
-            return [uniqueindex[1][1], uniqueindex[1][2]]
-       end
-    else
-        return [cartesianind[1][1],cartesianind[1][2]] 
-    end  
+
+    return [cartesianind[1][1], cartesianind[1][2]]
 end
 
-isproper(params::ContingencyNaturalParameters) = true
+isproper(params::NaturalParameters{Contingency}) = true
+basemeasure(::Union{<:NaturalParameters{Contingency}, <:Contingency}, x) = 1.0
 
-function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T} 
+function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     probvector   = vec(contingency_matrix(dist))
-    sampleindex  = rand(rng,Categorical(probvector))
-    cartesianind = indexin(probvector[sampleindex],contingency_matrix(dist))
-    return [cartesianind[1][1],cartesianind[1][2]]
+    sampleindex  = rand(rng, Categorical(probvector))
+    cartesianind = indexin(probvector[sampleindex], contingency_matrix(dist))
+    return [cartesianind[1][1], cartesianind[1][2]]
 end
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}, size::Int64) where {T}
-    container = Matrix{T}(undef,2, size)
+    container = Matrix{T}(undef, 2, size)
     return rand!(rng, dist, container)
 end
 
-function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractArray{T}) where {T <: Real} 
+function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractArray{T}) where {T <: Real}
     preallocated = similar(container)
-    @inbounds for i in 1:size(preallocated,2)
-        temp = rand(rng,dist)
-        @views container[: , i] =  temp
+    @inbounds for i in 1:size(preallocated, 2)
+        temp = rand(rng, dist)
+        @views container[:, i] = temp
     end
     return container
 end
