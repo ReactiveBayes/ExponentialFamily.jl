@@ -14,6 +14,7 @@ using Test
     include("distributions/test_exponential.jl")
     include("distributions/test_gamma.jl")
     include("distributions/test_gamma_inverse.jl")
+    incoude("distributions/test_multinomial.jl")
     include("distributions/test_mv_normal_mean_covariance.jl")
     include("distributions/test_mv_normal_mean_precision.jl")
     include("distributions/test_mv_normal_weighted_mean_precision.jl")
