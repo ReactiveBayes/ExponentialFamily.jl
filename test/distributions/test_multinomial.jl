@@ -44,9 +44,6 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         η1 = NaturalParameters(Multinomial, (5, [log(0.1), log(0.4), log(0.5)]))
         η2 = NaturalParameters(Multinomial, (5, [log(0.2), log(0.4), log(0.4)]))
 
-        #check isproper
-
-
         @test convert(NaturalParameters, d1) == η1
         @test convert(NaturalParameters, d2) == η2 
 

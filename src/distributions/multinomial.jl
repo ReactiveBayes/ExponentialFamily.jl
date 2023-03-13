@@ -25,21 +25,20 @@ end
 function Base.convert(::Type{NaturalParameters}, dist::Multinomial)
     n, p = params(dist)
     logprobabilities = log.(p)
+    
     # The params of NaturalParameters(Multinomial) is a Tuple (n, log(probvec))
     return NaturalParameters(Multinomial, (n,logprobabilities))
 end
 
-function Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial})
-    return Multinomial(first(get_params(η)), softmax(last(get_params(η))))
-end
+Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial}) = Multinomial(first(get_params(η)), softmax(last(get_params(η))))
 
-check_valid_natural(::Type{<:Multinomial}, params) = length(last(params)) >= 2
+check_valid_natural(::Type{<:Multinomial}, params) = length(params) == 2
 
 function isproper(params::NaturalParameters{Multinomial})
     η = get_params(params)
     n = first(η)
-    p = last(η)
-    return (n >= 1) && (length(p)>=2) && (sum(p) == 1)
+    logp = last(η)
+    return (n >= 1) && (length(logp)>=2)
 end
 
 lognormalizer(::NaturalParameters{Multinomial}) = 0.0
