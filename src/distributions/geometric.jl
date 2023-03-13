@@ -1,39 +1,33 @@
-export Geometric, GeometricNaturalParameters
+export Geometric
 
-import Distributions: Geometric, Distribution, succprob, failprob, logpdf
+import Distributions: Geometric, succprob, failprob
 
-Distributions.cov(dist::Geometric) = var(dist)
-
-vague(::Type{<:Geometric}) = Geometric(tiny)
+vague(::Type{<:Geometric}) = Geometric(1e-12)
 
 probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
 #write analytical rule for product
 prod_analytical_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ProdAnalyticalRuleAvailable()
 
-function Base.prod(::ProdAnalytical, left::Geometric, right::Geometric)
-    return Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right)) 
-end
+Base.prod(::ProdAnalytical, left::Geometric, right::Geometric) = Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right)) 
 
 # Geometric natural parameters 
-struct GeometricNaturalParameters <: NaturalParameters
-    η :: Real 
+Base.convert(::Type{NaturalParameters}, dist::Geometric) = NaturalParameters(Geometric, [log(1-succprob(dist))])
+
+Base.convert(::Type{Distribution}, η::NaturalParameters{Geometric}) = Geometric(1 - exp(first(get_params(η))))
+
+lognormalizer(η::NaturalParameters{Geometric}) = -log(1 - exp(first(get_params(η))))
+
+
+check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
+
+function isproper(params::NaturalParameters{Geometric})
+    η = first(get_params(params))
+    return (η <= 0.0) && (η >= log(1e-12)) 
 end
 
-naturalparams(dist::Geometric) = GeometricNaturalParameters(log(1-succprob(dist) + 1e-12))
+basemeasure(::Union{<:NaturalParameters{Geometric}, <:Geometric}, x) = 1.0
 
-lognormalizer(params::GeometricNaturalParameters) = -log(1 - exp(params.η))
 
-Distributions.logpdf(params::GeometricNaturalParameters,x) = x * params.η - lognormalizer(params.η)
 
-Base.convert(::Type{Distribution}, params::GeometricNaturalParameters) = Geometric(1 - exp(params.η))
-Base.:+(left::GeometricNaturalParameters, right::GeometricNaturalParameters) = GeometricNaturalParameters(left.η + right.η)
-Base.:-(left::GeometricNaturalParameters, right::GeometricNaturalParameters) = GeometricNaturalParameters(left.η - right.η)
 
-function Base.:(==)(left::GeometricNaturalParameters, right::GeometricNaturalParameters)
-    return left.η == right.η
-end
-
-function isproper(params::GeometricNaturalParameters)
-    return params.η <= 0
-end

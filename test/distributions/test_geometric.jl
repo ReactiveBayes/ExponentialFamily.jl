@@ -1,15 +1,17 @@
 module GeometricTest
 
 using Test
-using ExponentialFamily
 using Random
 using Distributions
+using ExponentialFamily
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
 @testset "Geometric" begin
     @testset "Geometric vague" begin
         d = Geometric(0.6)
 
         @test Geometric() == Geometric(0.5)
+        @test typeof(vague(Geometric)) <: Geometric
         @test vague(Geometric) == Geometric(1e-12)
         @test succprob(d) == 0.6
         @test failprob(d) == 0.4
@@ -18,32 +20,42 @@ using Distributions
 
     @testset "Geometric prod" begin
         @test prod(ProdAnalytical(),Geometric(0.5),Geometric(0.6)) == Geometric(0.8)
+        @test prod(ProdAnalytical(),Geometric(0.3),Geometric(0.8)) == Geometric(0.8600000000000001)
+        @test prod(ProdAnalytical(),Geometric(0.5),Geometric(0.5)) == Geometric(0.75)
     end
 
-    @testset "Geometric natural parameter" begin
-        @testset "natural parameter" begin
-            @test naturalparams(Geometric(0.6)) ≈ log(0.4)
-            @test lognormalizer(GeometricNaturalParameters(log(0.4))) == -log(0.6)
-        end
+    @testset "naturalparameter related Geometric" begin
+        d1 = Geometric(0.6)
+        d2 = Geometric(0.3)
+        η1 = NaturalParameters(Geometric, [log(1-0.6)])
+        η2 = NaturalParameters(Geometric, [log(1-0.3)])
 
-        @testset "Geometric logpdf" begin
-            @test logpdf(GeometricNaturalParameters(log(0.4)), 2) == logpdf(Geometric(0.6), 2)
-        end
+        @test convert(Geometric, η1) ≈ d1 
+        @test convert(Geometric, η2) ≈ d2 
+        
+        @test convert(NaturalParameters, d1) == η1 
+        @test convert(NaturalParameters, d2) == η2 
 
-        @testset "convert" begin
-            @test convert(Geometric, GeometricNaturalParameters(log(0.4))) == Geometric(0.6)
-        end
+        @test lognormalizer(η1) ≈ -log(0.6)
+        @test lognormalizer(η2) ≈ -log(0.3)
 
-        @testset "basic operations" begin
-            @test GeometricNaturalParameters(log(0.5)) + GeometricNaturalParameters(log(0.4)) == GeometricNaturalParameters(log(0.5) + log(0.4))
-        end
+        @test basemeasure(d1, 5) == 1.
+        @test basemeasure(d2,1) == 1.
+        @test basemeasure(η1,4) == 1.
+        @test basemeasure(η2,2) == 1.
 
-        @testset "proper" begin
-            for i=1:5
-                @test isproper(GeometricNaturalParameters(-i)) == true 
-                @test isproper(GeometricNaturalParameters(i)) == false
-            end 
-        end
+        @test η1 + η2 == NaturalParameters(Geometric, [log(0.4) + log(0.7)])
+        @test η1 - η2 == NaturalParameters(Geometric, [log(0.4) - log(0.7)])
+
+        @test logpdf(η1, 3) == logpdf(d1, 3)
+        @test logpdf(η2, 3) == logpdf(d2, 3)
+
+        @test pdf(η1, 3) == pdf(d1, 3)
+        @test pdf(η2, 3) == pdf(d2, 3)
+        
+        @test isproper(NaturalParameters(Geometric, [log(0.6)])) == true 
+        @test isproper(NaturalParameters(Geometric, [1.3])) == false
     end
     
+end
 end
