@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog, NaturalParameters, get_params
+import ExponentialFamily: mirrorlog, NaturalParameters, get_params, basemeasure
 
 @testset "Exponential" begin
 
@@ -35,6 +35,7 @@ import ExponentialFamily: mirrorlog, NaturalParameters, get_params
     @testset "Constructor(::ExponentialNaturalParameters)" begin
         @test convert(NaturalParameters, Exponential(5)) == NaturalParameters(Exponential, [-0.2])
         @test convert(NaturalParameters, Exponential(1e12)) == NaturalParameters(Exponential, [-1e-12])
+        @test basemeasure(Exponential(5), rand()) == 1.0
     end
 
     @testset "logpdf(::ExponentialNaturalParameters)" begin

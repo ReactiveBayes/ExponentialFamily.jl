@@ -120,3 +120,5 @@ function isproper(params::NaturalParameters{<:GammaDistributionsFamily})
     b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end
+
+basemeasure(::Union{<:NaturalParameters{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0

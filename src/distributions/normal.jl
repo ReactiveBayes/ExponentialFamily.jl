@@ -490,3 +490,6 @@ end
 # # end
 
 isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-getindex(get_params(params), 2))
+
+basemeasure(::Union{<:NaturalParameters{<:NormalDistributionsFamily}, <:NormalDistributionsFamily}, x) =
+    (2pi)^(-length(x) / 2)

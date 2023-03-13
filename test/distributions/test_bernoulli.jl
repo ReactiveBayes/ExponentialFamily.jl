@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: NaturalParameters, get_params, compute_logscale, lognormalizer
+import ExponentialFamily: NaturalParameters, get_params, compute_logscale, lognormalizer, basemeasure
 
 @testset "Bernoulli" begin
 
@@ -57,6 +57,8 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
             @test prod(ProdAnalytical(), convert(Distribution, convert(NaturalParameters, b_99) - bnp), b) ≈ b_99
         end
         @test isproper(NaturalParameters(Bernoulli, [10])) === true
+        @test basemeasure(b_99, 0.1) == 1.0
+        @test basemeasure(NaturalParameters(Bernoulli, [10]), 0.2) == 1.0
     end
 end
 

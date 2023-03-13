@@ -8,7 +8,7 @@ using ForwardDiff
 using Random
 using StableRNGs
 
-import ExponentialFamily: NaturalParameters, get_params
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -342,6 +342,13 @@ import ExponentialFamily: NaturalParameters, get_params
             for i in 1:10
                 @test isproper(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]])) === true
                 @test isproper(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [i 0; 0 i]])) === false
+            end
+        end
+
+        @testset "basemeasure" begin
+            for i in 1:10
+                @test basemeasure(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]]), rand(2)) ==
+                      1 / (2pi)
             end
         end
     end

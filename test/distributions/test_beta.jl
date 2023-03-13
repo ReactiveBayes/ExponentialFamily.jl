@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog, NaturalParameters, get_params, lognormalizer
+import ExponentialFamily: mirrorlog, NaturalParameters, get_params, lognormalizer, basemeasure
 import SpecialFunctions: loggamma
 
 @testset "Beta" begin
@@ -66,6 +66,13 @@ import SpecialFunctions: loggamma
             end
             for i in 1:10
                 @test isproper(NaturalParameters(Beta, [-i, -i])) === false
+            end
+        end
+
+        @testset "basemeasure" begin
+            for (i, j) in (1:10, 1:10)
+                @test basemeasure(NaturalParameters(Beta, [i, j]), rand()) == 1.0
+                @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
             end
         end
     end

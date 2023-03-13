@@ -163,3 +163,5 @@ function isproper(params::NaturalParameters{<:Union{WishartMessage, Wishart}})
 
     isposdef(-η2) && (0 < η1)
 end
+
+basemeasure(::Union{<:NaturalParameters{<:Union{WishartMessage, Wishart}}, <:Union{WishartMessage, Wishart}}, x) = 1.0

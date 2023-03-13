@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
 @testset "Categorical" begin
 
@@ -55,6 +55,9 @@ import ExponentialFamily: NaturalParameters, get_params
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
 
         @test logpdf_sample_friendly(dist) == (dist, dist)
+
+        @test basemeasure(η1, rand()) == 1.0
+        @test basemeasure(η2, rand()) == 1.0
     end
 end
 

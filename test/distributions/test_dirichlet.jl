@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
 import SpecialFunctions: loggamma
 @testset "Dirichlet" begin
 
@@ -76,6 +76,7 @@ import SpecialFunctions: loggamma
         @test isproper(NaturalParameters(Dirichlet, [10, 2, 3])) === true
         @test isproper(NaturalParameters(Dirichlet, [-0.1, -0.2, 3])) === true
         @test isproper(NaturalParameters(Dirichlet, [-0.1, -0.2, -3])) === false
+        @test basemeasure(NaturalParameters(Dirichlet, [-0.1, -0.2, -3]), rand(3)) == 1.0
     end
 end
 

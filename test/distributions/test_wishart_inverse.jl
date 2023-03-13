@@ -7,7 +7,7 @@ using Random
 using LinearAlgebra
 using StableRNGs
 
-import ExponentialFamily: InverseWishartMessage, NaturalParameters, get_params
+import ExponentialFamily: InverseWishartMessage, NaturalParameters, get_params, basemeasure
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
@@ -189,6 +189,12 @@ import StatsFuns: logmvgamma
                 @test isproper(NaturalParameters(InverseWishart, [3.0, [-i 0.0; 0.0 -i]])) === false
                 @test isproper(NaturalParameters(InverseWishart, [3.0, [i 0.0; 0.0 -i]])) === false
                 @test isproper(NaturalParameters(InverseWishart, [-1.0, [-i 0.0; 0.0 -i]])) === true
+            end
+        end
+
+        @testset "basemeasure" begin
+            for i in 1:10
+                @test basemeasure(NaturalParameters(InverseWishart, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
             end
         end
     end

@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
 @testset "MatrixDirichlet" begin
     @testset "common" begin
@@ -108,6 +108,8 @@ import ExponentialFamily: NaturalParameters, get_params
         @test isproper(NaturalParameters(MatrixDirichlet, [10 2; 3 2])) === true
         @test isproper(NaturalParameters(Dirichlet, [-0.1 -0.2; 3 -0.9])) === true
         @test isproper(NaturalParameters(Dirichlet, [-0.1 -0.2; -3 1])) === false
+
+        @test basemeasure(NaturalParameters(Dirichlet, [-0.1 -0.2; -3 1]), rand()) == 1.0
     end
 end
 

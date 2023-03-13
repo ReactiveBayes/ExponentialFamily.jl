@@ -6,7 +6,7 @@ using Distributions
 using Random
 using LinearAlgebra
 
-import ExponentialFamily: WishartMessage, NaturalParameters, get_params
+import ExponentialFamily: WishartMessage, NaturalParameters, get_params, basemeasure
 import StatsFuns: logmvgamma
 
 @testset "Wishart" begin
@@ -104,6 +104,12 @@ import StatsFuns: logmvgamma
                 @test isproper(NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])) === true
                 @test isproper(NaturalParameters(Wishart, [3.0, [i 0.0; 0.0 -i]])) === false
                 @test isproper(NaturalParameters(Wishart, [-1.0, [-i 0.0; 0.0 -i]])) === false
+            end
+        end
+
+        @testset "basemeasure" begin
+            for i in 1:10
+                @test basemeasure(NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
             end
         end
     end

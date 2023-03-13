@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import SpecialFunctions: logfactorial
-import ExponentialFamily: xtlog, NaturalParameters, get_params
+import ExponentialFamily: xtlog, NaturalParameters, get_params, basemeasure
 
 @testset "Erlang" begin
     @testset "Constructors" begin
@@ -47,6 +47,8 @@ import ExponentialFamily: xtlog, NaturalParameters, get_params
         @test Distributions.logpdf(Erlang(5, 2.0), 1.0) ≈
               Distributions.logpdf(convert(NaturalParameters, Erlang(5, 2.0)), 1.0)
     end
+
+    @test basemeasure(Erlang(5, 2.0), rand(3)) == 1.0
 end
 
 end

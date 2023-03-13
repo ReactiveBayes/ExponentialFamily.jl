@@ -51,3 +51,6 @@ function isproper(params::NaturalParameters{Erlang})
     b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end
+
+#due to our parameterization 
+basemeasure(::Union{<:NaturalParameters{Erlang}, <:Erlang}, x) = 1.0

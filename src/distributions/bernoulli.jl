@@ -89,3 +89,5 @@ end
 isproper(params::NaturalParameters{Bernoulli}) = true
 
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
+
+basemeasure(T::Union{<:NaturalParameters{Bernoulli}, <:Bernoulli}, x) = 1.0

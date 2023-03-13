@@ -36,3 +36,4 @@ function lognormalizer(η::NaturalParameters{Exponential})
 end
 
 isproper(::Type{<:Exponential}, parms) = (first(params) <= 0)
+basemeasure(::Union{<:NaturalParameters{Exponential}, <:Exponential}, x) = 1.0

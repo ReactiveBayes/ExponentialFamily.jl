@@ -46,3 +46,5 @@ function logpdf_sample_friendly(dist::Categorical)
     friendly = Categorical(p)
     return (friendly, friendly)
 end
+
+basemeasure(::Union{<:NaturalParameters{Categorical}, <:Categorical}, x) = 1.0

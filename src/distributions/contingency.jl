@@ -161,6 +161,7 @@ function icdf(dist::Contingency, probability::Float64)
 end
 
 isproper(params::NaturalParameters{Contingency}) = true
+basemeasure(::Union{<:NaturalParameters{Contingency}, <:Contingency}, x) = 1.0
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     probvector   = vec(contingency_matrix(dist))

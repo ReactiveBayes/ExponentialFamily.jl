@@ -219,3 +219,11 @@ function isproper(params::NaturalParameters{<:Union{InverseWishartMessage, Inver
 
     isposdef(-η2) && (η1 < 0)
 end
+
+basemeasure(
+    ::Union{
+        <:NaturalParameters{<:Union{InverseWishartMessage, InverseWishart}},
+        <:Union{InverseWishartMessage, InverseWishart}
+    },
+    x
+) = 1.0
