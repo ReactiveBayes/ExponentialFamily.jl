@@ -19,30 +19,30 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
     end
 
     @testset "Geometric prod" begin
-        @test prod(ProdAnalytical(),Geometric(0.5),Geometric(0.6)) == Geometric(0.8)
-        @test prod(ProdAnalytical(),Geometric(0.3),Geometric(0.8)) == Geometric(0.8600000000000001)
-        @test prod(ProdAnalytical(),Geometric(0.5),Geometric(0.5)) == Geometric(0.75)
+        @test prod(ProdAnalytical(), Geometric(0.5), Geometric(0.6)) == Geometric(0.8)
+        @test prod(ProdAnalytical(), Geometric(0.3), Geometric(0.8)) == Geometric(0.8600000000000001)
+        @test prod(ProdAnalytical(), Geometric(0.5), Geometric(0.5)) == Geometric(0.75)
     end
 
     @testset "naturalparameter related Geometric" begin
         d1 = Geometric(0.6)
         d2 = Geometric(0.3)
-        η1 = NaturalParameters(Geometric, [log(1-0.6)])
-        η2 = NaturalParameters(Geometric, [log(1-0.3)])
+        η1 = NaturalParameters(Geometric, [log(1 - 0.6)])
+        η2 = NaturalParameters(Geometric, [log(1 - 0.3)])
 
-        @test convert(Geometric, η1) ≈ d1 
-        @test convert(Geometric, η2) ≈ d2 
-        
-        @test convert(NaturalParameters, d1) == η1 
-        @test convert(NaturalParameters, d2) == η2 
+        @test convert(Geometric, η1) ≈ d1
+        @test convert(Geometric, η2) ≈ d2
+
+        @test convert(NaturalParameters, d1) == η1
+        @test convert(NaturalParameters, d2) == η2
 
         @test lognormalizer(η1) ≈ -log(0.6)
         @test lognormalizer(η2) ≈ -log(0.3)
 
-        @test basemeasure(d1, 5) == 1.
-        @test basemeasure(d2,1) == 1.
-        @test basemeasure(η1,4) == 1.
-        @test basemeasure(η2,2) == 1.
+        @test basemeasure(d1, 5) == 1.0
+        @test basemeasure(d2, 1) == 1.0
+        @test basemeasure(η1, 4) == 1.0
+        @test basemeasure(η2, 2) == 1.0
 
         @test η1 + η2 == NaturalParameters(Geometric, [log(0.4) + log(0.7)])
         @test η1 - η2 == NaturalParameters(Geometric, [log(0.4) - log(0.7)])
@@ -52,10 +52,9 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
         @test pdf(η1, 3) == pdf(d1, 3)
         @test pdf(η2, 3) == pdf(d2, 3)
-        
-        @test isproper(NaturalParameters(Geometric, [log(0.6)])) == true 
+
+        @test isproper(NaturalParameters(Geometric, [log(0.6)])) == true
         @test isproper(NaturalParameters(Geometric, [1.3])) == false
     end
-    
 end
 end
