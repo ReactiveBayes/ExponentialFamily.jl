@@ -4,7 +4,8 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import SpecialFunctions: loggamma
 @testset "Dirichlet" begin
 
     # Dirichlet comes from Distributions.jl and most of the things should be covered there
@@ -53,6 +54,29 @@ using Random
 
         @test promote_variate_type(Multivariate, MatrixDirichlet) === Dirichlet
         @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
+    end
+
+    @testset "NaturalParameters" begin
+        @test convert(NaturalParameters, Dirichlet([0.6, 0.7])) == NaturalParameters(Dirichlet, [0.6, 0.7] .- 1)
+        b_01 = Dirichlet([10.0, 10.0, 10.0])
+        @test lognormalizer(convert(NaturalParameters, Dirichlet([1, 1]))) ≈ 2loggamma(2)
+        @test lognormalizer(convert(NaturalParameters, Dirichlet([0.1, 0.2]))) ≈
+              loggamma(0.1) + loggamma(0.2) - loggamma(0.3)
+        for i in 1:9
+            b = Dirichlet([i / 10.0, i / 5, i])
+            bnp = convert(NaturalParameters, b)
+            @test convert(Distribution, bnp) ≈ b
+            @test logpdf(bnp, [0.5, 0.4, 0.1]) ≈ logpdf(b, [0.5, 0.4, 0.1])
+            @test logpdf(bnp, [0.2, 0.3, 0.5]) ≈ logpdf(b, [0.2, 0.3, 0.5])
+
+            @test convert(NaturalParameters, b) == bnp
+
+            @test prod(ProdAnalytical(), convert(Distribution, convert(NaturalParameters, b_01) - bnp), b) ≈ b_01
+        end
+        @test isproper(NaturalParameters(Dirichlet, [10, 2, 3])) === true
+        @test isproper(NaturalParameters(Dirichlet, [-0.1, -0.2, 3])) === true
+        @test isproper(NaturalParameters(Dirichlet, [-0.1, -0.2, -3])) === false
+        @test basemeasure(NaturalParameters(Dirichlet, [-0.1, -0.2, -3]), rand(3)) == 1.0
     end
 end
 

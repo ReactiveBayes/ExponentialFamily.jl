@@ -3,6 +3,7 @@ using Test
 
 @testset "ExponentialFamily" begin
     include("test_distributions.jl")
+    include("test_natural_parameters.jl")
     include("distributions/test_common.jl")
     include("distributions/test_bernoulli.jl")
     include("distributions/test_beta.jl")
