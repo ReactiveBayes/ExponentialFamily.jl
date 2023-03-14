@@ -17,6 +17,7 @@ function Base.prod(::ProdAnalytical, left::Multinomial, right::Multinomial)
     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
     norm = sum(mvec)
 
+    @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
     return Multinomial(left.n, mvec ./ norm)
 end
 
@@ -55,6 +56,7 @@ function Base.:+(left::NaturalParameters{Multinomial}, right::NaturalParameters{
     η_left = get_params(left)
     η_right = get_params(right)
 
+    @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
     return NaturalParameters(Multinomial, (first(η_left), last(η_left) + last(η_right)))
 end
 
@@ -62,5 +64,6 @@ function Base.:-(left::NaturalParameters{Multinomial}, right::NaturalParameters{
     η_left = get_params(left)
     η_right = get_params(right)
 
+    @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
     return NaturalParameters(Multinomial, (first(η_left), last(η_left) - last(η_right)))
 end

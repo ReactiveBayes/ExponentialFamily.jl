@@ -39,6 +39,9 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
             Multinomial(10, [0.1, 0.4, 0.3, 0.2])
         ) ==
               Multinomial(10, [0.1, 0.4, 0.3, 0.2])
+
+        @test_throws AssertionError prod(ProdAnalytical(), Multinomial(4, [0.2, 0.4, 0.4]), Multinomial(5, [0.1, 0.3, 0.6]))
+        @test_throws AssertionError prod(ProdAnalytical(), Multinomial(4, [0.2, 0.4, 0.4]), Multinomial(3, [0.1, 0.3, 0.6]))
     end
 
     @testset "naturalparameter related Multinomial" begin
@@ -65,6 +68,11 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
         @test η1 + η2 == NaturalParameters(Multinomial, (5, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)]))
         @test η1 - η2 == NaturalParameters(Multinomial, (5, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)]))
+
+        @test_throws AssertionError NaturalParameters(Multinomial, (5, [log(0.1), log(0.4), log(0.5)])) + NaturalParameters(Multinomial, (6, [log(0.1), log(0.4), log(0.5)]))
+        @test_throws AssertionError NaturalParameters(Multinomial, (5, [log(0.1), log(0.4), log(0.5)])) + NaturalParameters(Multinomial, (4, [log(0.1), log(0.4), log(0.5)]))
+        @test_throws AssertionError NaturalParameters(Multinomial, (5, [log(0.1), log(0.4), log(0.5)])) - NaturalParameters(Multinomial, (6, [log(0.1), log(0.4), log(0.5)]))
+        @test_throws AssertionError NaturalParameters(Multinomial, (5, [log(0.1), log(0.4), log(0.5)])) - NaturalParameters(Multinomial, (4, [log(0.1), log(0.4), log(0.5)]))
 
         @test logpdf(η1, [1, 2, 2]) == logpdf(d1, [1, 2, 2])
         @test logpdf(η2, [1, 2, 2]) == logpdf(d2, [1, 2, 2])
