@@ -99,10 +99,10 @@ function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDis
     η = get_params(params)
     a = first(η)
     b = getindex(η, 2)
-    return GammaShapeRate(a + 1, -b)
+    return first(typeof(params).parameters)(a + 1, -b)
 end
 
-Base.convert(::Type{NaturalParameters}, dist::Type{<:GammaDistributionsFamily}) =
+Base.convert(::Type{NaturalParameters}, dist::GammaDistributionsFamily) =
     NaturalParameters(typeof(dist), [shape(dist) - 1, -rate(dist)])
 
 # Natural parameters to standard dist. type

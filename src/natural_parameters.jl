@@ -22,6 +22,12 @@ Base.:+(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
 Base.:-(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
     NaturalParameters(T, get_params(left) - get_params(right))
 Base.:(==)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) == get_params(right)
+
+function Base.:(≈)(left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2}
+    T = promote_type(T1, T2)
+    return ≈(NaturalParameters(T, get_params(left)), NaturalParameters(T, get_params(right)))
+end
+
 Base.:(≈)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) ≈ get_params(right)
 
 Distributions.logpdf(np::NaturalParameters{T}, x) where {T} = Distributions.logpdf(Base.convert(T, np), x)
