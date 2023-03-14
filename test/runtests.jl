@@ -26,5 +26,6 @@ using Test
     include("distributions/test_wishart.jl")
     include("distributions/test_wishart_inverse.jl")
     include("distributions/test_erlang.jl")
+    include("distributions/test_von_mises_fisher.jl")
     include("distributions/test_vonmises.jl")
 end
