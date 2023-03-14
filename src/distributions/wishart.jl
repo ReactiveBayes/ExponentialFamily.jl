@@ -141,10 +141,8 @@ function Base.convert(::Type{Distribution}, params::NaturalParameters{<:WishartM
     p = first(size(η2))
 
     if isproper(params)
-        @info "Return wishart"
         return Wishart(2 * η1 + p + 1, 0.5cholinv(-η2))
     end
-    @info "Return wishart message"
     return WishartMessage(2 * η1 + p + 1, 0.5cholinv(-η2))
 end
 

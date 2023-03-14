@@ -30,6 +30,6 @@ end
 
 Base.:(≈)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) ≈ get_params(right)
 
-Distributions.logpdf(np::NaturalParameters{T}, x) where {T} = Distributions.logpdf(Base.convert(T, np), x)
-Distributions.pdf(np::NaturalParameters{T}, x) where {T} = Distributions.pdf(Base.convert(T, np), x)
-Distributions.cdf(np::NaturalParameters{T}, x) where {T} = Distributions.cdf(Base.convert(T, np), x)
+Distributions.logpdf(np::NaturalParameters, x) = Distributions.logpdf(Base.convert(Distribution, np), x)
+Distributions.pdf(np::NaturalParameters, x)  = Distributions.pdf(Base.convert(Distribution, np), x)
+Distributions.cdf(np::NaturalParameters, x) = Distributions.cdf(Base.convert(Distribution, np), x)
