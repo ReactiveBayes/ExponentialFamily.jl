@@ -20,7 +20,7 @@ Base.:+(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
 Base.:-(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
     NaturalParameters(T, get_params(left) - get_params(right))
 Base.:(==)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) == get_params(right)
-
+Base.:(≈)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) ≈ get_params(right)
 Distributions.logpdf(np::NaturalParameters{T}, x) where {T} = Distributions.logpdf(Base.convert(T, np), x)
 Distributions.pdf(np::NaturalParameters{T}, x) where {T} = Distributions.pdf(Base.convert(T, np), x)
 Distributions.cdf(np::NaturalParameters{T}, x) where {T} = Distributions.cdf(Base.convert(T, np), x)
