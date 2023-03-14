@@ -1,16 +1,18 @@
 using Distributions
 
-struct NaturalParameters{T, P}
+struct NaturalParameters{T, P, C}
     params::P
-    NaturalParameters(::Type{T}, params::P) where {T, P} = begin
+    conditioner::C
+    NaturalParameters(::Type{T}, params::P, conditioner::C = nothing) where {T, P, C} = begin
         @assert check_valid_natural(T, params) == true "Parameter vector $(params) is not a valid natural parameter for distribution $(T)"
-        new{T, P}(params)
+        new{T, P, C}(params, conditioner)
     end
 end
 
 function check_valid_natural end
 
 get_params(np::NaturalParameters) = np.params
+get_conditioner(np::NaturalParameters) = np.conditioner
 
 Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} =
     Base.convert(T, Base.convert(Distribution, params))
