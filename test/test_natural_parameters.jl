@@ -1,7 +1,7 @@
 module NaturalParametersTest
 
 using ExponentialFamily, Test, StatsFuns
-import ExponentialFamily: NaturalParameters, get_params
+import ExponentialFamily: NaturalParameters, get_params, get_conditioner
 @testset "NaturalParameters" begin
     params1 = NaturalParameters(Bernoulli, [0.9])
     params2 = NaturalParameters(Bernoulli, [0.2])
@@ -13,6 +13,12 @@ import ExponentialFamily: NaturalParameters, get_params
     logprobability1 = getindex(get_params(params1), 1)
     @test Base.convert(Bernoulli, params1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
     @test Base.convert(NaturalParameters, Bernoulli(0.9)) == NaturalParameters(Bernoulli, [logit(0.9)])
+
+    params3 = NaturalParameters(Categorical, log.([0.9, 0.1]), 2.0)
+    @test get_conditioner(params3) == 2.0
+    f = x -> x^3
+    params4 = NaturalParameters(Categorical, log.([0.9, 0.1]), f)
+    @test get_conditioner(params4) == f
 end
 
 @testset "pdf,cdf" begin
