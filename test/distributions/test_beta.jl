@@ -75,6 +75,12 @@ import SpecialFunctions: loggamma
                 @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
             end
         end
+
+        @testset "+(::NaturalParameters{Beta}, ::NaturalParameters{Beta})" begin
+            left = convert(NaturalParameters, Beta(2))
+            right = convert(NaturalParameters, Beta(5))
+            @test (left + right) == convert(NaturalParameters, Beta(6))
+        end
     end
 end
 
