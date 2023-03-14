@@ -19,7 +19,7 @@ Base.:+(left::NaturalParameters, right::NaturalParameters) = +(plus(left, right)
 Base.:-(left::NaturalParameters, right::NaturalParameters) = -(plus(left, right), left, right)
 
 Base.:+(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where{T1, T2} = NaturalParameters(T1, get_params(left) + get_params(right))
-Base.:-(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where{T1, T2} = NaturalParameters(T2, get_params(left) - get_params(right))
+Base.:-(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where{T1, T2} = NaturalParameters(T1, get_params(left) - get_params(right))
 
 Base.:(==)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) == get_params(right)
 
