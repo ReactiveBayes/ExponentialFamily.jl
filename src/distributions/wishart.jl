@@ -133,7 +133,6 @@ function Base.convert(::Type{NaturalParameters}, dist::Wishart)
     return NaturalParameters(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
 end
 
-
 function Base.convert(::Type{Distribution}, params::NaturalParameters{<:WishartMessage})
     η = get_params(params)
     η1 = first(η)
