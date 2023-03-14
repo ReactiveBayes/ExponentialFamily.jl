@@ -443,38 +443,42 @@ end
 ## Natural parameters for the Normal distribution
 check_valid_natural(::Type{<:NormalDistributionsFamily}, params) = length(params) === 2
 
-function Base.convert(::Type{NaturalParameters}, dist::NormalDistributionsFamily)
+function Base.convert(::Type{NaturalParameters}, dist::UnivariateGaussianDistributionsFamily)
     weightedmean, precision = weightedmean_precision(dist)
-    return NaturalParameters(typeof(dist), [weightedmean, -precision / 2])
+    return NaturalParameters(NormalWeightedMeanPrecision, [weightedmean, -precision / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:NormalDistributionsFamily})
-    variateform = variate_form(first(typeof(params).parameters))
+function Base.convert(::Type{NaturalParameters}, dist::MultivariateNormalDistributionsFamily)
+    weightedmean, precision = weightedmean_precision(dist)
+    return NaturalParameters(MvGaussianWeightedMeanPrecision, [weightedmean, -precision / 2])
+end
+
+function Base.convert(::Type{Distribution}, params::NaturalParameters{<:MvGaussianWeightedMeanPrecision})
     η = get_params(params)
     weightedmean = getindex(η, 1)
     minushalfprecision = getindex(η, 2)
-    if variateform == Univariate
-        return NormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
-    elseif variateform == Multivariate
-        return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
-    else
-        error("The variate form $(variateform) is not supported for Normals")
-    end
+    return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
 end
 
-function lognormalizer(params::NaturalParameters{<:NormalDistributionsFamily})
+function Base.convert(::Type{Distribution}, params::NaturalParameters{<:NormalWeightedMeanPrecision})
+    η = get_params(params)
+    weightedmean = getindex(η, 1)
+    minushalfprecision = getindex(η, 2)
+    return NormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
+end
+
+function lognormalizer(params::NaturalParameters{<:NormalWeightedMeanPrecision})
     η = get_params(params)
     weightedmean = first(η)
     minushalfprecision = getindex(η, 2)
-    variateform = variate_form(first(typeof(params).parameters))
-    if variateform == Univariate
-        return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) / 2
-    elseif variateform == Multivariate
-        return -weightedmean' * (minushalfprecision \ weightedmean) / 4 -
-               logdet(-2 * minushalfprecision) / 2
-    else
-        error("The variate form $(variateform) is not supported for Normals")
-    end
+    return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) / 2
+end
+
+function lognormalizer(params::NaturalParameters{<:MvGaussianWeightedMeanPrecision})
+    η = get_params(params)
+    weightedmean = first(η)
+    minushalfprecision = getindex(η, 2)
+    return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) / 2
 end
 
 # # # Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
