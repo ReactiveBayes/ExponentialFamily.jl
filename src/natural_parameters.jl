@@ -15,12 +15,15 @@ get_params(np::NaturalParameters) = np.params
 Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} =
     Base.convert(T, Base.convert(Distribution, params))
 
-Base.:+(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
-    NaturalParameters(T, get_params(left) + get_params(right))
-Base.:-(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
-    NaturalParameters(T, get_params(left) - get_params(right))
+Base.:+(left::NaturalParameters, right::NaturalParameters) = +(plus(left, right), left, right)
+
+Base.:+(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where{T1, T2} = NaturalParameters(T1, get_params(left) + get_params(right))
+Base.:-(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where{T1, T2} = NaturalParameters(T2, get_params(left) - get_params(right))
+
 Base.:(==)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} = get_params(left) == get_params(right)
 
 Distributions.logpdf(np::NaturalParameters{T}, x) where {T} = Distributions.logpdf(Base.convert(T, np), x)
 Distributions.pdf(np::NaturalParameters{T}, x) where {T} = Distributions.pdf(Base.convert(T, np), x)
 Distributions.cdf(np::NaturalParameters{T}, x) where {T} = Distributions.cdf(Base.convert(T, np), x)
+
+plus(::NaturalParameters, ::NaturalParameters) = Concat()
