@@ -4,6 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
 @testset "Categorical" begin
 
@@ -40,21 +41,23 @@ using Random
     end
 
     @testset "EF related Categorical" begin
-        ηcat = CategoricalNaturalParameters([log(0.5), log(0.5)])
+        ηcat = NaturalParameters(Categorical, [log(0.5), log(0.5)])
         dist = Categorical([0.5, 0.5])
-        η1   = CategoricalNaturalParameters([log(0.5), log(0.5)])
-        η2   = CategoricalNaturalParameters([log(0.5), log(0.5)])
+        η1   = NaturalParameters(Categorical, [log(0.5), log(0.5)])
+        η2   = NaturalParameters(Categorical, [log(0.5), log(0.5)])
 
-        @test convert(Categorical, ηcat) == dist
-        @test as_naturalparams(CategoricalNaturalParameters, log.([0.5, 0.5])) == ηcat
-        @test naturalparams(dist) == CategoricalNaturalParameters(log.([0.5, 0.5]))
-        @test η1 + η2 == CategoricalNaturalParameters([2log(0.5), 2log(0.5)])
-        @test η1 - η2 == CategoricalNaturalParameters([0.0, 0.0])
+        @test convert(Distribution, ηcat) == dist
+        @test convert(NaturalParameters, dist) == NaturalParameters(Categorical, log.([0.5, 0.5]))
+        @test η1 + η2 == NaturalParameters(Categorical, [2log(0.5), 2log(0.5)])
+        @test η1 - η2 == NaturalParameters(Categorical, [0.0, 0.0])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
 
         @test logpdf_sample_friendly(dist) == (dist, dist)
+
+        @test basemeasure(η1, rand()) == 1.0
+        @test basemeasure(η2, rand()) == 1.0
     end
 end
 

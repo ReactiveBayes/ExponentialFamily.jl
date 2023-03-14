@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog
+import ExponentialFamily: xtlog, NaturalParameters, get_params
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -118,17 +118,11 @@ import ExponentialFamily: xtlog
 
     @testset "GammaShapeRateNaturalParameters" begin
         for i in 2:10
-            @test convert(Distribution, GammaNaturalParameters(i, -i)) ≈ GammaShapeRate(i + 1, i)
-            @test Distributions.logpdf(GammaNaturalParameters(i, -i), 10) ≈
+            @test convert(Distribution, NaturalParameters(GammaShapeRate, [i, -i])) ≈ GammaShapeRate(i + 1, i)
+            @test Distributions.logpdf(NaturalParameters(GammaShapeRate, [i, -i]), 10) ≈
                   Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
-            @test isproper(GammaNaturalParameters(i, -i)) === true
-            @test isproper(GammaNaturalParameters(-i, i)) === false
-
-            @test convert(GammaNaturalParameters, i, -i) == GammaNaturalParameters(i, -i)
-            @test convert(GammaNaturalParameters{Float64}, i, -i) == GammaNaturalParameters(i, -i)
-
-            @test as_naturalparams(GammaNaturalParameters, i, -i) == GammaNaturalParameters(i, -i)
-            @test as_naturalparams(GammaNaturalParameters{Float64}, i, -i) == GammaNaturalParameters(i, -i)
+            @test isproper(NaturalParameters(Gamma, [i, -i])) === true
+            @test isproper(NaturalParameters(Gamma, [-i, i])) === false
         end
     end
 

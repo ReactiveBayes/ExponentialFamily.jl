@@ -1,10 +1,9 @@
 export vague
-export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
+export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, cdf, logpdf, logdetcov
 export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
     weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
 export variate_form, value_support, promote_variate_type, convert_eltype
-export naturalparams, as_naturalparams, lognormalizer, NaturalParameters
 
 using Distributions, Random
 
@@ -51,7 +50,7 @@ Note: supports real-valued containers, for which it defines:
 - `variate_form(vector_of_reals) = Multivariate`
 - `variate_form(matrix_of_reals) = Matrixvariate`
 
-See also: [`ReactiveMP.value_support`](@ref)
+See also: [`ExponentialFamily.value_support`](@ref)
 """
 variate_form(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = F
 variate_form(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = F
@@ -77,7 +76,7 @@ Returns the `ValueSupport` sub-type (defined in `Distributions.jl`):
 - `Discrete`, samples take discrete values
 - `Continuous`, samples take continuous real values
 
-See also: [`ReactiveMP.variate_form`](@ref)
+See also: [`ExponentialFamily.variate_form`](@ref)
 """
 value_support(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = S
 value_support(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = S
@@ -116,7 +115,6 @@ convert_eltype(::Type{E}, number::Number) where {E} = convert(E, number)
 
 Returns a type of the distribution. By default fallbacks to the `eltype`.
 
-See also: [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promotesamplefloatype`](@ref)
 """
 sampletype(distribution) = eltype(distribution)
 
@@ -131,7 +129,6 @@ sampletype(::Type{Matrixvariate}, distribution) = Matrix{eltype(distribution)}
 Returns a type of the distribution or the underlying float type in case if sample is `Multivariate` or `Matrixvariate`. 
 By default fallbacks to the `deep_eltype(sampletype(distribution))`.
 
-See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.promote_sampletype`](@ref), [`ReactiveMP.promote_samplefloatype`](@ref)
 """
 samplefloattype(distribution) = deep_eltype(sampletype(distribution))
 
@@ -140,7 +137,6 @@ samplefloattype(distribution) = deep_eltype(sampletype(distribution))
 
 Promotes `sampletype` of the `distributions` to a single type. See also `promote_type`.
 
-See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_samplefloattype`](@ref)
 """
 promote_sampletype(distributions...) = promote_type(sampletype.(distributions)...)
 
@@ -149,7 +145,6 @@ promote_sampletype(distributions...) = promote_type(sampletype.(distributions)..
 
 Promotes `samplefloattype` of the `distributions` to a single type. See also `promote_type`.
 
-See also: [`ReactiveMP.sampletype`](@ref), [`ReactiveMP.samplefloattype`](@ref), [`ReactiveMP.promote_sampletype`](@ref)
 """
 promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
 
@@ -170,7 +165,7 @@ MvNormalMeanPrecision(
 )
 
 
-julia> ReactiveMP.logpdf_sample_friendly(d)
+julia> ExponentialFamily.logpdf_sample_friendly(d)
 (FullNormal(
 dim: 2
 μ: [0.0, 0.0]
@@ -185,27 +180,6 @@ dim: 2
 ```
 """
 logpdf_sample_friendly(something) = (something, something)
-
-"""Abstract type for structures that represent natural parameters of the exponential distributions family"""
-abstract type NaturalParameters end
-
-Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} = convert(T, convert(Distribution, params))
-
-"""
-    naturalparams(distribution)
-
-Returns the natural parameters for the `distribution`. The `distribution` must be a member of the exponential family of distributions.
-"""
-function naturalparams end
-
-"""
-    as_naturalparams(::Type{T}, args...)
-
-Converts `args` (and promotes if necessary) to the natural parameters ot type `T`. Does not always returns an instance of type `T` but the closes one after type promotion.
-"""
-function as_naturalparams end
-
-function lognormalizer end
 
 """
     FactorizedJoint
@@ -254,7 +228,7 @@ There are multiple strategies for prod function, e.g. `ProdAnalytical`, `ProdGen
 
 # Examples:
 ```jldoctest
-using ReactiveMP
+using ExponentialFamily
 
 product = prod(ProdAnalytical(), NormalMeanVariance(-1.0, 1.0), NormalMeanVariance(1.0, 1.0))
 
