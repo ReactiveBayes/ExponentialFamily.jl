@@ -92,11 +92,17 @@ basemeasure(T::Union{<:NaturalParameters{ContinuousBernoulli}, <:ContinuousBerno
 
 plus(::NaturalParameters{ContinuousBernoulli}, ::NaturalParameters{ContinuousBernoulli}) = Plus()
 
-function lognormalizer(params::NaturalParameters{ContinuousBernoulli})
-    η = first(get_params(params))
-    if η ≈ 0.0
-        return log(2)
+function isvague(np::NaturalParameters{ContinuousBernoulli})
+    if first(get_params(np)) ≈ 0.0
+        return VagueContinuousBernoulli()
     else
-        return log((exp(η) - 1) / η + tiny)
+        return NonVagueContinuousBernoulli()
     end
 end
+
+function lognormalizer(::NonVagueContinuousBernoulli,params::NaturalParameters{ContinuousBernoulli})
+    η = first(get_params(params))
+    return log((exp(η) - 1) / η + tiny)  
+end
+lognormalizer(::VagueContinuousBernoulli, params::NaturalParameters{ContinuousBernoulli}) = log(2.0)
+lognormalizer(params::NaturalParameters{ContinuousBernoulli}) = lognormalizer(isvague(params),params)
