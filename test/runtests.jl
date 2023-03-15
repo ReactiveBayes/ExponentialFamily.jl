@@ -6,6 +6,7 @@ using Test
     include("test_natural_parameters.jl")
     include("distributions/test_common.jl")
     include("distributions/test_bernoulli.jl")
+    include("distributions/test_binomial.jl")
     include("distributions/test_beta.jl")
     include("distributions/test_categorical.jl")
     include("distributions/test_contingency.jl")

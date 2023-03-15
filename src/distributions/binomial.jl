@@ -1,9 +1,15 @@
 export Binomial
-export BinomiallNaturalParameters, lognormalizer, naturalparams, logpdf_sample_friendly
+import Distributions: Binomial, probs
+import StatsFuns: logit, logistic
 
-import Distributions: Binomial, ntrials, succprob, failprob
+vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
 
-vague(::Type{<:Binomial}, trials::Int) = Binomial(n)
+probvec(dist::Binomial) = (failprob(dist), succprob(dist))
+
+function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) where {T <: Real, R <: Real}
+    n, p = params(distribution)
+    return Binomial(n, convert(AbstractVector{T}, p))
+end
 
 prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ProdAnalyticalRuleAvailable()
 
@@ -16,63 +22,31 @@ function Base.prod(::ProdAnalytical, left::Binomial, right::Binomial)
     pprod = left_p * right_p
     norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
     @assert norm > 0 "Product of $(left) and $(right) results in non-normalizable distribution"
-    return Binomial(pprod / norm)
+    return Binomial(ntrials(left), pprod / norm)
 end
 
-probvec(dist::Binomial) = (failprob(dist), succprob(dist))
-
-struct BinomialNaturalParameters{T <: Real} <: NaturalParameters
-    η::T
+function Base.convert(::Type{NaturalParameters}, dist::Binomial)
+    n, p = params(dist)
+    return NaturalParameters(Binomial, logit(p), n)
 end
 
-function Base.vec(p::BinomialNaturalParameters)
-    return [p.η]
+function Base.convert(::Type{Distribution}, params::NaturalParameters{Binomial})
+    return Binomial(get_conditioner(params), logistic(get_params(params)))
 end
 
-function BinomialNaturalParameters(v::AbstractVector)
-    @assert length(v) === 1 "`BinomialNaturalParameters` must accept a vector of length `1`."
-    return BinomialNaturalParameters(v[1])
+check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
+
+function check_valid_conditioner(::Type{<:Binomial}, conditioner)
+    isinteger(conditioner) && conditioner > 0
 end
 
-Base.convert(::Type{BinomialNaturalParameters}, η::Real) = convert(BinomialNaturalParameters{typeof(η)}, η)
+isproper(params::NaturalParameters{Binomial}) = get_conditioner(params) > 0 ? true : false
 
-Base.convert(::Type{BinomialNaturalParameters{T}}, η::Real) where {T} = BinomialNaturalParameters(convert(T, η))
+lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1+exp(get_params(params)))
 
-Base.convert(::Type{BinomialNaturalParameters}, vec::AbstractVector) =
-    convert(BinomialNaturalParameters{eltype(vec)}, vec)
+basemeasure(::Union{<:NaturalParameters{Binomial}, <:Binomial}, x) = typeof(x) <: Integer ? binomial(sum(x), x) : error("x must be integer") 
 
-Base.convert(::Type{BinomialNaturalParameters{T}}, vec::AbstractVector) where {T} =
-    BinomialNaturalParameters(convert(AbstractVector{T}, vec))
-
-function Base.:(==)(left::BinomialNaturalParameters, right::BinomialNaturalParameters)
-    return left.η == right.η
-end
-
-as_naturalparams(::Type{T}, args...) where {T <: BinomialNaturalParameters} =
-    convert(BinomialNaturalParameters, args...)
-
-# Standard parameters to natural parameters
-function naturalparams(dist::Binomial)
-    @assert !(succprob(dist) ≈ 1) "Binomial natural parameters are not defiend for p = 1."
-    return BinomialNaturalParameters(log(succprob(dist) / (1 - succprob(dist))))
-end
-
-function convert(::Type{Distribution}, p::BinomialNaturalParameters)
-    return Binomial(n, exp(params.η) / (1 + exp(params.η)))
-end
-
-function Base.:+(left::BinomialNaturalParameters, right::BinomialNaturalParameters)
-    return BinomialNaturalParameters(left.η .+ right.η)
-end
-
-function Base.:-(left::BinomialNaturalParameters, right::BinomialNaturalParameters)
-    return BinomialNaturalParameters(left.η .- right.η)
-end
-
-function lognormalizer(params::BinomialNaturalParameters)
-    return -log(logistic(-params.η))
-end
-
-function Distributions.logpdf(params::BinomialNaturalParameters, x)
-    return x * params.η - lognormalizer(params)
+function plus(np1::NaturalParameters{Binomial}, np2::NaturalParameters{Binomial})
+    condition = get_conditioner(np1) == get_conditioner(np2) && (length(get_params(np1)) == first(size(get_params(np2))))
+    return condition ? Plus() : Concat()
 end
