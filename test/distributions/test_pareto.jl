@@ -31,8 +31,9 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
               Distributions.logpdf(convert(NaturalParameters, Pareto(5.0, 1.0)), 1.0)
     end
     @testset "isproper" begin
-        @test isproper(NaturalParameters(Pareto, [-2.0])) == true
-        @test isproper(NaturalParameters(Pareto, [1.3])) == false
+        @test isproper(NaturalParameters(Pareto, [-2.0],1)) == true
+        @test_throws AssertionError NaturalParameters(Pareto, [-2.0],2.1)
+        @test_throws AssertionError isproper(NaturalParameters(Pareto, [1.3])) 
     end
 end
 end

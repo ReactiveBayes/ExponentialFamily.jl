@@ -31,16 +31,17 @@ function Base.convert(::Type{NaturalParameters}, dist::Multinomial)
 end
 
 function Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial})
-    @assert !isnothing(get_conditioner(η)) "Number of trials should be supplied as a conditioner to convert back. Multinomial natural parameters should always be created with conditioiner"
     return Multinomial(get_conditioner(η), softmax(get_params(η)))
 end
 check_valid_natural(::Type{<:Multinomial}, params) = length(params) >= 1
+function check_valid_conditioner(::Type{<:Multinomial}, conditioner) 
+    isinteger(conditioner) && conditioner > 0
+end
 
 function isproper(params::NaturalParameters{Multinomial})
-    @assert !isnothing(get_conditioner(params)) "Conditioner should be supplied"
     logp = get_params(params)
     n = get_conditioner(params)
-    return (n >= 1) && (length(logp) >= 2)
+    return (n >= 1) && (length(logp) >= 1)
 end
 
 lognormalizer(::NaturalParameters{Multinomial}) = 0.0
@@ -54,7 +55,7 @@ function basemeasure(::Union{<:NaturalParameters{Multinomial}, <:Multinomial}, x
 end
 
 function plus(np1::NaturalParameters{Multinomial}, np2::NaturalParameters{Multinomial})
-    if get_conditioner(np1) == get_conditioner(np2)
+    if get_conditioner(np1) == get_conditioner(np2) && (first(size(get_params(np1))) == first(size(get_params(np2))))
         return Plus()
     else
         return Concat()

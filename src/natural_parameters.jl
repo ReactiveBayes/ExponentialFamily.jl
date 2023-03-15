@@ -5,9 +5,12 @@ struct NaturalParameters{T, P, C}
     conditioner::C
     NaturalParameters(::Type{T}, params::P, conditioner::C = nothing) where {T, P, C} = begin
         @assert check_valid_natural(T, params) == true "Parameter vector $(params) is not a valid natural parameter for distribution $(T)"
+        @assert check_valid_conditioner(T, conditioner) "Parameter vector $(conditioner) is not a valid conditioner for distribution $(T)"
         new{T, P, C}(params, conditioner)
     end
 end
+
+check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === nothing
 
 function check_valid_natural end
 
