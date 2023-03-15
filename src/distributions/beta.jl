@@ -54,3 +54,5 @@ lognormalizer(params::NaturalParameters{Beta}) =
 
 ## due to our parameterization as we use alpha-1 and beta-1
 basemeasure(T::Union{<:NaturalParameters{Beta}, <:Beta}, x) = 1.0
+
+plus(::NaturalParameters{Beta}, ::NaturalParameters{Beta}) = Plus()

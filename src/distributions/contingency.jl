@@ -183,3 +183,5 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractAr
     end
     return container
 end
+
+plus(::NaturalParameters{Contingency}, ::NaturalParameters{Contingency}) = Plus()

@@ -59,6 +59,12 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
         @test isproper(NaturalParameters(Bernoulli, [10])) === true
         @test basemeasure(b_99, 0.1) == 1.0
         @test basemeasure(NaturalParameters(Bernoulli, [10]), 0.2) == 1.0
+
+        @testset "+(::NaturalParameters{Bernoulli}, ::NaturalParameters{Bernoulli})" begin
+            left = convert(NaturalParameters, Bernoulli(0.5))
+            right = convert(NaturalParameters, Bernoulli(0.6))
+            @test (left + right) == convert(NaturalParameters, Bernoulli(0.6))
+        end
     end
 end
 

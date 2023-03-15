@@ -281,15 +281,15 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
             for i in 1:10
                 @test convert(Distribution, NaturalParameters(NormalWeightedMeanPrecision, [i, -i])) ==
                       NormalWeightedMeanPrecision(i, 2 * i)
-                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ==
+                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ≈
                       NaturalParameters(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
-                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ==
+                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ≈
                       NaturalParameters(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
             end
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(NormalMeanVariance, [1, -2])) ≈ -(log(2) - 1 / 8)
+            @test lognormalizer(NaturalParameters(NormalWeightedMeanPrecision, [1, -2])) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "logpdf" begin
@@ -301,8 +301,8 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(NaturalParameters(NormalMeanVariance, [i, -i])) === true
-                @test isproper(NaturalParameters(NormalMeanPrecision, [i, i])) === false
+                @test isproper(NaturalParameters(NormalWeightedMeanPrecision, [i, -i])) === true
+                @test isproper(NaturalParameters(NormalWeightedMeanPrecision, [i, i])) === false
             end
         end
     end
@@ -316,7 +316,7 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
                 ) ==
                       MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
-                @test convert(NaturalParameters, MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])) ==
+                @test convert(NaturalParameters, MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])) ≈
                       NaturalParameters(
                     MvGaussianWeightedMeanPrecision{Float64, Vector{Float64}, Matrix{Float64}},
                     [float([i, 0]), float([-i 0; 0 -i])]
@@ -335,7 +335,7 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(NormalMeanVariance, [1, -2])) ≈ -(log(2) - 1 / 8)
+            @test lognormalizer(NaturalParameters(NormalWeightedMeanPrecision, [1, -2])) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "isproper" begin

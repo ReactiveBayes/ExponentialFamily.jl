@@ -54,3 +54,4 @@ end
 
 #due to our parameterization 
 basemeasure(::Union{<:NaturalParameters{Erlang}, <:Erlang}, x) = 1.0
+plus(::NaturalParameters{Erlang}, ::NaturalParameters{Erlang}) = Plus()

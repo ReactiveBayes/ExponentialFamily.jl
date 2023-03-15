@@ -3,6 +3,7 @@ using TinyHugeNumbers
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
+include("plus_traits.jl")
 include("distributions.jl")
 include("natural_parameters.jl")
 
@@ -34,5 +35,6 @@ include("distributions/erlang.jl")
 include("distributions/exponential.jl")
 include("distributions/von_mises_fisher.jl")
 include("distributions/von_mises.jl")
+include("distributions/pareto.jl")
 
 end

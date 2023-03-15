@@ -73,20 +73,15 @@ import StatsFuns: logmvgamma
             for i in 1:10
                 @test convert(
                     Distribution,
-                    NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])
-                ) ≈
-                      Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
-                @test convert(
-                    Distribution,
                     NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
                 ) ≈
-                      WishartMessage(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
+                      Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
                 distribution = Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -95,21 +90,30 @@ import StatsFuns: logmvgamma
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(Wishart, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
+            @test lognormalizer(NaturalParameters(WishartMessage, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
                   logmvgamma(2, 3.0 + (2 + 1) / 2)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]])) === true
-                @test isproper(NaturalParameters(Wishart, [3.0, [i 0.0; 0.0 -i]])) === false
-                @test isproper(NaturalParameters(Wishart, [-1.0, [-i 0.0; 0.0 -i]])) === false
+                @test isproper(NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === true
+                @test isproper(NaturalParameters(WishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
+                @test isproper(NaturalParameters(WishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === false
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(NaturalParameters(Wishart, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
+                @test basemeasure(NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
+            end
+        end
+
+        @testset "base operations" begin
+            for i in 1:10
+                np1 = NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                np2 = NaturalParameters(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]])
+                @test np1 + np2 - np2 == np1
+                @test np1 + np2 - np1 == np2
             end
         end
     end

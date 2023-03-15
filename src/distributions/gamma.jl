@@ -97,13 +97,13 @@ check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDistributionsFamily})
     η = get_params(params)
-    a = first(η)
-    b = getindex(η, 2)
-    return GammaShapeRate(a + 1, -b)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    return GammaShapeRate(η1 + 1, -η2)
 end
 
-Base.convert(::Type{NaturalParameters}, dist::Type{<:GammaDistributionsFamily}) =
-    NaturalParameters(typeof(dist), [shape(dist) - 1, -rate(dist)])
+Base.convert(::Type{NaturalParameters}, dist::GammaDistributionsFamily) =
+    NaturalParameters(GammaShapeRate, [shape(dist) - 1, -rate(dist)])
 
 # Natural parameters to standard dist. type
 
@@ -122,3 +122,4 @@ function isproper(params::NaturalParameters{<:GammaDistributionsFamily})
 end
 
 basemeasure(::Union{<:NaturalParameters{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0
+plus(::NaturalParameters{GammaShapeRate}, ::NaturalParameters{GammaShapeRate}) = Plus()

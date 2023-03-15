@@ -52,3 +52,4 @@ isproper(params::NaturalParameters{<:Dirichlet}) = all(isless.(-1, get_params(pa
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
 ## due to alpha-1 parameterization
 basemeasure(::Union{<:NaturalParameters{Dirichlet}, <:Dirichlet}, x) = 1.0
+plus(::NaturalParameters{Dirichlet}, ::NaturalParameters{Dirichlet}) = Plus()
