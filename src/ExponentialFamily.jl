@@ -3,6 +3,7 @@ using TinyHugeNumbers
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
+include("plus_traits.jl")
 include("distributions.jl")
 include("natural_parameters.jl")
 

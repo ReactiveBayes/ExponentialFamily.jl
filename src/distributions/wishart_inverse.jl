@@ -219,3 +219,5 @@ basemeasure(
     },
     x
 ) = 1.0
+
+plus(::NaturalParameters{InverseWishartMessage}, ::NaturalParameters{InverseWishartMessage}) = Plus()

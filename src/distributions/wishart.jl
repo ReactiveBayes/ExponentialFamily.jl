@@ -163,3 +163,5 @@ function isproper(params::NaturalParameters{<:WishartMessage})
 end
 
 basemeasure(::Union{<:NaturalParameters{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
+
+plus(::NaturalParameters{WishartMessage}, ::NaturalParameters{WishartMessage}) = Plus()

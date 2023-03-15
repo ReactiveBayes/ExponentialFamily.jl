@@ -193,6 +193,15 @@ import StatsFuns: logmvgamma
                 @test basemeasure(NaturalParameters(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
             end
         end
+
+        @testset "base operations" begin
+            for i in 1:10
+                np1 = NaturalParameters(InverseWishartMessage, [3.0, [i 0.0; 0.0 i]])
+                np2 = NaturalParameters(InverseWishartMessage, [3.0, [2i 0.0; 0.0 2i]])
+                @test np1 + np2 - np2 == np1
+                @test np1 + np2 - np1 == np2
+            end
+        end
     end
 end
 
