@@ -36,7 +36,6 @@ function Base.prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeSca
     )
 end
 
-
 function Base.convert(::Type{GammaShapeScale{T}}, dist::GammaDistributionsFamily) where {T}
     return GammaShapeScale(convert(T, shape(dist)), convert(T, scale(dist)))
 end
@@ -45,7 +44,6 @@ function Base.convert(::Type{GammaShapeScale}, dist::GammaDistributionsFamily{T}
     return convert(GammaShapeScale{T}, dist)
 end
 
-
 function Base.convert(::Type{GammaShapeRate{T}}, dist::GammaDistributionsFamily) where {T}
     return GammaShapeRate(convert(T, shape(dist)), convert(T, rate(dist)))
 end
@@ -53,7 +51,6 @@ end
 function Base.convert(::Type{GammaShapeRate}, dist::GammaDistributionsFamily{T}) where {T}
     return convert(GammaShapeRate{T}, dist)
 end
-
 
 prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
 prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
@@ -82,7 +79,6 @@ function compute_logscale(
     return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
 
-
 function logpdf_sample_friendly(dist::GammaDistributionsFamily)
     friendly = convert(GammaShapeScale, dist)
     return (friendly, friendly)
@@ -99,7 +95,6 @@ end
 
 Base.convert(::Type{NaturalParameters}, dist::GammaDistributionsFamily) =
     NaturalParameters(GammaShapeRate, [shape(dist) - 1, -rate(dist)])
-
 
 function lognormalizer(params::NaturalParameters{<:GammaDistributionsFamily})
     η = get_params(params)

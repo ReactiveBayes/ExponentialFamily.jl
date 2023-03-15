@@ -18,7 +18,6 @@ probvec(dist::Dirichlet) = params(dist)[1]
 mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
 mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
 
-
 promote_variate_type(::Type{Multivariate}, ::Type{<:Dirichlet})  = Dirichlet
 promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichlet
 

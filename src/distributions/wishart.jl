@@ -89,7 +89,6 @@ function Base.convert(::Type{WishartMessage}, dist::Wishart)
     return WishartMessage(ν, cholinv(S))
 end
 
-
 function logpdf_sample_friendly(dist::WishartMessage)
     friendly = convert(Wishart, dist)
     return (friendly, friendly)

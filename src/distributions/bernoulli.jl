@@ -22,7 +22,6 @@ end
 prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
-
     p_left = probvec(left)
     p_right = probvec(right)
 

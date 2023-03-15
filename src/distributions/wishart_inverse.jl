@@ -84,7 +84,6 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage
     axes2 = axes(A, 2)
 
     for C in x
-
         if singular
             r = rank(S)
             randn!(rng, view(A, :, axes2[1:r]))
@@ -147,7 +146,6 @@ function Base.convert(::Type{InverseWishart}, dist::InverseWishartMessage)
 end
 
 Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
-
 
 function logpdf_sample_friendly(dist::InverseWishartMessage)
     friendly = convert(InverseWishart, dist)

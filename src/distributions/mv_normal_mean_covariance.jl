@@ -94,7 +94,6 @@ function Base.prod(
     left::MvNormalMeanCovariance{T1},
     right::MvNormalMeanCovariance{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
-
     xi, W = weightedmean_precision(left)
 
     W_right = precision(right)
