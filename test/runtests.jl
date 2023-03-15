@@ -14,6 +14,8 @@ using Test
     include("distributions/test_exponential.jl")
     include("distributions/test_gamma.jl")
     include("distributions/test_gamma_inverse.jl")
+    include("distributions/test_multinomial.jl")
+    include("distributions/test_geometric.jl")
     include("distributions/test_mv_normal_mean_covariance.jl")
     include("distributions/test_mv_normal_mean_precision.jl")
     include("distributions/test_mv_normal_weighted_mean_precision.jl")
@@ -24,4 +26,7 @@ using Test
     include("distributions/test_wishart.jl")
     include("distributions/test_wishart_inverse.jl")
     include("distributions/test_erlang.jl")
+    include("distributions/test_von_mises_fisher.jl")
+    include("distributions/test_vonmises.jl")
+    include("distributions/test_pareto.jl")
 end
