@@ -34,7 +34,7 @@ function Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial})
     return Multinomial(get_conditioner(η), softmax(get_params(η)))
 end
 check_valid_natural(::Type{<:Multinomial}, params) = length(params) >= 1
-function check_valid_conditioner(::Type{<:Multinomial}, conditioner) 
+function check_valid_conditioner(::Type{<:Multinomial}, conditioner)
     isinteger(conditioner) && conditioner > 0
 end
 

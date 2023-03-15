@@ -47,7 +47,7 @@ function lognormalizer(params::NaturalParameters{Pareto})
 end
 
 check_valid_natural(::Type{<:Pareto}, params) = first(params) < -1
-check_valid_conditioner(::Type{<:Pareto}, conditioner ) = isinteger(conditioner) && conditioner > 0
+check_valid_conditioner(::Type{<:Pareto}, conditioner) = isinteger(conditioner) && conditioner > 0
 function isproper(params::NaturalParameters{Pareto})
     η = get_params(params)
     return (first(η) <= -1)
