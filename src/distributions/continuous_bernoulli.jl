@@ -13,47 +13,57 @@ succprob(dist::ContinuousBernoulli) = dist.λ
 failprob(dist::ContinuousBernoulli) = 1 - succprob(dist)
 probvec(dist::ContinuousBernoulli) = (failprob(dist), succprob(dist))
 
-function Distributions.mean(dist::ContinuousBernoulli)
-    λ = succprob(dist)
-    if λ ≈ 1 / 2
-        return 1 / 2
+struct VagueContinuousBernoulli end
+struct NonVagueContinuousBernoulli end
+
+Distributions.mean(dist::ContinuousBernoulli) = mean(isvague(dist), dist)
+Distributions.var(dist::ContinuousBernoulli) = mean(isvague(dist), dist)
+Distributions.logpdf(dist::ContinuousBernoulli, x) = logpdf(isvague(dist), dist, x)
+Distributions.pdf(dist::ContinuousBernoulli, x) = exp(Distributions.logpdf(dist, x))
+Distributions.cdf(dist::ContinuousBernoulli, x) = cdf(isvague(dist), dist, x)
+
+function isvague(dist::ContinuousBernoulli)
+    if succprob(dist) ≈ 0.5
+        return VagueContinuousBernoulli()
     else
-        return λ / (2λ - 1) + 1 / (2atanh(1 - 2λ))
+        return NonVagueContinuousBernoulli()
     end
 end
-
-function Distributions.var(dist::ContinuousBernoulli)
+function mean(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
-    if λ ≈ 1 / 2
-        return 1 / 2
-    else
-        return λ * (1 - λ) / (1 - 2λ)^2 + 1 / (2atanh(1 - 2λ))^2
-    end
+    return λ / (2λ - 1) + 1 / (2atanh(1 - 2λ))
+end
+mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
+
+function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
+    λ = succprob(dist)
+    return λ * (1 - λ) / (1 - 2λ)^2 + 1 / (2atanh(1 - 2λ))^2
+end
+var(::VagueContinuousBernoulli, dist) = 1 / 2
+
+function cdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+    @assert 0 <= x <= 1 "cdf should be evaluated at a point between 0 and 1."
+    λ = succprob(dist)
+    return (λ^x * (1 - λ)^(1 - x) + λ - 1) / (2λ - 1)
+end
+function cdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+    @assert 0 <= x <= 1 "cdf should be evaluated at a point between 0 and 1."
+    return x
 end
 
-function Distributions.cdf(dist::ContinuousBernoulli, x)
-    λ = succprob(dist)
-    if λ ≈ 1 / 2
-        return x
-    else
-        return (λ^x * (1 - λ)^(1 - x) + λ - 1) / (2λ - 1)
-    end
-end
-
-function Distributions.logpdf(dist::ContinuousBernoulli, x)
+function logpdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x)
     @assert 0 <= x <= 1 "logpdf should be evaluated at a point between 0 and 1."
     λ = succprob(dist)
-
-    if λ ≈ 1 / 2
-        c = 2
-    else
-        c = 2atanh(1 - 2λ) / (1 - 2λ)
-    end
-
+    c = 2atanh(1 - 2λ) / (1 - 2λ)
     return c * x * log(λ) + (1 - x) * log(1 - λ)
 end
 
-Distributions.pdf(dist::ContinuousBernoulli, x) = exp(logpdf(dist, x))
+function logpdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+    @assert 0 <= x <= 1 "logpdf should be evaluated at a point between 0 and 1."
+    λ = succprob(dist)
+    c = 2
+    return c * x * log(λ) + (1 - x) * log(1 - λ)
+end
 
 prod_analytical_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ProdAnalyticalRuleAvailable()
 

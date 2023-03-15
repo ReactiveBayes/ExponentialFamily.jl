@@ -8,10 +8,6 @@ using StatsFuns
 import ExponentialFamily: NaturalParameters, get_params, compute_logscale, lognormalizer, basemeasure
 
 @testset "ContinuousBernoulli" begin
-
-    # ContinuousBernoulli comes from Distributions.jl and most of the things should be covered there
-    # Here we test some extra ExponentialFamily.jl specific functionality
-
     @testset "vague" begin
         d = vague(ContinuousBernoulli)
 
