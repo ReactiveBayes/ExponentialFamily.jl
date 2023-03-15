@@ -74,18 +74,13 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test basemeasure(d1, [1, 2, 2]) == basemeasure(η1, [1, 2, 2])
         @test basemeasure(d2, [1, 2, 2]) == basemeasure(η2, [1, 2, 2])
 
-        @test η1 + η2 == NaturalParameters(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)],5)
-        @test η1 - η2 == NaturalParameters(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)],5)
-
-        @test_throws AssertionError NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5) +
-                                    NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
-        @test_throws AssertionError NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5) +
-                                    NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 4)
-        @test_throws AssertionError NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5) -
-                                    NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
-        @test_throws AssertionError NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5) -
-                                    NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 4)
-
+        @test η1 + η2 == NaturalParameters(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
+        @test η1 - η2 == NaturalParameters(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)], 5)
+        @test η1 + η2 - η2 ≈ η1
+        @test η1 + η2 - η1 ≈ η2
+        η3 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
+        η4 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
+        @test η3 + η4 == [η3, η4]
         @test logpdf(η1, [1, 2, 2]) == logpdf(d1, [1, 2, 2])
         @test logpdf(η2, [1, 2, 2]) == logpdf(d2, [1, 2, 2])
 

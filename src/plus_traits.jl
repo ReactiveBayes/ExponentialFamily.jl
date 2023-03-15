@@ -1,7 +1,5 @@
-export Plus, Concat, Conditioned 
+export Plus, Concat
 
 struct Plus end
 
 struct Concat end
-
-struct Conditioned end
