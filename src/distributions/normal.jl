@@ -497,3 +497,6 @@ isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-get
 
 basemeasure(::Union{<:NaturalParameters{<:NormalDistributionsFamily}, <:NormalDistributionsFamily}, x) =
     (2pi)^(-length(x) / 2)
+
+plus(::NaturalParameters{MvNormalWeightedMeanPrecision}, ::NaturalParameters{MvNormalWeightedMeanPrecision}) = Plus()
+plus(::NaturalParameters{NormalWeightedMeanPrecision}, ::NaturalParameters{NormalWeightedMeanPrecision}) = Plus()

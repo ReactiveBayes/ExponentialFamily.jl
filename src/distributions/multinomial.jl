@@ -27,18 +27,19 @@ function Base.convert(::Type{NaturalParameters}, dist::Multinomial)
     logprobabilities = log.(p)
 
     # The params of NaturalParameters(Multinomial) is a Tuple (n, log(probvec))
-    return NaturalParameters(Multinomial, (n, logprobabilities))
+    return NaturalParameters(Multinomial, logprobabilities,n)
 end
 
-Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial}) =
-    Multinomial(first(get_params(η)), softmax(last(get_params(η))))
-
-check_valid_natural(::Type{<:Multinomial}, params) = length(params) == 2
+function Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial}) 
+    @assert !isnothing(get_conditioner(η)) "Number of trials should be supplied as a conditioner to convert back. Multinomial natural parameters should always be created with conditioiner"
+    return Multinomial(get_conditioner(η), softmax(get_params(η)))
+end
+check_valid_natural(::Type{<:Multinomial}, params) = length(params) >= 1 
 
 function isproper(params::NaturalParameters{Multinomial})
-    η = get_params(params)
-    n = first(η)
-    logp = last(η)
+    @assert !isnothing(get_conditioner(params)) "Conditioner should be supplied"
+    logp  = get_params(params)
+    n = get_conditioner(params)
     return (n >= 1) && (length(logp) >= 2)
 end
 
@@ -52,18 +53,20 @@ function basemeasure(::Union{<:NaturalParameters{Multinomial}, <:Multinomial}, x
     return factorial(n) / prod(factorial.(x))
 end
 
-function Base.:+(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
-    η_left = get_params(left)
-    η_right = get_params(right)
+plus(::NaturalParameters{Multinomial}, ::NaturalParameters{Multinomial}) = Conditioned()
 
-    @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
-    return NaturalParameters(Multinomial, (first(η_left), last(η_left) + last(η_right)))
-end
+# function Base.:+(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
+#     η_left = get_params(left)
+#     η_right = get_params(right)
 
-function Base.:-(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
-    η_left = get_params(left)
-    η_right = get_params(right)
+#     @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
+#     return NaturalParameters(Multinomial, (first(η_left), last(η_left) + last(η_right)))
+# end
 
-    @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
-    return NaturalParameters(Multinomial, (first(η_left), last(η_left) - last(η_right)))
-end
+# function Base.:-(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
+#     η_left = get_params(left)
+#     η_right = get_params(right)
+
+#     @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
+#     return NaturalParameters(Multinomial, (first(η_left), last(η_left) - last(η_right)))
+# end

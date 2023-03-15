@@ -19,7 +19,7 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Pareto, R <:
     return Pareto(n1, n2)
 end
 
-function mean(dist::Pareto)
+function Distributions.mean(dist::Pareto)
     k, θ = params(dist)
     k > 1 ? k * θ / (k - 1) : Inf
 end
@@ -53,3 +53,4 @@ function isproper(params::NaturalParameters{Pareto})
     return (first(η) <= -1)
 end
 basemeasure(::Union{<:NaturalParameters{Pareto}, <:Pareto}, x) = 1.0
+plus(::NaturalParameters{Pareto}, ::NaturalParameters{Pareto}) = Plus()

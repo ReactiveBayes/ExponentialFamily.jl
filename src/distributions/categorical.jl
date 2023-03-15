@@ -48,3 +48,4 @@ function logpdf_sample_friendly(dist::Categorical)
 end
 
 basemeasure(::Union{<:NaturalParameters{Categorical}, <:Categorical}, x) = 1.0
+plus(::NaturalParameters{Categorical}, ::NaturalParameters{Categorical}) = Plus()

@@ -27,3 +27,4 @@ function isproper(params::NaturalParameters{Geometric})
 end
 
 basemeasure(::Union{<:NaturalParameters{Geometric}, <:Geometric}, x) = 1.0
+plus(::NaturalParameters{Geometric}, ::NaturalParameters{Geometric}) = Plus()

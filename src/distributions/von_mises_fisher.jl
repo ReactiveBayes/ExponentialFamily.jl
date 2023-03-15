@@ -44,4 +44,6 @@ function lognormalizer(params::NaturalParameters{VonMisesFisher})
     p = length(η)
     return log(besselj(0.5p - 1, κ))
 end
-basemeasure(T::Union{<:NaturalParameters{VonMisesFisher}, <:VonMisesFisher}, x) = (1 / 2pi)^(length(x) / 2)
+basemeasure(::Union{<:NaturalParameters{VonMisesFisher}, <:VonMisesFisher}, x) = (1 / 2pi)^(length(x) / 2)
+
+plus(::NaturalParameters{VonMisesFisher}, ::NaturalParameters{VonMisesFisher}) = Plus()

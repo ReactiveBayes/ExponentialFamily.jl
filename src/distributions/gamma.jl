@@ -122,3 +122,4 @@ function isproper(params::NaturalParameters{<:GammaDistributionsFamily})
 end
 
 basemeasure(::Union{<:NaturalParameters{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0
+plus(::NaturalParameters{GammaShapeRate}, ::NaturalParameters{GammaShapeRate}) = Plus()

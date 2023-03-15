@@ -37,4 +37,5 @@ function lognormalizer(params::NaturalParameters{VonMises})
     κ = sqrt(η' * η)
     return log(besselj0(κ))
 end
-basemeasure(T::Union{<:NaturalParameters{VonMises}, <:VonMises}, x) = 1 / 2pi
+basemeasure(::Union{<:NaturalParameters{VonMises}, <:VonMises}, x) = 1 / 2pi
+plus(::NaturalParameters{VonMises}, ::NaturalParameters{VonMises}) = Plus()

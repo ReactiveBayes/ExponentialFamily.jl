@@ -56,3 +56,4 @@ isproper(params::NaturalParameters{<:MatrixDirichlet}) = all(isless.(-1, get_par
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Matrix)
 
 basemeasure(::Union{<:NaturalParameters{MatrixDirichlet}, <:MatrixDirichlet}, x) = 1.0
+plus(::NaturalParameters{MatrixDirichlet}, ::NaturalParameters{MatrixDirichlet}) = Plus()
