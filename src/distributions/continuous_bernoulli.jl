@@ -53,7 +53,8 @@ function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
     return λ * (1 - λ) / (1 - 2 * λ)^2 + 1 / (2 * atanh(1 - 2 * λ))^2
 end
-var(::VagueContinuousBernoulli, dist) = 1 / 2
+
+var(::VagueContinuousBernoulli, dist) = 1 / 12
 
 function cdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x)
     @assert 0 <= x <= 1 "cdf should be evaluated at a point between 0 and 1."
