@@ -31,13 +31,13 @@ function isvague(dist::ContinuousBernoulli)
 end
 function mean(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
-    return λ / (2λ - 1) + 1 / (2atanh(1 - 2λ))
+    return λ / (2 * λ - 1) + 1 / (2 * atanh(1 - 2 * λ))
 end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
-    return λ * (1 - λ) / (1 - 2λ)^2 + 1 / (2atanh(1 - 2λ))^2
+    return λ * (1 - λ) / (1 - 2 * λ)^2 + 1 / (2 * atanh(1 - 2 * λ))^2
 end
 var(::VagueContinuousBernoulli, dist) = 1 / 2
 
@@ -100,9 +100,9 @@ function isvague(np::NaturalParameters{ContinuousBernoulli})
     end
 end
 
-function lognormalizer(::NonVagueContinuousBernoulli,params::NaturalParameters{ContinuousBernoulli})
+function lognormalizer(::NonVagueContinuousBernoulli, params::NaturalParameters{ContinuousBernoulli})
     η = first(get_params(params))
-    return log((exp(η) - 1) / η + tiny)  
+    return log((exp(η) - 1) / η + tiny)
 end
 lognormalizer(::VagueContinuousBernoulli, params::NaturalParameters{ContinuousBernoulli}) = log(2.0)
-lognormalizer(params::NaturalParameters{ContinuousBernoulli}) = lognormalizer(isvague(params),params)
+lognormalizer(params::NaturalParameters{ContinuousBernoulli}) = lognormalizer(isvague(params), params)
