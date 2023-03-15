@@ -56,6 +56,23 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
             @test (left + right) == convert(NaturalParameters, ContinuousBernoulli(0.6))
         end
     end
+
+    @testset "rand" begin
+        dist = ContinuousBernoulli(0.3)
+        nsamples = 10
+        rng = collect(1:100)
+        for i in 1:10
+            samples = rand(MersenneTwister(rng[i]), dist, nsamples)
+            mestimated = mean(samples)
+
+            @test isapprox(mestimated, mean(dist), atol = 1e-1)
+            @test isapprox(
+                sum((sample - mestimated)^2 for sample in samples) / (nsamples),
+                var(dist),
+                atol = 1e-1
+            )
+        end
+    end
 end
 
 end
