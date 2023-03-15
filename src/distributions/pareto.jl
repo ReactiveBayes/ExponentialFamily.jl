@@ -5,6 +5,12 @@ import Distributions: Pareto, shape, scale, params
 vague(::Type{<:Pareto}) = Pareto(1e12)
 
 #mean and cov
+
+function mean(dist::Pareto)
+    k, θ = params(dist)
+    return k > 1 ? k * θ / (k - 1) : Inf
+end
+
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
 #write analytical rule for product
@@ -19,10 +25,7 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Pareto, R <:
     return Pareto(n1, n2)
 end
 
-function Distributions.mean(dist::Pareto)
-    k, θ = params(dist)
-    k > 1 ? k * θ / (k - 1) : Inf
-end
+
 
 ## Friendly functions
 function logpdf_sample_friendly(dist::Pareto)
