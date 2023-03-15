@@ -51,10 +51,10 @@ Distributions.pdf(np::NaturalParameters, x) = Distributions.pdf(Base.convert(Dis
 Distributions.cdf(np::NaturalParameters, x) = Distributions.cdf(Base.convert(Distribution, np), x)
 
 """
-Everywhere in the package we stick to convetion that we represent exponential family distribution in the following form:
+Everywhere in the package, we stick to a convention that we represent exponential family distribution in the following form:
 
 ``f_X(x\\mid\\theta) = h(x)\\,\\exp\\!\\bigl[\\,\\eta(\\theta) \\cdot T(x) - A(\\theta)\\,\\bigr]``.
 
-So the lognormalizer sign should allign with this form.
+So the lognormalizer sign should align with this form.
 """
 function lognormalizer end
