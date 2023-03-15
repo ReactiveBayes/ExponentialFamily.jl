@@ -29,4 +29,5 @@ using Test
     include("distributions/test_von_mises_fisher.jl")
     include("distributions/test_vonmises.jl")
     include("distributions/test_pareto.jl")
+    include("distributions/test_continuous_bernoulli.jl")
 end

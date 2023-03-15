@@ -1,6 +1,6 @@
 export Bernoulli
 
-import Distributions: Bernoulli, Distribution, succprob, failprob, logpdf
+import Distributions: Bernoulli, succprob, failprob, logpdf
 import StatsFuns: logistic
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
