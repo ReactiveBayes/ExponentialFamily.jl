@@ -61,19 +61,3 @@ function plus(np1::NaturalParameters{Multinomial}, np2::NaturalParameters{Multin
         return Concat()
     end
 end
-
-# function Base.:+(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
-#     η_left = get_params(left)
-#     η_right = get_params(right)
-
-#     @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
-#     return NaturalParameters(Multinomial, (first(η_left), last(η_left) + last(η_right)))
-# end
-
-# function Base.:-(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
-#     η_left = get_params(left)
-#     η_right = get_params(right)
-
-#     @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
-#     return NaturalParameters(Multinomial, (first(η_left), last(η_left) - last(η_right)))
-# end

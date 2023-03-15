@@ -4,7 +4,6 @@ import SpecialFunctions: digamma
 
 const GammaInverse = InverseGamma
 
-# uninformative prior
 vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
 
 prod_analytical_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = ProdAnalyticalRuleAvailable()

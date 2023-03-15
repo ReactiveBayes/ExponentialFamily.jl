@@ -95,14 +95,11 @@ function Base.prod(
     right::MvNormalMeanCovariance{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
 
-    # start with parameters of left
     xi, W = weightedmean_precision(left)
 
-    # update W
     W_right = precision(right)
     W .+= W_right
 
-    # update xi without allocating another vector
     T  = promote_type(T1, T2)
     xi = convert(AbstractVector{T}, xi)
     W  = convert(AbstractMatrix{T}, W)

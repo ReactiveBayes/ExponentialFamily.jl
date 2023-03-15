@@ -42,7 +42,6 @@ vague(::Type{<:Contingency}, dims::Int) = Contingency(ones(dims, dims) ./ abs2(d
 convert_eltype(::Type{Contingency}, ::Type{T}, distribution::Contingency{R}) where {T <: Real, R <: Real} =
     Contingency(convert(AbstractArray{T}, contingency_matrix(distribution)))
 
-## dispatch support is regular {1,2,..., N}
 function pdf_contingency(distribution::Contingency, x::AbstractArray, T)
     @assert length(x) === 2 "$(x) should be length 2 vector with the entries corresponding to elements of the contingency matrix of $(distribution)"
     contingencymatrix = contingency_matrix(distribution)
@@ -57,7 +56,6 @@ function pdf_contingency(distribution::Contingency, x::AbstractArray, T)
     end
 end
 
-## dispatch when support is one hot coded
 function pdf_contingency(distribution::Contingency, x::AbstractArray, T::Type{Bool})
     contingencymatrix = contingency_matrix(distribution)
     dim               = getindex(size(contingencymatrix), 1)
@@ -99,7 +97,6 @@ function entropy(distribution::Contingency)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
 
-# Standard parameters to natural parameters
 function Base.convert(::Type{NaturalParameters}, dist::Contingency)
     logcontingency = log.(contingency_matrix(dist))
     return NaturalParameters(Contingency, logcontingency)

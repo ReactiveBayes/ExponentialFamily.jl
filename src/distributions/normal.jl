@@ -481,18 +481,6 @@ function lognormalizer(params::NaturalParameters{<:MvGaussianWeightedMeanPrecisi
     return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) / 2
 end
 
-# # # Semih: logpdf wrt natural params. ForwardDiff is not stable with reshape function which
-# # # precludes the usage of logPdf functions previously defined. Below function is
-# # # meant to be used with Zygote.
-# # function Distributions.logpdf(η::UnivariateNormalNaturalParameters, x)
-# #     return -log2π / 2 + x * η.weighted_mean + x^2 * η.minus_half_precision - lognormalizer(η)
-# # end
-
-# # function Distributions.logpdf(η::MultivariateNormalNaturalParameters, x)
-# #     ϕx = vcat(x, vec(x * transpose(x)))
-# #     return -length(η.weighted_mean) * log2π / 2 + transpose(ϕx) * vec(η) - lognormalizer(η)
-# # end
-
 isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-getindex(get_params(params), 2))
 
 basemeasure(::Union{<:NaturalParameters{<:NormalDistributionsFamily}, <:NormalDistributionsFamily}, x) =
