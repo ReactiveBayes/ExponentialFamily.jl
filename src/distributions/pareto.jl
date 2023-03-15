@@ -25,8 +25,6 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Pareto, R <:
     return Pareto(n1, n2)
 end
 
-
-
 ## Friendly functions
 function logpdf_sample_friendly(dist::Pareto)
     friendly = convert(Pareto, dist)
