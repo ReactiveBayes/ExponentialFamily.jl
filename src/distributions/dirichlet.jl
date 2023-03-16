@@ -15,11 +15,8 @@ end
 
 probvec(dist::Dirichlet) = params(dist)[1]
 
-# probvec is not normalised
 mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
 mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
-
-# Variate forms promotion
 
 promote_variate_type(::Type{Multivariate}, ::Type{<:Dirichlet})  = Dirichlet
 promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichlet
@@ -50,6 +47,5 @@ end
 isproper(params::NaturalParameters{<:Dirichlet}) = all(isless.(-1, get_params(params)))
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
-## due to alpha-1 parameterization
 basemeasure(::Union{<:NaturalParameters{Dirichlet}, <:Dirichlet}, x) = 1.0
 plus(::NaturalParameters{Dirichlet}, ::NaturalParameters{Dirichlet}) = Plus()

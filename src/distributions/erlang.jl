@@ -12,21 +12,18 @@ end
 
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
-# Extensions of prod methods
 prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
-# Friendly function
 function logpdf_sample_friendly(dist::Erlang)
     k, λ = params(dist)
     friendly = Erlang(k, λ)
     return (friendly, friendly)
 end
 
-# Natural parameters for the Erlang distribution
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
 Base.convert(::Type{NaturalParameters}, dist::Erlang) = NaturalParameters(Erlang, [(shape(dist) - 1), -rate(dist)])
@@ -52,6 +49,5 @@ function isproper(params::NaturalParameters{Erlang})
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-#due to our parameterization 
 basemeasure(::Union{<:NaturalParameters{Erlang}, <:Erlang}, x) = 1.0
 plus(::NaturalParameters{Erlang}, ::NaturalParameters{Erlang}) = Plus()

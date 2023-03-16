@@ -2,6 +2,7 @@ module NaturalParametersTest
 
 using ExponentialFamily, Test, StatsFuns
 import ExponentialFamily: NaturalParameters, get_params, get_conditioner
+import Distributions: pdf, logpdf, cdf
 @testset "NaturalParameters" begin
     params1 = NaturalParameters(Bernoulli, [0.9])
     params2 = NaturalParameters(Bernoulli, [0.2])

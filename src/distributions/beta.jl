@@ -52,7 +52,6 @@ check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 lognormalizer(params::NaturalParameters{Beta}) =
     logbeta(first(get_params(params)) + 1, getindex(get_params(params), 2) + 1)
 
-## due to our parameterization as we use alpha-1 and beta-1
 basemeasure(T::Union{<:NaturalParameters{Beta}, <:Beta}, x) = 1.0
 
 plus(::NaturalParameters{Beta}, ::NaturalParameters{Beta}) = Plus()

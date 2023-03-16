@@ -42,9 +42,8 @@ vague(::Type{<:Contingency}, dims::Int) = Contingency(ones(dims, dims) ./ abs2(d
 convert_eltype(::Type{Contingency}, ::Type{T}, distribution::Contingency{R}) where {T <: Real, R <: Real} =
     Contingency(convert(AbstractArray{T}, contingency_matrix(distribution)))
 
-## dispatch support is regular {1,2,..., N}
 function pdf_contingency(distribution::Contingency, x::AbstractArray, T)
-    @assert length(x) === 2 "$(x) should be length 2 vector with the entries corresponding to elements of the contingency matrix of $(distribution)"
+    @assert first(size(x)) === 2 "$(x) should be length 2 vector with the entries corresponding to elements of the contingency matrix of $(distribution)"
     contingencymatrix = contingency_matrix(distribution)
     dim               = getindex(size(contingencymatrix), 1)
     support           = collect(1:getindex(size(contingencymatrix), 1))
@@ -57,7 +56,6 @@ function pdf_contingency(distribution::Contingency, x::AbstractArray, T)
     end
 end
 
-## dispatch when support is one hot coded
 function pdf_contingency(distribution::Contingency, x::AbstractArray, T::Type{Bool})
     contingencymatrix = contingency_matrix(distribution)
     dim               = getindex(size(contingencymatrix), 1)
@@ -94,12 +92,11 @@ end
 
 Distributions.var(distribution::Contingency) = diag(cov(distribution))
 
-function entropy(distribution::Contingency)
+function Distributions.entropy(distribution::Contingency)
     P = contingency_matrix(distribution)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
 
-# Standard parameters to natural parameters
 function Base.convert(::Type{NaturalParameters}, dist::Contingency)
     logcontingency = log.(contingency_matrix(dist))
     return NaturalParameters(Contingency, logcontingency)
@@ -116,7 +113,7 @@ end
 check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > 1) && (getindex(size(v), 2) > 1)
 
 function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where {T}
-    @assert length(x) === 2 "$(x) should be length 2 vector "
+    @assert first(size(x)) === 2 "$(x) should be length 2 vector "
     contingencymatrix = contingency_matrix(d)
     P = float(eltype(contingencymatrix))
     n = first(size(contingencymatrix))
@@ -148,11 +145,12 @@ end
 function icdf(dist::Contingency, probability::Float64)
     @assert 0 <= probability <= 1 "probability should be between 0 and 1."
     contingencymatrix = contingency_matrix(dist)
-    support = collect(1:first(size(contingencymatrix)))
-    cdfmatrix = zeros(length(support), length(support))
-    @inbounds for (s1, i) in zip(support, collect(1:length(support)))
-        @inbounds for (s2, j) in zip(support, collect(1:length(support)))
-            cdfmatrix[i, j] = cdf(dist, [s1, s2])
+    n = first(size(contingencymatrix))
+    support = collect(1:n)
+    cdfmatrix = zeros(n, n)
+    @inbounds for (s1, i) in zip(support, collect(1:n))
+        @inbounds for (s2, j) in zip(support, collect(1:n))
+            cdfmatrix[i, j] = Distributions.cdf(dist, [s1, s2])
         end
     end
     cartesianind = findall(x -> x == Base.minimum(filter(d -> !isless(d, probability), cdfmatrix)), cdfmatrix)

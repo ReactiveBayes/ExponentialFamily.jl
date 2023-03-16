@@ -14,19 +14,18 @@ end
 prod_analytical_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::Multinomial, right::Multinomial)
+    @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
+
     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
     norm = sum(mvec)
 
-    @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
     return Multinomial(left.n, mvec ./ norm)
 end
 
-# Standard parameters to natural parameters
 function Base.convert(::Type{NaturalParameters}, dist::Multinomial)
     n, p = params(dist)
     logprobabilities = log.(p)
 
-    # The params of NaturalParameters(Multinomial) is a Tuple (n, log(probvec))
     return NaturalParameters(Multinomial, logprobabilities, n)
 end
 
@@ -61,19 +60,3 @@ function plus(np1::NaturalParameters{Multinomial}, np2::NaturalParameters{Multin
         return Concat()
     end
 end
-
-# function Base.:+(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
-#     η_left = get_params(left)
-#     η_right = get_params(right)
-
-#     @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
-#     return NaturalParameters(Multinomial, (first(η_left), last(η_left) + last(η_right)))
-# end
-
-# function Base.:-(left::NaturalParameters{Multinomial}, right::NaturalParameters{Multinomial})
-#     η_left = get_params(left)
-#     η_right = get_params(right)
-
-#     @assert first(η_left) == first(η_right) "$(left) and $(right) must have the same number of trials"
-#     return NaturalParameters(Multinomial, (first(η_left), last(η_left) - last(η_right)))
-# end

@@ -6,6 +6,7 @@ using Distributions
 using Random
 using StatsFuns
 import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import Distributions: cdf
 
 @testset "Contingency" begin
     @testset "common" begin

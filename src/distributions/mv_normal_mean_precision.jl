@@ -104,7 +104,6 @@ function Base.prod(
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
-    # fast & efficient implementation of xi = precision(right)*mean(right) + precision(left)*mean(left)
     xi = precision(right) * mean(right)
     T  = promote_type(T1, T2)
     xi = convert(AbstractVector{T}, xi)

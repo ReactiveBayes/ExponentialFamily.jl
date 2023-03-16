@@ -36,5 +36,6 @@ include("distributions/exponential.jl")
 include("distributions/von_mises_fisher.jl")
 include("distributions/von_mises.jl")
 include("distributions/pareto.jl")
+include("distributions/continuous_bernoulli.jl")
 
 end
