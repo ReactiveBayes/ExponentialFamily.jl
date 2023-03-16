@@ -117,8 +117,8 @@ basemeasure(T::Union{<:NaturalParameters{ContinuousBernoulli}, <:ContinuousBerno
 
 plus(::NaturalParameters{ContinuousBernoulli}, ::NaturalParameters{ContinuousBernoulli}) = Plus()
 
-function isvague(np::NaturalParameters{ContinuousBernoulli})
-    if first(get_params(np)) ≈ 0.0
+function isvague(params::NaturalParameters{ContinuousBernoulli})
+    if first(get_params(params)) ≈ 0.0
         return VagueContinuousBernoulli()
     else
         return NonVagueContinuousBernoulli()
