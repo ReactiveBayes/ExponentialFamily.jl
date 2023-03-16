@@ -31,7 +31,6 @@ import ExponentialFamily: FactorizedJoint
             push!(distributions, MvNormalMeanCovariance(rand(rng, T, n)))
             push!(distributions, MvNormalWeightedMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormal(Diagonal(map(abs2, rand(rng, T, n)))))
-            
         end
 
         # Add `Matrixvariate` distributions

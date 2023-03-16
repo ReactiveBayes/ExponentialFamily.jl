@@ -14,7 +14,6 @@ end
 prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::Binomial, right::Binomial)
-    
     @assert ntrials(left) == ntrials(right) "Number of trials in $(left) and $(right) is not equal"
     left_p  = succprob(left)
     right_p = succprob(right)
@@ -42,13 +41,14 @@ end
 
 isproper(params::NaturalParameters{Binomial}) = get_conditioner(params) > 0 ? true : false
 
-lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1+exp(first(get_params(params))))
+lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1 + exp(first(get_params(params))))
 
-basemeasure(d::NaturalParameters{Binomial}, x) = typeof(x) <: Integer ? binomial(get_conditioner(d), x) : error("x must be integer") 
+basemeasure(d::NaturalParameters{Binomial}, x) =
+    typeof(x) <: Integer ? binomial(get_conditioner(d), x) : error("x must be integer")
 basemeasure(d::Binomial, x) = typeof(x) <: Integer ? binomial(d.n, x) : error("x must be integer")
 function basemeasure(d::Binomial, x)
     binomial(d.n, x)
-end 
+end
 
 function plus(np1::NaturalParameters{Binomial}, np2::NaturalParameters{Binomial})
     condition = get_conditioner(np1) == get_conditioner(np2) && (length(get_params(np1)) == length(get_params(np2)))
