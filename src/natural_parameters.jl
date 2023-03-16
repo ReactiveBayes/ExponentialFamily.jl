@@ -30,7 +30,7 @@ Base.:-(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where
 
 Base.:+(::Concat, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2} = [left, right]
 Base.:-(::Concat, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2} =
-    [left, NaturalParameters(T2, -get_params(right))]
+    [left, NaturalParameters(T2, -get_params(right), get_conditioner(right))]
 
 Base.:(==)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
     get_params(left) == get_params(right) && get_conditioner(left) == get_conditioner(right)
