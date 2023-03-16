@@ -73,7 +73,6 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage
     S = cholinv(S⁻¹)
     L = Distributions.PDMats.chol_lower(fastcholesky(S))
 
-    # check 
     p = size(S, 1)
     singular = df <= p - 1
     if singular
@@ -85,8 +84,6 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage
     axes2 = axes(A, 2)
 
     for C in x
-
-        # Wishart sample
         if singular
             r = rank(S)
             randn!(rng, view(A, :, axes2[1:r]))
@@ -122,12 +119,10 @@ function Distributions.pdf!(
 
     M = fastcholesky!(T)
 
-    # logc0 evaluation
     h_df = df / 2
     Ψld = logdet(M)
     logc0 = -h_df * (p * convert(typeof(df), Distributions.logtwo) - Ψld) - logmvgamma(p, h_df)
 
-    # logkernel evaluation 
     @inbounds for i in 1:length(out)
         copyto!(T, 1, samples[i], 1, l)
         C = fastcholesky!(T)
@@ -151,8 +146,6 @@ function Base.convert(::Type{InverseWishart}, dist::InverseWishartMessage)
 end
 
 Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
-
-## Friendly functions
 
 function logpdf_sample_friendly(dist::InverseWishartMessage)
     friendly = convert(InverseWishart, dist)

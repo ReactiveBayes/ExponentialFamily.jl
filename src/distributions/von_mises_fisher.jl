@@ -40,6 +40,7 @@ check_valid_natural(::Type{<:VonMisesFisher}, v) = length(v) >= 2
 
 function lognormalizer(params::NaturalParameters{VonMisesFisher})
     η = get_params(params)
+    ## because cos^2+sin^2 = 1 this trick obtains κ 
     κ = sqrt(η' * η)
     p = length(η)
     return log(besselj(0.5p - 1, κ))

@@ -11,7 +11,6 @@ convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) whe
     Categorical(convert(AbstractVector{T}, probs(distribution)))
 
 function Base.prod(::ProdAnalytical, left::Categorical, right::Categorical)
-    # Multiplication of 2 categorical PMFs: p(z) = p(x) * p(y)
     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
     norm = sum(mvec)
     return Categorical(mvec ./ norm)
@@ -23,7 +22,6 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 
-# Standard parameters to natural parameters
 function Base.convert(::Type{NaturalParameters}, dist::Categorical)
     logprobabilities = log.(probvec(dist))
     return NaturalParameters(Categorical, logprobabilities)

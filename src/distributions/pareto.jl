@@ -4,10 +4,8 @@ import Distributions: Pareto, shape, scale, params
 
 vague(::Type{<:Pareto}) = Pareto(1e12)
 
-#cov
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
-#write analytical rule for product
 prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Pareto, R <: Pareto}
@@ -19,13 +17,11 @@ function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Pareto, R <:
     return Pareto(n1, n2)
 end
 
-## Friendly functions
 function logpdf_sample_friendly(dist::Pareto)
     friendly = convert(Pareto, dist)
     return (friendly, friendly)
 end
 
-#convert
 Base.convert(::Type{NaturalParameters}, dist::Pareto) =
     NaturalParameters(Pareto, [-shape(dist) - 1], shape(dist))
 
@@ -37,7 +33,6 @@ end
 function lognormalizer(params::NaturalParameters{Pareto})
     η = first(get_params(params))
     k = get_conditioner(params)
-    # k, θ = params(dist)
     return -log(-1 - η) + (1 + η)log(k)
 end
 

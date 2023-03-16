@@ -6,13 +6,11 @@ vague(::Type{<:Geometric}) = Geometric(1e-12)
 
 probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
-#write analytical rule for product
 prod_analytical_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ProdAnalyticalRuleAvailable()
 
 Base.prod(::ProdAnalytical, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-# Geometric natural parameters 
 Base.convert(::Type{NaturalParameters}, dist::Geometric) = NaturalParameters(Geometric, [log(1 - succprob(dist))])
 
 Base.convert(::Type{Distribution}, η::NaturalParameters{Geometric}) = Geometric(1 - exp(first(get_params(η))))
