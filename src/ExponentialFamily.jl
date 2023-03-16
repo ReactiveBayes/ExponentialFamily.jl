@@ -38,5 +38,6 @@ include("distributions/von_mises_fisher.jl")
 include("distributions/von_mises.jl")
 include("distributions/pareto.jl")
 include("distributions/continuous_bernoulli.jl")
+include("distributions/rayleigh.jl")
 
 end
