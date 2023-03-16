@@ -27,7 +27,7 @@ end
 
 function Base.convert(::Type{NaturalParameters}, dist::Binomial)
     n, p = params(dist)
-    return NaturalParameters(Binomial, logit(p), n)
+    return NaturalParameters(Binomial, [logit(p)], n)
 end
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{Binomial})
@@ -44,9 +44,13 @@ isproper(params::NaturalParameters{Binomial}) = get_conditioner(params) > 0 ? tr
 
 lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1+exp(get_params(params)))
 
-basemeasure(::Union{<:NaturalParameters{Binomial}, <:Binomial}, x) = typeof(x) <: Integer ? binomial(sum(x), x) : error("x must be integer") 
+basemeasure(d::NaturalParameters{Binomial}, x) = typeof(x) <: Integer ? binomial(get_conditioner(d), x) : error("x must be integer") 
+basemeasure(d::Binomial, x) = typeof(x) <: Integer ? binomial(d.n, x) : error("x must be integer")
+function basemeasure(d::Binomial, x)
+    binomial(d.n, x)
+end 
 
 function plus(np1::NaturalParameters{Binomial}, np2::NaturalParameters{Binomial})
-    condition = get_conditioner(np1) == get_conditioner(np2) && (length(get_params(np1)) == first(size(get_params(np2))))
+    condition = get_conditioner(np1) == get_conditioner(np2) && (length(get_params(np1)) == length(get_params(np2)))
     return condition ? Plus() : Concat()
 end

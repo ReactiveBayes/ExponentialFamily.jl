@@ -8,15 +8,15 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
 @testset "Binomial" begin
     @testset "probvec" begin
-        @test probvec(Binomial(2, 0.8)) == (0.2, 0.8)
+        @test all(probvec(Binomial(2, 0.8)) .≈ (0.2, 0.8)) # check
         @test probvec(Binomial(2, 0.2)) == (0.8, 0.2)
         @test probvec(Binomial(2, 0.1)) == (0.9, 0.1)
         @test probvec(Binomial(2)) == (0.5, 0.5)
     end
 
     @testset "vague" begin
-        @test_throws MethodError vague(Multinomial)
-        @test_throws MethodError vague(Multinomial, 4)
+        @test_throws MethodError vague(Binomial)
+        @test_throws MethodError vague(Binomial, 4)
 
         vague_dist = vague(Binomial, 5)
         @test typeof(vague_dist) <: Binomial
@@ -55,28 +55,29 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
 
-        @test lognormalizer(η1) == 0.0
-        @test lognormalizer(η2) == 0.0
+        η3 = NaturalParameters(Binomial, log(exp(1)-1), 5)
+        η4 = NaturalParameters(Binomial, log(exp(1)-1), 10)
 
-        @test basemeasure(d1, [1, 2, 2]) == 30.0
-        @test basemeasure(d2, [1, 2, 2]) == 30.0
-        @test basemeasure(η1, [1, 2, 2]) == 30.0
-        @test basemeasure(η2, [1, 2, 2]) == 30.0
-        @test basemeasure(d1, [1, 2, 2]) == basemeasure(η1, [1, 2, 2])
-        @test basemeasure(d2, [1, 2, 2]) == basemeasure(η2, [1, 2, 2])
+        @test lognormalizer(η3) ≈ 5.0
+        @test lognormalizer(η4) ≈ 10.0
 
-        @test η1 + η2 == NaturalParameters(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
-        @test η1 - η2 == NaturalParameters(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)], 5)
+        @test basemeasure(d1, 5) == 1
+        @test basemeasure(d2, 2) == 10
+        @test basemeasure(η1, 5) == basemeasure(d1, 5)
+        @test basemeasure(η2, 2) == basemeasure(d2, 2)
+
+        @test η1 + η2 == NaturalParameters(Binomial, logit(1/3) + logit(1/2), 5)
+        @test η1 - η2 == NaturalParameters(Binomial, logit(1/3) - logit(1/2), 5)
+        @test η3 - η4 == [NaturalParameters(Binomial, log(exp(1)-1), 5), NaturalParameters(Binomial, -log(exp(1)-1), 10)]
         @test η1 + η2 - η2 ≈ η1
         @test η1 + η2 - η1 ≈ η2
-        η3 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
-        η4 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
         @test η3 + η4 == [η3, η4]
-        @test logpdf(η1, [1, 2, 2]) == logpdf(d1, [1, 2, 2])
-        @test logpdf(η2, [1, 2, 2]) == logpdf(d2, [1, 2, 2])
 
-        @test pdf(η1, [1, 2, 2]) == pdf(d1, [1, 2, 2])
-        @test pdf(η2, [1, 2, 2]) == pdf(d2, [1, 2, 2])
+        @test logpdf(η1, 2) == logpdf(d1, 2)
+        @test logpdf(η2, 3) == logpdf(d2, 3)
+
+        @test pdf(η1, 2) == pdf(d1, 2)
+        @test pdf(η2, 4) == pdf(d2, 4)
     end
 end
 end
