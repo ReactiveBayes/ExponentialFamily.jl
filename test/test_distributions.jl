@@ -6,6 +6,7 @@ using Distributions
 using StaticArrays
 using StableRNGs
 
+import LinearAlgebra: Diagonal
 import ExponentialFamily:
     convert_eltype, deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype
 import ExponentialFamily: FactorizedJoint
@@ -29,7 +30,8 @@ import ExponentialFamily: FactorizedJoint
             push!(distributions, MvNormalMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormalMeanCovariance(rand(rng, T, n)))
             push!(distributions, MvNormalWeightedMeanPrecision(rand(rng, T, n)))
-            push!(distributions, MvNormal(rand(rng, T, n)))
+            push!(distributions, MvNormal(Diagonal(map(abs2, rand(rng, T, n)))))
+            
         end
 
         # Add `Matrixvariate` distributions

@@ -31,7 +31,7 @@ function Base.convert(::Type{NaturalParameters}, dist::Binomial)
 end
 
 function Base.convert(::Type{Distribution}, params::NaturalParameters{Binomial})
-    return Binomial(get_conditioner(params), logistic(get_params(params)))
+    return Binomial(get_conditioner(params), logistic(first(get_params(params))))
 end
 
 check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
@@ -42,7 +42,7 @@ end
 
 isproper(params::NaturalParameters{Binomial}) = get_conditioner(params) > 0 ? true : false
 
-lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1+exp(get_params(params)))
+lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1+exp(first(get_params(params))))
 
 basemeasure(d::NaturalParameters{Binomial}, x) = typeof(x) <: Integer ? binomial(get_conditioner(d), x) : error("x must be integer") 
 basemeasure(d::Binomial, x) = typeof(x) <: Integer ? binomial(d.n, x) : error("x must be integer")
