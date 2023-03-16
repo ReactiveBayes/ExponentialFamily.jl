@@ -4,13 +4,7 @@ import Distributions: Pareto, shape, scale, params
 
 vague(::Type{<:Pareto}) = Pareto(1e12)
 
-#mean and cov
-
-function mean(dist::Pareto)
-    k, θ = params(dist)
-    return k > 1 ? k * θ / (k - 1) : Inf
-end
-
+#cov
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
 #write analytical rule for product
