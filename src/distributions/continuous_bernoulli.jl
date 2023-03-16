@@ -28,20 +28,20 @@ function isvague(dist::ContinuousBernoulli)
 end
 
 Distributions.mean(dist::ContinuousBernoulli) = mean(isvague(dist), dist)
-Distributions.var(dist::ContinuousBernoulli) = mean(isvague(dist), dist)
-function Distributions.logpdf(dist::ContinuousBernoulli, x) 
+Distributions.var(dist::ContinuousBernoulli) = var(isvague(dist), dist)
+function Distributions.logpdf(dist::ContinuousBernoulli, x::Real)
     @assert 0 <= x <= 1 "Second argument to logpdf should be a probability in between 0 and 1"
     return logpdf(isvague(dist), dist, x)
 end
-function Distributions.pdf(dist::ContinuousBernoulli, x) 
+function Distributions.pdf(dist::ContinuousBernoulli, x::Real)
     @assert 0 <= x <= 1 "Second argument to logpdf should be a probability in between 0 and 1"
     return exp(Distributions.logpdf(dist, x))
 end
-Distributions.cdf(dist::ContinuousBernoulli, x) = cdf(isvague(dist), dist, x) 
-function icdf(dist::ContinuousBernoulli,x) 
+Distributions.cdf(dist::ContinuousBernoulli, x::Real) = cdf(isvague(dist), dist, x)
+function icdf(dist::ContinuousBernoulli, x)
     @assert 0 <= x <= 1 "Second argument to icdf should be a probability in between 0 and 1"
-    return icdf(isvague(dist),dist,x)
-end 
+    return icdf(isvague(dist), dist, x)
+end
 
 function mean(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
@@ -50,45 +50,44 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    λ = succprob(dist)
-    return λ * (1 - λ) / (1 - 2 * λ)^2 + 1 / (2 * atanh(1 - 2 * λ))^2
+    η = first(get_params(convert(NaturalParameters, dist)))
+    eη = exp(η)
+    return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
 
 var(::VagueContinuousBernoulli, dist) = 1 / 12
 
-function cdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+function cdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real)
     @assert 0 <= x <= 1 "cdf should be evaluated at a point between 0 and 1."
     λ = succprob(dist)
     return (λ^x * (1 - λ)^(1 - x) + λ - 1) / (2λ - 1)
 end
-function cdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+function cdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real)
     @assert 0 <= x <= 1 "cdf should be evaluated at a point between 0 and 1."
     return x
 end
 
-icdf(::VagueContinuousBernoulli,dist::ContinuousBernoulli,x) = x
-function icdf(::NonVagueContinuousBernoulli,dist::ContinuousBernoulli,x)
+icdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real) = x
+function icdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x)
     λ = succprob(dist)
-    term1 = log((2λ-1)*x+1-λ) - log(1-λ)
-    term2 = log(λ) - log(1-λ)
+    term1 = log((2λ - 1) * x + 1 - λ) - log(1 - λ)
+    term2 = log(λ) - log(1 - λ)
 
-    return term1/term2
+    return term1 / term2
 end
 
-
-
-function logpdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+function logpdf(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real)
     @assert 0 <= x <= 1 "logpdf should be evaluated at a point between 0 and 1."
     λ = succprob(dist)
     c = 2atanh(1 - 2λ) / (1 - 2λ)
-    return c * x * log(λ) + (1 - x) * log(1 - λ)
+    return x * log(λ) + (1 - x) * log(1 - λ) + log(c)
 end
 
-function logpdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x)
+function logpdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real)
     @assert 0 <= x <= 1 "logpdf should be evaluated at a point between 0 and 1."
     λ = succprob(dist)
     c = 2
-    return c * x * log(λ) + (1 - x) * log(1 - λ)
+    return x * log(λ) + (1 - x) * log(1 - λ) + log(c)
 end
 
 prod_analytical_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ProdAnalyticalRuleAvailable()
@@ -133,7 +132,7 @@ end
 lognormalizer(::VagueContinuousBernoulli, params::NaturalParameters{ContinuousBernoulli}) = log(2.0)
 lognormalizer(params::NaturalParameters{ContinuousBernoulli}) = lognormalizer(isvague(params), params)
 
-Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}) where {T} = icdf(dist,rand(rng))
+Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}) where {T} = icdf(dist, rand(rng, Uniform()))
 
 function Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}, size::Int64) where {T}
     container = Array{T}(undef, size)
@@ -141,8 +140,7 @@ function Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}, size::Int64
 end
 
 function Random.rand!(rng::AbstractRNG, dist::ContinuousBernoulli, container::AbstractArray{T}) where {T <: Real}
-    preallocated = similar(container)
-    @inbounds for i in 1:size(preallocated, 1)
+    @inbounds for i in 1:size(container, 1)
         temp = rand(rng, dist)
         @views container[i] = temp
     end

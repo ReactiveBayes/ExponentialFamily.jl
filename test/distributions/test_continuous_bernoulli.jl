@@ -59,15 +59,15 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
 
     @testset "rand" begin
         dist = ContinuousBernoulli(0.3)
-        nsamples = 10
+        nsamples = 1000
         rng = collect(1:100)
         for i in 1:10
             samples = rand(MersenneTwister(rng[i]), dist, nsamples)
             mestimated = mean(samples)
-
+            weights = ones(nsamples) / nsamples
             @test isapprox(mestimated, mean(dist), atol = 1e-1)
             @test isapprox(
-                sum((sample - mestimated)^2 for sample in samples) / (nsamples),
+                sum(weight * (sample - mestimated)^2 for (sample, weight) in (samples, weights)),
                 var(dist),
                 atol = 1e-1
             )
