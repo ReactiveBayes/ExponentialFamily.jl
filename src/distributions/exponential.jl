@@ -35,6 +35,6 @@ function lognormalizer(η::NaturalParameters{Exponential})
     return -log(-first(get_params(η)))
 end
 
-isproper(::Type{<:Exponential}, parms) = (first(params) <= 0)
+isproper(params::NaturalParameters{Exponential}) = (first(get_params(params)) <= 0)
 basemeasure(::Union{<:NaturalParameters{Exponential}, <:Exponential}, x) = 1.0
 plus(::NaturalParameters{Exponential}, ::NaturalParameters{Exponential}) = Plus()

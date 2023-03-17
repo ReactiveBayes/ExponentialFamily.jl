@@ -45,7 +45,7 @@ lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(
 
 basemeasure(d::NaturalParameters{Binomial}, x) =
     typeof(x) <: Integer ? binomial(get_conditioner(d), x) : error("x must be integer")
-basemeasure(d::Binomial, x) = typeof(x) <: Integer ? binomial(d.n, x) : error("x must be integer")
+
 function basemeasure(d::Binomial, x)
     binomial(d.n, x)
 end

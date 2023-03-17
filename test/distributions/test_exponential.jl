@@ -26,6 +26,11 @@ import ExponentialFamily: mirrorlog, NaturalParameters, get_params, basemeasure
         @test prod(ProdAnalytical(), Exponential(0.1), Exponential(0.1)) ≈ Exponential(0.05)
     end
 
+    @testset "isproper" begin
+        @test isproper(NaturalParameters(Exponential, [-5.0])) === true
+        @test isproper(NaturalParameters(Exponential, [1.0])) === false
+    end
+
     @testset "mean(::typeof(log))" begin
         @test mean(log, Exponential(1)) ≈ -MathConstants.eulergamma
         @test mean(log, Exponential(10)) ≈ 1.7253694280925127
