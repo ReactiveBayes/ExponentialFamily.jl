@@ -36,7 +36,7 @@ function lognormalizer(params::NaturalParameters{Pareto})
     return -log(-1 - η) + (1 + η)log(k)
 end
 
-check_valid_natural(::Type{<:Pareto}, params) = first(params) < -1
+check_valid_natural(::Type{<:Pareto}, params) = length(params) === 1
 check_valid_conditioner(::Type{<:Pareto}, conditioner) = isinteger(conditioner) && conditioner > 0
 function isproper(params::NaturalParameters{Pareto})
     η = get_params(params)

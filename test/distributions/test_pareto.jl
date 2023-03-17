@@ -33,7 +33,7 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
     @testset "isproper" begin
         @test isproper(NaturalParameters(Pareto, [-2.0], 1)) == true
         @test_throws AssertionError NaturalParameters(Pareto, [-2.0], 2.1)
-        @test_throws AssertionError isproper(NaturalParameters(Pareto, [1.3]))
+        @test_throws MethodError isproper(NaturalParameters(Pareto, [1.3]))
     end
 end
 end
