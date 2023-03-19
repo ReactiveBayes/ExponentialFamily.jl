@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import Distributions: cdf
 
 @testset "Contingency" begin
@@ -59,17 +59,17 @@ import Distributions: cdf
         @test var(d3) == [0.25, 0.25]
     end
 
-    @testset "NaturalParameters" begin
+    @testset "ExponentialFamilyDistribution" begin
         d1           = vague(Contingency, 2)
         d2           = vague(Contingency, 2)
-        ηcontingency = NaturalParameters(Contingency, log.([0.1 0.7; 0.05 0.15]))
-        @test get_params(ηcontingency) == log.([0.1 0.7; 0.05 0.15])
-        @test convert(NaturalParameters, Contingency([0.1 0.7; 0.05 0.15])) ==
-              NaturalParameters(Contingency, log.([0.1 0.7; 0.05 0.15]))
+        ηcontingency = ExponentialFamilyDistribution(Contingency, log.([0.1 0.7; 0.05 0.15]))
+        @test getnaturalparameters(ηcontingency) == log.([0.1 0.7; 0.05 0.15])
+        @test convert(ExponentialFamilyDistribution, Contingency([0.1 0.7; 0.05 0.15])) ==
+              ExponentialFamilyDistribution(Contingency, log.([0.1 0.7; 0.05 0.15]))
         @test d1 == d2
-        @test convert(NaturalParameters, d1) == NaturalParameters(Contingency, log.([1/4 1/4; 1/4 1/4]))
+        @test convert(ExponentialFamilyDistribution, d1) == ExponentialFamilyDistribution(Contingency, log.([1/4 1/4; 1/4 1/4]))
         @test convert(Distribution, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
-        @test ηcontingency + ηcontingency == NaturalParameters(Contingency, 2log.([0.1 0.7; 0.05 0.15]))
+        @test ηcontingency + ηcontingency == ExponentialFamilyDistribution(Contingency, 2log.([0.1 0.7; 0.05 0.15]))
 
         @test basemeasure(d1, rand()) == 1.0
         @test basemeasure(d2, [1, 2]) == 1.0

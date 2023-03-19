@@ -11,18 +11,18 @@ prod_analytical_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ProdAnalyticalR
 Base.prod(::ProdAnalytical, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-Base.convert(::Type{NaturalParameters}, dist::Geometric) = NaturalParameters(Geometric, [log(1 - succprob(dist))])
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Geometric) = ExponentialFamilyDistribution(Geometric, [log(1 - succprob(dist))])
 
-Base.convert(::Type{Distribution}, η::NaturalParameters{Geometric}) = Geometric(1 - exp(first(get_params(η))))
+Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{Geometric}) = Geometric(1 - exp(first(getnaturalparameters(η))))
 
-lognormalizer(η::NaturalParameters{Geometric}) = -log(1 - exp(first(get_params(η))))
+lognormalizer(η::ExponentialFamilyDistribution{Geometric}) = -log(1 - exp(first(getnaturalparameters(η))))
 
 check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
 
-function isproper(params::NaturalParameters{Geometric})
-    η = first(get_params(params))
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Geometric})
+    η = first(getnaturalparameters(exponentialfamily))
     return (η <= 0.0) && (η >= log(1e-12))
 end
 
-basemeasure(::Union{<:NaturalParameters{Geometric}, <:Geometric}, x) = 1.0
-plus(::NaturalParameters{Geometric}, ::NaturalParameters{Geometric}) = Plus()
+basemeasure(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x) = 1.0
+plus(::ExponentialFamilyDistribution{Geometric}, ::ExponentialFamilyDistribution{Geometric}) = Plus()

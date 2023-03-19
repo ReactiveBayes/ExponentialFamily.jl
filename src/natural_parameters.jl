@@ -1,12 +1,12 @@
 using Distributions
 
-struct NaturalParameters{T, P, C}
-    params::P
+struct ExponentialFamilyDistribution{T, P, C}
+    naturalparameters::P
     conditioner::C
-    NaturalParameters(::Type{T}, params::P, conditioner::C = nothing) where {T, P, C} = begin
-        @assert check_valid_natural(T, params) == true "Parameter vector $(params) is not a valid natural parameter for distribution $(T)"
+    ExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing) where {T, P, C} = begin
+        @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
         @assert check_valid_conditioner(T, conditioner) "$(conditioner) is not a valid conditioner for distribution $(T) or 'check_valid_conditioner' function is not implemented!"
-        new{T, P, C}(params, conditioner)
+        new{T, P, C}(naturalparameters, conditioner)
     end
 end
 
@@ -14,41 +14,41 @@ check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === noth
 
 function check_valid_natural end
 
-get_params(np::NaturalParameters) = np.params
-get_conditioner(np::NaturalParameters) = np.conditioner
+getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.naturalparameters
+getconditioner(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.conditioner
 
-Base.convert(::Type{T}, params::NaturalParameters) where {T <: Distribution} =
-    Base.convert(T, Base.convert(Distribution, params))
+Base.convert(::Type{T}, naturalparameters::ExponentialFamilyDistribution) where {T <: Distribution} =
+    Base.convert(T, Base.convert(Distribution, naturalparameters))
 
-Base.:+(left::NaturalParameters, right::NaturalParameters) = +(plus(left, right), left, right)
-Base.:-(left::NaturalParameters, right::NaturalParameters) = -(plus(left, right), left, right)
+Base.:+(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) = +(plus(left, right), left, right)
+Base.:-(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) = -(plus(left, right), left, right)
 
-Base.:+(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2} =
-    NaturalParameters(T1, get_params(left) + get_params(right), get_conditioner(left))
-Base.:-(::Plus, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2} =
-    NaturalParameters(T1, get_params(left) - get_params(right), get_conditioner(left))
+Base.:+(::Plus, left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilyDistribution{T2}) where {T1, T2} =
+    ExponentialFamilyDistribution(T1, getnaturalparameters(left) + getnaturalparameters(right), getconditioner(left))
+Base.:-(::Plus, left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilyDistribution{T2}) where {T1, T2} =
+    ExponentialFamilyDistribution(T1, getnaturalparameters(left) - getnaturalparameters(right), getconditioner(left))
 
-Base.:+(::Concat, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2} = [left, right]
-Base.:-(::Concat, left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2} =
-    [left, NaturalParameters(T2, -get_params(right), get_conditioner(right))]
+Base.:+(::Concat, left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilyDistribution{T2}) where {T1, T2} = [left, right]
+Base.:-(::Concat, left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilyDistribution{T2}) where {T1, T2} =
+    [left, ExponentialFamilyDistribution(T2, -getnaturalparameters(right), getconditioner(right))]
 
-Base.:(==)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
-    get_params(left) == get_params(right) && get_conditioner(left) == get_conditioner(right)
+Base.:(==)(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T} =
+    getnaturalparameters(left) == getnaturalparameters(right) && getconditioner(left) == getconditioner(right)
 
-function Base.:(≈)(left::NaturalParameters{T1}, right::NaturalParameters{T2}) where {T1, T2}
+function Base.:(≈)(left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilyDistribution{T2}) where {T1, T2}
     T = promote_type(T1, T2)
     return ≈(
-        NaturalParameters(T, get_params(left), get_conditioner(left)),
-        NaturalParameters(T, get_params(right), get_conditioner(right))
+        ExponentialFamilyDistribution(T, getnaturalparameters(left), getconditioner(left)),
+        ExponentialFamilyDistribution(T, getnaturalparameters(right), getconditioner(right))
     )
 end
 
-Base.:(≈)(left::NaturalParameters{T}, right::NaturalParameters{T}) where {T} =
-    get_params(left) ≈ get_params(right) && get_conditioner(left) == get_conditioner(right)
+Base.:(≈)(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T} =
+    getnaturalparameters(left) ≈ getnaturalparameters(right) && getconditioner(left) == getconditioner(right)
 
-Distributions.logpdf(np::NaturalParameters, x) = Distributions.logpdf(Base.convert(Distribution, np), x)
-Distributions.pdf(np::NaturalParameters, x) = Distributions.pdf(Base.convert(Distribution, np), x)
-Distributions.cdf(np::NaturalParameters, x) = Distributions.cdf(Base.convert(Distribution, np), x)
+Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution, x) = Distributions.logpdf(Base.convert(Distribution, exponentialfamily), x)
+Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = Distributions.pdf(Base.convert(Distribution, exponentialfamily), x)
+Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x) = Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
 """
 Everywhere in the package, we stick to a convention that we represent exponential family distributions in the following form:
@@ -58,3 +58,12 @@ Everywhere in the package, we stick to a convention that we represent exponentia
 So the `lognormalizer` sign should align with this form.
 """
 function lognormalizer end
+
+Base.prod(::ProdAnalytical, left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilyDistribution{T2}) where {T1,T2} = Base.prod(plus(left,right),left,right)
+
+function Base.prod(::Plus,left::ExponentialFamilyDistribution{T1}, right::ExponentialFamilDistribution{T2}) where {T1, T2} 
+    ef_left = Base.convert(ExponentialFamilyDistribution, left)
+    ef_right = Base.convert(ExponentialFamilyDistribution, right)
+    naturalparams = getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
+    return Base.convert(Distribution, ExponentialFamilyDistribution(T1,naturalparams,getconditioner(left)))
+end

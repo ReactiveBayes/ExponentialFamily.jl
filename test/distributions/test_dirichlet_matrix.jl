@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "MatrixDirichlet" begin
     @testset "common" begin
@@ -87,29 +87,29 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
     end
 
-    @testset "NaturalParameters" begin
-        @test convert(NaturalParameters, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
-              NaturalParameters(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
+    @testset "ExponentialFamilyDistribution" begin
+        @test convert(ExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
+              ExponentialFamilyDistribution(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
         b_01 = MatrixDirichlet([10.0 10.0; 10.0 10.0])
-        nb_01 = convert(NaturalParameters, b_01)
+        nb_01 = convert(ExponentialFamilyDistribution, b_01)
         @test lognormalizer(nb_01) ==
-              mapreduce(d -> lognormalizer(NaturalParameters(Dirichlet, d)), +, eachrow(get_params(nb_01)))
+              mapreduce(d -> lognormalizer(ExponentialFamilyDistribution(Dirichlet, d)), +, eachrow(getnaturalparameters(nb_01)))
         for i in 1:9
             b = MatrixDirichlet([i/10.0 i/20; i/5 i])
-            bnp = convert(NaturalParameters, b)
+            bnp = convert(ExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
 
-            @test convert(NaturalParameters, b) == bnp
+            @test convert(ExponentialFamilyDistribution, b) == bnp
 
-            @test prod(ProdAnalytical(), convert(Distribution, convert(NaturalParameters, b_01) - bnp), b) ≈ b_01
+            @test prod(ProdAnalytical(), convert(Distribution, convert(ExponentialFamilyDistribution, b_01) - bnp), b) ≈ b_01
         end
-        @test isproper(NaturalParameters(MatrixDirichlet, [10 2; 3 2])) === true
-        @test isproper(NaturalParameters(Dirichlet, [-0.1 -0.2; 3 -0.9])) === true
-        @test isproper(NaturalParameters(Dirichlet, [-0.1 -0.2; -3 1])) === false
+        @test isproper(ExponentialFamilyDistribution(MatrixDirichlet, [10 2; 3 2])) === true
+        @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1 -0.2; 3 -0.9])) === true
+        @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1 -0.2; -3 1])) === false
 
-        @test basemeasure(NaturalParameters(Dirichlet, [-0.1 -0.2; -3 1]), rand()) == 1.0
+        @test basemeasure(ExponentialFamilyDistribution(Dirichlet, [-0.1 -0.2; -3 1]), rand()) == 1.0
     end
 end
 

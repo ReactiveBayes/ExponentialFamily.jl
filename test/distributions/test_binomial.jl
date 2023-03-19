@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 import StatsFuns: logit
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Binomial" begin
     @testset "probvec" begin
@@ -46,17 +46,17 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
     @testset "naturalparameter related Binomial" begin
         d1 = Binomial(5, 1 / 3)
         d2 = Binomial(5, 1 / 2)
-        η1 = NaturalParameters(Binomial, [logit(1 / 3)], 5)
-        η2 = NaturalParameters(Binomial, [logit(1 / 2)], 5)
+        η1 = ExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
+        η2 = ExponentialFamilyDistribution(Binomial, [logit(1 / 2)], 5)
 
-        @test convert(NaturalParameters, d1) == η1
-        @test convert(NaturalParameters, d2) == η2
+        @test convert(ExponentialFamilyDistribution, d1) == η1
+        @test convert(ExponentialFamilyDistribution, d2) == η2
 
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
 
-        η3 = NaturalParameters(Binomial, [log(exp(1) - 1)], 5)
-        η4 = NaturalParameters(Binomial, [log(exp(1) - 1)], 10)
+        η3 = ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5)
+        η4 = ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 10)
 
         @test lognormalizer(η3) ≈ 5.0
         @test lognormalizer(η4) ≈ 10.0
@@ -66,10 +66,10 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
 
-        @test η1 + η2 == NaturalParameters(Binomial, [logit(1 / 3) + logit(1 / 2)], 5)
-        @test η1 - η2 == NaturalParameters(Binomial, [logit(1 / 3) - logit(1 / 2)], 5)
+        @test η1 + η2 == ExponentialFamilyDistribution(Binomial, [logit(1 / 3) + logit(1 / 2)], 5)
+        @test η1 - η2 == ExponentialFamilyDistribution(Binomial, [logit(1 / 3) - logit(1 / 2)], 5)
         @test η3 - η4 ==
-              [NaturalParameters(Binomial, [log(exp(1) - 1)], 5), NaturalParameters(Binomial, [-log(exp(1) - 1)], 10)]
+              [ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5), ExponentialFamilyDistribution(Binomial, [-log(exp(1) - 1)], 10)]
         @test η1 + η2 - η2 ≈ η1
         @test η1 + η2 - η1 ≈ η2
         @test η3 + η4 == [η3, η4]

@@ -4,7 +4,7 @@ using Test
 using Random
 using Distributions
 using ExponentialFamily
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Geometric" begin
     @testset "Geometric vague" begin
@@ -27,14 +27,14 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
     @testset "naturalparameter related Geometric" begin
         d1 = Geometric(0.6)
         d2 = Geometric(0.3)
-        η1 = NaturalParameters(Geometric, [log(1 - 0.6)])
-        η2 = NaturalParameters(Geometric, [log(1 - 0.3)])
+        η1 = ExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
+        η2 = ExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
 
         @test convert(Geometric, η1) ≈ d1
         @test convert(Geometric, η2) ≈ d2
 
-        @test convert(NaturalParameters, d1) == η1
-        @test convert(NaturalParameters, d2) == η2
+        @test convert(ExponentialFamilyDistribution, d1) == η1
+        @test convert(ExponentialFamilyDistribution, d2) == η2
 
         @test lognormalizer(η1) ≈ -log(0.6)
         @test lognormalizer(η2) ≈ -log(0.3)
@@ -44,8 +44,8 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test basemeasure(η1, 4) == 1.0
         @test basemeasure(η2, 2) == 1.0
 
-        @test η1 + η2 == NaturalParameters(Geometric, [log(0.4) + log(0.7)])
-        @test η1 - η2 == NaturalParameters(Geometric, [log(0.4) - log(0.7)])
+        @test η1 + η2 == ExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
+        @test η1 - η2 == ExponentialFamilyDistribution(Geometric, [log(0.4) - log(0.7)])
 
         @test logpdf(η1, 3) == logpdf(d1, 3)
         @test logpdf(η2, 3) == logpdf(d2, 3)
@@ -53,8 +53,8 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test pdf(η1, 3) == pdf(d1, 3)
         @test pdf(η2, 3) == pdf(d2, 3)
 
-        @test isproper(NaturalParameters(Geometric, [log(0.6)])) == true
-        @test isproper(NaturalParameters(Geometric, [1.3])) == false
+        @test isproper(ExponentialFamilyDistribution(Geometric, [log(0.6)])) == true
+        @test isproper(ExponentialFamilyDistribution(Geometric, [1.3])) == false
     end
 end
 end

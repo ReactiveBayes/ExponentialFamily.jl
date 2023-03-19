@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Multinomial" begin
     @testset "probvec" begin
@@ -55,11 +55,11 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
     @testset "naturalparameter related Multinomial" begin
         d1 = Multinomial(5, [0.1, 0.4, 0.5])
         d2 = Multinomial(5, [0.2, 0.4, 0.4])
-        η1 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
-        η2 = NaturalParameters(Multinomial, [log(0.2), log(0.4), log(0.4)], 5)
+        η1 = ExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
+        η2 = ExponentialFamilyDistribution(Multinomial, [log(0.2), log(0.4), log(0.4)], 5)
 
-        @test convert(NaturalParameters, d1) == η1
-        @test convert(NaturalParameters, d2) == η2
+        @test convert(ExponentialFamilyDistribution, d1) == η1
+        @test convert(ExponentialFamilyDistribution, d2) == η2
 
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
@@ -74,12 +74,12 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test basemeasure(d1, [1, 2, 2]) == basemeasure(η1, [1, 2, 2])
         @test basemeasure(d2, [1, 2, 2]) == basemeasure(η2, [1, 2, 2])
 
-        @test η1 + η2 == NaturalParameters(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
-        @test η1 - η2 == NaturalParameters(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)], 5)
+        @test η1 + η2 == ExponentialFamilyDistribution(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
+        @test η1 - η2 == ExponentialFamilyDistribution(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)], 5)
         @test η1 + η2 - η2 ≈ η1
         @test η1 + η2 - η1 ≈ η2
-        η3 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
-        η4 = NaturalParameters(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
+        η3 = ExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
+        η4 = ExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
         @test η3 + η4 == [η3, η4]
         @test logpdf(η1, [1, 2, 2]) == logpdf(d1, [1, 2, 2])
         @test logpdf(η2, [1, 2, 2]) == logpdf(d2, [1, 2, 2])

@@ -26,28 +26,28 @@ end
 
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
-Base.convert(::Type{NaturalParameters}, dist::Erlang) = NaturalParameters(Erlang, [(shape(dist) - 1), -rate(dist)])
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Erlang) = ExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Erlang})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Erlang})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return Erlang(Int64(a + 1), -1 / b)
 end
 
-function lognormalizer(params::NaturalParameters{Erlang})
-    η = get_params(params)
+function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Erlang})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return logfactorial(a) - (a + 1) * log(-b)
 end
 
-function isproper(params::NaturalParameters{Erlang})
-    η = get_params(params)
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Erlang})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:NaturalParameters{Erlang}, <:Erlang}, x) = 1.0
-plus(::NaturalParameters{Erlang}, ::NaturalParameters{Erlang}) = Plus()
+basemeasure(::Union{<:ExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = 1.0
+plus(::ExponentialFamilyDistribution{Erlang}, ::ExponentialFamilyDistribution{Erlang}) = Plus()

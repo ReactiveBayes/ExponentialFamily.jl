@@ -8,7 +8,7 @@ using ForwardDiff
 using Random
 using StableRNGs
 
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -276,48 +276,48 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         end
     end
 
-    @testset "UnivariateNormalNaturalParameters" begin
+    @testset "UnivariateNormalExponentialFamilyDistribution" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, NaturalParameters(NormalWeightedMeanPrecision, [i, -i])) ==
+                @test convert(Distribution, ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) ==
                       NormalWeightedMeanPrecision(i, 2 * i)
-                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-                      NaturalParameters(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
-                @test convert(NaturalParameters, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-                      NaturalParameters(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
+                @test convert(ExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
+                      ExponentialFamilyDistribution(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
+                @test convert(ExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
+                      ExponentialFamilyDistribution(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
             end
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(NormalWeightedMeanPrecision, [1, -2])) ≈ -(log(2) - 1 / 8)
+            @test lognormalizer(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                @test logpdf(NaturalParameters(NormalWeightedMeanPrecision, [i, -i]), 0) ≈
+                @test logpdf(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i]), 0) ≈
                       logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
             end
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(NaturalParameters(NormalWeightedMeanPrecision, [i, -i])) === true
-                @test isproper(NaturalParameters(NormalWeightedMeanPrecision, [i, i])) === false
+                @test isproper(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) === true
+                @test isproper(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, i])) === false
             end
         end
     end
 
-    @testset "MultivariateNormalNaturalParameters" begin
+    @testset "MultivariateNormalExponentialFamilyDistribution" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(
                     Distribution,
-                    NaturalParameters(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
+                    ExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
                 ) ==
                       MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
-                @test convert(NaturalParameters, MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])) ≈
-                      NaturalParameters(
+                @test convert(ExponentialFamilyDistribution, MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])) ≈
+                      ExponentialFamilyDistribution(
                     MvGaussianWeightedMeanPrecision{Float64, Vector{Float64}, Matrix{Float64}},
                     [float([i, 0]), float([-i 0; 0 -i])]
                 )
@@ -326,7 +326,7 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
         @testset "logpdf" begin
             for i in 1:10
-                mv_np = NaturalParameters(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
+                mv_np = ExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
                 distribution = MvGaussianWeightedMeanPrecision([i, 0.0], [2*i -0.0; -0.0 2*i])
                 @test logpdf(distribution, [0.0, 0.0]) ≈ logpdf(mv_np, [0.0, 0.0])
                 @test logpdf(distribution, [1.0, 0.0]) ≈ logpdf(mv_np, [1.0, 0.0])
@@ -335,19 +335,19 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(NormalWeightedMeanPrecision, [1, -2])) ≈ -(log(2) - 1 / 8)
+            @test lognormalizer(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈ -(log(2) - 1 / 8)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]])) === true
-                @test isproper(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [i 0; 0 i]])) === false
+                @test isproper(ExponentialFamilyDistribution(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]])) === true
+                @test isproper(ExponentialFamilyDistribution(MvNormalMeanCovariance, [[i, 0], [i 0; 0 i]])) === false
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(NaturalParameters(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]]), rand(2)) ==
+                @test basemeasure(ExponentialFamilyDistribution(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]]), rand(2)) ==
                       1 / (2pi)
             end
         end

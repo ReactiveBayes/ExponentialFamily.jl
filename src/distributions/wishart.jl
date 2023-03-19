@@ -117,22 +117,22 @@ end
 
 check_valid_natural(::Type{<:Union{WishartMessage, Wishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{NaturalParameters}, dist::WishartMessage)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartMessage)
     dof = dist.ν
     invscale = dist.invS
     p = first(size(invscale))
-    return NaturalParameters(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
+    return ExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Wishart)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart)
     dof = dist.ν
     invscale = cholinv(dist.S)
     p = first(size(invscale))
-    return NaturalParameters(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
+    return ExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:WishartMessage})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, params::ExponentialFamilyDistribution{<:WishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
@@ -143,8 +143,8 @@ function Base.convert(::Type{Distribution}, params::NaturalParameters{<:WishartM
     return WishartMessage(2 * η1 + p + 1, 0.5cholinv(-η2))
 end
 
-function lognormalizer(params::NaturalParameters{<:WishartMessage})
-    η = get_params(params)
+function lognormalizer(params::ExponentialFamilyDistribution{<:WishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
@@ -153,13 +153,13 @@ function lognormalizer(params::NaturalParameters{<:WishartMessage})
     return term1 + term2
 end
 
-function isproper(params::NaturalParameters{<:WishartMessage})
-    η = get_params(params)
+function isproper(params::ExponentialFamilyDistribution{<:WishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     isposdef(-η2) && (0 < η1)
 end
 
-basemeasure(::Union{<:NaturalParameters{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
+basemeasure(::Union{<:ExponentialFamilyDistribution{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
 
-plus(::NaturalParameters{WishartMessage}, ::NaturalParameters{WishartMessage}) = Plus()
+plus(::ExponentialFamilyDistribution{WishartMessage}, ::ExponentialFamilyDistribution{WishartMessage}) = Plus()

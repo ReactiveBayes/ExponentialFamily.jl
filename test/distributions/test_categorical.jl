@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Categorical" begin
 
@@ -41,15 +41,15 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
     end
 
     @testset "EF related Categorical" begin
-        ηcat = NaturalParameters(Categorical, [log(0.5), log(0.5)])
+        ηcat = ExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
         dist = Categorical([0.5, 0.5])
-        η1   = NaturalParameters(Categorical, [log(0.5), log(0.5)])
-        η2   = NaturalParameters(Categorical, [log(0.5), log(0.5)])
+        η1   = ExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
+        η2   = ExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
 
         @test convert(Distribution, ηcat) == dist
-        @test convert(NaturalParameters, dist) == NaturalParameters(Categorical, log.([0.5, 0.5]))
-        @test η1 + η2 == NaturalParameters(Categorical, [2log(0.5), 2log(0.5)])
-        @test η1 - η2 == NaturalParameters(Categorical, [0.0, 0.0])
+        @test convert(ExponentialFamilyDistribution, dist) == ExponentialFamilyDistribution(Categorical, log.([0.5, 0.5]))
+        @test η1 + η2 == ExponentialFamilyDistribution(Categorical, [2log(0.5), 2log(0.5)])
+        @test η1 - η2 == ExponentialFamilyDistribution(Categorical, [0.0, 0.0])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)

@@ -62,24 +62,24 @@ end
 compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
     compute_logscale(new_dist, right_dist, left_dist)
 
-function lognormalizer(params::NaturalParameters{Bernoulli})
-    return -log(logistic(-first(get_params(params))))
+function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
+    return -log(logistic(-first(getnaturalparameters(exponentialfamily))))
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Bernoulli})
-    logprobability = getindex(get_params(params), 1)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
+    logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
     return Bernoulli(exp(logprobability) / (1 + exp(logprobability)))
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Bernoulli)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Bernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    NaturalParameters(Bernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
+    ExponentialFamilyDistribution(Bernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
 end
 
-isproper(params::NaturalParameters{Bernoulli}) = true
+isproper(exponentialfamily::ExponentialFamilyDistribution{Bernoulli}) = true
 
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
-basemeasure(T::Union{<:NaturalParameters{Bernoulli}, <:Bernoulli}, x) = 1.0
+basemeasure(T::Union{<:ExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) = 1.0
 
-plus(::NaturalParameters{Bernoulli}, ::NaturalParameters{Bernoulli}) = Plus()
+plus(::ExponentialFamilyDistribution{Bernoulli}, ::ExponentialFamilyDistribution{Bernoulli}) = Plus()

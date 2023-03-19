@@ -173,23 +173,23 @@ end
 
 check_valid_natural(::Type{<:Union{InverseWishartMessage, InverseWishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{NaturalParameters}, dist::Union{InverseWishartMessage, InverseWishart})
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartMessage, InverseWishart})
     dof = dist.ν
     scale = dist.S
     p = first(size(scale))
-    return NaturalParameters(InverseWishartMessage, [-(dof + p + 1) / 2, -scale / 2])
+    return ExponentialFamilyDistribution(InverseWishartMessage, [-(dof + p + 1) / 2, -scale / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:InverseWishartMessage})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, params::ExponentialFamilyDistribution{<:InverseWishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
     return InverseWishart(-(2 * η1 + p + 1), -2η2)
 end
 
-function lognormalizer(params::NaturalParameters{<:InverseWishartMessage})
-    η = get_params(params)
+function lognormalizer(params::ExponentialFamilyDistribution{<:InverseWishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
@@ -198,8 +198,8 @@ function lognormalizer(params::NaturalParameters{<:InverseWishartMessage})
     return term1 + term2
 end
 
-function isproper(params::NaturalParameters{<:InverseWishartMessage})
-    η = get_params(params)
+function isproper(params::ExponentialFamilyDistribution{<:InverseWishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     isposdef(-η2) && (η1 < 0)
@@ -207,10 +207,10 @@ end
 
 basemeasure(
     ::Union{
-        <:NaturalParameters{<:InverseWishartMessage},
+        <:ExponentialFamilyDistribution{<:InverseWishartMessage},
         <:Union{InverseWishartMessage, InverseWishart}
     },
     x
 ) = 1.0
 
-plus(::NaturalParameters{InverseWishartMessage}, ::NaturalParameters{InverseWishartMessage}) = Plus()
+plus(::ExponentialFamilyDistribution{InverseWishartMessage}, ::ExponentialFamilyDistribution{InverseWishartMessage}) = Plus()

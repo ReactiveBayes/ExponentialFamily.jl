@@ -86,29 +86,29 @@ end
 
 check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDistributionsFamily})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
     return GammaShapeRate(η1 + 1, -η2)
 end
 
-Base.convert(::Type{NaturalParameters}, dist::GammaDistributionsFamily) =
-    NaturalParameters(GammaShapeRate, [shape(dist) - 1, -rate(dist)])
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::GammaDistributionsFamily) =
+    ExponentialFamilyDistribution(GammaShapeRate, [shape(dist) - 1, -rate(dist)])
 
-function lognormalizer(params::NaturalParameters{<:GammaDistributionsFamily})
-    η = get_params(params)
+function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return loggamma(a + 1) - (a + 1) * log(-b)
 end
 
-function isproper(params::NaturalParameters{<:GammaDistributionsFamily})
-    η = get_params(params)
+function isproper(exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:NaturalParameters{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0
-plus(::NaturalParameters{GammaShapeRate}, ::NaturalParameters{GammaShapeRate}) = Plus()
+basemeasure(::Union{<:ExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0
+plus(::ExponentialFamilyDistribution{GammaShapeRate}, ::ExponentialFamilyDistribution{GammaShapeRate}) = Plus()

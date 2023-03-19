@@ -27,31 +27,31 @@ function logpdf_sample_friendly(dist::Pareto)
     return (friendly, friendly)
 end
 
-Base.convert(::Type{NaturalParameters}, dist::Pareto) =
-    NaturalParameters(Pareto, [-shape(dist) - 1], shape(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Pareto) =
+    ExponentialFamilyDistribution(Pareto, [-shape(dist) - 1], shape(dist))
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:Pareto})
-    η = first(get_params(params))
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{<:Pareto})
+    η = first(getnaturalparameters(exponentialfamily))
     return Pareto(-1 - η)
 end
 
-function lognormalizer(params::NaturalParameters{Pareto})
-    η = first(get_params(params))
-    k = get_conditioner(params)
+function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Pareto})
+    η = first(getnaturalparameters(exponentialfamily))
+    k = getconditioner(exponentialfamily)
     return -log(-1 - η) + (1 + η)log(k)
 end
 
-check_valid_natural(::Type{<:Pareto}, params) = first(params) < -1
+check_valid_natural(::Type{<:Pareto}, params) = (length(params) === 1)
 check_valid_conditioner(::Type{<:Pareto}, conditioner) = isinteger(conditioner) && conditioner > 0
-function isproper(params::NaturalParameters{Pareto})
-    η = get_params(params)
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Pareto})
+    η = getnaturalparameters(exponentialfamily)
     return (first(η) <= -1)
 end
 
-basemeasure(::Union{<:NaturalParameters{Pareto}, <:Pareto}, x) = 1.0
+basemeasure(::Union{<:ExponentialFamilyDistribution{Pareto}, <:Pareto}, x) = 1.0
 
-function plus(np1::NaturalParameters{Pareto}, np2::NaturalParameters{Pareto})
-    if get_conditioner(np1) == get_conditioner(np2) && (first(size(get_params(np1))) == first(size(get_params(np2))))
+function plus(np1::ExponentialFamilyDistribution{Pareto}, np2::ExponentialFamilyDistribution{Pareto})
+    if getconditioner(np1) == getconditioner(np2) && (first(size(getnaturalparameters(np1))) == first(size(getnaturalparameters(np2))))
         return Plus()
     else
         return Concat()

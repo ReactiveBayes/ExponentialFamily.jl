@@ -28,24 +28,24 @@ function compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist:
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
 end
 
-function lognormalizer(params::NaturalParameters{Dirichlet})
-    η = get_params(params)
+function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Dirichlet})
+    η = getnaturalparameters(exponentialfamily)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η)
     secondterm = loggamma(sum(η .+ 1))
     return firstterm - secondterm
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Dirichlet})
-    get_params(params)
-    return Dirichlet(get_params(params) .+ 1)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Dirichlet})
+    getnaturalparameters(exponentialfamily)
+    return Dirichlet(getnaturalparameters(exponentialfamily) .+ 1)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Dirichlet)
-    NaturalParameters(Dirichlet, probvec(dist) .- 1)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Dirichlet)
+    ExponentialFamilyDistribution(Dirichlet, probvec(dist) .- 1)
 end
 
-isproper(params::NaturalParameters{<:Dirichlet}) = all(isless.(-1, get_params(params)))
+isproper(exponentialfamily::ExponentialFamilyDistribution{<:Dirichlet}) = all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
-basemeasure(::Union{<:NaturalParameters{Dirichlet}, <:Dirichlet}, x) = 1.0
-plus(::NaturalParameters{Dirichlet}, ::NaturalParameters{Dirichlet}) = Plus()
+basemeasure(::Union{<:ExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) = 1.0
+plus(::ExponentialFamilyDistribution{Dirichlet}, ::ExponentialFamilyDistribution{Dirichlet}) = Plus()

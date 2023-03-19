@@ -4,7 +4,7 @@ using Test
 using Random
 using Distributions
 using ExponentialFamily
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Pareto" begin
     @testset "Pareto vague" begin
@@ -26,14 +26,14 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
 
     @testset "Natural parameterization related Pareto" begin
         @test Distributions.logpdf(Pareto(10.0, 1.0), 1.0) ≈
-              Distributions.logpdf(convert(NaturalParameters, Pareto(10.0, 1.0)), 1.0)
+              Distributions.logpdf(convert(ExponentialFamilyDistribution, Pareto(10.0, 1.0)), 1.0)
         @test Distributions.logpdf(Pareto(5.0, 1.0), 1.0) ≈
-              Distributions.logpdf(convert(NaturalParameters, Pareto(5.0, 1.0)), 1.0)
+              Distributions.logpdf(convert(ExponentialFamilyDistribution, Pareto(5.0, 1.0)), 1.0)
     end
     @testset "isproper" begin
-        @test isproper(NaturalParameters(Pareto, [-2.0], 1)) == true
-        @test_throws AssertionError NaturalParameters(Pareto, [-2.0], 2.1)
-        @test_throws AssertionError isproper(NaturalParameters(Pareto, [1.3]))
+        @test isproper(ExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
+        @test_throws AssertionError ExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
+        @test_throws AssertionError isproper(ExponentialFamilyDistribution(Pareto, [1.3]))
     end
 end
 end

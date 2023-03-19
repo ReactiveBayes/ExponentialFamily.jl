@@ -1,0 +1,17 @@
+using DarmoisKoopmanFamily
+using Distributions
+import DarmoisKoopmanFamily: DarmoisKoopmanFamily, getDarmoisKoopmanFamily, compute_logscale, lognormalizer, basemeasure
+np1 = DarmoisKoopmanFamily(Bernoulli,[log(0.1)])
+np2 = DarmoisKoopmanFamily(Dirichlet,[log(0.1), log(0.9)])
+
+np = [np1, np2]
+function basemeasure(vnp::Vector{T},x::Real) where {T <: DarmoisKoopmanFamily}
+    return mapreduce(p -> basemeasure(p,x), *, vnp)
+end
+
+function lognormalizer(vnp::Vector{T}) where {T <: DarmoisKoopmanFamily}
+    return mapreduce(p -> lognormalizer(p),+,vnp)
+end
+
+np3 = convert(DarmoisKoopmanFamily, Beta(2,2))
+basemeasure(np,2.0)

@@ -22,22 +22,22 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Categorical)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical)
     logprobabilities = log.(probvec(dist))
-    return NaturalParameters(Categorical, logprobabilities)
+    return ExponentialFamilyDistribution(Categorical, logprobabilities)
 end
 
-function Base.convert(::Type{Distribution}, η::NaturalParameters{Categorical})
-    return Categorical(softmax(get_params(η)))
+function Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{Categorical})
+    return Categorical(softmax(getnaturalparameters(η)))
 end
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-function lognormalizer(::NaturalParameters{Categorical})
+function lognormalizer(::ExponentialFamilyDistribution{Categorical})
     return 0.0
 end
 
-isproper(params::NaturalParameters{Categorical}) = true
+isproper(::ExponentialFamilyDistribution{Categorical}) = true
 
 function logpdf_sample_friendly(dist::Categorical)
     p = probvec(dist)
@@ -45,5 +45,5 @@ function logpdf_sample_friendly(dist::Categorical)
     return (friendly, friendly)
 end
 
-basemeasure(::Union{<:NaturalParameters{Categorical}, <:Categorical}, x) = 1.0
-plus(::NaturalParameters{Categorical}, ::NaturalParameters{Categorical}) = Plus()
+basemeasure(::Union{<:ExponentialFamilyDistribution{Categorical}, <:Categorical}, x) = 1.0
+plus(::ExponentialFamilyDistribution{Categorical}, ::ExponentialFamilyDistribution{Categorical}) = Plus()

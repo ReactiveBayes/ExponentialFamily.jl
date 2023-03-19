@@ -24,13 +24,13 @@ function Base.prod(::ProdAnalytical, left::Binomial, right::Binomial)
     return Binomial(ntrials(left), pprod / norm)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Binomial)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Binomial)
     n, p = params(dist)
-    return NaturalParameters(Binomial, [logit(p)], n)
+    return ExponentialFamilyDistribution(Binomial, [logit(p)], n)
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Binomial})
-    return Binomial(get_conditioner(params), logistic(first(get_params(params))))
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Binomial})
+    return Binomial(getconditioner(exponentialfamily), logistic(first(getnaturalparameters(exponentialfamily))))
 end
 
 check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
@@ -39,18 +39,18 @@ function check_valid_conditioner(::Type{<:Binomial}, conditioner)
     isinteger(conditioner) && conditioner > 0
 end
 
-isproper(params::NaturalParameters{Binomial}) = get_conditioner(params) > 0 ? true : false
+isproper(exponentialfamily::ExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily) > 0 ? true : false
 
-lognormalizer(params::NaturalParameters{Binomial}) = get_conditioner(params)log(1 + exp(first(get_params(params))))
+lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily)log(1 + exp(first(getnaturalparameters(exponentialfamily))))
 
-basemeasure(d::NaturalParameters{Binomial}, x) =
-    typeof(x) <: Integer ? binomial(get_conditioner(d), x) : error("x must be integer")
+basemeasure(exponentialfamily::ExponentialFamilyDistribution{Binomial}, x) =
+    typeof(x) <: Integer ? binomial(getconditioner(exponentialfamily), x) : error("x must be integer")
 
 function basemeasure(d::Binomial, x)
     binomial(d.n, x)
 end
 
-function plus(np1::NaturalParameters{Binomial}, np2::NaturalParameters{Binomial})
-    condition = get_conditioner(np1) == get_conditioner(np2) && (length(get_params(np1)) == length(get_params(np2)))
+function plus(ef1::ExponentialFamilyDistribution{Binomial}, ef2::ExponentialFamilyDistribution{Binomial})
+    condition = getconditioner(ef1) == getconditioner(ef2) && (length(getnaturalparameters(ef1)) == length(getnaturalparameters(ef2)))
     return condition ? Plus() : Concat()
 end

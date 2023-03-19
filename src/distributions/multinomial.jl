@@ -22,30 +22,30 @@ function Base.prod(::ProdAnalytical, left::Multinomial, right::Multinomial)
     return Multinomial(left.n, mvec ./ norm)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Multinomial)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Multinomial)
     n, p = params(dist)
     logprobabilities = log.(p)
 
-    return NaturalParameters(Multinomial, logprobabilities, n)
+    return ExponentialFamilyDistribution(Multinomial, logprobabilities, n)
 end
 
-function Base.convert(::Type{Distribution}, η::NaturalParameters{Multinomial})
-    return Multinomial(get_conditioner(η), softmax(get_params(η)))
+function Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{Multinomial})
+    return Multinomial(getconditioner(η), softmax(getnaturalparameters(η)))
 end
 check_valid_natural(::Type{<:Multinomial}, params) = length(params) >= 1
 function check_valid_conditioner(::Type{<:Multinomial}, conditioner)
     isinteger(conditioner) && conditioner > 0
 end
 
-function isproper(params::NaturalParameters{Multinomial})
-    logp = get_params(params)
-    n = get_conditioner(params)
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Multinomial})
+    logp = getnaturalparameters(exponentialfamily)
+    n = getconditioner(exponentialfamily)
     return (n >= 1) && (length(logp) >= 1)
 end
 
-lognormalizer(::NaturalParameters{Multinomial}) = 0.0
+lognormalizer(::ExponentialFamilyDistribution{Multinomial}) = 0.0
 
-function basemeasure(::Union{<:NaturalParameters{Multinomial}, <:Multinomial}, x)
+function basemeasure(::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x)
     """
     x is a vector satisfying ∑x = n
     """
@@ -53,8 +53,8 @@ function basemeasure(::Union{<:NaturalParameters{Multinomial}, <:Multinomial}, x
     return factorial(n) / prod(factorial.(x))
 end
 
-function plus(np1::NaturalParameters{Multinomial}, np2::NaturalParameters{Multinomial})
-    if get_conditioner(np1) == get_conditioner(np2) && (first(size(get_params(np1))) == first(size(get_params(np2))))
+function plus(np1::ExponentialFamilyDistribution{Multinomial}, np2::ExponentialFamilyDistribution{Multinomial})
+    if getconditioner(np1) == getconditioner(np2) && (first(size(getnaturalparameters(np1))) == first(size(getnaturalparameters(np2))))
         return Plus()
     else
         return Concat()

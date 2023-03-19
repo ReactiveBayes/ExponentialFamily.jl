@@ -7,7 +7,7 @@ using Random
 using LinearAlgebra
 using StableRNGs
 
-import ExponentialFamily: InverseWishartMessage, NaturalParameters, get_params, basemeasure
+import ExponentialFamily: InverseWishartMessage, ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
@@ -155,19 +155,19 @@ import StatsFuns: logmvgamma
         end
     end
 
-    @testset "InverseWishartNaturalParameters" begin
+    @testset "InverseWishartExponentialFamilyDistribution" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(
                     Distribution,
-                    NaturalParameters(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
+                    ExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
                 ) ≈ InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = NaturalParameters(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = ExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
                 distribution = InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -176,28 +176,28 @@ import StatsFuns: logmvgamma
         end
 
         @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(InverseWishartMessage, [-3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
+            @test lognormalizer(ExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
                   logmvgamma(2, 1.5)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(NaturalParameters(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === false
-                @test isproper(NaturalParameters(InverseWishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
-                @test isproper(NaturalParameters(InverseWishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === true
+                @test isproper(ExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === false
+                @test isproper(ExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
+                @test isproper(ExponentialFamilyDistribution(InverseWishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === true
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(NaturalParameters(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
+                @test basemeasure(ExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
             end
         end
 
         @testset "base operations" begin
             for i in 1:10
-                np1 = NaturalParameters(InverseWishartMessage, [3.0, [i 0.0; 0.0 i]])
-                np2 = NaturalParameters(InverseWishartMessage, [3.0, [2i 0.0; 0.0 2i]])
+                np1 = ExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 i]])
+                np2 = ExponentialFamilyDistribution(InverseWishartMessage, [3.0, [2i 0.0; 0.0 2i]])
                 @test np1 + np2 - np2 == np1
                 @test np1 + np2 - np1 == np2
             end

@@ -50,7 +50,7 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    η = first(get_params(convert(NaturalParameters, dist)))
+    η = first(getnaturalparameters(convert(ExponentialFamilyDistribution, dist)))
     eη = exp(η)
     return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
@@ -93,44 +93,44 @@ end
 prod_analytical_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::ContinuousBernoulli, right::ContinuousBernoulli)
-    npleft = convert(NaturalParameters, left)
-    npright = convert(NaturalParameters, right)
+    npleft = convert(ExponentialFamilyDistribution, left)
+    npright = convert(ExponentialFamilyDistribution, right)
 
     return convert(Distribution, npleft + npright)
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{ContinuousBernoulli})
-    logprobability = getindex(get_params(params), 1)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
+    logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
     return ContinuousBernoulli(logistic(logprobability))
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::ContinuousBernoulli)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::ContinuousBernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    NaturalParameters(ContinuousBernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
+    ExponentialFamilyDistribution(ContinuousBernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
 end
 
-isproper(params::NaturalParameters{ContinuousBernoulli}) = true
+isproper(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) = true
 
 check_valid_natural(::Type{<:ContinuousBernoulli}, params) = (length(params) === 1)
 
-basemeasure(T::Union{<:NaturalParameters{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = 1.0
+basemeasure(T::Union{<:ExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = 1.0
 
-plus(::NaturalParameters{ContinuousBernoulli}, ::NaturalParameters{ContinuousBernoulli}) = Plus()
+plus(::ExponentialFamilyDistribution{ContinuousBernoulli}, ::ExponentialFamilyDistribution{ContinuousBernoulli}) = Plus()
 
-function isvague(params::NaturalParameters{ContinuousBernoulli})
-    if first(get_params(params)) ≈ 0.0
+function isvague(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
+    if first(getnaturalparameters(exponentialfamily)) ≈ 0.0
         return VagueContinuousBernoulli()
     else
         return NonVagueContinuousBernoulli()
     end
 end
 
-function lognormalizer(::NonVagueContinuousBernoulli, params::NaturalParameters{ContinuousBernoulli})
-    η = first(get_params(params))
+function lognormalizer(::NonVagueContinuousBernoulli, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
+    η = first(getnaturalparameters(exponentialfamily))
     return log((exp(η) - 1) / η + tiny)
 end
-lognormalizer(::VagueContinuousBernoulli, params::NaturalParameters{ContinuousBernoulli}) = log(2.0)
-lognormalizer(params::NaturalParameters{ContinuousBernoulli}) = lognormalizer(isvague(params), params)
+lognormalizer(::VagueContinuousBernoulli, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) = log(2.0)
+lognormalizer(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) = lognormalizer(isvague(exponentialfamily), exponentialfamily)
 
 Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}) where {T} = icdf(dist, rand(rng, Uniform()))
 

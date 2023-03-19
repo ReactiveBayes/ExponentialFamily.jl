@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, NaturalParameters, get_params
+import ExponentialFamily: xtlog, ExponentialFamilyDistribution, getnaturalparameters
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -116,15 +116,15 @@ import ExponentialFamily: xtlog, NaturalParameters, get_params
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
     end
 
-    @testset "GammaShapeRateNaturalParameters" begin
+    @testset "GammaShapeRateExponentialFamilyDistribution" begin
         for i in 2:10
-            @test convert(Distribution, NaturalParameters(GammaShapeRate, [i, -i])) ≈ GammaShapeRate(i + 1, i)
-            @test Distributions.logpdf(NaturalParameters(GammaShapeRate, [i, -i]), 10) ≈
+            @test convert(Distribution, ExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈ GammaShapeRate(i + 1, i)
+            @test Distributions.logpdf(ExponentialFamilyDistribution(GammaShapeRate, [i, -i]), 10) ≈
                   Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
-            @test isproper(NaturalParameters(Gamma, [i, -i])) === true
-            @test isproper(NaturalParameters(Gamma, [-i, i])) === false
-            @test convert(NaturalParameters, GammaShapeRate(i + 1, i)) ≈ NaturalParameters(GammaShapeRate, [i, -i])
-            @test convert(NaturalParameters, GammaShapeScale(i + 1, i)) ≈ NaturalParameters(GammaShapeRate, [i, -1 / i])
+            @test isproper(ExponentialFamilyDistribution(Gamma, [i, -i])) === true
+            @test isproper(ExponentialFamilyDistribution(Gamma, [-i, i])) === false
+            @test convert(ExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈ ExponentialFamilyDistribution(GammaShapeRate, [i, -i])
+            @test convert(ExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈ ExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
         end
     end
 

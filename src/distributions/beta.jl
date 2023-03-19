@@ -29,19 +29,19 @@ function mean(::typeof(mirrorlog), dist::Beta)
     return digamma(b) - digamma(a + b)
 end
 
-function isproper(params::NaturalParameters{Beta})
-    αm1 = first(get_params(params))
-    βm1 = getindex(get_params(params), 2)
+function isproper(params::ExponentialFamilyDistribution{Beta})
+    αm1 = first(getnaturalparameters(params))
+    βm1 = getindex(getnaturalparameters(params), 2)
     return ((αm1 + 1) > 0) && ((βm1 + 1) > 0)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Beta)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Beta)
     a, b = params(dist)
-    NaturalParameters(Beta, [a - 1, b - 1])
+    ExponentialFamilyDistribution(Beta, [a - 1, b - 1])
 end
 
-function Base.convert(::Type{Distribution}, η::NaturalParameters{Beta})
-    params = get_params(η)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Beta})
+    params = getnaturalparameters(exponentialfamily)
     αm1    = first(params)
     βm1    = getindex(params, 2)
     return Beta(αm1 + 1, βm1 + 1, check_args = false)
@@ -49,9 +49,9 @@ end
 
 check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 
-lognormalizer(params::NaturalParameters{Beta}) =
-    logbeta(first(get_params(params)) + 1, getindex(get_params(params), 2) + 1)
+lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Beta}) =
+    logbeta(first(getnaturalparameters(exponentialfamily)) + 1, getindex(getnaturalparameters(exponentialfamily), 2) + 1)
 
-basemeasure(T::Union{<:NaturalParameters{Beta}, <:Beta}, x) = 1.0
+basemeasure(T::Union{<:ExponentialFamilyDistribution{Beta}, <:Beta}, x) = 1.0
 
-plus(::NaturalParameters{Beta}, ::NaturalParameters{Beta}) = Plus()
+plus(::ExponentialFamilyDistribution{Beta}, ::ExponentialFamilyDistribution{Beta}) = Plus()

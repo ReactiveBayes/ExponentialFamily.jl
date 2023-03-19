@@ -24,8 +24,8 @@ function Distributions.entropy(dist::MatrixDirichlet)
 end
 
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
-    η = Base.convert(NaturalParameters, dist)
-    return -lognormalizer(η) + tr(get_params(η)' * log.(x))
+    η = Base.convert(ExponentialFamilyDistribution, dist)
+    return -lognormalizer(η) + tr(getnaturalparameters(η)' * log.(x))
 end
 
 Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
@@ -39,21 +39,21 @@ function Base.prod(::ProdAnalytical, left::MatrixDirichlet, right::MatrixDirichl
     return MatrixDirichlet(left.a + right.a .- one(T))
 end
 
-lognormalizer(params::NaturalParameters{MatrixDirichlet}) =
-    mapreduce(d -> lognormalizer(NaturalParameters(Dirichlet, d)), +, eachrow(get_params(params)))
+lognormalizer(exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
+    mapreduce(d -> lognormalizer(ExponentialFamilyDistribution(Dirichlet, d)), +, eachrow(getnaturalparameters(exponentialfamily)))
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{MatrixDirichlet})
-    get_params(params)
-    return MatrixDirichlet(get_params(params) .+ 1)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet})
+    getnaturalparameters(exponentialfamily)
+    return MatrixDirichlet(getnaturalparameters(exponentialfamily) .+ 1)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::MatrixDirichlet)
-    NaturalParameters(MatrixDirichlet, dist.a .- 1)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixDirichlet)
+    ExponentialFamilyDistribution(MatrixDirichlet, dist.a .- 1)
 end
 
-isproper(params::NaturalParameters{<:MatrixDirichlet}) = all(isless.(-1, get_params(params)))
+isproper(exponentialfamily::ExponentialFamilyDistribution{<:MatrixDirichlet}) = all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Matrix)
 
-basemeasure(::Union{<:NaturalParameters{MatrixDirichlet}, <:MatrixDirichlet}, x) = 1.0
-plus(::NaturalParameters{MatrixDirichlet}, ::NaturalParameters{MatrixDirichlet}) = Plus()
+basemeasure(::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}, x) = 1.0
+plus(::ExponentialFamilyDistribution{MatrixDirichlet}, ::ExponentialFamilyDistribution{MatrixDirichlet}) = Plus()

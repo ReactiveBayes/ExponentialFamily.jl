@@ -23,18 +23,18 @@ end
 
 check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
-function Base.convert(::Type{NaturalParameters}, dist::Exponential)
-    return NaturalParameters(Exponential, [-inv(dist.θ)])
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Exponential)
+    return ExponentialFamilyDistribution(Exponential, [-inv(dist.θ)])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Exponential})
-    return Exponential(-inv(first(get_params(params))))
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Exponential})
+    return Exponential(-inv(first(getnaturalparameters(exponentialfamily))))
 end
 
-function lognormalizer(η::NaturalParameters{Exponential})
-    return -log(-first(get_params(η)))
+function lognormalizer(η::ExponentialFamilyDistribution{Exponential})
+    return -log(-first(getnaturalparameters(η)))
 end
 
-isproper(params::NaturalParameters{Exponential}) = (first(get_params(params)) <= 0)
-basemeasure(::Union{<:NaturalParameters{Exponential}, <:Exponential}, x) = 1.0
-plus(::NaturalParameters{Exponential}, ::NaturalParameters{Exponential}) = Plus()
+isproper(exponentialfamily::ExponentialFamilyDistribution{Exponential}) = (first(getnaturalparameters(exponentialfamily)) <= 0)
+basemeasure(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0
+plus(::ExponentialFamilyDistribution{Exponential}, ::ExponentialFamilyDistribution{Exponential}) = Plus()

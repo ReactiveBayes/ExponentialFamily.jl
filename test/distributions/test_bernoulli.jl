@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: NaturalParameters, get_params, compute_logscale, lognormalizer, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, lognormalizer, basemeasure
 
 @testset "Bernoulli" begin
 
@@ -42,28 +42,28 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
         @test compute_logscale(Categorical([1.0, 0.0, 0.0]), Bernoulli(0.5), Categorical([1.0, 0, 0])) ≈ log(0.5)
     end
 
-    @testset "NaturalParameters" begin
-        @test lognormalizer(convert(NaturalParameters, Bernoulli(0.5))) ≈ log(2)
+    @testset "ExponentialFamilyDistribution" begin
+        @test lognormalizer(convert(ExponentialFamilyDistribution, Bernoulli(0.5))) ≈ log(2)
         b_99 = Bernoulli(0.99)
         for i in 1:9
             b = Bernoulli(i / 10.0)
-            bnp = convert(NaturalParameters, b)
+            bnp = convert(ExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
-            @test convert(NaturalParameters, b) == NaturalParameters(Bernoulli, [logit(i / 10.0)])
+            @test convert(ExponentialFamilyDistribution, b) == ExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
 
-            @test prod(ProdAnalytical(), convert(Distribution, convert(NaturalParameters, b_99) - bnp), b) ≈ b_99
+            @test prod(ProdAnalytical(), convert(Distribution, convert(ExponentialFamilyDistribution, b_99) - bnp), b) ≈ b_99
         end
-        @test isproper(NaturalParameters(Bernoulli, [10])) === true
+        @test isproper(ExponentialFamilyDistribution(Bernoulli, [10])) === true
         @test basemeasure(b_99, 0.1) == 1.0
-        @test basemeasure(NaturalParameters(Bernoulli, [10]), 0.2) == 1.0
+        @test basemeasure(ExponentialFamilyDistribution(Bernoulli, [10]), 0.2) == 1.0
 
-        @testset "+(::NaturalParameters{Bernoulli}, ::NaturalParameters{Bernoulli})" begin
-            left = convert(NaturalParameters, Bernoulli(0.5))
-            right = convert(NaturalParameters, Bernoulli(0.6))
-            @test (left + right) == convert(NaturalParameters, Bernoulli(0.6))
+        @testset "+(::ExponentialFamilyDistribution{Bernoulli}, ::ExponentialFamilyDistribution{Bernoulli})" begin
+            left = convert(ExponentialFamilyDistribution, Bernoulli(0.5))
+            right = convert(ExponentialFamilyDistribution, Bernoulli(0.6))
+            @test (left + right) == convert(ExponentialFamilyDistribution, Bernoulli(0.6))
         end
     end
 end

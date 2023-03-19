@@ -8,10 +8,10 @@ vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 prod_analytical_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = ProdAnalyticalRuleAvailable()
 
 function Base.prod(::ProdAnalytical, left::VonMisesFisher, right::VonMisesFisher)
-    naturalparams_left = Base.convert(NaturalParameters, left)
-    naturalparams_right = Base.convert(NaturalParameters, right)
-    naturalparams = naturalparams_left + naturalparams_right
-    return Base.convert(Distribution, naturalparams)
+    ef_left = Base.convert(ExponentialFamilyDistribution, left)
+    ef_right = Base.convert(ExponentialFamilyDistribution, right)
+    naturalparams = getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
+    return Base.convert(Distribution, ExponentialFamilyDistribution(VonMisesFisher,naturalparams))
 end
 
 function Distributions.mean(dist::VonMisesFisher)
@@ -22,15 +22,15 @@ function Distributions.mean(dist::VonMisesFisher)
     return factor * μ
 end
 
-isproper(params::NaturalParameters{VonMisesFisher}) = all(0 .<= (get_params(params)))
+isproper(exponentialfamily::ExponentialFamilyDistribution{VonMisesFisher}) = all(0 .<= (getnaturalparameters(exponentialfamily)))
 
-function Base.convert(::Type{NaturalParameters}, dist::VonMisesFisher)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::VonMisesFisher)
     μ, κ = params(dist)
-    NaturalParameters(VonMisesFisher, μ * κ)
+    ExponentialFamilyDistribution(VonMisesFisher, μ * κ)
 end
 
-function Base.convert(::Type{Distribution}, η::NaturalParameters{VonMisesFisher})
-    κμ = get_params(η)
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{VonMisesFisher})
+    κμ = getnaturalparameters(exponentialfamily)
     κ = sqrt(κμ' * κμ)
     μ = κμ / κ
     return VonMisesFisher(μ, κ)
@@ -38,13 +38,13 @@ end
 
 check_valid_natural(::Type{<:VonMisesFisher}, v) = length(v) >= 2
 
-function lognormalizer(params::NaturalParameters{VonMisesFisher})
-    η = get_params(params)
+function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{VonMisesFisher})
+    η = getnaturalparameters(exponentialfamily)
     ## because cos^2+sin^2 = 1 this trick obtains κ 
     κ = sqrt(η' * η)
     p = length(η)
     return log(besselj(0.5p - 1, κ))
 end
-basemeasure(::Union{<:NaturalParameters{VonMisesFisher}, <:VonMisesFisher}, x) = (1 / 2pi)^(length(x) / 2)
+basemeasure(::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x) = (1 / 2pi)^(length(x) / 2)
 
-plus(::NaturalParameters{VonMisesFisher}, ::NaturalParameters{VonMisesFisher}) = Plus()
+plus(::ExponentialFamilyDistribution{VonMisesFisher}, ::ExponentialFamilyDistribution{VonMisesFisher}) = Plus()
