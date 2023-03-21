@@ -7,12 +7,12 @@ vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
 prod_analytical_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::VonMisesFisher, right::VonMisesFisher)
-    ef_left = Base.convert(KnownExponentialFamilyDistribution, left)
-    ef_right = Base.convert(KnownExponentialFamilyDistribution, right)
-    naturalparams = getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
-    return Base.convert(Distribution, KnownExponentialFamilyDistribution(VonMisesFisher,naturalparams))
-end
+# function Base.prod(::ClosedProd, left::VonMisesFisher, right::VonMisesFisher)
+#     ef_left = Base.convert(KnownExponentialFamilyDistribution, left)
+#     ef_right = Base.convert(KnownExponentialFamilyDistribution, right)
+#     naturalparams = getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
+#     return Base.convert(Distribution, KnownExponentialFamilyDistribution(VonMisesFisher,naturalparams))
+# end
 
 function Distributions.mean(dist::VonMisesFisher)
     (μ, κ) = params(dist)

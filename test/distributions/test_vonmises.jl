@@ -23,15 +23,15 @@ import SpecialFunctions: besselj0
     @testset "prod" begin
         @test prod(ClosedProd(), VonMises(3.0, 2.0), VonMises(2.0, 1.0)) ≈ Base.convert(
             Distribution,
-            convert(KnownExponentialFamilyDistribution, VonMises(3.0, 2.0)) + convert(KnownExponentialFamilyDistribution, VonMises(2.0, 1.0))
+            prod(convert(KnownExponentialFamilyDistribution, VonMises(3.0, 2.0)) , convert(KnownExponentialFamilyDistribution, VonMises(2.0, 1.0)))
         )
         @test prod(ClosedProd(), VonMises(7.0, 1.0), VonMises(0.1, 4.5)) ≈ Base.convert(
             Distribution,
-            convert(KnownExponentialFamilyDistribution, VonMises(7.0, 1.0)) + convert(KnownExponentialFamilyDistribution, VonMises(0.1, 4.5))
+            prod(convert(KnownExponentialFamilyDistribution, VonMises(7.0, 1.0)) , convert(KnownExponentialFamilyDistribution, VonMises(0.1, 4.5)))
         )
         @test prod(ClosedProd(), VonMises(1.0, 3.0), VonMises(0.2, 0.4)) ≈ Base.convert(
             Distribution,
-            convert(KnownExponentialFamilyDistribution, VonMises(1.0, 3.0)) + convert(KnownExponentialFamilyDistribution, VonMises(0.2, 0.4))
+            prod(convert(KnownExponentialFamilyDistribution, VonMises(1.0, 3.0)) , convert(KnownExponentialFamilyDistribution, VonMises(0.2, 0.4)))
         )
     end
 

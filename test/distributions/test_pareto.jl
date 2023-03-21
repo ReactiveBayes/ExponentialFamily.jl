@@ -33,7 +33,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "isproper" begin
         @test isproper(KnownExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
         @test_throws AssertionError KnownExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
-        @test_throws AssertionError isproper(KnownExponentialFamilyDistribution(Pareto, [1.3]))
+        @test_throws MethodError KnownExponentialFamilyDistribution(Pareto, [1.3])
     end
 end
 end

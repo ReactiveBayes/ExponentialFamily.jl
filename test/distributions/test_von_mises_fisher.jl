@@ -24,14 +24,14 @@ import SpecialFunctions: besselj
         @test prod(ClosedProd(), VonMisesFisher([sin(30), cos(30)], 3.0), VonMisesFisher([sin(45), cos(45)], 4.0)) ≈
               Base.convert(
             Distribution,
-            convert(KnownExponentialFamilyDistribution, VonMisesFisher([sin(30), cos(30)], 3.0)) +
-            convert(KnownExponentialFamilyDistribution, VonMisesFisher([sin(45), cos(45)], 4.0))
+            prod(convert(KnownExponentialFamilyDistribution, VonMisesFisher([sin(30), cos(30)], 3.0)), 
+            convert(KnownExponentialFamilyDistribution, VonMisesFisher([sin(45), cos(45)], 4.0)))
         )
         @test prod(ClosedProd(), VonMisesFisher([sin(15), cos(15)], 5.0), VonMisesFisher([cos(20), sin(20)], 2.0)) ≈
               Base.convert(
             Distribution,
-            convert(KnownExponentialFamilyDistribution, VonMisesFisher([sin(15), cos(15)], 5.0)) +
-            convert(KnownExponentialFamilyDistribution, VonMisesFisher([cos(20), sin(20)], 2.0))
+            prod(convert(KnownExponentialFamilyDistribution, VonMisesFisher([sin(15), cos(15)], 5.0)) ,
+            convert(KnownExponentialFamilyDistribution, VonMisesFisher([cos(20), sin(20)], 2.0)))
         )
     end
 

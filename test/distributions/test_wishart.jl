@@ -112,8 +112,7 @@ import StatsFuns: logmvgamma
             for i in 1:10
                 np1 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
                 np2 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]])
-                @test np1 + np2 - np2 == np1
-                @test np1 + np2 - np1 == np2
+                @test prod(np1 , np2)  == KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]]+[3.0, [-i 0.0; 0.0 -i]])
             end
         end
     end
