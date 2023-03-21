@@ -282,9 +282,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 @test convert(Distribution, KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) ==
                       NormalWeightedMeanPrecision(i, 2 * i)
                 @test convert(KnownExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-                      KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
+                      KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
                 @test convert(KnownExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-                      KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision{Float64}, float([i, -i]))
+                      KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
             end
         end
 
@@ -318,7 +318,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
                 @test convert(KnownExponentialFamilyDistribution, MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])) ≈
                       KnownExponentialFamilyDistribution(
-                    MvGaussianWeightedMeanPrecision{Float64, Vector{Float64}, Matrix{Float64}},
+                    MvGaussianWeightedMeanPrecision,
                     [float([i, 0]), float([-i 0; 0 -i])]
                 )
             end
