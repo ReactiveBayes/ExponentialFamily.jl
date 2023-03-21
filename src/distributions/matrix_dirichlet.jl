@@ -24,36 +24,35 @@ function Distributions.entropy(dist::MatrixDirichlet)
 end
 
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
-    η = Base.convert(ExponentialFamilyDistribution, dist)
-    return -lognormalizer(η) + tr(getnaturalparameters(η)' * log.(x))
+    η = Base.convert(KnownExponentialFamilyDistribution, dist)
+    return -logpartition(η) + tr(getnaturalparameters(η)' * log.(x))
 end
 
 Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
 
 mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
 
-prod_analytical_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::MatrixDirichlet, right::MatrixDirichlet)
+function Base.prod(::ClosedProd, left::MatrixDirichlet, right::MatrixDirichlet)
     T = promote_samplefloattype(left, right)
     return MatrixDirichlet(left.a + right.a .- one(T))
 end
 
-lognormalizer(exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
-    mapreduce(d -> lognormalizer(ExponentialFamilyDistribution(Dirichlet, d)), +, eachrow(getnaturalparameters(exponentialfamily)))
+logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
+    mapreduce(d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)), +, eachrow(getnaturalparameters(exponentialfamily)))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet})
     getnaturalparameters(exponentialfamily)
     return MatrixDirichlet(getnaturalparameters(exponentialfamily) .+ 1)
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixDirichlet)
-    ExponentialFamilyDistribution(MatrixDirichlet, dist.a .- 1)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MatrixDirichlet)
+    KnownExponentialFamilyDistribution(MatrixDirichlet, dist.a .- 1)
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{<:MatrixDirichlet}) = all(isless.(-1, getnaturalparameters(exponentialfamily)))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:MatrixDirichlet}) = all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Matrix)
 
-basemeasure(::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}, x) = 1.0
-plus(::ExponentialFamilyDistribution{MatrixDirichlet}, ::ExponentialFamilyDistribution{MatrixDirichlet}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}, x) = 1.0

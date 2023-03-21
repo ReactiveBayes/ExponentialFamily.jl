@@ -12,9 +12,9 @@ end
 
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
-prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::Erlang, right::Erlang)
+function Base.prod(::ClosedProd, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
@@ -26,28 +26,27 @@ end
 
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Erlang) = ExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) = KnownExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Erlang})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return Erlang(Int64(a + 1), -1 / b)
 end
 
-function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Erlang})
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return logfactorial(a) - (a + 1) * log(-b)
 end
 
-function isproper(exponentialfamily::ExponentialFamilyDistribution{Erlang})
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:ExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = 1.0
-plus(::ExponentialFamilyDistribution{Erlang}, ::ExponentialFamilyDistribution{Erlang}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = 1.0

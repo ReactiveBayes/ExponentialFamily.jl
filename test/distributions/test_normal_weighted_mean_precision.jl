@@ -114,11 +114,11 @@ using ExponentialFamily
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1 / 1), NormalWeightedMeanPrecision(1, 1 / 1)) ≈
+        @test prod(ClosedProd(), NormalWeightedMeanPrecision(-1, 1 / 1), NormalWeightedMeanPrecision(1, 1 / 1)) ≈
               NormalWeightedMeanPrecision(0, 2)
-        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(-1, 1 / 2), NormalWeightedMeanPrecision(1, 1 / 4)) ≈
+        @test prod(ClosedProd(), NormalWeightedMeanPrecision(-1, 1 / 2), NormalWeightedMeanPrecision(1, 1 / 4)) ≈
               NormalWeightedMeanPrecision(0, 3 / 4)
-        @test prod(ProdAnalytical(), NormalWeightedMeanPrecision(2, 1 / 2), NormalWeightedMeanPrecision(0, 1 / 10)) ≈
+        @test prod(ClosedProd(), NormalWeightedMeanPrecision(2, 1 / 2), NormalWeightedMeanPrecision(0, 1 / 10)) ≈
               NormalWeightedMeanPrecision(2, 3 / 5)
     end
 end

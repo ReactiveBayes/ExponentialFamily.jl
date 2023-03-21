@@ -5,23 +5,23 @@ import SpecialFunctions: besselj0
 
 vague(::Type{<:VonMises}) = VonMises(0.0, tiny)
 
-prod_analytical_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::VonMises, right::VonMises)
-    naturalparams_left = Base.convert(ExponentialFamilyDistribution, left)
-    naturalparams_right = Base.convert(ExponentialFamilyDistribution, right)
+function Base.prod(::ClosedProd, left::VonMises, right::VonMises)
+    naturalparams_left = Base.convert(KnownExponentialFamilyDistribution, left)
+    naturalparams_right = Base.convert(KnownExponentialFamilyDistribution, right)
     naturalparams = naturalparams_left + naturalparams_right
     return Base.convert(Distribution, naturalparams)
 end
 
-isproper(params::ExponentialFamilyDistribution{VonMises}) = true
+isproper(params::KnownExponentialFamilyDistribution{VonMises}) = true
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::VonMises)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::VonMises)
     μ, κ = params(dist)
-    ExponentialFamilyDistribution(VonMises, [κ * cos(μ), κ * sin(μ)])
+    KnownExponentialFamilyDistribution(VonMises, [κ * cos(μ), κ * sin(μ)])
 end
 
-function Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{VonMises})
+function Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{VonMises})
     params = getnaturalparameters(η)
     κcosμ  = first(params)
 
@@ -32,10 +32,9 @@ end
 
 check_valid_natural(::Type{<:VonMises}, v) = length(v) === 2
 
-function lognormalizer(params::ExponentialFamilyDistribution{VonMises})
+function logpartition(params::KnownExponentialFamilyDistribution{VonMises})
     η = getnaturalparameters(params)
     κ = sqrt(η' * η)
     return log(besselj0(κ))
 end
-basemeasure(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x) = 1 / 2pi
-plus(::ExponentialFamilyDistribution{VonMises}, ::ExponentialFamilyDistribution{VonMises}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMises}, <:VonMises}, x) = 1 / 2pi

@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, ExponentialFamilyDistribution, getnaturalparameters
+import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -116,15 +116,15 @@ import ExponentialFamily: xtlog, ExponentialFamilyDistribution, getnaturalparame
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
     end
 
-    @testset "GammaShapeRateExponentialFamilyDistribution" begin
+    @testset "GammaShapeRateKnownExponentialFamilyDistribution" begin
         for i in 2:10
-            @test convert(Distribution, ExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈ GammaShapeRate(i + 1, i)
-            @test Distributions.logpdf(ExponentialFamilyDistribution(GammaShapeRate, [i, -i]), 10) ≈
+            @test convert(Distribution, KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈ GammaShapeRate(i + 1, i)
+            @test Distributions.logpdf(KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i]), 10) ≈
                   Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
-            @test isproper(ExponentialFamilyDistribution(Gamma, [i, -i])) === true
-            @test isproper(ExponentialFamilyDistribution(Gamma, [-i, i])) === false
-            @test convert(ExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈ ExponentialFamilyDistribution(GammaShapeRate, [i, -i])
-            @test convert(ExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈ ExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
+            @test isproper(KnownExponentialFamilyDistribution(Gamma, [i, -i])) === true
+            @test isproper(KnownExponentialFamilyDistribution(Gamma, [-i, i])) === false
+            @test convert(KnownExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈ KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])
+            @test convert(KnownExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈ KnownExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
         end
     end
 
@@ -179,29 +179,29 @@ import ExponentialFamily: xtlog, ExponentialFamilyDistribution, getnaturalparame
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), GammaShapeScale(1, 1), GammaShapeScale(1, 1)) == GammaShapeScale(1, 1 / 2)
-        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeScale(1, 1)) == GammaShapeScale(1, 2 / 3)
-        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeScale(1, 2)) == GammaShapeScale(1, 1)
-        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeScale(1, 2)) == GammaShapeScale(2, 1)
-        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeScale(2, 2)) == GammaShapeScale(3, 1)
+        @test prod(ClosedProd(), GammaShapeScale(1, 1), GammaShapeScale(1, 1)) == GammaShapeScale(1, 1 / 2)
+        @test prod(ClosedProd(), GammaShapeScale(1, 2), GammaShapeScale(1, 1)) == GammaShapeScale(1, 2 / 3)
+        @test prod(ClosedProd(), GammaShapeScale(1, 2), GammaShapeScale(1, 2)) == GammaShapeScale(1, 1)
+        @test prod(ClosedProd(), GammaShapeScale(2, 2), GammaShapeScale(1, 2)) == GammaShapeScale(2, 1)
+        @test prod(ClosedProd(), GammaShapeScale(2, 2), GammaShapeScale(2, 2)) == GammaShapeScale(3, 1)
 
-        @test prod(ProdAnalytical(), GammaShapeRate(1, 1), GammaShapeRate(1, 1)) == GammaShapeRate(1, 2)
-        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeRate(1, 1)) == GammaShapeRate(1, 3)
-        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeRate(1, 2)) == GammaShapeRate(1, 4)
-        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeRate(1, 2)) == GammaShapeRate(2, 4)
-        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeRate(2, 2)) == GammaShapeRate(3, 4)
+        @test prod(ClosedProd(), GammaShapeRate(1, 1), GammaShapeRate(1, 1)) == GammaShapeRate(1, 2)
+        @test prod(ClosedProd(), GammaShapeRate(1, 2), GammaShapeRate(1, 1)) == GammaShapeRate(1, 3)
+        @test prod(ClosedProd(), GammaShapeRate(1, 2), GammaShapeRate(1, 2)) == GammaShapeRate(1, 4)
+        @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeRate(1, 2)) == GammaShapeRate(2, 4)
+        @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeRate(2, 2)) == GammaShapeRate(3, 4)
 
-        @test prod(ProdAnalytical(), GammaShapeScale(1, 1), GammaShapeRate(1, 1)) == GammaShapeScale(1, 1 / 2)
-        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeRate(1, 1)) == GammaShapeScale(1, 2 / 3)
-        @test prod(ProdAnalytical(), GammaShapeScale(1, 2), GammaShapeRate(1, 2)) == GammaShapeScale(1, 2 / 5)
-        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeRate(1, 2)) == GammaShapeScale(2, 2 / 5)
-        @test prod(ProdAnalytical(), GammaShapeScale(2, 2), GammaShapeRate(2, 2)) == GammaShapeScale(3, 2 / 5)
+        @test prod(ClosedProd(), GammaShapeScale(1, 1), GammaShapeRate(1, 1)) == GammaShapeScale(1, 1 / 2)
+        @test prod(ClosedProd(), GammaShapeScale(1, 2), GammaShapeRate(1, 1)) == GammaShapeScale(1, 2 / 3)
+        @test prod(ClosedProd(), GammaShapeScale(1, 2), GammaShapeRate(1, 2)) == GammaShapeScale(1, 2 / 5)
+        @test prod(ClosedProd(), GammaShapeScale(2, 2), GammaShapeRate(1, 2)) == GammaShapeScale(2, 2 / 5)
+        @test prod(ClosedProd(), GammaShapeScale(2, 2), GammaShapeRate(2, 2)) == GammaShapeScale(3, 2 / 5)
 
-        @test prod(ProdAnalytical(), GammaShapeRate(1, 1), GammaShapeScale(1, 1)) == GammaShapeRate(1, 2)
-        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeScale(1, 1)) == GammaShapeRate(1, 3)
-        @test prod(ProdAnalytical(), GammaShapeRate(1, 2), GammaShapeScale(1, 2)) == GammaShapeRate(1, 5 / 2)
-        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5 / 2)
-        @test prod(ProdAnalytical(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
+        @test prod(ClosedProd(), GammaShapeRate(1, 1), GammaShapeScale(1, 1)) == GammaShapeRate(1, 2)
+        @test prod(ClosedProd(), GammaShapeRate(1, 2), GammaShapeScale(1, 1)) == GammaShapeRate(1, 3)
+        @test prod(ClosedProd(), GammaShapeRate(1, 2), GammaShapeScale(1, 2)) == GammaShapeRate(1, 5 / 2)
+        @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5 / 2)
+        @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
     end
 end
 

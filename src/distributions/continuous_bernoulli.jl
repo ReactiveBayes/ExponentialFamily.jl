@@ -50,7 +50,7 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    η = first(getnaturalparameters(convert(ExponentialFamilyDistribution, dist)))
+    η = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, dist)))
     eη = exp(η)
     return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
@@ -90,34 +90,33 @@ function logpdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real)
     return x * log(λ) + (1 - x) * log(1 - λ) + log(c)
 end
 
-prod_analytical_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::ContinuousBernoulli, right::ContinuousBernoulli)
-    npleft = convert(ExponentialFamilyDistribution, left)
-    npright = convert(ExponentialFamilyDistribution, right)
+# function Base.prod(::ClosedProd, left::ContinuousBernoulli, right::ContinuousBernoulli)
+#     efleft = convert(KnownExponentialFamilyDistribution, left)
+#     npright = convert(KnownExponentialFamilyDistribution, right)
 
-    return convert(Distribution, npleft + npright)
-end
+#     return convert(Distribution, npleft + npright)
+# end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
     return ContinuousBernoulli(logistic(logprobability))
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::ContinuousBernoulli)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::ContinuousBernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    ExponentialFamilyDistribution(ContinuousBernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
+    KnownExponentialFamilyDistribution(ContinuousBernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) = true
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = true
 
 check_valid_natural(::Type{<:ContinuousBernoulli}, params) = (length(params) === 1)
 
-basemeasure(T::Union{<:ExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = 1.0
+basemeasure(T::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = 1.0
 
-plus(::ExponentialFamilyDistribution{ContinuousBernoulli}, ::ExponentialFamilyDistribution{ContinuousBernoulli}) = Plus()
 
-function isvague(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
+function isvague(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     if first(getnaturalparameters(exponentialfamily)) ≈ 0.0
         return VagueContinuousBernoulli()
     else
@@ -125,12 +124,12 @@ function isvague(exponentialfamily::ExponentialFamilyDistribution{ContinuousBern
     end
 end
 
-function lognormalizer(::NonVagueContinuousBernoulli, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
+function logpartition(::NonVagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     η = first(getnaturalparameters(exponentialfamily))
     return log((exp(η) - 1) / η + tiny)
 end
-lognormalizer(::VagueContinuousBernoulli, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) = log(2.0)
-lognormalizer(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) = lognormalizer(isvague(exponentialfamily), exponentialfamily)
+logpartition(::VagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = log(2.0)
+logpartition(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = logpartition(isvague(exponentialfamily), exponentialfamily)
 
 Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}) where {T} = icdf(dist, rand(rng, Uniform()))
 

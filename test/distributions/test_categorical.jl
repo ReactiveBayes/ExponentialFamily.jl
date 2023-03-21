@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Categorical" begin
 
@@ -26,11 +26,11 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, b
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
+        @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
               Categorical([0.1, 0.4, 0.5])
-        @test prod(ProdAnalytical(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
+        @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
               Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ProdAnalytical(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ==
+        @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ==
               Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
     end
 
@@ -41,15 +41,14 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, b
     end
 
     @testset "EF related Categorical" begin
-        ηcat = ExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
+        ηcat = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
         dist = Categorical([0.5, 0.5])
-        η1   = ExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
-        η2   = ExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
+        η1   = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
+        η2   = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
 
         @test convert(Distribution, ηcat) == dist
-        @test convert(ExponentialFamilyDistribution, dist) == ExponentialFamilyDistribution(Categorical, log.([0.5, 0.5]))
-        @test η1 + η2 == ExponentialFamilyDistribution(Categorical, [2log(0.5), 2log(0.5)])
-        @test η1 - η2 == ExponentialFamilyDistribution(Categorical, [0.0, 0.0])
+        @test convert(KnownExponentialFamilyDistribution, dist) == KnownExponentialFamilyDistribution(Categorical, log.([0.5, 0.5]))
+        @test prod(η1 , η2) == KnownExponentialFamilyDistribution(Categorical, [2log(0.5), 2log(0.5)])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)

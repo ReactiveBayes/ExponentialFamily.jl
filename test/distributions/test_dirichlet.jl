@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import SpecialFunctions: loggamma
 @testset "Dirichlet" begin
 
@@ -26,11 +26,11 @@ import SpecialFunctions: loggamma
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0])) ==
+        @test prod(ClosedProd(), Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0])) ==
               Dirichlet([1.0, 1.0, 1.0])
-        @test prod(ProdAnalytical(), Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0])) ==
+        @test prod(ClosedProd(), Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0])) ==
               Dirichlet([1.1, 1.2000000000000002, 2.0])
-        @test prod(ProdAnalytical(), Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0])) ==
+        @test prod(ClosedProd(), Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0])) ==
               Dirichlet([3.0999999999999996, 2.2, 6.0])
     end
 
@@ -56,27 +56,28 @@ import SpecialFunctions: loggamma
         @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
     end
 
-    @testset "ExponentialFamilyDistribution" begin
-        @test convert(ExponentialFamilyDistribution, Dirichlet([0.6, 0.7])) == ExponentialFamilyDistribution(Dirichlet, [0.6, 0.7] .- 1)
+    @testset "KnownExponentialFamilyDistribution" begin
+        @test convert(KnownExponentialFamilyDistribution, Dirichlet([0.6, 0.7])) == KnownExponentialFamilyDistribution(Dirichlet, [0.6, 0.7] .- 1)
         b_01 = Dirichlet([10.0, 10.0, 10.0])
-        @test lognormalizer(convert(ExponentialFamilyDistribution, Dirichlet([1, 1]))) ≈ 2loggamma(2)
-        @test lognormalizer(convert(ExponentialFamilyDistribution, Dirichlet([0.1, 0.2]))) ≈
+        nb_01 = convert(KnownExponentialFamilyDistribution,b_01)
+        @test logpartition(convert(KnownExponentialFamilyDistribution, Dirichlet([1, 1]))) ≈ 2loggamma(2)
+        @test logpartition(convert(KnownExponentialFamilyDistribution, Dirichlet([0.1, 0.2]))) ≈
               loggamma(0.1) + loggamma(0.2) - loggamma(0.3)
         for i in 1:9
             b = Dirichlet([i / 10.0, i / 5, i])
-            bnp = convert(ExponentialFamilyDistribution, b)
+            bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, [0.5, 0.4, 0.1]) ≈ logpdf(b, [0.5, 0.4, 0.1])
             @test logpdf(bnp, [0.2, 0.3, 0.5]) ≈ logpdf(b, [0.2, 0.3, 0.5])
 
-            @test convert(ExponentialFamilyDistribution, b) == bnp
+            @test convert(KnownExponentialFamilyDistribution, b) == bnp
 
-            @test prod(ProdAnalytical(), convert(Distribution, convert(ExponentialFamilyDistribution, b_01) - bnp), b) ≈ b_01
+            @test prod(ClosedProd(),b, b_01) ≈ convert(Distribution, prod(bnp,nb_01))
         end
-        @test isproper(ExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
-        @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
-        @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
-        @test basemeasure(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand(3)) == 1.0
+        @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
+        @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
+        @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
+        @test basemeasure(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand(3)) == 1.0
     end
 end
 

@@ -73,7 +73,7 @@ end
 vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
-prod_analytical_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     invcovleft  = invcov(left)
@@ -83,14 +83,14 @@ function Base.prod(::ProdPreserveType, left::MvNormalMeanCovariance, right::MvNo
     return MvNormalMeanCovariance(μ, Σ)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
+function Base.prod(::ClosedProd, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     xi_left, W_left = weightedmean_precision(left)
     xi_right, W_right = weightedmean_precision(right)
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
 function Base.prod(
-    ::ProdAnalytical,
+    ::ClosedProd,
     left::MvNormalMeanCovariance{T1},
     right::MvNormalMeanCovariance{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}

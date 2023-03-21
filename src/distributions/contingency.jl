@@ -97,16 +97,16 @@ function Distributions.entropy(distribution::Contingency)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Contingency)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Contingency)
     logcontingency = log.(contingency_matrix(dist))
-    return ExponentialFamilyDistribution(Contingency, logcontingency)
+    return KnownExponentialFamilyDistribution(Contingency, logcontingency)
 end
 
-function Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{Contingency})
+function Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Contingency})
     return Contingency(softmax(getnaturalparameters(η)))
 end
 
-function lognormalizer(::ExponentialFamilyDistribution{Contingency})
+function logpartition(::KnownExponentialFamilyDistribution{Contingency})
     return 0.0
 end
 
@@ -158,8 +158,8 @@ function icdf(dist::Contingency, probability::Float64)
     return [cartesianind[1][1], cartesianind[1][2]]
 end
 
-isproper(::ExponentialFamilyDistribution{Contingency}) = true
-basemeasure(::Union{<:ExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
+isproper(::KnownExponentialFamilyDistribution{Contingency}) = true
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     probvector   = vec(contingency_matrix(dist))
@@ -182,4 +182,4 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractAr
     return container
 end
 
-plus(::ExponentialFamilyDistribution{Contingency}, ::ExponentialFamilyDistribution{Contingency}) = Plus()
+prod_analytical_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()

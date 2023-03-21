@@ -5,9 +5,9 @@ import SpecialFunctions: digamma, logbeta
 
 vague(::Type{<:Exponential}) = Exponential(1e12)
 
-prod_analytical_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::Exponential, right::Exponential)
+function Base.prod(::ClosedProd, left::Exponential, right::Exponential)
     θ_left  = left.θ
     θ_right = right.θ
     return Exponential(inv(inv(θ_left) + inv(θ_right)))
@@ -17,24 +17,23 @@ function mean(::typeof(log), dist::Exponential)
     return -log(rate(dist)) - MathConstants.eulergamma
 end
 
-function lognormalizer(dist::Exponential)
+function logpartition(dist::Exponential)
     return -log(rate(dist))
 end
 
 check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Exponential)
-    return ExponentialFamilyDistribution(Exponential, [-inv(dist.θ)])
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Exponential)
+    return KnownExponentialFamilyDistribution(Exponential, [-inv(dist.θ)])
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Exponential})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Exponential})
     return Exponential(-inv(first(getnaturalparameters(exponentialfamily))))
 end
 
-function lognormalizer(η::ExponentialFamilyDistribution{Exponential})
+function logpartition(η::KnownExponentialFamilyDistribution{Exponential})
     return -log(-first(getnaturalparameters(η)))
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{Exponential}) = (first(getnaturalparameters(exponentialfamily)) <= 0)
-basemeasure(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0
-plus(::ExponentialFamilyDistribution{Exponential}, ::ExponentialFamilyDistribution{Exponential}) = Plus()
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) = (first(getnaturalparameters(exponentialfamily)) <= 0)
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0

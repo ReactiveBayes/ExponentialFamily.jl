@@ -56,9 +56,9 @@ Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} =
 
 vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
 
-prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeRate)
+function Base.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeRate)
     T = promote_samplefloattype(left, right)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end

@@ -96,9 +96,9 @@ end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartMessage` messages as they are significantly faster in creation
-prod_analytical_rule(::Type{<:WishartMessage}, ::Type{<:WishartMessage}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:WishartMessage}, ::Type{<:WishartMessage}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::WishartMessage, right::WishartMessage)
+function Base.prod(::ClosedProd, left::WishartMessage, right::WishartMessage)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
 
     d = size(left, 1)
@@ -117,21 +117,21 @@ end
 
 check_valid_natural(::Type{<:Union{WishartMessage, Wishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartMessage)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::WishartMessage)
     dof = dist.ν
     invscale = dist.invS
     p = first(size(invscale))
-    return ExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
+    return KnownExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Wishart)
     dof = dist.ν
     invscale = cholinv(dist.S)
     p = first(size(invscale))
-    return ExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
+    return KnownExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::ExponentialFamilyDistribution{<:WishartMessage})
+function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:WishartMessage})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -143,7 +143,7 @@ function Base.convert(::Type{Distribution}, params::ExponentialFamilyDistributio
     return WishartMessage(2 * η1 + p + 1, 0.5cholinv(-η2))
 end
 
-function lognormalizer(params::ExponentialFamilyDistribution{<:WishartMessage})
+function logpartition(params::KnownExponentialFamilyDistribution{<:WishartMessage})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -153,13 +153,12 @@ function lognormalizer(params::ExponentialFamilyDistribution{<:WishartMessage})
     return term1 + term2
 end
 
-function isproper(params::ExponentialFamilyDistribution{<:WishartMessage})
+function isproper(params::KnownExponentialFamilyDistribution{<:WishartMessage})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     isposdef(-η2) && (0 < η1)
 end
 
-basemeasure(::Union{<:ExponentialFamilyDistribution{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
 
-plus(::ExponentialFamilyDistribution{WishartMessage}, ::ExponentialFamilyDistribution{WishartMessage}) = Plus()

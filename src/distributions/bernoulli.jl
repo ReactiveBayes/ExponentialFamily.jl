@@ -7,9 +7,8 @@ vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
 probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
-prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ProdAnalyticalRuleAvailable()
-
-function Base.prod(::ProdAnalytical, left::Bernoulli, right::Bernoulli)
+prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ClosedProd()
+function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
     right_p = succprob(right)
 
@@ -19,9 +18,9 @@ function Base.prod(::ProdAnalytical, left::Bernoulli, right::Bernoulli)
     return Bernoulli(pprod / norm)
 end
 
-prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::Bernoulli, right::Categorical)
+function Base.prod(::ClosedProd, left::Bernoulli, right::Categorical)
     p_left = probvec(left)
     p_right = probvec(right)
 
@@ -62,24 +61,22 @@ end
 compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
     compute_logscale(new_dist, right_dist, left_dist)
 
-function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
     return -log(logistic(-first(getnaturalparameters(exponentialfamily))))
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
     logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
     return Bernoulli(exp(logprobability) / (1 + exp(logprobability)))
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Bernoulli)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Bernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    ExponentialFamilyDistribution(Bernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
+    KnownExponentialFamilyDistribution(Bernoulli, [log(succprob(dist) / (1 - succprob(dist)))])
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{Bernoulli}) = true
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli}) = true
 
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
-basemeasure(T::Union{<:ExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) = 1.0
-
-plus(::ExponentialFamilyDistribution{Bernoulli}, ::ExponentialFamilyDistribution{Bernoulli}) = Plus()
+basemeasure(T::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) = 1.0

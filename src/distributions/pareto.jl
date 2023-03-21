@@ -6,9 +6,9 @@ vague(::Type{<:Pareto}) = Pareto(1e12)
 
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
-prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::L, right::R) where {L <: Pareto, R <: Pareto}
+function Base.prod(::ClosedProd, left::L, right::R) where {L <: Pareto, R <: Pareto}
     n1 = shape(left) + shape(right) + 1
     n2 = exp(
         shape(left) / (shape(left) + shape(right) + 1) * log(scale(left)) +
@@ -27,15 +27,15 @@ function logpdf_sample_friendly(dist::Pareto)
     return (friendly, friendly)
 end
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Pareto) =
-    ExponentialFamilyDistribution(Pareto, [-shape(dist) - 1], shape(dist))
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Pareto) =
+    KnownExponentialFamilyDistribution(Pareto, [-shape(dist) - 1], shape(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{<:Pareto})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{<:Pareto})
     η = first(getnaturalparameters(exponentialfamily))
     return Pareto(-1 - η)
 end
 
-function lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Pareto})
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})
     η = first(getnaturalparameters(exponentialfamily))
     k = getconditioner(exponentialfamily)
     return -log(-1 - η) + (1 + η)log(k)
@@ -43,17 +43,17 @@ end
 
 check_valid_natural(::Type{<:Pareto}, params) = (length(params) === 1)
 check_valid_conditioner(::Type{<:Pareto}, conditioner) = isinteger(conditioner) && conditioner > 0
-function isproper(exponentialfamily::ExponentialFamilyDistribution{Pareto})
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})
     η = getnaturalparameters(exponentialfamily)
     return (first(η) <= -1)
 end
 
-basemeasure(::Union{<:ExponentialFamilyDistribution{Pareto}, <:Pareto}, x) = 1.0
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x) = 1.0
 
-function plus(np1::ExponentialFamilyDistribution{Pareto}, np2::ExponentialFamilyDistribution{Pareto})
-    if getconditioner(np1) == getconditioner(np2) && (first(size(getnaturalparameters(np1))) == first(size(getnaturalparameters(np2))))
-        return Plus()
-    else
-        return Concat()
-    end
-end
+# function plus(np1::KnownExponentialFamilyDistribution{Pareto}, np2::KnownExponentialFamilyDistribution{Pareto})
+#     if getconditioner(np1) == getconditioner(np2) && (first(size(getnaturalparameters(np1))) == first(size(getnaturalparameters(np2))))
+#         return Plus()
+#     else
+#         return Concat()
+#     end
+# end

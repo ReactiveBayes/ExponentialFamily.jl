@@ -11,9 +11,9 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
     return Binomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::Binomial, right::Binomial)
+function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     @assert ntrials(left) == ntrials(right) "Number of trials in $(left) and $(right) is not equal"
     left_p  = succprob(left)
     right_p = succprob(right)
@@ -24,12 +24,12 @@ function Base.prod(::ProdAnalytical, left::Binomial, right::Binomial)
     return Binomial(ntrials(left), pprod / norm)
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Binomial)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Binomial)
     n, p = params(dist)
-    return ExponentialFamilyDistribution(Binomial, [logit(p)], n)
+    return KnownExponentialFamilyDistribution(Binomial, [logit(p)], n)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Binomial})
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Binomial})
     return Binomial(getconditioner(exponentialfamily), logistic(first(getnaturalparameters(exponentialfamily))))
 end
 
@@ -39,18 +39,18 @@ function check_valid_conditioner(::Type{<:Binomial}, conditioner)
     isinteger(conditioner) && conditioner > 0
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily) > 0 ? true : false
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily) > 0 ? true : false
 
-lognormalizer(exponentialfamily::ExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily)log(1 + exp(first(getnaturalparameters(exponentialfamily))))
+logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily)log(1 + exp(first(getnaturalparameters(exponentialfamily))))
 
-basemeasure(exponentialfamily::ExponentialFamilyDistribution{Binomial}, x) =
+basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}, x) =
     typeof(x) <: Integer ? binomial(getconditioner(exponentialfamily), x) : error("x must be integer")
 
 function basemeasure(d::Binomial, x)
     binomial(d.n, x)
 end
 
-function plus(ef1::ExponentialFamilyDistribution{Binomial}, ef2::ExponentialFamilyDistribution{Binomial})
-    condition = getconditioner(ef1) == getconditioner(ef2) && (length(getnaturalparameters(ef1)) == length(getnaturalparameters(ef2)))
-    return condition ? Plus() : Concat()
-end
+# function plus(ef1::KnownExponentialFamilyDistribution{Binomial}, ef2::KnownExponentialFamilyDistribution{Binomial})
+#     condition = getconditioner(ef1) == getconditioner(ef2) && (length(getnaturalparameters(ef1)) == length(getnaturalparameters(ef2)))
+#     return condition ? Plus() : Concat()
+# end
