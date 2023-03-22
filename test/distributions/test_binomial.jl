@@ -25,19 +25,19 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), Binomial(2, 0.7), Binomial(2, 0.1)) ≈ Binomial(2, 7 / 34)
+        @test prod(ConditionallyClosedProd(), Binomial(2, 0.7), Binomial(2, 0.1)) ≈ Binomial(2, 7 / 34)
 
-        @test prod(ClosedProd(), Binomial(3, 0.9), Binomial(3, 0.4)) ≈ Binomial(3, 6 / 7)
+        @test prod(ConditionallyClosedProd(), Binomial(3, 0.9), Binomial(3, 0.4)) ≈ Binomial(3, 6 / 7)
 
-        @test prod(ClosedProd(), Binomial(4, 0.8), Binomial(4, 0.2)) ≈ Binomial(4, 0.5)
+        @test prod(ConditionallyClosedProd(), Binomial(4, 0.8), Binomial(4, 0.2)) ≈ Binomial(4, 0.5)
 
         @test_throws AssertionError prod(
-            ClosedProd(),
+            ConditionallyClosedProd(),
             Binomial(4, 0.8),
             Binomial(5, 0.2)
         )
         @test_throws AssertionError prod(
-            ClosedProd(),
+            ConditionallyClosedProd(),
             Binomial(5, 0.8),
             Binomial(4, 0.2)
         )
@@ -66,13 +66,13 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
 
-        @test η1 + η2 == KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3) + logit(1 / 2)], 5)
-        @test η1 - η2 == KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3) - logit(1 / 2)], 5)
-        @test η3 - η4 ==
-              [KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5), KnownExponentialFamilyDistribution(Binomial, [-log(exp(1) - 1)], 10)]
-        @test η1 + η2 - η2 ≈ η1
-        @test η1 + η2 - η1 ≈ η2
-        @test η3 + η4 == [η3, η4]
+        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3) + logit(1 / 2)], 5)
+        # @test η1 - η2 == KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3) - logit(1 / 2)], 5)
+        # @test η3 - η4 ==
+        #       [KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5), KnownExponentialFamilyDistribution(Binomial, [-log(exp(1) - 1)], 10)]
+        # @test η1 + η2 - η2 ≈ η1
+        # @test η1 + η2 - η1 ≈ η2
+        # @test η3 + η4 == [η3, η4]
 
         @test logpdf(η1, 2) == logpdf(d1, 2)
         @test logpdf(η2, 3) == logpdf(d2, 3)

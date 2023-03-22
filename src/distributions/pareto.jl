@@ -6,16 +6,16 @@ vague(::Type{<:Pareto}) = Pareto(1e12)
 
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
-prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ClosedProd()
+prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ConditionallyClosedProd()
 
-function Base.prod(::ClosedProd, left::L, right::R) where {L <: Pareto, R <: Pareto}
-    n1 = shape(left) + shape(right) + 1
-    n2 = exp(
-        shape(left) / (shape(left) + shape(right) + 1) * log(scale(left)) +
-        shape(right) / (shape(left) + shape(right) + 1) * log(scale(right))
-    )
-    return Pareto(n1, n2)
-end
+# function Base.prod(::ClosedProd, left::L, right::R) where {L <: Pareto, R <: Pareto}
+#     n1 = shape(left) + shape(right) + 1
+#     n2 = exp(
+#         shape(left) / (shape(left) + shape(right) + 1) * log(scale(left)) +
+#         shape(right) / (shape(left) + shape(right) + 1) * log(scale(right))
+#     )
+#     return Pareto(n1, n2)
+# end
 
 function Distributions.mean(dist::Pareto)
     k, θ = params(dist)

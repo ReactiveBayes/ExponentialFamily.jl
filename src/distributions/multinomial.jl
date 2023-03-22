@@ -11,16 +11,16 @@ function convert_eltype(::Type{Multinomial}, ::Type{T}, distribution::Multinomia
     return Multinomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_analytical_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
+prod_analytical_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ConditionallyClosedProd()
 
-function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
-    @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
+# function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
+#     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
 
-    mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
-    norm = sum(mvec)
+#     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
+#     norm = sum(mvec)
 
-    return Multinomial(left.n, mvec ./ norm)
-end
+#     return Multinomial(left.n, mvec ./ norm)
+# end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Multinomial)
     n, p = params(dist)

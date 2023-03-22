@@ -11,7 +11,7 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
     return Binomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
+prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ConditionallyClosedProd()
 
 function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     @assert ntrials(left) == ntrials(right) "Number of trials in $(left) and $(right) is not equal"
@@ -50,7 +50,4 @@ function basemeasure(d::Binomial, x)
     binomial(d.n, x)
 end
 
-# function plus(ef1::KnownExponentialFamilyDistribution{Binomial}, ef2::KnownExponentialFamilyDistribution{Binomial})
-#     condition = getconditioner(ef1) == getconditioner(ef2) && (length(getnaturalparameters(ef1)) == length(getnaturalparameters(ef2)))
-#     return condition ? Plus() : Concat()
-# end
+

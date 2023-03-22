@@ -92,13 +92,6 @@ end
 
 prod_analytical_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ClosedProd()
 
-# function Base.prod(::ClosedProd, left::ContinuousBernoulli, right::ContinuousBernoulli)
-#     efleft = convert(KnownExponentialFamilyDistribution, left)
-#     npright = convert(KnownExponentialFamilyDistribution, right)
-
-#     return convert(Distribution, npleft + npright)
-# end
-
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
     return ContinuousBernoulli(logistic(logprobability))
