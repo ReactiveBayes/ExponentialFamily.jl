@@ -8,19 +8,6 @@ Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
 prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ConditionallyClosedProd()
 
-# function Base.prod(::ClosedProd, left::L, right::R) where {L <: Pareto, R <: Pareto}
-#     n1 = shape(left) + shape(right) + 1
-#     n2 = exp(
-#         shape(left) / (shape(left) + shape(right) + 1) * log(scale(left)) +
-#         shape(right) / (shape(left) + shape(right) + 1) * log(scale(right))
-#     )
-#     return Pareto(n1, n2)
-# end
-
-function Distributions.mean(dist::Pareto)
-    k, θ = params(dist)
-    k > 1 ? k * θ / (k - 1) : Inf
-end
 
 function logpdf_sample_friendly(dist::Pareto)
     friendly = convert(Pareto, dist)
@@ -28,11 +15,12 @@ function logpdf_sample_friendly(dist::Pareto)
 end
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Pareto) =
-    KnownExponentialFamilyDistribution(Pareto, [-shape(dist) - 1], shape(dist))
+    KnownExponentialFamilyDistribution(Pareto, [-shape(dist) - 1], scale(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{<:Pareto})
     η = first(getnaturalparameters(exponentialfamily))
-    return Pareto(-1 - η)
+    conditioner = getconditioner(exponentialfamily)
+    return Pareto(-1 - η,conditioner)
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})
@@ -49,11 +37,3 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x) = 1.0
-
-# function plus(np1::KnownExponentialFamilyDistribution{Pareto}, np2::KnownExponentialFamilyDistribution{Pareto})
-#     if getconditioner(np1) == getconditioner(np2) && (first(size(getnaturalparameters(np1))) == first(size(getnaturalparameters(np2))))
-#         return Plus()
-#     else
-#         return Concat()
-#     end
-# end

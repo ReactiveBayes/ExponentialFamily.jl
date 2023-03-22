@@ -4,7 +4,7 @@ import Distributions
 import Distributions: VariateForm, ValueSupport
 import Base: prod, show, showerror
 
-
+struct ClosedProd end
 """
     ClosedProd
 
@@ -101,7 +101,7 @@ struct ProdPreserveTypeRight end
 
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
-struct ClosedProd end
+
 struct SemiClosedProd end
 struct ConditionallyClosedProd end
 
