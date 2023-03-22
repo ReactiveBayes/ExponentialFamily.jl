@@ -44,7 +44,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(η1, 4) == 1.0
         @test basemeasure(η2, 2) == 1.0
 
-        @test prod(η1 , η2) == KnownExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
+        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
         # @test η1 - η2 == KnownExponentialFamilyDistribution(Geometric, [log(0.4) - log(0.7)])
 
         @test logpdf(η1, 3) == logpdf(d1, 3)

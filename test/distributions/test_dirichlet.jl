@@ -57,9 +57,10 @@ import SpecialFunctions: loggamma
     end
 
     @testset "KnownExponentialFamilyDistribution" begin
-        @test convert(KnownExponentialFamilyDistribution, Dirichlet([0.6, 0.7])) == KnownExponentialFamilyDistribution(Dirichlet, [0.6, 0.7] .- 1)
+        @test convert(KnownExponentialFamilyDistribution, Dirichlet([0.6, 0.7])) ==
+              KnownExponentialFamilyDistribution(Dirichlet, [0.6, 0.7] .- 1)
         b_01 = Dirichlet([10.0, 10.0, 10.0])
-        nb_01 = convert(KnownExponentialFamilyDistribution,b_01)
+        nb_01 = convert(KnownExponentialFamilyDistribution, b_01)
         @test logpartition(convert(KnownExponentialFamilyDistribution, Dirichlet([1, 1]))) ≈ 2loggamma(2)
         @test logpartition(convert(KnownExponentialFamilyDistribution, Dirichlet([0.1, 0.2]))) ≈
               loggamma(0.1) + loggamma(0.2) - loggamma(0.3)
@@ -72,7 +73,7 @@ import SpecialFunctions: loggamma
 
             @test convert(KnownExponentialFamilyDistribution, b) == bnp
 
-            @test prod(ClosedProd(),b, b_01) ≈ convert(Distribution, prod(bnp,nb_01))
+            @test prod(ClosedProd(), b, b_01) ≈ convert(Distribution, prod(bnp, nb_01))
         end
         @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
         @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true

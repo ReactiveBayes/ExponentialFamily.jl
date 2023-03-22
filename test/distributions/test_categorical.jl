@@ -47,8 +47,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         η2   = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
 
         @test convert(Distribution, ηcat) == dist
-        @test convert(KnownExponentialFamilyDistribution, dist) == KnownExponentialFamilyDistribution(Categorical, log.([0.5, 0.5]))
-        @test prod(η1 , η2) == KnownExponentialFamilyDistribution(Categorical, [2log(0.5), 2log(0.5)])
+        @test convert(KnownExponentialFamilyDistribution, dist) ==
+              KnownExponentialFamilyDistribution(Categorical, log.([0.5, 0.5]))
+        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Categorical, [2log(0.5), 2log(0.5)])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)

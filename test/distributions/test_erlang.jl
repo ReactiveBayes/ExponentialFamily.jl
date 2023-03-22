@@ -22,7 +22,8 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
             @test isproper(KnownExponentialFamilyDistribution(Erlang, [i, -i])) === true
             @test isproper(KnownExponentialFamilyDistribution(Erlang, [-i, i])) === false
 
-            @test convert(KnownExponentialFamilyDistribution, Erlang(i + 1, inv(i))) == KnownExponentialFamilyDistribution(Erlang, [i, -i])
+            @test convert(KnownExponentialFamilyDistribution, Erlang(i + 1, inv(i))) ==
+                  KnownExponentialFamilyDistribution(Erlang, [i, -i])
         end
     end
 
@@ -37,7 +38,10 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
     @testset "Base operations" begin
         # @test KnownExponentialFamilyDistribution(Erlang, [1, 2.0]) - KnownExponentialFamilyDistribution(Erlang, [2, 3.0]) ==
         #       KnownExponentialFamilyDistribution(Erlang, [-1, -1.0])
-        @test prod(KnownExponentialFamilyDistribution(Erlang, [4, 2.0]) , KnownExponentialFamilyDistribution(Erlang, [2, 3.0])) ==
+        @test prod(
+            KnownExponentialFamilyDistribution(Erlang, [4, 2.0]),
+            KnownExponentialFamilyDistribution(Erlang, [2, 3.0])
+        ) ==
               KnownExponentialFamilyDistribution(Erlang, [6, 5.0])
     end
 

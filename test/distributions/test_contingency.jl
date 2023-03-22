@@ -67,9 +67,11 @@ import Distributions: cdf
         @test convert(KnownExponentialFamilyDistribution, Contingency([0.1 0.7; 0.05 0.15])) ==
               KnownExponentialFamilyDistribution(Contingency, log.([0.1 0.7; 0.05 0.15]))
         @test d1 == d2
-        @test convert(KnownExponentialFamilyDistribution, d1) == KnownExponentialFamilyDistribution(Contingency, log.([1/4 1/4; 1/4 1/4]))
+        @test convert(KnownExponentialFamilyDistribution, d1) ==
+              KnownExponentialFamilyDistribution(Contingency, log.([1/4 1/4; 1/4 1/4]))
         @test convert(Distribution, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
-        @test prod(ηcontingency, ηcontingency) == KnownExponentialFamilyDistribution(Contingency, 2log.([0.1 0.7; 0.05 0.15]))
+        @test prod(ηcontingency, ηcontingency) ==
+              KnownExponentialFamilyDistribution(Contingency, 2log.([0.1 0.7; 0.05 0.15]))
 
         @test basemeasure(d1, rand()) == 1.0
         @test basemeasure(d2, [1, 2]) == 1.0

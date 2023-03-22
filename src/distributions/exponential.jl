@@ -35,5 +35,6 @@ function logpartition(η::KnownExponentialFamilyDistribution{Exponential})
     return -log(-first(getnaturalparameters(η)))
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) = (first(getnaturalparameters(exponentialfamily)) <= 0)
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
+    (first(getnaturalparameters(exponentialfamily)) <= 0)
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0

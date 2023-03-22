@@ -118,13 +118,16 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
 
     @testset "GammaShapeRateKnownExponentialFamilyDistribution" begin
         for i in 2:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈ GammaShapeRate(i + 1, i)
+            @test convert(Distribution, KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈
+                  GammaShapeRate(i + 1, i)
             @test Distributions.logpdf(KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i]), 10) ≈
                   Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
             @test isproper(KnownExponentialFamilyDistribution(Gamma, [i, -i])) === true
             @test isproper(KnownExponentialFamilyDistribution(Gamma, [-i, i])) === false
-            @test convert(KnownExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈ KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])
-            @test convert(KnownExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈ KnownExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
+            @test convert(KnownExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈
+                  KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])
+            @test convert(KnownExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈
+                  KnownExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
         end
     end
 

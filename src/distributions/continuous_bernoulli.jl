@@ -108,7 +108,6 @@ check_valid_natural(::Type{<:ContinuousBernoulli}, params) = (length(params) ===
 
 basemeasure(T::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = 1.0
 
-
 function isvague(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     if first(getnaturalparameters(exponentialfamily)) ≈ 0.0
         return VagueContinuousBernoulli()
@@ -117,12 +116,17 @@ function isvague(exponentialfamily::KnownExponentialFamilyDistribution{Continuou
     end
 end
 
-function logpartition(::NonVagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
+function logpartition(
+    ::NonVagueContinuousBernoulli,
+    exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}
+)
     η = first(getnaturalparameters(exponentialfamily))
     return log((exp(η) - 1) / η + tiny)
 end
-logpartition(::VagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = log(2.0)
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = logpartition(isvague(exponentialfamily), exponentialfamily)
+logpartition(::VagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) =
+    log(2.0)
+logpartition(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) =
+    logpartition(isvague(exponentialfamily), exponentialfamily)
 
 Random.rand(rng::AbstractRNG, dist::ContinuousBernoulli{T}) where {T} = icdf(dist, rand(rng, Uniform()))
 

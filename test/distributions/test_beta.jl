@@ -44,7 +44,8 @@ import SpecialFunctions: loggamma
             for i in 0:10, j in 0:10
                 @test convert(Distribution, KnownExponentialFamilyDistribution(Beta, [i, j])) == Beta(i + 1, j + 1)
 
-                @test convert(KnownExponentialFamilyDistribution, Beta(i + 1, j + 1)) == KnownExponentialFamilyDistribution(Beta, [i, j])
+                @test convert(KnownExponentialFamilyDistribution, Beta(i + 1, j + 1)) ==
+                      KnownExponentialFamilyDistribution(Beta, [i, j])
             end
         end
 
@@ -79,7 +80,7 @@ import SpecialFunctions: loggamma
         @testset "prod(::KnownExponentialFamilyDistribution{Beta}, ::KnownExponentialFamilyDistribution{Beta})" begin
             left = convert(KnownExponentialFamilyDistribution, Beta(2))
             right = convert(KnownExponentialFamilyDistribution, Beta(5))
-            @test prod(left, right) == convert(KnownExponentialFamilyDistribution, prod(ClosedProd(),Beta(2),Beta(5)))
+            @test prod(left, right) == convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Beta(2), Beta(5)))
         end
     end
 end

@@ -8,7 +8,6 @@ Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
 prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ConditionallyClosedProd()
 
-
 function logpdf_sample_friendly(dist::Pareto)
     friendly = convert(Pareto, dist)
     return (friendly, friendly)
@@ -20,7 +19,7 @@ Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Pareto) =
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{<:Pareto})
     η = first(getnaturalparameters(exponentialfamily))
     conditioner = getconditioner(exponentialfamily)
-    return Pareto(-1 - η,conditioner)
+    return Pareto(-1 - η, conditioner)
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})

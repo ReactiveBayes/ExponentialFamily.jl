@@ -176,21 +176,29 @@ import StatsFuns: logmvgamma
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
+            @test logpartition(
+                KnownExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-1.0 0.0; 0.0 -1.0]])
+            ) ≈
                   logmvgamma(2, 1.5)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === false
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === true
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]])) ===
+                      false
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 -i]])) ===
+                      false
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) ===
+                      true
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
+                @test basemeasure(
+                    KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]]),
+                    rand(3, 3)
+                ) == 1
             end
         end
 
@@ -198,7 +206,10 @@ import StatsFuns: logmvgamma
             for i in 1:10
                 np1 = KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 i]])
                 np2 = KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [2i 0.0; 0.0 2i]])
-                @test prod(np1 , np2)  == KnownExponentialFamilyDistribution(InverseWishartMessage,[3.0, [i 0.0; 0.0 i]]+[3.0, [2i 0.0; 0.0 2i]])
+                @test prod(np1, np2) == KnownExponentialFamilyDistribution(
+                    InverseWishartMessage,
+                    [3.0, [i 0.0; 0.0 i]] + [3.0, [2i 0.0; 0.0 2i]]
+                )
             end
         end
     end

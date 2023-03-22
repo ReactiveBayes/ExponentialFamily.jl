@@ -11,9 +11,11 @@ prod_analytical_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
 Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Geometric) = KnownExponentialFamilyDistribution(Geometric, [log(1 - succprob(dist))])
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Geometric) =
+    KnownExponentialFamilyDistribution(Geometric, [log(1 - succprob(dist))])
 
-Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Geometric}) = Geometric(1 - exp(first(getnaturalparameters(η))))
+Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Geometric}) =
+    Geometric(1 - exp(first(getnaturalparameters(η))))
 
 logpartition(η::KnownExponentialFamilyDistribution{Geometric}) = -log(1 - exp(first(getnaturalparameters(η))))
 

@@ -38,8 +38,10 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
     end
 
     @testset "Constructor(::ExponentialKnownExponentialFamilyDistribution)" begin
-        @test convert(KnownExponentialFamilyDistribution, Exponential(5)) == KnownExponentialFamilyDistribution(Exponential, [-0.2])
-        @test convert(KnownExponentialFamilyDistribution, Exponential(1e12)) == KnownExponentialFamilyDistribution(Exponential, [-1e-12])
+        @test convert(KnownExponentialFamilyDistribution, Exponential(5)) ==
+              KnownExponentialFamilyDistribution(Exponential, [-0.2])
+        @test convert(KnownExponentialFamilyDistribution, Exponential(1e12)) ==
+              KnownExponentialFamilyDistribution(Exponential, [-1e-12])
         @test basemeasure(Exponential(5), rand()) == 1.0
     end
 
@@ -72,15 +74,15 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
     @testset ":+(::ExponentialKnownExponentialFamilyDistribution, ::ExponentialKnownExponentialFamilyDistribution)" begin
         left = convert(KnownExponentialFamilyDistribution, Exponential(4))
         right = convert(KnownExponentialFamilyDistribution, Exponential(3))
-        @test getnaturalparameters(prod(left,  right)) ≈ [-0.5833333333333333]
+        @test getnaturalparameters(prod(left, right)) ≈ [-0.5833333333333333]
 
         left = convert(KnownExponentialFamilyDistribution, Exponential(4))
         right = convert(KnownExponentialFamilyDistribution, Exponential(5))
-        @test getnaturalparameters(prod(left , right)) ≈ [-0.45]
+        @test getnaturalparameters(prod(left, right)) ≈ [-0.45]
 
         left = convert(KnownExponentialFamilyDistribution, Exponential(1))
         right = convert(KnownExponentialFamilyDistribution, Exponential(1))
-        @test getnaturalparameters(prod(left , right)) ≈ [-2]
+        @test getnaturalparameters(prod(left, right)) ≈ [-2]
     end
 
     # @testset ":-(::ExponentialKnownExponentialFamilyDistribution, ::ExponentialKnownExponentialFamilyDistribution)" begin

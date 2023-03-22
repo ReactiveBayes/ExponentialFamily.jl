@@ -453,14 +453,20 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Multivar
     return KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, [weightedmean, -precision / 2])
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{<:MvGaussianWeightedMeanPrecision})
+function Base.convert(
+    ::Type{Distribution},
+    exponentialfamily::KnownExponentialFamilyDistribution{<:MvGaussianWeightedMeanPrecision}
+)
     η = getnaturalparameters(exponentialfamily)
     weightedmean = getindex(η, 1)
     minushalfprecision = getindex(η, 2)
     return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{<:NormalWeightedMeanPrecision})
+function Base.convert(
+    ::Type{Distribution},
+    exponentialfamily::KnownExponentialFamilyDistribution{<:NormalWeightedMeanPrecision}
+)
     η = getnaturalparameters(exponentialfamily)
     weightedmean = getindex(η, 1)
     minushalfprecision = getindex(η, 2)
@@ -481,8 +487,11 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:Mv
     return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) / 2
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}) = isposdef(-getindex(getnaturalparameters(exponentialfamily), 2))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
+    isposdef(-getindex(getnaturalparameters(exponentialfamily), 2))
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily}, x) =
+basemeasure(
+    ::Union{<:KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
+    x
+) =
     (2pi)^(-length(x) / 2)
-

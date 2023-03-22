@@ -26,7 +26,8 @@ end
 
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) = KnownExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) =
+    KnownExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     η = getnaturalparameters(exponentialfamily)

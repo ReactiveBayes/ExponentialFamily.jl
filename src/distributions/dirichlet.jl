@@ -44,7 +44,8 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Dirichle
     KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) .- 1)
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) = all(isless.(-1, getnaturalparameters(exponentialfamily)))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
+    all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) = 1.0

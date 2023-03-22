@@ -104,7 +104,10 @@ import StatsFuns: logmvgamma
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
+                @test basemeasure(
+                    KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]]),
+                    rand(3, 3)
+                ) == 1
             end
         end
 
@@ -112,7 +115,10 @@ import StatsFuns: logmvgamma
             for i in 1:10
                 np1 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
                 np2 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]])
-                @test prod(np1 , np2)  == KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]]+[3.0, [-i 0.0; 0.0 -i]])
+                @test prod(np1, np2) == KnownExponentialFamilyDistribution(
+                    WishartMessage,
+                    [3.0, [-2i 0.0; 0.0 -2i]] + [3.0, [-i 0.0; 0.0 -i]]
+                )
             end
         end
     end

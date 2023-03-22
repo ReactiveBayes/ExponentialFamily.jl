@@ -50,7 +50,9 @@ end
 check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
-    logbeta(first(getnaturalparameters(exponentialfamily)) + 1, getindex(getnaturalparameters(exponentialfamily), 2) + 1)
+    logbeta(
+        first(getnaturalparameters(exponentialfamily)) + 1,
+        getindex(getnaturalparameters(exponentialfamily), 2) + 1
+    )
 
 basemeasure(T::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) = 1.0
-

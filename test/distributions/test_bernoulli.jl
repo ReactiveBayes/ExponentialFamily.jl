@@ -5,7 +5,8 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
 
 @testset "Bernoulli" begin
 
@@ -52,7 +53,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
-            @test convert(KnownExponentialFamilyDistribution, b) == KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
+            @test convert(KnownExponentialFamilyDistribution, b) ==
+                  KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
 
             # @test prod(ClosedProd(), convert(Distribution, convert(KnownExponentialFamilyDistribution, b_99) / bnp), b) ≈ b_99
         end
@@ -63,7 +65,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @testset "prod(::KnownExponentialFamilyDistribution{Bernoulli}, ::KnownExponentialFamilyDistribution{Bernoulli})" begin
             left = convert(KnownExponentialFamilyDistribution, Bernoulli(0.5))
             right = convert(KnownExponentialFamilyDistribution, Bernoulli(0.6))
-            @test prod(left, right) == convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Bernoulli(0.5),Bernoulli(0.6)))
+            @test prod(left, right) ==
+                  convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.6)))
         end
     end
 end

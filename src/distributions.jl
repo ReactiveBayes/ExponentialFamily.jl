@@ -203,4 +203,3 @@ function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))
-

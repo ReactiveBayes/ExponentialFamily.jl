@@ -74,7 +74,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(d1, [1, 2, 2]) == basemeasure(η1, [1, 2, 2])
         @test basemeasure(d2, [1, 2, 2]) == basemeasure(η2, [1, 2, 2])
 
-        @test prod(η1,  η2) == KnownExponentialFamilyDistribution(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
+        @test prod(η1, η2) ==
+              KnownExponentialFamilyDistribution(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
         # @test η1 - η2 == KnownExponentialFamilyDistribution(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)], 5)
         # @test η1 + η2 - η2 ≈ η1
         # @test η1 + η2 - η1 ≈ η2

@@ -7,13 +7,6 @@ vague(::Type{<:VonMises}) = VonMises(0.0, tiny)
 
 prod_analytical_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ClosedProd()
 
-# function Base.prod(::ClosedProd, left::VonMises, right::VonMises)
-#     naturalparams_left = Base.convert(KnownExponentialFamilyDistribution, left)
-#     naturalparams_right = Base.convert(KnownExponentialFamilyDistribution, right)
-#     naturalparams = naturalparams_left + naturalparams_right
-#     return Base.convert(Distribution, naturalparams)
-# end
-
 isproper(params::KnownExponentialFamilyDistribution{VonMises}) = true
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::VonMises)

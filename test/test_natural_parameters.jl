@@ -13,7 +13,8 @@ import Distributions: pdf, logpdf, cdf
     @test getnaturalparameters(params1) - getnaturalparameters(params2) == [0.7]
     logprobability1 = getindex(getnaturalparameters(params1), 1)
     @test Base.convert(Bernoulli, params1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
-    @test Base.convert(KnownExponentialFamilyDistribution, Bernoulli(0.9)) == KnownExponentialFamilyDistribution(Bernoulli, [logit(0.9)])
+    @test Base.convert(KnownExponentialFamilyDistribution, Bernoulli(0.9)) ==
+          KnownExponentialFamilyDistribution(Bernoulli, [logit(0.9)])
 
     @test_throws AssertionError KnownExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), 2.0)
     f = x -> x^3

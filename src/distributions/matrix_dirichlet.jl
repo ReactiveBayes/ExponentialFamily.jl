@@ -40,7 +40,11 @@ function Base.prod(::ClosedProd, left::MatrixDirichlet, right::MatrixDirichlet)
 end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
-    mapreduce(d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)), +, eachrow(getnaturalparameters(exponentialfamily)))
+    mapreduce(
+        d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)),
+        +,
+        eachrow(getnaturalparameters(exponentialfamily))
+    )
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet})
     getnaturalparameters(exponentialfamily)
@@ -51,7 +55,8 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MatrixDi
     KnownExponentialFamilyDistribution(MatrixDirichlet, dist.a .- 1)
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:MatrixDirichlet}) = all(isless.(-1, getnaturalparameters(exponentialfamily)))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:MatrixDirichlet}) =
+    all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Matrix)
 

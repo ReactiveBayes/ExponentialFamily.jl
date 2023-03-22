@@ -86,7 +86,10 @@ end
 
 check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+function Base.convert(
+    ::Type{Distribution},
+    exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}
+)
     η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -110,4 +113,5 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaD
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) =
+    1.0

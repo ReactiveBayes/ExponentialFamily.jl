@@ -7,13 +7,6 @@ vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
 prod_analytical_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = ClosedProd()
 
-# function Base.prod(::ClosedProd, left::VonMisesFisher, right::VonMisesFisher)
-#     ef_left = Base.convert(KnownExponentialFamilyDistribution, left)
-#     ef_right = Base.convert(KnownExponentialFamilyDistribution, right)
-#     naturalparams = getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
-#     return Base.convert(Distribution, KnownExponentialFamilyDistribution(VonMisesFisher,naturalparams))
-# end
-
 function Distributions.mean(dist::VonMisesFisher)
     (μ, κ) = params(dist)
 
@@ -22,7 +15,8 @@ function Distributions.mean(dist::VonMisesFisher)
     return factor * μ
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{VonMisesFisher}) = all(0 .<= (getnaturalparameters(exponentialfamily)))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{VonMisesFisher}) =
+    all(0 .<= (getnaturalparameters(exponentialfamily)))
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::VonMisesFisher)
     μ, κ = params(dist)
@@ -45,5 +39,5 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{VonM
     p = length(η)
     return log(besselj(0.5p - 1, κ))
 end
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x) = (1 / 2pi)^(length(x) / 2)
-
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x) =
+    (1 / 2pi)^(length(x) / 2)

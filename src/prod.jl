@@ -16,7 +16,6 @@ Note: `ClosedProd` ignores `missing` values and simply returns the non-`missing`
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdGeneric`](@ref)
 """
 
-
 """
     prod(strategy, left, right)
 
@@ -101,7 +100,6 @@ struct ProdPreserveTypeRight end
 
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
-
 struct SemiClosedProd end
 struct ConditionallyClosedProd end
 
@@ -118,8 +116,8 @@ struct ExponentialFamilyProduct{L, R}
     right :: R
 end
 
-
-Base.show(io::IO, product::ExponentialFamilyProduct) = print(io, "ExponentialFamilyProduct(", getleft(product), ",", getright(product), ")")
+Base.show(io::IO, product::ExponentialFamilyProduct) =
+    print(io, "ExponentialFamilyProduct(", getleft(product), ",", getright(product), ")")
 
 getleft(product::ExponentialFamilyProduct)  = product.left
 getright(product::ExponentialFamilyProduct) = product.right
@@ -176,61 +174,109 @@ prod(::ProdGeneric, ::Missing, ::Missing) = missing
 prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, prod_analytical_rule(L, R), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
-prod(generic::ProdGeneric, ::SemiClosedProd, left, right)   = ExponentialFamilyProduct(left, right)
+prod(generic::ProdGeneric, ::SemiClosedProd, left, right) = ExponentialFamilyProduct(left, right)
 
 # In case of ProdPointMass we want to propagate a single `ExponentialFamilyProduct` as much as possible and do not create a big tree of product which will reduce performance significantly
 # In this methods the general rule is the folowing: If we see that one of the arguments of `ExponentialFamilyProduct` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
-prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T} = prod(generic, prod_analytical_rule(L, T), prod_analytical_rule(R, T), left, right)
-prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} = prod(generic, prod_analytical_rule(T, L), prod_analytical_rule(T, R), left, right)
+prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T} =
+    prod(generic, prod_analytical_rule(L, T), prod_analytical_rule(R, T), left, right)
+prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} =
+    prod(generic, prod_analytical_rule(T, L), prod_analytical_rule(T, R), left, right)
 
-prod(generic::ProdGeneric, ::SemiClosedProd, ::SemiClosedProd, left::ExponentialFamilyProduct, right)   = ExponentialFamilyProduct(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::SemiClosedProd, left::ExponentialFamilyProduct, right) = ExponentialFamilyProduct(prod(get_constraint(generic), getleft(left), right), getright(left))
-prod(generic::ProdGeneric, ::SemiClosedProd, ::ClosedProd, left::ExponentialFamilyProduct, right) = ExponentialFamilyProduct(getleft(left), prod(get_constraint(generic), getright(left), right))
+prod(generic::ProdGeneric, ::SemiClosedProd, ::SemiClosedProd, left::ExponentialFamilyProduct, right) =
+    ExponentialFamilyProduct(left, right)
+prod(generic::ProdGeneric, ::ClosedProd, ::SemiClosedProd, left::ExponentialFamilyProduct, right) =
+    ExponentialFamilyProduct(prod(get_constraint(generic), getleft(left), right), getright(left))
+prod(generic::ProdGeneric, ::SemiClosedProd, ::ClosedProd, left::ExponentialFamilyProduct, right) =
+    ExponentialFamilyProduct(getleft(left), prod(get_constraint(generic), getright(left), right))
 
-prod(generic::ProdGeneric, ::SemiClosedProd, ::SemiClosedProd, left, right::ExponentialFamilyProduct)   = ExponentialFamilyProduct(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::SemiClosedProd, left, right::ExponentialFamilyProduct) = ExponentialFamilyProduct(prod(get_constraint(generic), left, getleft(right)), getright(right))
-prod(generic::ProdGeneric, ::SemiClosedProd, ::ClosedProd, left, right::ExponentialFamilyProduct) = ExponentialFamilyProduct(getleft(right), prod(get_constraint(generic), left, getright(right)))
+prod(generic::ProdGeneric, ::SemiClosedProd, ::SemiClosedProd, left, right::ExponentialFamilyProduct) =
+    ExponentialFamilyProduct(left, right)
+prod(generic::ProdGeneric, ::ClosedProd, ::SemiClosedProd, left, right::ExponentialFamilyProduct) =
+    ExponentialFamilyProduct(prod(get_constraint(generic), left, getleft(right)), getright(right))
+prod(generic::ProdGeneric, ::SemiClosedProd, ::ClosedProd, left, right::ExponentialFamilyProduct) =
+    ExponentialFamilyProduct(getleft(right), prod(get_constraint(generic), left, getright(right)))
 
-function prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L1, R1}, right::ExponentialFamilyProduct{L2, R2}) where {L1, R1, L2, R2}
-    return prod(generic, prod_analytical_rule(L1, L2), prod_analytical_rule(L1, R2), prod_analytical_rule(R1, L2), prod_analytical_rule(R1, R2), left, right)
+function prod(
+    generic::ProdGeneric,
+    left::ExponentialFamilyProduct{L1, R1},
+    right::ExponentialFamilyProduct{L2, R2}
+) where {L1, R1, L2, R2}
+    return prod(
+        generic,
+        prod_analytical_rule(L1, L2),
+        prod_analytical_rule(L1, R2),
+        prod_analytical_rule(R1, L2),
+        prod_analytical_rule(R1, R2),
+        left,
+        right
+    )
 end
 
-prod(::ProdGeneric, _, _, _, _, left::ExponentialFamilyProduct, right::ExponentialFamilyProduct) = ExponentialFamilyProduct(left, right)
+prod(::ProdGeneric, _, _, _, _, left::ExponentialFamilyProduct, right::ExponentialFamilyProduct) =
+    ExponentialFamilyProduct(left, right)
 
-function prod(generic::ProdGeneric, ::ClosedProd, _, _, ::ClosedProd, left::ExponentialFamilyProduct, right::ExponentialFamilyProduct)
-    return prod(generic, prod(get_constraint(generic), getleft(left), getleft(right)), prod(get_constraint(generic), getright(left), getright(right)))
+function prod(
+    generic::ProdGeneric,
+    ::ClosedProd,
+    _,
+    _,
+    ::ClosedProd,
+    left::ExponentialFamilyProduct,
+    right::ExponentialFamilyProduct
+)
+    return prod(
+        generic,
+        prod(get_constraint(generic), getleft(left), getleft(right)),
+        prod(get_constraint(generic), getright(left), getright(right))
+    )
 end
 
-function prod(left::KnownExponentialFamilyDistribution{T1}, right::KnownExponentialFamilyDistribution{T2}) where {T1,T2}
-    return prod(prod_analytical_rule(T1,T2),left,right)
+function prod(
+    left::KnownExponentialFamilyDistribution{T1},
+    right::KnownExponentialFamilyDistribution{T2}
+) where {T1, T2}
+    return prod(prod_analytical_rule(T1, T2), left, right)
 end
-prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T} =
-    KnownExponentialFamilyDistribution(T, getnaturalparameters(left) + getnaturalparameters(right), getconditioner(left))
-
+prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T} =
+    KnownExponentialFamilyDistribution(
+        T,
+        getnaturalparameters(left) + getnaturalparameters(right),
+        getconditioner(left)
+    )
 
 function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
     efleft = convert(KnownExponentialFamilyDistribution, left)
     efright = convert(KnownExponentialFamilyDistribution, right)
 
-    return convert(Distribution, prod(efleft,efright))
+    return convert(Distribution, prod(efleft, efright))
 end
 
-
-function prod(::ConditionallyClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T}
+function prod(
+    ::ConditionallyClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T}
     leftconditioner = getconditioner(left)
     rightconditioner = getconditioner(right)
 
     @assert leftconditioner === rightconditioner "Conditioners of $(left) and $(right) must be the same in order for a product to be defined between them."
 
-    return KnownExponentialFamilyDistribution(T, getnaturalparameters(left)+getnaturalparameters(right), getconditioner(left))
+    return KnownExponentialFamilyDistribution(
+        T,
+        getnaturalparameters(left) + getnaturalparameters(right),
+        getconditioner(left)
+    )
 end
 
-function prod(::ConditionallyClosedProd,left::Distribution{T},right::Distribution{T}) where {T} 
+function prod(::ConditionallyClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
     efleft = convert(KnownExponentialFamilyDistribution, left)
     efright = convert(KnownExponentialFamilyDistribution, right)
 
-    return convert(Distribution, prod(efleft,efright))
+    return convert(Distribution, prod(efleft, efright))
 end
-
-

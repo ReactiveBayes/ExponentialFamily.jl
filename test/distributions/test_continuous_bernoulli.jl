@@ -5,7 +5,8 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
 
 @testset "ContinuousBernoulli" begin
     @testset "vague" begin
@@ -33,7 +34,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
     @testset "KnownExponentialFamilyDistribution" begin
         @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))) ≈ log(2)
-        @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.2))) ≈ log((-3 / 4) / log(1 / 4))
+        @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.2))) ≈
+              log((-3 / 4) / log(1 / 4))
         b_99 = ContinuousBernoulli(0.99)
         for i in 1:9
             b = ContinuousBernoulli(i / 10.0)
@@ -42,7 +44,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
-            @test convert(KnownExponentialFamilyDistribution, b) == KnownExponentialFamilyDistribution(ContinuousBernoulli, [logit(i / 10.0)])
+            @test convert(KnownExponentialFamilyDistribution, b) ==
+                  KnownExponentialFamilyDistribution(ContinuousBernoulli, [logit(i / 10.0)])
 
             # @test prod(ClosedProd(), convert(Distribution, convert(KnownExponentialFamilyDistribution, b_99) - bnp), b) ≈ b_99
         end
@@ -53,7 +56,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @testset "prod(::KnownExponentialFamilyDistribution{ContinuousBernoulli}, ::KnownExponentialFamilyDistribution{ContinuousBernoulli})" begin
             left = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))
             right = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
-            @test prod(left ,right) == convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
+            @test prod(left, right) == convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
         end
     end
 

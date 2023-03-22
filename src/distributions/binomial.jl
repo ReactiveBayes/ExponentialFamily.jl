@@ -39,9 +39,11 @@ function check_valid_conditioner(::Type{<:Binomial}, conditioner)
     isinteger(conditioner) && conditioner > 0
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily) > 0 ? true : false
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
+    getconditioner(exponentialfamily) > 0 ? true : false
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) = getconditioner(exponentialfamily)log(1 + exp(first(getnaturalparameters(exponentialfamily))))
+logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
+    getconditioner(exponentialfamily)log(1 + exp(first(getnaturalparameters(exponentialfamily))))
 
 basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}, x) =
     typeof(x) <: Integer ? binomial(getconditioner(exponentialfamily), x) : error("x must be integer")
@@ -49,5 +51,3 @@ basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}, x) 
 function basemeasure(d::Binomial, x)
     binomial(d.n, x)
 end
-
-

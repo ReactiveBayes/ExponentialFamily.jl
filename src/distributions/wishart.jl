@@ -161,4 +161,3 @@ function isproper(params::KnownExponentialFamilyDistribution{<:WishartMessage})
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
-

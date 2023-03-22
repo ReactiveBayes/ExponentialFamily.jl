@@ -93,7 +93,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         b_01 = MatrixDirichlet([10.0 10.0; 10.0 10.0])
         nb_01 = convert(KnownExponentialFamilyDistribution, b_01)
         @test logpartition(nb_01) ==
-              mapreduce(d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)), +, eachrow(getnaturalparameters(nb_01)))
+              mapreduce(
+            d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)),
+            +,
+            eachrow(getnaturalparameters(nb_01))
+        )
         for i in 1:9
             b = MatrixDirichlet([i/10.0 i/20; i/5 i])
             bnp = convert(KnownExponentialFamilyDistribution, b)
@@ -103,7 +107,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
             @test convert(KnownExponentialFamilyDistribution, b) == bnp
 
-            @test prod(nb_01 , bnp) ≈ convert(KnownExponentialFamilyDistribution, prod(ClosedProd(),b_01, b))
+            @test prod(nb_01, bnp) ≈ convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
         end
         @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, [10 2; 3 2])) === true
         @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1 -0.2; 3 -0.9])) === true
