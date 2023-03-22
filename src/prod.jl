@@ -1,7 +1,6 @@
 export ExponentialFamilyProduct, ClosedProd, ConditionallyClosedProd, ProdGeneric, GenericLogPdfVectorisedProduct
 
 import Distributions
-import Distributions: VariateForm, ValueSupport
 import Base: prod, show, showerror
 
 struct ClosedProd end
