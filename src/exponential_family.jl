@@ -1,4 +1,15 @@
 using Distributions, LinearAlgebra
+
+"""
+    ExponentialFamilyDistribution{T, H, S, P, Z, A}
+
+    `ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
+    Its fields are `basemeasure` ,`sufficientstatistics`,  `naturalparameters`, `logpartition` and `support`. 
+    `basemeasure` is a positive a valued function. `sufficientstatistics` is a vector of functions such as [x, x^2] or [x, logx].
+    `naturalparameters` is an `AbstractArray` holding the values of the natural parameters. `logpartition` is a function that depends 
+    on the naturalparameters and it ensures that the distribution is normalized to 1. `support` is the set that the distribution is 
+    defined over. Could be real numbers, positive integers, 3d cube etc. 
+"""
 struct ExponentialFamilyDistribution{T, H, S, P, Z, A}
     basemeasure::H
     sufficientstatistics::S
@@ -43,6 +54,16 @@ end
 
 Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
 
+"""
+    KnownExponentialFamilyDistribution{T, P, C}
+
+    `KnownExponentialFamilyDistribution` structure represents an exponential family distribution whose lognormalization is known.
+    It is parameterized by a `Distribution` type from Distributions.jl. Its fields are `naturalparameters` holding a vector of natural parameters
+    and `conditioner` that holds a constant parameter of `Distribution` such that it can be represented by an exponential family. For example,
+    Gaussian, Gamma, etc. do not need a conditioner field because they are in exponential family unconditionally. However, Binomial and Multinomial 
+    distributions are in exponential family give a parameter is fixed.
+
+"""
 struct KnownExponentialFamilyDistribution{T, P, C}
     naturalparameters::P
     conditioner::C
