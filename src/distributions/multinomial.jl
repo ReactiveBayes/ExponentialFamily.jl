@@ -52,5 +52,3 @@ function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, 
     n = Int(sum(x))
     return factorial(n) / prod(factorial.(x))
 end
-
-

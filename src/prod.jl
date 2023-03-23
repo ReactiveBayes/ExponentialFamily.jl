@@ -241,7 +241,7 @@ function prod(
     ::ClosedProd,
     left::KnownExponentialFamilyDistribution{T},
     right::KnownExponentialFamilyDistribution{T}
-) where {T} 
+) where {T}
     leftconditioner = getconditioner(left)
     rightconditioner = getconditioner(right)
 

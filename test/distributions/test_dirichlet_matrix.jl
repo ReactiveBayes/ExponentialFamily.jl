@@ -110,7 +110,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test prod(nb_01, bnp) ≈ convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
         end
         @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, [10 2; 3 2])) === true
-        
     end
 end
 

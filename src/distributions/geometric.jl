@@ -17,7 +17,8 @@ Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Geometric) =
 Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Geometric}) =
     Geometric(one(Float64) - exp(first(getnaturalparameters(η))))
 
-logpartition(η::KnownExponentialFamilyDistribution{Geometric}) = -log(one(Float64) - exp(first(getnaturalparameters(η))))
+logpartition(η::KnownExponentialFamilyDistribution{Geometric}) =
+    -log(one(Float64) - exp(first(getnaturalparameters(η))))
 
 check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
 

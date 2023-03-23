@@ -19,7 +19,8 @@ vague(::Type{<:MatrixDirichlet}, dims::Tuple)            = MatrixDirichlet(ones(
 function Distributions.entropy(dist::MatrixDirichlet)
     return mapreduce(+, eachcol(dist.a)) do column
         scolumn = sum(column)
-        -sum((column .- one(Float64)) .* (digamma.(column) .- digamma.(scolumn))) - loggamma(scolumn) + sum(loggamma.(column))
+        -sum((column .- one(Float64)) .* (digamma.(column) .- digamma.(scolumn))) - loggamma(scolumn) +
+        sum(loggamma.(column))
     end
 end
 
@@ -46,8 +47,8 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichl
         eachrow(getnaturalparameters(exponentialfamily))
     )
 
-Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) = MatrixDirichlet(getnaturalparameters(exponentialfamily) .+ one(Float64))
-
+Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
+    MatrixDirichlet(getnaturalparameters(exponentialfamily) .+ one(Float64))
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MatrixDirichlet)
     KnownExponentialFamilyDistribution(MatrixDirichlet, dist.a .- one(Float64))
