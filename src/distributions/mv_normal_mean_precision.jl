@@ -63,11 +63,11 @@ end
 vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
     MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-prod_analytical_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
+prod_closed_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
-    Λ = invcov(left) + invcov(right)
-    μ = cholinv(Λ) * (invcov(left) * mean(left) + invcov(right) * mean(right))
+    Λ = precision(left) + precision(right)
+    μ = cholinv(Λ) * (precision(left) * mean(left) + precision(right) * mean(right))
     return MvNormalMeanPrecision(μ, Λ)
 end
 

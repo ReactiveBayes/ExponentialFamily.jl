@@ -5,7 +5,7 @@ import SpecialFunctions: besselj0
 
 vague(::Type{<:VonMises}) = VonMises(0.0, tiny)
 
-prod_analytical_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ClosedProd()
+prod_closed_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ClosedProd()
 
 isproper(params::KnownExponentialFamilyDistribution{VonMises}) = true
 

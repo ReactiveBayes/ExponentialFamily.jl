@@ -5,7 +5,7 @@ import SpecialFunctions: besselj
 
 vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
-prod_analytical_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = ClosedProd()
+prod_closed_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = ClosedProd()
 
 function Distributions.mean(dist::VonMisesFisher)
     (μ, κ) = params(dist)

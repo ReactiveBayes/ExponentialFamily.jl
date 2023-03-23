@@ -1,4 +1,4 @@
-export ExponentialFamilyProduct, ClosedProd, ConditionallyClosedProd, ProdGeneric, GenericLogPdfVectorisedProduct
+export ExponentialFamilyProduct, ClosedProd, ClosedProd, ProdGeneric, GenericLogPdfVectorisedProduct
 
 import Distributions
 import Base: prod, show, showerror
@@ -33,7 +33,7 @@ mean(product), var(product)
 (0.0, 0.5)
 ```
 
-See also: [`prod_analytical_rule`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
+See also: [`prod_closed_rule`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
 """
 prod(::ClosedProd, left, right) = throw(NoClosedProdException(left, right))
 
@@ -100,15 +100,14 @@ struct ProdPreserveTypeRight end
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
 struct SemiClosedProd end
-struct ConditionallyClosedProd end
-
+struct ProdClosedRuleUnknown end
 """
-    prod_analytical_rule(::Type, ::Type)
-Returns either `ProdAnalyticalRuleAvailable` or `ProdAnalyticalRuleUnknown` for two given distribution types.
+    prod_closed_rule(::Type, ::Type)
+Returns either `ProdClosed` or `ProdCloseddRuleUnknown` for two given distribution types.
 Returns `ProdAnalyticalRuleUnknown` by default.
 See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
 """
-prod_analytical_rule(::Type, ::Type) = ProdAnalyticalRuleUnknown()
+prod_closed_rule(::Type, ::Type) = ProdClosedRuleUnknown()
 
 struct ExponentialFamilyProduct{L, R}
     left  :: L
@@ -154,7 +153,7 @@ In a few words this object keeps all the information of a product of messages an
 
 `ProdGeneric` has a "fallback" method, which it may or may not use under some circumstances. For example if the `fallback` method is `ClosedProd` (which is the default one) - `ProdGeneric` will try to optimize `prod` tree with analytical solutions where possible.
 
-See also: [`prod`](@ref), [`ExponentialFamilyProduct`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`prod_analytical_rule`](@ref), [`GenericLogPdfVectorisedProduct`](@ref)
+See also: [`prod`](@ref), [`ExponentialFamilyProduct`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`prod_closed_rule`](@ref), [`GenericLogPdfVectorisedProduct`](@ref)
 """
 struct ProdGeneric{C}
     prod_constraint::C
@@ -170,7 +169,7 @@ prod(::ProdGeneric, ::Missing, right)     = right
 prod(::ProdGeneric, left, ::Missing)      = left
 prod(::ProdGeneric, ::Missing, ::Missing) = missing
 
-prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, prod_analytical_rule(L, R), left, right)
+prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, prod_closed_rule(L, R), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
 prod(generic::ProdGeneric, ::SemiClosedProd, left, right) = ExponentialFamilyProduct(left, right)
@@ -179,9 +178,9 @@ prod(generic::ProdGeneric, ::SemiClosedProd, left, right) = ExponentialFamilyPro
 # In this methods the general rule is the folowing: If we see that one of the arguments of `ExponentialFamilyProduct` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
 prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T} =
-    prod(generic, prod_analytical_rule(L, T), prod_analytical_rule(R, T), left, right)
+    prod(generic, prod_closed_rule(L, T), prod_closed_rule(R, T), left, right)
 prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} =
-    prod(generic, prod_analytical_rule(T, L), prod_analytical_rule(T, R), left, right)
+    prod(generic, prod_closed_rule(T, L), prod_closed_rule(T, R), left, right)
 
 prod(generic::ProdGeneric, ::SemiClosedProd, ::SemiClosedProd, left::ExponentialFamilyProduct, right) =
     ExponentialFamilyProduct(left, right)
@@ -204,10 +203,10 @@ function prod(
 ) where {L1, R1, L2, R2}
     return prod(
         generic,
-        prod_analytical_rule(L1, L2),
-        prod_analytical_rule(L1, R2),
-        prod_analytical_rule(R1, L2),
-        prod_analytical_rule(R1, R2),
+        prod_closed_rule(L1, L2),
+        prod_closed_rule(L1, R2),
+        prod_closed_rule(R1, L2),
+        prod_closed_rule(R1, R2),
         left,
         right
     )
@@ -236,44 +235,25 @@ function prod(
     left::KnownExponentialFamilyDistribution{T1},
     right::KnownExponentialFamilyDistribution{T2}
 ) where {T1, T2}
-    return prod(prod_analytical_rule(T1, T2), left, right)
+    return prod(prod_closed_rule(T1, T2), left, right)
 end
-prod(
+function prod(
     ::ClosedProd,
     left::KnownExponentialFamilyDistribution{T},
     right::KnownExponentialFamilyDistribution{T}
-) where {T} =
-    KnownExponentialFamilyDistribution(
-        T,
-        getnaturalparameters(left) + getnaturalparameters(right),
-        getconditioner(left)
-    )
-
-function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
-    efleft = convert(KnownExponentialFamilyDistribution, left)
-    efright = convert(KnownExponentialFamilyDistribution, right)
-
-    return convert(Distribution, prod(efleft, efright))
-end
-
-function prod(
-    ::ConditionallyClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
-) where {T}
+) where {T} 
     leftconditioner = getconditioner(left)
     rightconditioner = getconditioner(right)
 
     @assert leftconditioner === rightconditioner "Conditioners of $(left) and $(right) must be the same in order for a product to be defined between them."
 
-    return KnownExponentialFamilyDistribution(
+    KnownExponentialFamilyDistribution(
         T,
         getnaturalparameters(left) + getnaturalparameters(right),
         getconditioner(left)
     )
 end
-
-function prod(::ConditionallyClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
+function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
     efleft = convert(KnownExponentialFamilyDistribution, left)
     efright = convert(KnownExponentialFamilyDistribution, right)
 

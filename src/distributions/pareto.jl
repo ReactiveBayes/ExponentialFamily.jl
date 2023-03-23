@@ -6,7 +6,7 @@ vague(::Type{<:Pareto}) = Pareto(1e12)
 
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
-prod_analytical_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ConditionallyClosedProd()
+prod_closed_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ClosedProd()
 
 function logpdf_sample_friendly(dist::Pareto)
     friendly = convert(Pareto, dist)

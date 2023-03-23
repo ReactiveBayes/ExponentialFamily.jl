@@ -3,14 +3,14 @@ export Exponential
 import Distributions: Exponential, params
 import SpecialFunctions: digamma, logbeta
 
-vague(::Type{<:Exponential}) = Exponential(1e12)
+vague(::Type{<:Exponential}) = Exponential(Float64(huge))
 
-prod_analytical_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ClosedProd()
+prod_closed_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Exponential, right::Exponential)
-    θ_left  = left.θ
-    θ_right = right.θ
-    return Exponential(inv(inv(θ_left) + inv(θ_right)))
+    invθ_left  = inv(left.θ)
+    invθ_right = inv(right.θ)
+    return Exponential(inv(invθ_left + invθ_right))
 end
 
 function mean(::typeof(log), dist::Exponential)
@@ -36,5 +36,5 @@ function logpartition(η::KnownExponentialFamilyDistribution{Exponential})
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
-    (first(getnaturalparameters(exponentialfamily)) <= 0)
+    (first(getnaturalparameters(exponentialfamily)) <= zero(Float64))
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0

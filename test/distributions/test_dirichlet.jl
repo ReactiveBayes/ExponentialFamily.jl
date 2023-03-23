@@ -78,7 +78,7 @@ import SpecialFunctions: loggamma
         @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
         @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
         @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
-        @test basemeasure(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand(3)) == 1.0
+        @test basemeasure(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand()) == 1.0
     end
 end
 

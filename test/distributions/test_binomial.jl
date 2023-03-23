@@ -25,19 +25,19 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        @test prod(ConditionallyClosedProd(), Binomial(2, 0.7), Binomial(2, 0.1)) ≈ Binomial(2, 7 / 34)
+        @test prod(ClosedProd(), Binomial(2, 0.7), Binomial(2, 0.1)) ≈ Binomial(2, 7 / 34)
 
-        @test prod(ConditionallyClosedProd(), Binomial(3, 0.9), Binomial(3, 0.4)) ≈ Binomial(3, 6 / 7)
+        @test prod(ClosedProd(), Binomial(3, 0.9), Binomial(3, 0.4)) ≈ Binomial(3, 6 / 7)
 
-        @test prod(ConditionallyClosedProd(), Binomial(4, 0.8), Binomial(4, 0.2)) ≈ Binomial(4, 0.5)
+        @test prod(ClosedProd(), Binomial(4, 0.8), Binomial(4, 0.2)) ≈ Binomial(4, 0.5)
 
         @test_throws AssertionError prod(
-            ConditionallyClosedProd(),
+            ClosedProd(),
             Binomial(4, 0.8),
             Binomial(5, 0.2)
         )
         @test_throws AssertionError prod(
-            ConditionallyClosedProd(),
+            ClosedProd(),
             Binomial(5, 0.8),
             Binomial(4, 0.2)
         )

@@ -12,7 +12,7 @@ end
 
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
-prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ClosedProd()
+prod_closed_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
@@ -33,14 +33,14 @@ function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialF
     η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
-    return Erlang(Int64(a + 1), -1 / b)
+    return Erlang(Int64(a + one(a)), -inv(b))
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
-    return logfactorial(a) - (a + 1) * log(-b)
+    return logfactorial(a) - (a + one(a)) * log(-b)
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})

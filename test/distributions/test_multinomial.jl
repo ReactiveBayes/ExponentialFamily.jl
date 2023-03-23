@@ -27,26 +27,26 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        @test prod(ConditionallyClosedProd(), Multinomial(4, [0.2, 0.4, 0.4]), Multinomial(4, [0.1, 0.3, 0.6])) ≈
+        @test prod(ClosedProd(), Multinomial(4, [0.2, 0.4, 0.4]), Multinomial(4, [0.1, 0.3, 0.6])) ≈
               Multinomial(4, [0.05263157894736842, 0.3157894736842105, 0.631578947368421])
 
-        @test prod(ConditionallyClosedProd(), Multinomial(3, [0.6, 0.4]), Multinomial(3, [0.3, 0.7])) ≈
+        @test prod(ClosedProd(), Multinomial(3, [0.6, 0.4]), Multinomial(3, [0.3, 0.7])) ≈
               Multinomial(3, [0.3913043478260869, 0.6086956521739131])
 
         @test prod(
-            ConditionallyClosedProd(),
+            ClosedProd(),
             Multinomial(10, [1 / 4, 1 / 4, 1 / 4, 1 / 4]),
             Multinomial(10, [0.1, 0.4, 0.3, 0.2])
         ) ≈
               Multinomial(10, [0.1, 0.4, 0.3, 0.2])
 
         @test_throws AssertionError prod(
-            ConditionallyClosedProd(),
+            ClosedProd(),
             Multinomial(4, [0.2, 0.4, 0.4]),
             Multinomial(5, [0.1, 0.3, 0.6])
         )
         @test_throws AssertionError prod(
-            ConditionallyClosedProd(),
+            ClosedProd(),
             Multinomial(4, [0.2, 0.4, 0.4]),
             Multinomial(3, [0.1, 0.3, 0.6])
         )

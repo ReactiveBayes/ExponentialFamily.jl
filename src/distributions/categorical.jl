@@ -5,7 +5,7 @@ import Distributions: Categorical, probs
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
-prod_analytical_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ClosedProd()
+prod_closed_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ClosedProd()
 
 convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
     Categorical(convert(AbstractVector{T}, probs(distribution)))
@@ -33,9 +33,7 @@ end
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-function logpartition(::KnownExponentialFamilyDistribution{Categorical})
-    return 0.0
-end
+logpartition(::KnownExponentialFamilyDistribution{Categorical}) = zero(Float64)
 
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
 

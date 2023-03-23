@@ -73,7 +73,7 @@ end
 vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
-prod_analytical_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
+prod_closed_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     invcovleft  = invcov(left)

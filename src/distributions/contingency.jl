@@ -106,11 +106,9 @@ function Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistributi
     return Contingency(softmax(getnaturalparameters(η)))
 end
 
-function logpartition(::KnownExponentialFamilyDistribution{Contingency})
-    return 0.0
-end
+logpartition(::KnownExponentialFamilyDistribution{Contingency}) = zero(Float64)
 
-check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > 1) && (getindex(size(v), 2) > 1)
+check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > one(Int64)) && (getindex(size(v), 2) > one(Int64))
 
 function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where {T}
     @assert first(size(x)) === 2 "$(x) should be length 2 vector "
@@ -182,4 +180,4 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractAr
     return container
 end
 
-prod_analytical_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
+prod_closed_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()

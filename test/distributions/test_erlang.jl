@@ -36,8 +36,6 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
     end
 
     @testset "Base operations" begin
-        # @test KnownExponentialFamilyDistribution(Erlang, [1, 2.0]) - KnownExponentialFamilyDistribution(Erlang, [2, 3.0]) ==
-        #       KnownExponentialFamilyDistribution(Erlang, [-1, -1.0])
         @test prod(
             KnownExponentialFamilyDistribution(Erlang, [4, 2.0]),
             KnownExponentialFamilyDistribution(Erlang, [2, 3.0])

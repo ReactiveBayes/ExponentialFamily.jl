@@ -18,10 +18,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test var(d) == 0.75
     end
     @testset "Pareto prod" begin
-        @test prod(ConditionallyClosedProd(), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
-        @test prod(ConditionallyClosedProd(), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
-        @test prod(ConditionallyClosedProd(), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
-        @test prod(ConditionallyClosedProd(), Pareto(3), Pareto(2)) == Pareto(6.0)
+        @test prod(ClosedProd(), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
+        @test prod(ClosedProd(), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
+        @test prod(ClosedProd(), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
+        @test prod(ClosedProd(), Pareto(3), Pareto(2)) == Pareto(6.0)
     end
 
     @testset "Natural parameterization related Pareto" begin

@@ -11,9 +11,9 @@ function convert_eltype(::Type{Multinomial}, ::Type{T}, distribution::Multinomia
     return Multinomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_analytical_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ConditionallyClosedProd()
+prod_closed_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
-function Base.prod(::ConditionallyClosedProd, left::Multinomial, right::Multinomial)
+function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
 
     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
@@ -53,10 +53,4 @@ function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, 
     return factorial(n) / prod(factorial.(x))
 end
 
-# function plus(ef1::KnownExponentialFamilyDistribution{Multinomial}, ef2::KnownExponentialFamilyDistribution{Multinomial})
-#     if getconditioner(ef1) == getconditioner(ef2) && (first(size(getnaturalparameters(ef1))) == first(size(getnaturalparameters(ef2))))
-#         return Plus()
-#     else
-#         return Concat()
-#     end
-# end
+

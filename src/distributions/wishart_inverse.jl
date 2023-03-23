@@ -154,7 +154,7 @@ end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `InverseWishartMessage` messages as they are significantly faster in creation
-prod_analytical_rule(::Type{<:InverseWishartMessage}, ::Type{<:InverseWishartMessage}) = ClosedProd()
+prod_closed_rule(::Type{<:InverseWishartMessage}, ::Type{<:InverseWishartMessage}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::InverseWishartMessage, right::InverseWishartMessage)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two InverseWishart distributions of different sizes"

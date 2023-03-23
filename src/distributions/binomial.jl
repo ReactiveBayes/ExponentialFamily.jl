@@ -11,7 +11,7 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
     return Binomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_analytical_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ConditionallyClosedProd()
+prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     @assert ntrials(left) == ntrials(right) "Number of trials in $(left) and $(right) is not equal"
@@ -20,7 +20,7 @@ function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
 
     pprod = left_p * right_p
     norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
-    @assert norm > 0 "Product of $(left) and $(right) results in non-normalizable distribution"
+    @assert norm > zero(norm) "Product of $(left) and $(right) results in non-normalizable distribution"
     return Binomial(ntrials(left), pprod / norm)
 end
 
@@ -36,14 +36,14 @@ end
 check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
 
 function check_valid_conditioner(::Type{<:Binomial}, conditioner)
-    isinteger(conditioner) && conditioner > 0
+    isinteger(conditioner) && conditioner > zero(conditioner)
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
-    getconditioner(exponentialfamily) > 0 ? true : false
+    getconditioner(exponentialfamily) > zero(Int64) ? true : false
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
-    getconditioner(exponentialfamily)log(1 + exp(first(getnaturalparameters(exponentialfamily))))
+    getconditioner(exponentialfamily)log(one(Float64) + exp(first(getnaturalparameters(exponentialfamily))))
 
 basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}, x) =
     typeof(x) <: Integer ? binomial(getconditioner(exponentialfamily), x) : error("x must be integer")

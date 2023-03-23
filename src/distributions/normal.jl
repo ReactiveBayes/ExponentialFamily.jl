@@ -313,7 +313,7 @@ end
 
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
-prod_analytical_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+prod_closed_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
     ClosedProd()
 
 function Base.prod(
@@ -340,7 +340,7 @@ function compute_logscale(
     return -(logdet(v) + log2π) / 2 - m^2 / v / 2
 end
 
-prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
+prod_closed_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
     ClosedProd()
 
 function Base.prod(

@@ -5,7 +5,7 @@ import SpecialFunctions: digamma, loggamma
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
-prod_analytical_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
+prod_closed_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
@@ -37,15 +37,15 @@ end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
     getnaturalparameters(exponentialfamily)
-    return Dirichlet(getnaturalparameters(exponentialfamily) .+ 1)
+    return Dirichlet(getnaturalparameters(exponentialfamily) .+ one(Float64))
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Dirichlet)
-    KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) .- 1)
+    KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) .- one(Float64))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
     all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
-check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
+check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > one(Int64))
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) = 1.0
