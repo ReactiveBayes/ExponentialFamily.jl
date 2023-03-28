@@ -16,19 +16,19 @@ end
 
 function mean(::typeof(loggamma), dist::GammaShapeScale)
     k, θ = params(dist)
-    return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-1 + digamma(k + 1) + log(θ))
+    return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-one(k) + digamma(k + one(k)) + log(θ))
 end
 
 function mean(::typeof(xtlog), dist::GammaShapeScale)
     k, θ = params(dist)
-    return mean(dist) * (digamma(k + 1) + log(θ))
+    return mean(dist) * (digamma(k + one(k)) + log(θ))
 end
 
-vague(::Type{<:GammaShapeScale}) = GammaShapeScale(1.0, huge)
+vague(::Type{<:GammaShapeScale}) = GammaShapeScale(one(Float64), huge)
 
-prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeScale)
+function Base.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)
     return GammaShapeScale(
         shape(left) + shape(right) - one(T),
@@ -52,15 +52,15 @@ function Base.convert(::Type{GammaShapeRate}, dist::GammaDistributionsFamily{T})
     return convert(GammaShapeRate{T}, dist)
 end
 
-prod_analytical_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ProdAnalyticalRuleAvailable()
-prod_analytical_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ClosedProd()
+prod_closed_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::GammaShapeRate, right::GammaShapeScale)
+function Base.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-function Base.prod(::ProdAnalytical, left::GammaShapeScale, right::GammaShapeRate)
+function Base.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeRate)
     T = promote_samplefloattype(left, right)
     return GammaShapeScale(
         shape(left) + shape(right) - one(T),
@@ -86,29 +86,32 @@ end
 
 check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:GammaDistributionsFamily})
-    η = get_params(params)
+function Base.convert(
+    ::Type{Distribution},
+    exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}
+)
+    η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
-    return GammaShapeRate(η1 + 1, -η2)
+    return GammaShapeRate(η1 + one(η1), -η2)
 end
 
-Base.convert(::Type{NaturalParameters}, dist::GammaDistributionsFamily) =
-    NaturalParameters(GammaShapeRate, [shape(dist) - 1, -rate(dist)])
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::GammaDistributionsFamily) =
+    KnownExponentialFamilyDistribution(GammaShapeRate, [shape(dist) - one(Float64), -rate(dist)])
 
-function lognormalizer(params::NaturalParameters{<:GammaDistributionsFamily})
-    η = get_params(params)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
-    return loggamma(a + 1) - (a + 1) * log(-b)
+    return loggamma(a + one(a)) - (a + one(a)) * log(-b)
 end
 
-function isproper(params::NaturalParameters{<:GammaDistributionsFamily})
-    η = get_params(params)
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
-    return (a >= tiny - 1) && (-b >= tiny)
+    return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:NaturalParameters{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) = 1.0
-plus(::NaturalParameters{GammaShapeRate}, ::NaturalParameters{GammaShapeRate}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) =
+    1.0

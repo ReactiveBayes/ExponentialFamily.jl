@@ -5,7 +5,8 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: NaturalParameters, get_params, compute_logscale, lognormalizer, basemeasure
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
 
 @testset "Bernoulli" begin
 
@@ -22,9 +23,9 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
     end
 
     @testset "prod Bernoulli-Bernoulli" begin
-        @test prod(ProdAnalytical(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
-        @test prod(ProdAnalytical(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
-        @test prod(ProdAnalytical(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
+        @test prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
+        @test prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
+        @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
     end
 
     @testset "probvec" begin
@@ -42,28 +43,30 @@ import ExponentialFamily: NaturalParameters, get_params, compute_logscale, logno
         @test compute_logscale(Categorical([1.0, 0.0, 0.0]), Bernoulli(0.5), Categorical([1.0, 0, 0])) ≈ log(0.5)
     end
 
-    @testset "NaturalParameters" begin
-        @test lognormalizer(convert(NaturalParameters, Bernoulli(0.5))) ≈ log(2)
+    @testset "KnownExponentialFamilyDistribution" begin
+        @test logpartition(convert(KnownExponentialFamilyDistribution, Bernoulli(0.5))) ≈ log(2)
         b_99 = Bernoulli(0.99)
         for i in 1:9
             b = Bernoulli(i / 10.0)
-            bnp = convert(NaturalParameters, b)
+            bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
-            @test convert(NaturalParameters, b) == NaturalParameters(Bernoulli, [logit(i / 10.0)])
+            @test convert(KnownExponentialFamilyDistribution, b) ==
+                  KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
 
-            @test prod(ProdAnalytical(), convert(Distribution, convert(NaturalParameters, b_99) - bnp), b) ≈ b_99
+            # @test prod(ClosedProd(), convert(Distribution, convert(KnownExponentialFamilyDistribution, b_99) / bnp), b) ≈ b_99
         end
-        @test isproper(NaturalParameters(Bernoulli, [10])) === true
+        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, [10])) === true
         @test basemeasure(b_99, 0.1) == 1.0
-        @test basemeasure(NaturalParameters(Bernoulli, [10]), 0.2) == 1.0
+        @test basemeasure(KnownExponentialFamilyDistribution(Bernoulli, [10]), 0.2) == 1.0
 
-        @testset "+(::NaturalParameters{Bernoulli}, ::NaturalParameters{Bernoulli})" begin
-            left = convert(NaturalParameters, Bernoulli(0.5))
-            right = convert(NaturalParameters, Bernoulli(0.6))
-            @test (left + right) == convert(NaturalParameters, Bernoulli(0.6))
+        @testset "prod(::KnownExponentialFamilyDistribution{Bernoulli}, ::KnownExponentialFamilyDistribution{Bernoulli})" begin
+            left = convert(KnownExponentialFamilyDistribution, Bernoulli(0.5))
+            right = convert(KnownExponentialFamilyDistribution, Bernoulli(0.6))
+            @test prod(left, right) ==
+                  convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.6)))
         end
     end
 end

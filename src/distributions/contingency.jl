@@ -97,20 +97,18 @@ function Distributions.entropy(distribution::Contingency)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Contingency)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Contingency)
     logcontingency = log.(contingency_matrix(dist))
-    return NaturalParameters(Contingency, logcontingency)
+    return KnownExponentialFamilyDistribution(Contingency, logcontingency)
 end
 
-function Base.convert(::Type{Distribution}, η::NaturalParameters{Contingency})
-    return Contingency(softmax(get_params(η)))
+function Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Contingency})
+    return Contingency(softmax(getnaturalparameters(η)))
 end
 
-function lognormalizer(::NaturalParameters{Contingency})
-    return 0.0
-end
+logpartition(::KnownExponentialFamilyDistribution{Contingency}) = zero(Float64)
 
-check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > 1) && (getindex(size(v), 2) > 1)
+check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > one(Int64)) && (getindex(size(v), 2) > one(Int64))
 
 function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where {T}
     @assert first(size(x)) === 2 "$(x) should be length 2 vector "
@@ -158,8 +156,8 @@ function icdf(dist::Contingency, probability::Float64)
     return [cartesianind[1][1], cartesianind[1][2]]
 end
 
-isproper(params::NaturalParameters{Contingency}) = true
-basemeasure(::Union{<:NaturalParameters{Contingency}, <:Contingency}, x) = 1.0
+isproper(::KnownExponentialFamilyDistribution{Contingency}) = true
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     probvector   = vec(contingency_matrix(dist))
@@ -182,4 +180,4 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractAr
     return container
 end
 
-plus(::NaturalParameters{Contingency}, ::NaturalParameters{Contingency}) = Plus()
+prod_closed_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()

@@ -63,11 +63,11 @@ end
 vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
     MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-prod_analytical_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
-    Λ = invcov(left) + invcov(right)
-    μ = cholinv(Λ) * (invcov(left) * mean(left) + invcov(right) * mean(right))
+    Λ = precision(left) + precision(right)
+    μ = cholinv(Λ) * (precision(left) * mean(left) + precision(right) * mean(right))
     return MvNormalMeanPrecision(μ, Λ)
 end
 
@@ -91,14 +91,14 @@ function Base.prod(
     return MvNormalMeanPrecision(μ, Λ)
 end
 
-function Base.prod(::ProdAnalytical, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
+function Base.prod(::ClosedProd, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     W = precision(left) + precision(right)
     xi = precision(left) * mean(left) + precision(right) * mean(right)
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
 function Base.prod(
-    ::ProdAnalytical,
+    ::ClosedProd,
     left::MvNormalMeanPrecision{T1},
     right::MvNormalMeanPrecision{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}

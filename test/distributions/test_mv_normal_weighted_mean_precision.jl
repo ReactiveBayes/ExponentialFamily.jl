@@ -88,7 +88,7 @@ using Distributions
 
     @testset "prod" begin
         @test prod(
-            ProdAnalytical(),
+            ClosedProd(),
             MvNormalWeightedMeanPrecision([-1, -1], [2, 2]),
             MvNormalWeightedMeanPrecision([1, 1], [2, 4])
         ) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
@@ -97,7 +97,7 @@ using Distributions
         Λ    = [1.5 -0.1 0.1; -0.1 1.8 0.0; 0.1 0.0 3.5]
         dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
-        @test prod(ProdAnalytical(), dist, dist) ≈
+        @test prod(ClosedProd(), dist, dist) ≈
               MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
     end
 

@@ -5,9 +5,9 @@ import SpecialFunctions: digamma, loggamma
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
-prod_analytical_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::Dirichlet, right::Dirichlet)
+function Base.prod(::ClosedProd, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
     mvec = mvec .- one(eltype(mvec))
     return Dirichlet(mvec)
@@ -28,24 +28,24 @@ function compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist:
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
 end
 
-function lognormalizer(params::NaturalParameters{Dirichlet})
-    η = get_params(params)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
+    η = getnaturalparameters(exponentialfamily)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η)
     secondterm = loggamma(sum(η .+ 1))
     return firstterm - secondterm
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Dirichlet})
-    get_params(params)
-    return Dirichlet(get_params(params) .+ 1)
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
+    getnaturalparameters(exponentialfamily)
+    return Dirichlet(getnaturalparameters(exponentialfamily) .+ one(Float64))
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Dirichlet)
-    NaturalParameters(Dirichlet, probvec(dist) .- 1)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Dirichlet)
+    KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) .- one(Float64))
 end
 
-isproper(params::NaturalParameters{<:Dirichlet}) = all(isless.(-1, get_params(params)))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
+    all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
-check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > 1)
-basemeasure(::Union{<:NaturalParameters{Dirichlet}, <:Dirichlet}, x) = 1.0
-plus(::NaturalParameters{Dirichlet}, ::NaturalParameters{Dirichlet}) = Plus()
+check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > one(Int64))
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) = 1.0
