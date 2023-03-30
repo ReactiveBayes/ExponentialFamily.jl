@@ -19,8 +19,13 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
         @test prod(ClosedProd(), LogNormal(1.0, 1.0), LogNormal(2.0, 1.0)) == LogNormal(1.0, 0.5)
         @test prod(ClosedProd(), LogNormal(1.0, 2.0), LogNormal(1.0, 2.0)) == LogNormal(0.0, 1.0)
         @test prod(ClosedProd(), LogNormal(2.0, 2.0), LogNormal(2.0, 2.0)) == LogNormal(1.0, 1.0)
+    end
+
+    @testset "Base operations" begin
         @test prod(KnownExponentialFamilyDistribution(LogNormal, [1, 1]), KnownExponentialFamilyDistribution(LogNormal, [1, 1])) ==
               KnownExponentialFamilyDistribution(LogNormal, [2, 2])
+        @test prod(KnownExponentialFamilyDistribution(LogNormal, [2, 3]), KnownExponentialFamilyDistribution(LogNormal, [-1, -2])) ==       
+              KnownExponentialFamilyDistribution(LogNormal, [1, 1])
     end
 
     @testset "Natural parameterization" begin
@@ -30,7 +35,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, LogNormal(5, 2.0)), 1.0)
     end
 
-    @testset "NaturalParameters" begin
+    @testset "LogNormalKnownExponentialFamilyDistribution" begin
         @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ LogNormal(1, 0.5)
         @test Distributions.logpdf(KnownExponentialFamilyDistribution(LogNormal, [2, -2]), 10) ≈
               Distributions.logpdf(LogNormal(0.75, 0.25), 10)
