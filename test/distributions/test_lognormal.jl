@@ -19,14 +19,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
         @test prod(ClosedProd(), LogNormal(1.0, 1.0), LogNormal(2.0, 1.0)) == LogNormal(1.0, 0.5)
         @test prod(ClosedProd(), LogNormal(1.0, 2.0), LogNormal(1.0, 2.0)) == LogNormal(0.0, 1.0)
         @test prod(ClosedProd(), LogNormal(2.0, 2.0), LogNormal(2.0, 2.0)) == LogNormal(1.0, 1.0)
+        @test prod(KnownExponentialFamilyDistribution(LogNormal, [1, 1]), KnownExponentialFamilyDistribution(LogNormal, [1, 1])) ==
+              KnownExponentialFamilyDistribution(LogNormal, [2, 2])
     end
-
-    # @testset "Base operations" begin
-    #     @test KnownExponentialFamilyDistribution(LogNormal, [1.0, 2.0]) - KnownExponentialFamilyDistribution(LogNormal, [2.0, 3.0]) ==
-    #           KnownExponentialFamilyDistribution(LogNormal, [-1.0, -1.0])
-    #     @test KnownExponentialFamilyDistribution(LogNormal, [4, 2.0]) + KnownExponentialFamilyDistribution(LogNormal, [2, 3.0]) ==
-    #           KnownExponentialFamilyDistribution(LogNormal, [6, 5.0])
-    # end
 
     @testset "Natural parameterization" begin
         @test Distributions.logpdf(LogNormal(10, 4.0), 1.0) ≈
@@ -45,10 +40,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
         @test convert(KnownExponentialFamilyDistribution, LogNormal(1.0, 2.0)) == KnownExponentialFamilyDistribution(LogNormal, [-0.5, -0.25])
     end
 
-    # @testset "lognormalizer" begin
-    #     @test lognormalizer(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) ≈ 0.5
-    #     @test lognormalizer(KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ 1.0
-    # end
+    @testset "logpartition" begin
+        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) ≈ 0.5
+        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ 1.0
+    end
 
     @testset "basemeasure" begin
         @test basemeasure(LogNormal(1, 1 / 2pi), rand(1)) == 1.0

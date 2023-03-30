@@ -33,9 +33,7 @@ function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialF
     return LogNormal(-(η1 + 1) / (2 * η2), -1 / (2 * η2))
 end
 
-#function lognormalizer(params::NaturalParameters{LogNormal})
-function lognormalizer(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
-    #η = get_params(params)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
     η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
