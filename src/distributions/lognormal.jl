@@ -7,9 +7,9 @@ Distributions.cov(dist::LogNormal) = var(dist)
 
 vague(::Type{<:LogNormal}) = LogNormal(1, 1e12)
 
-prod_analytical_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::LogNormal, right::LogNormal)
+function Base.prod(::ClosedProd, left::LogNormal, right::LogNormal)
     mean1, var1 = params(left)
     mean2, var2 = params(right)
 
@@ -21,40 +21,42 @@ end
 
 check_valid_natural(::Type{<:LogNormal}, params) = length(params) === 2
 
-function Base.convert(::Type{NaturalParameters}, dist::LogNormal)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::LogNormal)
     μ, var = params(dist)
-    return NaturalParameters(LogNormal, [(μ - var) / var, -1 / (2 * var)])
+    return KnownExponentialFamilyDistribution(LogNormal, [(μ - var) / var, -1 / (2 * var)])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{LogNormal})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
+    η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
     return LogNormal(-(η1 + 1) / (2 * η2), -1 / (2 * η2))
 end
 
-function lognormalizer(params::NaturalParameters{LogNormal})
-    η = get_params(params)
+#function lognormalizer(params::NaturalParameters{LogNormal})
+function lognormalizer(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
+    #η = get_params(params)
+    η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
     return -(η1 + 1)^2 / (4 * η2)
 end
 
-function isproper(params::NaturalParameters{LogNormal})
-    η = get_params(params)
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
+    η = getnaturalparameters(exponentialfamily)
     η2 = getindex(η, 2)
     return (η2 < 0)
 end
 
-function basemeasure(d::Union{<:NaturalParameters{LogNormal}, <:LogNormal}, x)
+function basemeasure(d::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}, x)
     if typeof(d) <: LogNormal
         μ, var = params(d)
 
     else
-        η = get_params(d)
+        η = getnaturalparameters(d)
         η2 = getindex(η, 2)
         var = -1 / (2 * η2)
     end
     return 1 / (sqrt(2pi * var))
 end
-plus(::NaturalParameters{LogNormal}, ::NaturalParameters{LogNormal}) = Plus()
+plus(::KnownExponentialFamilyDistribution{LogNormal}, ::KnownExponentialFamilyDistribution{LogNormal}) = Plus()
