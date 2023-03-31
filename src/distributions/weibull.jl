@@ -11,7 +11,7 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}
 end
 
 basemeasure(dist::Weibull, x) = x^(shape(dist) - 1)
-basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x) = x^(get_conditioner(weibull) - 1)
+basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x) = x^(getconditioner(weibull) - 1)
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Weibull) =
     KnownExponentialFamilyDistribution(Weibull, [-(1 / scale(dist))^(shape(dist))], shape(dist))

@@ -28,6 +28,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test isproper(KnownExponentialFamilyDistribution(Weibull, [η], k)) == (η < 0)
         end
     end
+
+    @testset "basemeasure" begin
+        for η in -10:0.5:-0.5, k in 0.5:0.5:10, x in 0.5:0.5:10
+            @test basemeasure(KnownExponentialFamilyDistribution(Weibull, [η], k), x) ≈ x^(k-1)
+        end
+    end
 end
 
 end
