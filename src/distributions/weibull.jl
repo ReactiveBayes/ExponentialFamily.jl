@@ -23,5 +23,5 @@ function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialF
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
-    return -log(first(get_params(exponentialfamily))) - log(get_condioner(exponentialfamily))
+    return -log(-first(getnaturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
 end

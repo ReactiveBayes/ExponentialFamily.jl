@@ -18,6 +18,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                   KnownExponentialFamilyDistribution(Weibull, [-(1 / λ)^(k)], k)
         end
     end
+
+    @testset "logpartition" begin
+        @test logpartition(KnownExponentialFamilyDistribution(Weibull, [-1], 1)) ≈ 0
+    end
 end
 
 end
