@@ -4,8 +4,10 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using DomainSets
 
-import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, logpartition, basemeasure
+import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
+    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics
 
 @testset "Rayleigh" begin
     @testset "vague" begin
@@ -17,9 +19,16 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, logpart
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), Rayleigh(3.0), Rayleigh(2.0)) ≈ Rayleigh(sqrt(36 / 13))
-        @test prod(ClosedProd(), Rayleigh(7.0), Rayleigh(1.0)) ≈ Rayleigh(sqrt(49 / 50))
-        @test prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)) ≈ Rayleigh(sqrt(4 / 5))
+        naturalparameters(σ1, σ2) = [-0.5(σ1^2 + σ2^2) / (σ1 * σ2)^2]
+        basemeasure = (x) -> 4 * x^2 / sqrt(pi)
+        sufficientstatistics = (x) -> x^2
+        logpartition = (η) -> log(η^(-3 / 2))
+        supp = DomainSets.HalfLine()
+        @test getnaturalparameters(prod(ClosedProd(), Rayleigh(3.0), Rayleigh(2.0))) == naturalparameters(3.0, 2.0)
+        @test support(prod(ClosedProd(), Rayleigh(7.0), Rayleigh(1.0))) == supp
+        @test getbasemeasure(prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)))(1.0) == basemeasure(1.0)
+        @test getsufficientstatistics(prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)))(1.0) ==
+              sufficientstatistics(1.0)
     end
 
     @testset "RayleighKnownExponentialFamilyDistribution" begin
