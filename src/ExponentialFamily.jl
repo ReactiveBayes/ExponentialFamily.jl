@@ -40,5 +40,6 @@ include("distributions/von_mises.jl")
 include("distributions/pareto.jl")
 include("distributions/continuous_bernoulli.jl")
 include("distributions/negative_binomial.jl")
+include("distributions/rayleigh.jl")
 
 end
