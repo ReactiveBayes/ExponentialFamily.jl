@@ -3,9 +3,9 @@ using TinyHugeNumbers
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
-include("plus_traits.jl")
 include("distributions.jl")
-include("natural_parameters.jl")
+include("exponential_family.jl")
+include("prod.jl")
 
 include("helpers/fixes.jl")
 include("helpers/algebra/cholesky.jl")
@@ -19,6 +19,7 @@ include("distributions/categorical.jl")
 include("distributions/matrix_dirichlet.jl")
 include("distributions/dirichlet.jl")
 include("distributions/beta.jl")
+include("distributions/lognormal.jl")
 include("distributions/bernoulli.jl")
 include("distributions/binomial.jl")
 include("distributions/normal_mean_variance.jl")
@@ -38,5 +39,6 @@ include("distributions/von_mises_fisher.jl")
 include("distributions/von_mises.jl")
 include("distributions/pareto.jl")
 include("distributions/continuous_bernoulli.jl")
+include("distributions/rayleigh.jl")
 
 end

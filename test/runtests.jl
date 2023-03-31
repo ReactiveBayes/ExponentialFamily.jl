@@ -3,7 +3,7 @@ using Test
 
 @testset "ExponentialFamily" begin
     include("test_distributions.jl")
-    include("test_natural_parameters.jl")
+    include("test_exponential_family.jl")
     include("distributions/test_common.jl")
     include("distributions/test_bernoulli.jl")
     include("distributions/test_binomial.jl")
@@ -15,6 +15,7 @@ using Test
     include("distributions/test_exponential.jl")
     include("distributions/test_gamma.jl")
     include("distributions/test_gamma_inverse.jl")
+    include("distributions/test_lognormal.jl")
     include("distributions/test_multinomial.jl")
     include("distributions/test_geometric.jl")
     include("distributions/test_mv_normal_mean_covariance.jl")
@@ -31,4 +32,5 @@ using Test
     include("distributions/test_vonmises.jl")
     include("distributions/test_pareto.jl")
     include("distributions/test_continuous_bernoulli.jl")
+    include("distributions/test_rayleigh.jl")
 end

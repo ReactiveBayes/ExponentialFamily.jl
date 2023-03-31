@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog, NaturalParameters, get_params, lognormalizer, basemeasure
+import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure
 import SpecialFunctions: loggamma
 
 @testset "Beta" begin
@@ -22,9 +22,9 @@ import SpecialFunctions: loggamma
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
-        @test prod(ProdAnalytical(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
-        @test prod(ProdAnalytical(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
+        @test prod(ClosedProd(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
+        @test prod(ClosedProd(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
+        @test prod(ClosedProd(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
     end
 
     @testset "mean(::typeof(log))" begin
@@ -39,47 +39,48 @@ import SpecialFunctions: loggamma
         @test mean(mirrorlog, Beta(4.5, 0.3)) ≈ -4.963371962929249
     end
 
-    @testset "BetaNaturalParameters" begin
+    @testset "BetaKnownExponentialFamilyDistribution" begin
         @testset "Constructor" begin
             for i in 0:10, j in 0:10
-                @test convert(Distribution, NaturalParameters(Beta, [i, j])) == Beta(i + 1, j + 1)
+                @test convert(Distribution, KnownExponentialFamilyDistribution(Beta, [i, j])) == Beta(i + 1, j + 1)
 
-                @test convert(NaturalParameters, Beta(i + 1, j + 1)) == NaturalParameters(Beta, [i, j])
+                @test convert(KnownExponentialFamilyDistribution, Beta(i + 1, j + 1)) ==
+                      KnownExponentialFamilyDistribution(Beta, [i, j])
             end
         end
 
-        @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(Beta, [0, 0])) ≈ 0
-            @test lognormalizer(NaturalParameters(Beta, [1, 1])) ≈ -loggamma(4)
+        @testset "logpartition" begin
+            @test logpartition(KnownExponentialFamilyDistribution(Beta, [0, 0])) ≈ 0
+            @test logpartition(KnownExponentialFamilyDistribution(Beta, [1, 1])) ≈ -loggamma(4)
         end
 
         @testset "logpdf" begin
             for i in 0:10, j in 0:10
-                @test logpdf(NaturalParameters(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
-                @test logpdf(NaturalParameters(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
+                @test logpdf(KnownExponentialFamilyDistribution(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
+                @test logpdf(KnownExponentialFamilyDistribution(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
             end
         end
 
         @testset "isproper" begin
             for i in 0:10
-                @test isproper(NaturalParameters(Beta, [i, i])) === true
+                @test isproper(KnownExponentialFamilyDistribution(Beta, [i, i])) === true
             end
             for i in 1:10
-                @test isproper(NaturalParameters(Beta, [-i, -i])) === false
+                @test isproper(KnownExponentialFamilyDistribution(Beta, [-i, -i])) === false
             end
         end
 
         @testset "basemeasure" begin
             for (i, j) in (1:10, 1:10)
-                @test basemeasure(NaturalParameters(Beta, [i, j]), rand()) == 1.0
+                @test basemeasure(KnownExponentialFamilyDistribution(Beta, [i, j]), rand()) == 1.0
                 @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
             end
         end
 
-        @testset "+(::NaturalParameters{Beta}, ::NaturalParameters{Beta})" begin
-            left = convert(NaturalParameters, Beta(2))
-            right = convert(NaturalParameters, Beta(5))
-            @test (left + right) == convert(NaturalParameters, Beta(6))
+        @testset "prod(::KnownExponentialFamilyDistribution{Beta}, ::KnownExponentialFamilyDistribution{Beta})" begin
+            left = convert(KnownExponentialFamilyDistribution, Beta(2))
+            right = convert(KnownExponentialFamilyDistribution, Beta(5))
+            @test prod(left, right) == convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Beta(2), Beta(5)))
         end
     end
 end

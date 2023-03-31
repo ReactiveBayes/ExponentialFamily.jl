@@ -154,9 +154,9 @@ end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `InverseWishartMessage` messages as they are significantly faster in creation
-prod_analytical_rule(::Type{<:InverseWishartMessage}, ::Type{<:InverseWishartMessage}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:InverseWishartMessage}, ::Type{<:InverseWishartMessage}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::InverseWishartMessage, right::InverseWishartMessage)
+function Base.prod(::ClosedProd, left::InverseWishartMessage, right::InverseWishartMessage)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two InverseWishart distributions of different sizes"
 
     d = size(left, 1)
@@ -173,23 +173,23 @@ end
 
 check_valid_natural(::Type{<:Union{InverseWishartMessage, InverseWishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{NaturalParameters}, dist::Union{InverseWishartMessage, InverseWishart})
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Union{InverseWishartMessage, InverseWishart})
     dof = dist.ν
     scale = dist.S
     p = first(size(scale))
-    return NaturalParameters(InverseWishartMessage, [-(dof + p + 1) / 2, -scale / 2])
+    return KnownExponentialFamilyDistribution(InverseWishartMessage, [-(dof + p + 1) / 2, -scale / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:InverseWishartMessage})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:InverseWishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
     return InverseWishart(-(2 * η1 + p + 1), -2η2)
 end
 
-function lognormalizer(params::NaturalParameters{<:InverseWishartMessage})
-    η = get_params(params)
+function logpartition(params::KnownExponentialFamilyDistribution{<:InverseWishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
@@ -198,8 +198,8 @@ function lognormalizer(params::NaturalParameters{<:InverseWishartMessage})
     return term1 + term2
 end
 
-function isproper(params::NaturalParameters{<:InverseWishartMessage})
-    η = get_params(params)
+function isproper(params::KnownExponentialFamilyDistribution{<:InverseWishartMessage})
+    η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     isposdef(-η2) && (η1 < 0)
@@ -207,10 +207,8 @@ end
 
 basemeasure(
     ::Union{
-        <:NaturalParameters{<:InverseWishartMessage},
+        <:KnownExponentialFamilyDistribution{<:InverseWishartMessage},
         <:Union{InverseWishartMessage, InverseWishart}
     },
     x
 ) = 1.0
-
-plus(::NaturalParameters{InverseWishartMessage}, ::NaturalParameters{InverseWishartMessage}) = Plus()

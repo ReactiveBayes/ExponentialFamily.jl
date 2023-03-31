@@ -86,14 +86,14 @@ using Distributions
     end
 
     @testset "prod" begin
-        @test prod(ProdAnalytical(), MvNormalMeanCovariance([-1, -1], [2, 2]), MvNormalMeanCovariance([1, 1], [2, 4])) ≈
+        @test prod(ClosedProd(), MvNormalMeanCovariance([-1, -1], [2, 2]), MvNormalMeanCovariance([1, 1], [2, 4])) ≈
               MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
 
         μ    = [1.0, 2.0, 3.0]
         Σ    = diagm([1.0, 2.0, 3.0])
         dist = MvNormalMeanCovariance(μ, Σ)
 
-        @test prod(ProdAnalytical(), dist, dist) ≈
+        @test prod(ClosedProd(), dist, dist) ≈
               MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
     end
 

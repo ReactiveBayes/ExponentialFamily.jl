@@ -12,9 +12,9 @@ end
 
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
-prod_analytical_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ClosedProd()
 
-function Base.prod(::ProdAnalytical, left::Erlang, right::Erlang)
+function Base.prod(::ClosedProd, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
@@ -26,28 +26,28 @@ end
 
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
-Base.convert(::Type{NaturalParameters}, dist::Erlang) = NaturalParameters(Erlang, [(shape(dist) - 1), -rate(dist)])
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) =
+    KnownExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Erlang})
-    η = get_params(params)
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
-    return Erlang(Int64(a + 1), -1 / b)
+    return Erlang(Int64(a + one(a)), -inv(b))
 end
 
-function lognormalizer(params::NaturalParameters{Erlang})
-    η = get_params(params)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
-    return logfactorial(a) - (a + 1) * log(-b)
+    return logfactorial(a) - (a + one(a)) * log(-b)
 end
 
-function isproper(params::NaturalParameters{Erlang})
-    η = get_params(params)
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
+    η = getnaturalparameters(exponentialfamily)
     a = first(η)
     b = getindex(η, 2)
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:NaturalParameters{Erlang}, <:Erlang}, x) = 1.0
-plus(::NaturalParameters{Erlang}, ::NaturalParameters{Erlang}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = 1.0

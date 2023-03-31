@@ -4,7 +4,7 @@ using Test
 using Random
 using Distributions
 using ExponentialFamily
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Pareto" begin
     @testset "Pareto vague" begin
@@ -18,22 +18,22 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test var(d) == 0.75
     end
     @testset "Pareto prod" begin
-        @test prod(ProdAnalytical(), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
-        @test prod(ProdAnalytical(), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
-        @test prod(ProdAnalytical(), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
-        @test prod(ProdAnalytical(), Pareto(3), Pareto(2)) == Pareto(6.0)
+        @test prod(ClosedProd(), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
+        @test prod(ClosedProd(), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
+        @test prod(ClosedProd(), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
+        @test prod(ClosedProd(), Pareto(3), Pareto(2)) == Pareto(6.0)
     end
 
     @testset "Natural parameterization related Pareto" begin
         @test Distributions.logpdf(Pareto(10.0, 1.0), 1.0) ≈
-              Distributions.logpdf(convert(NaturalParameters, Pareto(10.0, 1.0)), 1.0)
+              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Pareto(10.0, 1.0)), 1.0)
         @test Distributions.logpdf(Pareto(5.0, 1.0), 1.0) ≈
-              Distributions.logpdf(convert(NaturalParameters, Pareto(5.0, 1.0)), 1.0)
+              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Pareto(5.0, 1.0)), 1.0)
     end
     @testset "isproper" begin
-        @test isproper(NaturalParameters(Pareto, [-2.0], 1)) == true
-        @test_throws AssertionError NaturalParameters(Pareto, [-2.0], 2.1)
-        @test_throws AssertionError isproper(NaturalParameters(Pareto, [1.3]))
+        @test isproper(KnownExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
+        @test_throws AssertionError KnownExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
+        @test_throws MethodError KnownExponentialFamilyDistribution(Pareto, [1.3])
     end
 end
 end
