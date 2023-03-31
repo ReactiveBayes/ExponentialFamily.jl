@@ -14,17 +14,23 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), LogNormal(1.0, 1.0), LogNormal(1.0, 1.0)) == LogNormal(0.5, 0.5)
-        @test prod(ClosedProd(), LogNormal(2.0, 1.0), LogNormal(2.0, 1.0)) == LogNormal(1.5, 0.5)
-        @test prod(ClosedProd(), LogNormal(1.0, 1.0), LogNormal(2.0, 1.0)) == LogNormal(1.0, 0.5)
-        @test prod(ClosedProd(), LogNormal(1.0, 2.0), LogNormal(1.0, 2.0)) == LogNormal(0.0, 1.0)
-        @test prod(ClosedProd(), LogNormal(2.0, 2.0), LogNormal(2.0, 2.0)) == LogNormal(1.0, 1.0)
+        @test prod(ClosedProd(), LogNormal(1.0, 1.0), LogNormal(1.0, 1.0)) == LogNormal(0.5, sqrt(1 / 2))
+        @test prod(ClosedProd(), LogNormal(2.0, 1.0), LogNormal(2.0, 1.0)) == LogNormal(1.5, sqrt(1 / 2))
+        @test prod(ClosedProd(), LogNormal(1.0, 1.0), LogNormal(2.0, 1.0)) == LogNormal(1.0, sqrt(1 / 2))
+        @test prod(ClosedProd(), LogNormal(1.0, 2.0), LogNormal(1.0, 2.0)) == LogNormal(-1.0, sqrt(2))
+        @test prod(ClosedProd(), LogNormal(2.0, 2.0), LogNormal(2.0, 2.0)) == LogNormal(0.0, sqrt(2))
     end
 
     @testset "Base operations" begin
-        @test prod(KnownExponentialFamilyDistribution(LogNormal, [1, 1]), KnownExponentialFamilyDistribution(LogNormal, [1, 1])) ==
+        @test prod(
+            KnownExponentialFamilyDistribution(LogNormal, [1, 1]),
+            KnownExponentialFamilyDistribution(LogNormal, [1, 1])
+        ) ==
               KnownExponentialFamilyDistribution(LogNormal, [2, 2])
-        @test prod(KnownExponentialFamilyDistribution(LogNormal, [2, 3]), KnownExponentialFamilyDistribution(LogNormal, [-1, -2])) ==       
+        @test prod(
+            KnownExponentialFamilyDistribution(LogNormal, [2, 3]),
+            KnownExponentialFamilyDistribution(LogNormal, [-1, -2])
+        ) ==
               KnownExponentialFamilyDistribution(LogNormal, [1, 1])
     end
 
@@ -36,13 +42,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
     end
 
     @testset "LogNormalKnownExponentialFamilyDistribution" begin
-        @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ LogNormal(1, 0.5)
+        @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ LogNormal(1, sqrt(0.5))
         @test Distributions.logpdf(KnownExponentialFamilyDistribution(LogNormal, [2, -2]), 10) ≈
-              Distributions.logpdf(LogNormal(0.75, 0.25), 10)
+              Distributions.logpdf(LogNormal(0.75, sqrt(0.25)), 10)
         @test isproper(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) === true
         @test isproper(KnownExponentialFamilyDistribution(LogNormal, [2, 1])) === false
 
-        @test convert(KnownExponentialFamilyDistribution, LogNormal(1.0, 2.0)) == KnownExponentialFamilyDistribution(LogNormal, [-0.5, -0.25])
+        @test convert(KnownExponentialFamilyDistribution, LogNormal(1.0, sqrt(2.0))) ≈
+              KnownExponentialFamilyDistribution(LogNormal, [-0.5, -0.25])
     end
 
     @testset "logpartition" begin
@@ -51,8 +58,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
     end
 
     @testset "basemeasure" begin
-        @test basemeasure(LogNormal(1, 1 / 2pi), rand(1)) == 1.0
+        @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), rand(1)) == 1.0
         @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), rand(1)) == 1.0
+        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), rand(1)) == 1 / sqrt(pi)
     end
 end
 end
