@@ -6,7 +6,7 @@ check_valid_natural(::Type{<:Weibull}, params) = length(params) === 1
 check_valid_conditioner(::Type{<:Weibull}, conditioner) = isreal(conditioner) && conditioner > 0
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
-    η = get_params(exponentialfamily)
+    η = getnaturalparameters(exponentialfamily)
     return first(η) < 0
 end
 

@@ -22,6 +22,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "logpartition" begin
         @test logpartition(KnownExponentialFamilyDistribution(Weibull, [-1], 1)) ≈ 0
     end
+
+    @testset "isproper" begin
+        for η in -10:0.5:10, k in 0.5:0.5:10
+            @test isproper(KnownExponentialFamilyDistribution(Weibull, [η], k)) == (η < 0)
+        end
+    end
 end
 
 end
