@@ -46,8 +46,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "naturalparameter related NegativeBinomial" begin
         d1 = NegativeBinomial(5, 1 / 3)
         d2 = NegativeBinomial(5, 1 / 2)
-        η1 = KnownExponentialFamilyDistribution(NegativeBinomial, [logit(1 / 3)], 5)
-        η2 = KnownExponentialFamilyDistribution(NegativeBinomial, [logit(1 / 2)], 5)
+        η1 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 3)], 5)
+        η2 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 2)], 5)
 
         @test convert(KnownExponentialFamilyDistribution, d1) == η1
         @test convert(KnownExponentialFamilyDistribution, d2) == η2
@@ -55,18 +55,18 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
 
-        η3 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(exp(1) - 1)], 5)
-        η4 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(exp(1) - 1)], 10)
+        η3 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(0.1)], 5)
+        η4 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(0.2)], 10)
 
-        @test logpartition(η3) ≈ 5.0
-        @test logpartition(η4) ≈ 10.0
+        @test logpartition(η3) ≈ -5.0 * log(1 - 0.1)
+        @test logpartition(η4) ≈ -10.0 * log(1 - 0.2)
 
-        @test basemeasure(d1, 5) == 1
-        @test basemeasure(d2, 2) == 10
+        @test basemeasure(d1, 5) == binomial(9, 5)
+        @test basemeasure(d2, 2) == binomial(6, 2)
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
 
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(NegativeBinomial, [logit(1 / 3) + logit(1 / 2)], 5)
+        @test prod(η1, η2) == KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 3) + log(1 / 2)], 5)
 
         @test logpdf(η1, 2) == logpdf(d1, 2)
         @test logpdf(η2, 3) == logpdf(d2, 3)
