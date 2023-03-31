@@ -4,34 +4,32 @@ import Distributions: Rayleigh, params
 
 vague(::Type{<:Rayleigh}) = Rayleigh(1e12)
 
-# prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ProdAnalyticalRuleAvailable()
+prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ClosedProd()
 
-# function Base.prod(::ProdAnalytical, left::Rayleigh, right::Rayleigh)
-#     left_a, left_b   = params(left)
-#     right_a, right_b = params(right)
-#     T                = promote_samplefloattype(left, right)
-#     return Rayleigh(left_a + right_a - one(T), left_b + right_b - one(T))
-# end
+function Base.prod(::ClosedProd, left::Rayleigh, right::Rayleigh)
+    varleft = first(params(left))^2
+    varright = first(params(right))^2
 
-function isproper(params::NaturalParameters{Rayleigh})
-    η = first(get_params(params))
+    return Rayleigh(sqrt(varleft * varright / (varleft + varright)))
+end
+
+function isproper(ef::KnownExponentialFamilyDistribution{Rayleigh})
+    η = first(getnaturalparameters(ef))
     return (η < 0)
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::Rayleigh)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Rayleigh)
     σ = first(params(dist))
-    NaturalParameters(Rayleigh, [-1 / (2σ^2)])
+    KnownExponentialFamilyDistribution(Rayleigh, [-1 / (2σ^2)])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{Rayleigh})
-    η = first(get_params(params))
+function Base.convert(::Type{Distribution}, ef::KnownExponentialFamilyDistribution{Rayleigh})
+    η = first(getnaturalparameters(ef))
     return Rayleigh(sqrt(-1 / (2η)))
 end
 
 check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
-lognormalizer(params::NaturalParameters{Rayleigh}) = log(-2first(get_params(params)))
+lognormalizer(ef::KnownExponentialFamilyDistribution{Rayleigh}) = log(-2first(getnaturalparameters(ef)))
 
-basemeasure(::Union{<:NaturalParameters{Rayleigh}, <:Rayleigh}, x) = x
-
-plus(::NaturalParameters{Rayleigh}, ::NaturalParameters{Rayleigh}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) = x
