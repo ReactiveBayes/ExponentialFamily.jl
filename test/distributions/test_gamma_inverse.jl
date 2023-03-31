@@ -16,9 +16,9 @@ using Random
 
     # (α, θ) = (α_L + α_R + 1, θ_L + θ_R)
     @testset "prod" begin
-        @test prod(ProdAnalytical(), GammaInverse(3.0, 2.0), GammaInverse(2.0, 1.0)) ≈ GammaInverse(6.0, 3.0)
-        @test prod(ProdAnalytical(), GammaInverse(7.0, 1.0), GammaInverse(0.1, 4.5)) ≈ GammaInverse(8.1, 5.5)
-        @test prod(ProdAnalytical(), GammaInverse(1.0, 3.0), GammaInverse(0.2, 0.4)) ≈ GammaInverse(2.2, 3.4)
+        @test prod(ClosedProd(), GammaInverse(3.0, 2.0), GammaInverse(2.0, 1.0)) ≈ GammaInverse(6.0, 3.0)
+        @test prod(ClosedProd(), GammaInverse(7.0, 1.0), GammaInverse(0.1, 4.5)) ≈ GammaInverse(8.1, 5.5)
+        @test prod(ClosedProd(), GammaInverse(1.0, 3.0), GammaInverse(0.2, 0.4)) ≈ GammaInverse(2.2, 3.4)
     end
 
     # log(θ) - digamma(α)

@@ -6,7 +6,7 @@ using Distributions
 using Random
 using LinearAlgebra
 
-import ExponentialFamily: WishartMessage, NaturalParameters, get_params, basemeasure
+import ExponentialFamily: WishartMessage, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import StatsFuns: logmvgamma
 
 @testset "Wishart" begin
@@ -51,14 +51,14 @@ import StatsFuns: logmvgamma
         inv_v2 = cholinv([10.2 -3.3; -3.3 5.0])
         inv_v3 = cholinv([8.1 -2.7; -2.7 9.0])
 
-        @test prod(ProdAnalytical(), WishartMessage(3, inv_v1), WishartMessage(3, inv_v2)) ≈
+        @test prod(ClosedProd(), WishartMessage(3, inv_v1), WishartMessage(3, inv_v2)) ≈
               WishartMessage(
             3,
             cholinv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
         )
-        @test prod(ProdAnalytical(), WishartMessage(4, inv_v1), WishartMessage(4, inv_v3)) ≈
+        @test prod(ClosedProd(), WishartMessage(4, inv_v1), WishartMessage(4, inv_v3)) ≈
               WishartMessage(5, cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725]))
-        @test prod(ProdAnalytical(), WishartMessage(5, inv_v2), WishartMessage(4, inv_v3)) ≈
+        @test prod(ClosedProd(), WishartMessage(5, inv_v2), WishartMessage(4, inv_v3)) ≈
               WishartMessage(6, cholinv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
     end
 
@@ -68,12 +68,12 @@ import StatsFuns: logmvgamma
         @test ndims(vague(Wishart, 5)) === 5
     end
 
-    @testset "WishartNaturalParameters" begin
+    @testset "WishartKnownExponentialFamilyDistribution" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(
                     Distribution,
-                    NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                    KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
                 ) ≈
                       Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
             end
@@ -81,7 +81,7 @@ import StatsFuns: logmvgamma
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
                 distribution = Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -89,31 +89,36 @@ import StatsFuns: logmvgamma
             end
         end
 
-        @testset "lognormalizer" begin
-            @test lognormalizer(NaturalParameters(WishartMessage, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
+        @testset "logpartition" begin
+            @test logpartition(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
                   logmvgamma(2, 3.0 + (2 + 1) / 2)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === true
-                @test isproper(NaturalParameters(WishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
-                @test isproper(NaturalParameters(WishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === false
+                @test isproper(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === true
+                @test isproper(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
+                @test isproper(KnownExponentialFamilyDistribution(WishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === false
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]]), rand(3, 3)) == 1
+                @test basemeasure(
+                    KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]]),
+                    rand(3, 3)
+                ) == 1
             end
         end
 
         @testset "base operations" begin
             for i in 1:10
-                np1 = NaturalParameters(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
-                np2 = NaturalParameters(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]])
-                @test np1 + np2 - np2 == np1
-                @test np1 + np2 - np1 == np2
+                np1 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                np2 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]])
+                @test prod(np1, np2) == KnownExponentialFamilyDistribution(
+                    WishartMessage,
+                    [3.0, [-2i 0.0; 0.0 -2i]] + [3.0, [-i 0.0; 0.0 -i]]
+                )
             end
         end
     end

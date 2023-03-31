@@ -39,7 +39,7 @@ Base.convert(::Type{NormalMeanPrecision{T}}, μ::Real, w::Real) where {T <: Real
 
 vague(::Type{<:NormalMeanPrecision}) = NormalMeanPrecision(0.0, tiny)
 
-prod_analytical_rule(::Type{<:NormalMeanPrecision}, ::Type{<:NormalMeanPrecision}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:NormalMeanPrecision}, ::Type{<:NormalMeanPrecision}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::NormalMeanPrecision, right::NormalMeanPrecision)
     w = precision(left) + precision(right)
@@ -47,7 +47,7 @@ function Base.prod(::ProdPreserveType, left::NormalMeanPrecision, right::NormalM
     return NormalMeanPrecision(μ, w)
 end
 
-function Base.prod(::ProdAnalytical, left::NormalMeanPrecision, right::NormalMeanPrecision)
+function Base.prod(::ClosedProd, left::NormalMeanPrecision, right::NormalMeanPrecision)
     w = precision(left) + precision(right)
     xi = mean(left) * precision(left) + mean(right) * precision(right)
     return NormalWeightedMeanPrecision(xi, w)

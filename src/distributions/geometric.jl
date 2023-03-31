@@ -2,27 +2,29 @@ export Geometric
 
 import Distributions: Geometric, succprob, failprob
 
-vague(::Type{<:Geometric}) = Geometric(1e-12)
+vague(::Type{<:Geometric}) = Geometric(Float64(tiny))
 
 probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
-prod_analytical_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
 
-Base.prod(::ProdAnalytical, left::Geometric, right::Geometric) =
+Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-Base.convert(::Type{NaturalParameters}, dist::Geometric) = NaturalParameters(Geometric, [log(1 - succprob(dist))])
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Geometric) =
+    KnownExponentialFamilyDistribution(Geometric, [log(one(Float64) - succprob(dist))])
 
-Base.convert(::Type{Distribution}, η::NaturalParameters{Geometric}) = Geometric(1 - exp(first(get_params(η))))
+Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Geometric}) =
+    Geometric(one(Float64) - exp(first(getnaturalparameters(η))))
 
-lognormalizer(η::NaturalParameters{Geometric}) = -log(1 - exp(first(get_params(η))))
+logpartition(η::KnownExponentialFamilyDistribution{Geometric}) =
+    -log(one(Float64) - exp(first(getnaturalparameters(η))))
 
 check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
 
-function isproper(params::NaturalParameters{Geometric})
-    η = first(get_params(params))
-    return (η <= 0.0) && (η >= log(1e-12))
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometric})
+    η = first(getnaturalparameters(exponentialfamily))
+    return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
 end
 
-basemeasure(::Union{<:NaturalParameters{Geometric}, <:Geometric}, x) = 1.0
-plus(::NaturalParameters{Geometric}, ::NaturalParameters{Geometric}) = Plus()
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x) = 1.0

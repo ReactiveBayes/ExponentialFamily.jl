@@ -313,17 +313,17 @@ end
 
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
-prod_analytical_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
-    ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    ClosedProd()
 
 function Base.prod(
-    ::ProdAnalytical,
+    ::ClosedProd,
     left::L,
     right::R
 ) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
-    return prod(ProdAnalytical(), wleft, wright)
+    return prod(ClosedProd(), wleft, wright)
 end
 
 function compute_logscale(
@@ -340,17 +340,17 @@ function compute_logscale(
     return -(logdet(v) + log2π) / 2 - m^2 / v / 2
 end
 
-prod_analytical_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
-    ProdAnalyticalRuleAvailable()
+prod_closed_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
+    ClosedProd()
 
 function Base.prod(
-    ::ProdAnalytical,
+    ::ClosedProd,
     left::L,
     right::R
 ) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(ProdAnalytical(), wleft, wright)
+    return prod(ClosedProd(), wleft, wright)
 end
 
 function compute_logscale(
@@ -443,48 +443,55 @@ end
 ## Natural parameters for the Normal distribution
 check_valid_natural(::Type{<:NormalDistributionsFamily}, params) = length(params) === 2
 
-function Base.convert(::Type{NaturalParameters}, dist::UnivariateGaussianDistributionsFamily)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::UnivariateGaussianDistributionsFamily)
     weightedmean, precision = weightedmean_precision(dist)
-    return NaturalParameters(NormalWeightedMeanPrecision, [weightedmean, -precision / 2])
+    return KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [weightedmean, -precision / 2])
 end
 
-function Base.convert(::Type{NaturalParameters}, dist::MultivariateNormalDistributionsFamily)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MultivariateNormalDistributionsFamily)
     weightedmean, precision = weightedmean_precision(dist)
-    return NaturalParameters(MvGaussianWeightedMeanPrecision, [weightedmean, -precision / 2])
+    return KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, [weightedmean, -precision / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:MvGaussianWeightedMeanPrecision})
-    η = get_params(params)
+function Base.convert(
+    ::Type{Distribution},
+    exponentialfamily::KnownExponentialFamilyDistribution{<:MvGaussianWeightedMeanPrecision}
+)
+    η = getnaturalparameters(exponentialfamily)
     weightedmean = getindex(η, 1)
     minushalfprecision = getindex(η, 2)
     return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
 end
 
-function Base.convert(::Type{Distribution}, params::NaturalParameters{<:NormalWeightedMeanPrecision})
-    η = get_params(params)
+function Base.convert(
+    ::Type{Distribution},
+    exponentialfamily::KnownExponentialFamilyDistribution{<:NormalWeightedMeanPrecision}
+)
+    η = getnaturalparameters(exponentialfamily)
     weightedmean = getindex(η, 1)
     minushalfprecision = getindex(η, 2)
     return NormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
 end
 
-function lognormalizer(params::NaturalParameters{<:NormalWeightedMeanPrecision})
-    η = get_params(params)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:NormalWeightedMeanPrecision})
+    η = getnaturalparameters(exponentialfamily)
     weightedmean = first(η)
     minushalfprecision = getindex(η, 2)
     return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) / 2
 end
 
-function lognormalizer(params::NaturalParameters{<:MvGaussianWeightedMeanPrecision})
-    η = get_params(params)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:MvGaussianWeightedMeanPrecision})
+    η = getnaturalparameters(exponentialfamily)
     weightedmean = first(η)
     minushalfprecision = getindex(η, 2)
     return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) / 2
 end
 
-isproper(params::NaturalParameters{<:NormalDistributionsFamily}) = isposdef(-getindex(get_params(params), 2))
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
+    isposdef(-getindex(getnaturalparameters(exponentialfamily), 2))
 
-basemeasure(::Union{<:NaturalParameters{<:NormalDistributionsFamily}, <:NormalDistributionsFamily}, x) =
+basemeasure(
+    ::Union{<:KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
+    x
+) =
     (2pi)^(-length(x) / 2)
-
-plus(::NaturalParameters{MvNormalWeightedMeanPrecision}, ::NaturalParameters{MvNormalWeightedMeanPrecision}) = Plus()
-plus(::NaturalParameters{NormalWeightedMeanPrecision}, ::NaturalParameters{NormalWeightedMeanPrecision}) = Plus()

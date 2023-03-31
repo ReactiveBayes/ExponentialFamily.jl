@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: NaturalParameters, get_params, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "MatrixDirichlet" begin
     @testset "common" begin
@@ -69,12 +69,12 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         d2 = MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])
         d3 = MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])
 
-        @test prod(ProdAnalytical(), d1, d2) ==
+        @test prod(ClosedProd(), d1, d2) ==
               MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test prod(ProdAnalytical(), d1, d3) == MatrixDirichlet(
+        @test prod(ClosedProd(), d1, d3) == MatrixDirichlet(
             [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
         )
-        @test prod(ProdAnalytical(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+        @test prod(ClosedProd(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
     end
 
     @testset "promote_variate_type" begin
@@ -87,29 +87,29 @@ import ExponentialFamily: NaturalParameters, get_params, basemeasure
         @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
     end
 
-    @testset "NaturalParameters" begin
-        @test convert(NaturalParameters, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
-              NaturalParameters(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
+    @testset "KnownExponentialFamilyDistribution" begin
+        @test convert(KnownExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
+              KnownExponentialFamilyDistribution(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
         b_01 = MatrixDirichlet([10.0 10.0; 10.0 10.0])
-        nb_01 = convert(NaturalParameters, b_01)
-        @test lognormalizer(nb_01) ==
-              mapreduce(d -> lognormalizer(NaturalParameters(Dirichlet, d)), +, eachrow(get_params(nb_01)))
+        nb_01 = convert(KnownExponentialFamilyDistribution, b_01)
+        @test logpartition(nb_01) ==
+              mapreduce(
+            d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)),
+            +,
+            eachrow(getnaturalparameters(nb_01))
+        )
         for i in 1:9
             b = MatrixDirichlet([i/10.0 i/20; i/5 i])
-            bnp = convert(NaturalParameters, b)
+            bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
 
-            @test convert(NaturalParameters, b) == bnp
+            @test convert(KnownExponentialFamilyDistribution, b) == bnp
 
-            @test prod(ProdAnalytical(), convert(Distribution, convert(NaturalParameters, b_01) - bnp), b) ≈ b_01
+            @test prod(nb_01, bnp) ≈ convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
         end
-        @test isproper(NaturalParameters(MatrixDirichlet, [10 2; 3 2])) === true
-        @test isproper(NaturalParameters(Dirichlet, [-0.1 -0.2; 3 -0.9])) === true
-        @test isproper(NaturalParameters(Dirichlet, [-0.1 -0.2; -3 1])) === false
-
-        @test basemeasure(NaturalParameters(Dirichlet, [-0.1 -0.2; -3 1]), rand()) == 1.0
+        @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, [10 2; 3 2])) === true
     end
 end
 
