@@ -2,7 +2,7 @@ export Rayleigh
 
 import Distributions: Rayleigh, params
 
-vague(::Type{<:Rayleigh}) = Rayleigh(1e12)
+vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
 prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ClosedProd()
 
@@ -30,6 +30,6 @@ end
 
 check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
-lognormalizer(ef::KnownExponentialFamilyDistribution{Rayleigh}) = log(-2first(getnaturalparameters(ef)))
+logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = log(-2first(getnaturalparameters(ef)))
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) = x

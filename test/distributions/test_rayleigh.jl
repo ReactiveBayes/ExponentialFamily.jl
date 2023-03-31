@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, get_params, lognormalizer, basemeasure
+import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, logpartition, basemeasure
 
 @testset "Rayleigh" begin
     @testset "vague" begin
@@ -33,9 +33,9 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, get_par
             end
         end
 
-        @testset "lognormalizer" begin
-            @test lognormalizer(KnownExponentialFamilyDistribution(Rayleigh, -1.0)) ≈ log(2)
-            @test lognormalizer(KnownExponentialFamilyDistribution(Rayleigh, -2.0)) ≈ log(4)
+        @testset "logpartition" begin
+            @test logpartition(KnownExponentialFamilyDistribution(Rayleigh, -1.0)) ≈ log(2)
+            @test logpartition(KnownExponentialFamilyDistribution(Rayleigh, -2.0)) ≈ log(4)
         end
 
         @testset "logpdf" begin
