@@ -16,9 +16,9 @@ basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x) = x^(get_co
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Weibull) =
     KnownExponentialFamilyDistribution(Weibull, [-(1 / scale(dist))^(shape(dist))], shape(dist))
 
-function Base.convert(::Type{Distribution}, np::NaturalParameters{Weibull})
-    k = get_condioner(np)
-    η = first(get_params(np))
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
+    k = get_condioner(exponentialfamily)
+    η = first(get_params(exponentialfamily))
     return Weibull(k, (-1 / η)^(1 / k))
 end
 
