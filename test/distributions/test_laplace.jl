@@ -30,11 +30,18 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
         (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
         basemeasure = (x) -> 1.0
         sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right)]
+        sorted_conditioner = sort([conditioner_left, conditioner_right])
         function logpartition(η)
-            A = sum(η)
-            B = exp(sum(η))
-            return -η[1] * conditioner_left - η[2] * conditioner_right - log(A) +
-                   log(abs(B^conditioner_left - B^conditioner_right))
+            A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
+            A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
+            A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right)
+            B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
+            B2 =
+                (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
+                (η[1] - η[2])
+            B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
+
+            return log(A1 * B1 + A2 * B2 + A3 * B3)
         end
         naturalparameters = [η_left, η_right]
         supp = support(l_left)
