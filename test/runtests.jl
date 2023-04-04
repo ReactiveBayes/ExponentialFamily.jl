@@ -33,4 +33,5 @@ using Test
     include("distributions/test_pareto.jl")
     include("distributions/test_continuous_bernoulli.jl")
     include("distributions/test_rayleigh.jl")
+    include("distributions/test_laplace.jl")
 end
