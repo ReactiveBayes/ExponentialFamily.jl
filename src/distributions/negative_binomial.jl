@@ -44,7 +44,7 @@ function check_valid_conditioner(::Type{<:NegativeBinomial}, conditioner)
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
-    first(getnaturalparameters(exponentialfamily)) > zero(Int64) ? true : false
+    Base.isgreater(first(getnaturalparameters(exponentialfamily)), 0)
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
     -getconditioner(exponentialfamily) * log(one(Float64) - exp(first(getnaturalparameters(exponentialfamily))))
