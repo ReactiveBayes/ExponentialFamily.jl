@@ -25,23 +25,34 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), Binomial(2, 0.7), Binomial(2, 0.1)) ≈ Binomial(2, 7 / 34)
-
-        @test prod(ClosedProd(), Binomial(3, 0.9), Binomial(3, 0.4)) ≈ Binomial(3, 6 / 7)
-
-        @test prod(ClosedProd(), Binomial(4, 0.8), Binomial(4, 0.2)) ≈ Binomial(4, 0.5)
-
-        @test_throws AssertionError prod(
-            ClosedProd(),
-            Binomial(4, 0.8),
-            Binomial(5, 0.2)
-        )
-        @test_throws AssertionError prod(
-            ClosedProd(),
-            Binomial(5, 0.8),
-            Binomial(4, 0.2)
-        )
+        left = Binomial(10, 0.5)
+        right = Binomial(15, 0.3)
+        prod_dist = prod(ClosedProd(), left, right)
+        
+        sample_points = collect(1:5)
+        for x in sample_points
+            @test prod_dist.basemeasure(x) == (binomial(10, x) * binomial(15, x))
+            @test prod_dist.sufficientstatistics(x) == x
+        end
+    
+        sample_points = [-5, -2, 0, 2, 5]
+        for η in sample_points
+            @test prod_dist.logpartition(η) == log(pFq([-10, -15], [1], exp(η)))
+        end
+    
+        @test prod_dist.naturalparameters == [logit(0.5) + logit(0.3)]
+        @test prod_dist.support == support(left)
+    
+        sample_points = collect(1:5)
+        for x in sample_points
+            hist_sum(x) = prod_dist.basemeasure(x) * exp(
+                prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
+                prod_dist.logpartition(prod_dist.naturalparameters[1])
+            )
+            @test sum(hist_sum(x) for x in 0:20) ≈ 1.0 atol=1e-5
+        end
     end
+    
 
     @testset "naturalparameter related Binomial" begin
         d1 = Binomial(5, 1 / 3)
@@ -65,14 +76,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(d2, 2) == 10
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
-
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3) + logit(1 / 2)], 5)
-        # @test η1 - η2 == KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3) - logit(1 / 2)], 5)
-        # @test η3 - η4 ==
-        #       [KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5), KnownExponentialFamilyDistribution(Binomial, [-log(exp(1) - 1)], 10)]
-        # @test η1 + η2 - η2 ≈ η1
-        # @test η1 + η2 - η1 ≈ η2
-        # @test η3 + η4 == [η3, η4]
 
         @test logpdf(η1, 2) == logpdf(d1, 2)
         @test logpdf(η2, 3) == logpdf(d2, 3)

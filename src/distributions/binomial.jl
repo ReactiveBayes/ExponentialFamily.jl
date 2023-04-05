@@ -1,6 +1,8 @@
 export Binomial
+using DomainSets
 import Distributions: Binomial, probs
 import StatsFuns: logit, logistic
+import HypergeometricFunctions: pFq
 
 vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
 
@@ -14,14 +16,31 @@ end
 prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
-    @assert ntrials(left) == ntrials(right) "Number of trials in $(left) and $(right) is not equal"
-    left_p  = succprob(left)
-    right_p = succprob(right)
+    left_trials, right_trials = ntrials(left), ntrials(right)
 
-    pprod = left_p * right_p
-    norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
-    @assert norm > zero(norm) "Product of $(left) and $(right) results in non-normalizable distribution"
-    return Binomial(ntrials(left), pprod / norm)
+    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
+    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+
+    naturalparameters = [η_left + η_right]
+
+    function basemeasure(x)
+        i_left = left_trials::BigInt > 40 ? BigInt(left_trials) : Int(left_trials)
+        i_right = right_trials::BigInt > 40 ? BigInt(right_trials) : Int(right_trials)
+        binomial(i_left, x) * binomial(i_right, x)
+    end
+
+    sufficientstatistics = (x) -> x
+    logpartition = (η) -> log(pFq([-left_trials, -right_trials], [1], exp(η)))
+    supp = support(left)
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Binomial)
