@@ -31,9 +31,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         left = Poisson(1)
         right = Poisson(1)
         prod_dist = prod(ClosedProd(), left, right)
-        sample_points = [1, 2, 3, 4, 5]
+        sample_points = collect(1:5)
         for x in sample_points
-            @test prod_dist.basemeasure(x) == (1 / x^2)
+            @test prod_dist.basemeasure(x) == (1 / factorial(x)^2)
             @test prod_dist.sufficientstatistics(x) == x
         end
         sample_points = [-5, -2, 0, 2, 5]
@@ -42,6 +42,16 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
         @test prod_dist.naturalparameters == [log(1) + log(1)]
         @test prod_dist.support == NonNegativeIntegers()
+
+        sample_points = collect(1:5)
+        for x in sample_points
+            hist_sum(x) =
+                prod_dist.basemeasure(x) * exp(
+                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
+                    prod_dist.logpartition(prod_dist.naturalparameters[1])
+                )
+            @test sum(hist_sum(x) for x in 0:20) ≈ 1.0
+        end
     end
 
     @testset "Natural parameterization tests" begin
@@ -51,7 +61,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
     end
 
-    @test basemeasure(Poisson(5), 3) == 1.0 / 3
+    @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
 end
 
 end

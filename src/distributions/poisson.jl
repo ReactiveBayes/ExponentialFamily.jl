@@ -21,7 +21,7 @@ function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
     η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
 
     naturalparameters = [η_left + η_right]
-    basemeasure = (x) -> 1 / x^2
+    basemeasure = (x) -> 1 / factorial(x)^2
     sufficientstatistics = (x) -> x
     logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
     supp = NonNegativeIntegers()
@@ -58,4 +58,4 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
     first(getnaturalparameters(exponentialfamily)) >= 0
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = 1.0 / x
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = 1.0 / factorial(x)
