@@ -11,7 +11,7 @@ function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
     η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
     η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
 
-    naturalparameters = [η_left + η_right - 2]
+    naturalparameters = [η_left + η_right]
     basemeasure = (x) -> exp(-x)
     sufficientstatistics = (x) -> log(x)
     logpartition = (η) -> loggamma(η + 1)
@@ -25,12 +25,6 @@ function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
         logpartition,
         supp
     )
-end
-
-function logpdf_sample_friendly(dist::Chisq)
-    k, λ = params(dist)
-    friendly = Chisq(k, λ)
-    return (friendly, friendly)
 end
 
 check_valid_natural(::Type{<:Chisq}, params) = length(params) === 1
