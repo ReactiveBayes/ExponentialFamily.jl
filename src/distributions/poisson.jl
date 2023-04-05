@@ -1,15 +1,39 @@
 export Poisson
 
+import SpecialFunctions: besseli
 import Distributions: Poisson, shape, scale, cov
+using DomainSets
+
+struct NonNegativeIntegers <: DomainSets.Domain{Int}
+end
+
+# Define the contains function for NonNegativeIntegers
+function DomainSets.contains(d::NonNegativeIntegers, x)
+    return isa(x, Integer) && x >= 0
+end
 
 Distributions.cov(dist::Poisson) = var(dist)
-
-vague(::Type{<:Poisson}) = Poisson(1, huge)
 
 prod_closed_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
-    return Poisson(rate(left)*rate(right))
+    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
+    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+
+    naturalparameters = [η_left + η_right]
+    basemeasure = (x) -> 1 / x^2
+    sufficientstatistics = (x) -> x
+    logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
+    supp = NonNegativeIntegers()
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
 end
 
 function logpdf_sample_friendly(dist::Poisson)
@@ -28,8 +52,10 @@ function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialF
     return Poisson(exp(η))
 end
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) = first(getnaturalparameters(exponentialfamily))
+logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
+    first(getnaturalparameters(exponentialfamily))
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) = Base.isgreater(first(getnaturalparameters(exponentialfamily)), 1)
+isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
+    first(getnaturalparameters(exponentialfamily)) >= 0
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = 1.0 / x
