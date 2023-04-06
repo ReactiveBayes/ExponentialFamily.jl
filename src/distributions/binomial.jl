@@ -24,9 +24,12 @@ function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     naturalparameters = [η_left + η_right]
 
     function basemeasure(x)
-        i_left = left_trials::BigInt > 40 ? BigInt(left_trials) : Int(left_trials)
-        i_right = right_trials::BigInt > 40 ? BigInt(right_trials) : Int(right_trials)
-        binomial(i_left, x) * binomial(i_right, x)
+        p_left, p_right, p_x = promote(left_trials, right_trials, x)
+        b1 = binomial(p_left, p_x)
+        b2 = binomial(p_right, p_x)
+        result, flag = Base.mul_with_overflow(b1, b2)
+        flag && return basemeasure(BigInt(left_trials), BigInt(right_trials), BigInt(x))
+        return result
     end
 
     sufficientstatistics = (x) -> x

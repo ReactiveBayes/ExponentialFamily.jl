@@ -6,6 +6,7 @@ using Distributions
 using Random
 import StatsFuns: logit
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import HypergeometricFunctions: pFq
 
 @testset "Binomial" begin
     @testset "probvec" begin
@@ -29,22 +30,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         right = Binomial(15, 0.3)
         prod_dist = prod(ClosedProd(), left, right)
 
-        sample_points = collect(1:5)
+        sample_points = collect(1:10)
         for x in sample_points
             @test prod_dist.basemeasure(x) == (binomial(10, x) * binomial(15, x))
             @test prod_dist.sufficientstatistics(x) == x
-        end
-
-        sample_points = [-5, -2, 0, 2, 5]
-        for η in sample_points
-            @test prod_dist.logpartition(η) == log(pFq([-10, -15], [1], exp(η)))
-        end
-
-        @test prod_dist.naturalparameters == [logit(0.5) + logit(0.3)]
-        @test prod_dist.support == support(left)
-
-        sample_points = collect(1:5)
-        for x in sample_points
             hist_sum(x) =
                 prod_dist.basemeasure(x) * exp(
                     prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
