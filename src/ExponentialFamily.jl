@@ -43,5 +43,6 @@ include("distributions/negative_binomial.jl")
 include("distributions/rayleigh.jl")
 include("distributions/laplace.jl")
 include("distributions/poisson.jl")
+include("distributions/chi_squared.jl")
 
 end
