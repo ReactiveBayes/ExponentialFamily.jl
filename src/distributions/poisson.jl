@@ -4,14 +4,6 @@ import SpecialFunctions: besseli
 import Distributions: Poisson, shape, scale, cov
 using DomainSets
 
-struct NonNegativeIntegers <: DomainSets.Domain{Int}
-end
-
-# Define the contains function for NonNegativeIntegers
-function DomainSets.contains(d::NonNegativeIntegers, x)
-    return isa(x, Integer) && x >= 0
-end
-
 Distributions.cov(dist::Poisson) = var(dist)
 
 prod_closed_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
@@ -24,7 +16,7 @@ function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
     basemeasure = (x) -> 1 / factorial(x)^2
     sufficientstatistics = (x) -> x
     logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
-    supp = NonNegativeIntegers()
+    supp = DomainSets.NaturalNumbers()
 
     return ExponentialFamilyDistribution(
         Float64,
