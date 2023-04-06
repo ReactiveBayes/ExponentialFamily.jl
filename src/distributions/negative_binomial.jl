@@ -28,6 +28,65 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
     return NegativeBinomial(rleft, pprod / norm)
 end
 
+function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
+    rleft, pleft = params(left)
+    rright, pright = params(right)
+
+    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
+    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+
+    naturalparameters = [η_left + η_right]
+
+    function basemeasure(x)
+        p_left, p_right, p_x = promote(rleft, rright, x)
+        b1 = binomial(p_x + p_left -1, p_x)
+        b2 = binomial(p_x + p_right -1, p_x)
+        result, flag = Base.mul_with_overflow(b1, b2)
+        flag && return basemeasure(BigInt(left_trials), BigInt(right_trials), BigInt(x))
+        return result
+    end
+    _₃F₂
+    sufficientstatistics = (x) -> x
+    function logpartition_(m, n, η)
+        max_m_n = max(m, n)
+    
+        exp_η = exp(η)
+        max_m_n_plus1 = max_m_n + 1
+        max_m_n_plus2 = max_m_n + 2
+    
+        term1 = _₂F₁(m, n, 1, exp_η)
+    
+        binomial1 = binomial(m + max_m_n, max_m_n_plus1)
+        binomial2 = binomial(n + max_m_n, max_m_n_plus1)
+    
+        term2 = exp_η * (max_m_n_plus1) * binomial1 * binomial2
+    
+        term3 = _₃F₂(
+            1,
+            m + max_m_n_plus1,
+            n + max_m_n_plus1,
+            max_m_n_plus2,
+            max_m_n_plus2,
+            -exp_η
+        )
+    
+        result = log(term1 - term2 * term3)
+    
+        return result
+    end
+    
+    supp = support(left)
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
+end
+
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NegativeBinomial)
     n, p = params(dist)
     return KnownExponentialFamilyDistribution(NegativeBinomial, [log(p)], n)
