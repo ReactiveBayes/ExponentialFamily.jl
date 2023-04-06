@@ -6,7 +6,9 @@ using Random
 using Distributions
 
 import SpecialFunctions: logfactorial, besseli
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, NonNegativeIntegers
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import DomainSets: NaturalNumbers
+
 
 @testset "Poisson" begin
     @testset "Constructors" begin
@@ -41,7 +43,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test prod_dist.logpartition(η) == log(abs(besseli(0, 2 * exp(η / 2))))
         end
         @test prod_dist.naturalparameters == [log(1) + log(1)]
-        @test prod_dist.support == NonNegativeIntegers()
+        @test prod_dist.support == NaturalNumbers()
 
         sample_points = collect(1:5)
         for x in sample_points
