@@ -89,11 +89,6 @@ function Base.convert(::Type{WishartMessage}, dist::Wishart)
     return WishartMessage(ν, cholinv(S))
 end
 
-function logpdf_sample_friendly(dist::WishartMessage)
-    friendly = convert(Wishart, dist)
-    return (friendly, friendly)
-end
-
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartMessage` messages as they are significantly faster in creation
 prod_closed_rule(::Type{<:WishartMessage}, ::Type{<:WishartMessage}) = ClosedProd()

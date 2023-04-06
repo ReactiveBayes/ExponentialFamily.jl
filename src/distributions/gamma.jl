@@ -79,10 +79,6 @@ function compute_logscale(
     return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
 
-function logpdf_sample_friendly(dist::GammaDistributionsFamily)
-    friendly = convert(GammaShapeScale, dist)
-    return (friendly, friendly)
-end
 
 check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
