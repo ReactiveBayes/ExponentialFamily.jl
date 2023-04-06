@@ -6,7 +6,7 @@ using Distributions
 using Random
 import StatsFuns: logit
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
-import HypergeometricFunctions: pFq
+import HypergeometricFunctions: _₂F₁
 
 @testset "Binomial" begin
     @testset "probvec" begin

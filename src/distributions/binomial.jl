@@ -2,7 +2,7 @@ export Binomial
 using DomainSets
 import Distributions: Binomial, probs
 import StatsFuns: logit, logistic
-import HypergeometricFunctions: pFq
+import HypergeometricFunctions: _₂F₁
 
 vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
 
@@ -33,7 +33,7 @@ function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     end
 
     sufficientstatistics = (x) -> x
-    logpartition = (η) -> log(pFq([-left_trials, -right_trials], [1], exp(η)))
+    logpartition = (η) -> log(_₂F₁(-left_trials, -right_trials, 1, exp(η)))
     supp = support(left)
 
     return ExponentialFamilyDistribution(

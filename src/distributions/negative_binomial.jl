@@ -19,17 +19,6 @@ end
 prod_closed_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
-    rleft, left_p = params(left)
-    rright, right_p = params(right)
-    @assert rleft == rright "Number of trials in $(left) and $(right) is not equal"
-
-    pprod = left_p * right_p
-    norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
-    @assert norm > zero(norm) "Product of $(left) and $(right) results in non-normalizable distribution"
-    return NegativeBinomial(rleft, pprod / norm)
-end
-
-function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
     rleft, _ = params(left)
     rright, _ = params(right)
 
