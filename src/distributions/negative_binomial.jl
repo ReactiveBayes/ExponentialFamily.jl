@@ -2,6 +2,7 @@ export NegativeBinomial
 import Distributions: NegativeBinomial, probs
 import StatsFuns: logit, logistic
 import DomainSets: NaturalNumbers
+import HypergeometricFunctions: _₂F₁, _₃F₂
 
 vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
 
@@ -19,23 +20,26 @@ end
 prod_closed_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
-    rleft, _ = params(left)
-    rright, _ = params(right)
+    rleft, rright = Integer(first(params(left))), Integer(first(params(right)))
 
     η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
     η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
 
     naturalparameters = [η_left + η_right]
 
+    sufficientstatistics = (x) -> x
+
     function basemeasure(x)
         p_left, p_right, p_x = promote(rleft, rright, x)
-        b1 = binomial(p_x + p_left -1, p_x)
-        b2 = binomial(p_x + p_right -1, p_x)
+        b1 = binomial(p_x + p_left - 1, p_x)
+        b2 = binomial(p_x + p_right - 1, p_x)
         result, flag = Base.mul_with_overflow(b1, b2)
         flag && return basemeasure(BigInt(left_trials), BigInt(right_trials), BigInt(x))
         return result
     end
-    function logpartition_(η)
+
+    function logpartition(η)
+        m, n = rright, rleft
         max_m_n = max(m, n)
         exp_η = exp(η)
         max_m_n_plus1 = max_m_n + 1
@@ -43,25 +47,26 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
 
         term1 = _₂F₁(m, n, 1, exp_η)
 
-        binomial1 = binomial(m + max_m_n, max_m_n_plus1)
-        binomial2 = binomial(n + max_m_n, max_m_n_plus1)
+        binomial1 = BigInt(binomial(m + max_m_n, max_m_n_plus1))
+        binomial2 = BigInt(binomial(n + max_m_n, max_m_n_plus1))
 
-        term2 = exp(η*(maximum([m, n])+1))
+        term2 = exp(η * (maximum([m, n]) + 1))
 
-        term3 = binomial1*binomial2*_₃F₂(
-            1,
-            m + max_m_n_plus1,
-            n + max_m_n_plus1,
-            max_m_n_plus2,
-            max_m_n_plus2,
-            exp_η
-        )
+        term3 =
+            binomial1 * binomial2 * _₃F₂(
+                1,
+                m + max_m_n_plus1,
+                n + max_m_n_plus1,
+                max_m_n_plus2,
+                max_m_n_plus2,
+                exp_η
+            )
 
         result = log(term1 - term2 * term3)
 
         return result
     end
-    
+
     supp = NaturalNumbers()
 
     return ExponentialFamilyDistribution(

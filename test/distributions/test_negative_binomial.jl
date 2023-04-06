@@ -5,6 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 import StatsFuns: logit
+import DomainSets: NaturalNumbers
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "NegativeBinomial" begin
@@ -25,22 +26,27 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), NegativeBinomial(2, 0.7), NegativeBinomial(2, 0.1)) ≈ NegativeBinomial(2, 7 / 34)
+        left = NegativeBinomial(10, 0.5)
+        right = NegativeBinomial(15, 0.3)
+        prod_dist = prod(ClosedProd(), left, right)
 
-        @test prod(ClosedProd(), NegativeBinomial(3, 0.9), NegativeBinomial(3, 0.4)) ≈ NegativeBinomial(3, 6 / 7)
+        η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
+        η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
 
-        @test prod(ClosedProd(), NegativeBinomial(4, 0.8), NegativeBinomial(4, 0.2)) ≈ NegativeBinomial(4, 0.5)
+        sample_points = collect(1:5)
+        for x in sample_points
+            rleft, rright = Integer(first(params(left))), Integer(first(params(right)))
 
-        @test_throws AssertionError prod(
-            ClosedProd(),
-            NegativeBinomial(4, 0.8),
-            NegativeBinomial(5, 0.2)
-        )
-        @test_throws AssertionError prod(
-            ClosedProd(),
-            NegativeBinomial(5, 0.8),
-            NegativeBinomial(4, 0.2)
-        )
+            @test prod_dist.basemeasure(x) == (binomial(BigInt(x + rleft - 1), x) * binomial(BigInt(x + rright - 1), x))
+            @test prod_dist.sufficientstatistics(x) == x
+
+            hist_sum(x) =
+                prod_dist.basemeasure(x) * exp(
+                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
+                    prod_dist.logpartition(prod_dist.naturalparameters[1])
+                )
+            @test sum(hist_sum(x) for x in 0:15) ≈ 1.0
+        end
     end
 
     @testset "naturalparameter related NegativeBinomial" begin
