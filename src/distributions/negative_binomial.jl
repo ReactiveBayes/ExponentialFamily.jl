@@ -1,6 +1,7 @@
 export NegativeBinomial
 import Distributions: NegativeBinomial, probs
 import StatsFuns: logit, logistic
+import DomainSets: NaturalNumbers
 
 vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
 
@@ -29,8 +30,8 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
 end
 
 function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
-    rleft, pleft = params(left)
-    rright, pright = params(right)
+    rleft, _ = params(left)
+    rright, _ = params(right)
 
     η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
     η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
@@ -45,37 +46,34 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
         flag && return basemeasure(BigInt(left_trials), BigInt(right_trials), BigInt(x))
         return result
     end
-    _₃F₂
-    sufficientstatistics = (x) -> x
-    function logpartition_(m, n, η)
+    function logpartition_(η)
         max_m_n = max(m, n)
-    
         exp_η = exp(η)
         max_m_n_plus1 = max_m_n + 1
         max_m_n_plus2 = max_m_n + 2
-    
+
         term1 = _₂F₁(m, n, 1, exp_η)
-    
+
         binomial1 = binomial(m + max_m_n, max_m_n_plus1)
         binomial2 = binomial(n + max_m_n, max_m_n_plus1)
-    
-        term2 = exp_η * (max_m_n_plus1) * binomial1 * binomial2
-    
-        term3 = _₃F₂(
+
+        term2 = exp(η*(maximum([m, n])+1))
+
+        term3 = binomial1*binomial2*_₃F₂(
             1,
             m + max_m_n_plus1,
             n + max_m_n_plus1,
             max_m_n_plus2,
             max_m_n_plus2,
-            -exp_η
+            exp_η
         )
-    
+
         result = log(term1 - term2 * term3)
-    
+
         return result
     end
     
-    supp = support(left)
+    supp = NaturalNumbers()
 
     return ExponentialFamilyDistribution(
         Float64,
