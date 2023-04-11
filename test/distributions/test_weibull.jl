@@ -1,11 +1,14 @@
-module VonMisesTest
+module WeibullTest
 
 using Test
 using ExponentialFamily
 using Distributions
 using Random
+using HCubature
+using SpecialFunctions
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution,ExponentialFamilyDistribution, getnaturalparameters, getsufficientstatistics, getlogpartition, getbasemeasure
+import ExponentialFamily: basemeasure
 
 @testset "Weibull" begin
 
@@ -34,6 +37,31 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test basemeasure(KnownExponentialFamilyDistribution(Weibull, [η], k), x) ≈ x^(k-1)
         end
     end
-end
 
+    @testset "same k prod" begin
+        for η in -10:0.5:-0.5, k in 1.0:0.5:10, x in 0.5:0.5:10
+            ef_left = convert(Distribution,KnownExponentialFamilyDistribution(Weibull, [η], k))
+            ef_right = convert(Distribution,KnownExponentialFamilyDistribution(Weibull, [-η^2], k))
+            res = prod(ClosedProd(),ef_left,ef_right)
+            @test getbasemeasure(res)(x) == x^(2*(k-1))
+            @test getsufficientstatistics(res)(x) == x^k
+            @test getlogpartition(res)(η-η^2) == log(abs(η-η^2)^(1/k)) + loggamma(2-1/k) - 2*log(abs(η-η^2)) - log(k)
+            @test getnaturalparameters(res) ≈ [η - η^2]
+            @test first(hquadrature(x -> pdf(res,tan(x*pi/2))*(pi/2)*(1/cos(pi*x/2))^2,0.0,1.0)) ≈ 1.0
+            
+        end
+    end
+
+    @testset "different k prod" begin
+        for η in -12:4:-0.5, k in 1.0:4:10, x in 0.5:4:10
+            ef_left = convert(Distribution,KnownExponentialFamilyDistribution(Weibull, [η], k*2))
+            ef_right = convert(Distribution,KnownExponentialFamilyDistribution(Weibull, [-η^2], k))
+            res = prod(ClosedProd(),ef_left,ef_right)
+            @test getbasemeasure(res)(x) == x^(k+k*2 - 2)
+            @test getsufficientstatistics(res)(x) == [x^(2*k), x^k]
+            @test getnaturalparameters(res) ≈ [η, - η^2]
+            @test first(hquadrature(x -> pdf(res,tan(x*pi/2))*(pi/2)*(1/cos(pi*x/2))^2,0.0,1.0)) ≈ 1.0
+        end
+    end
+end
 end
