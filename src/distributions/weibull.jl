@@ -2,15 +2,13 @@ export Weibull
 
 import Distributions: Weibull, params
 using DomainSets
-using SpecialFunctions: loggamma 
-using HCubature  
-
+using SpecialFunctions: loggamma
+using HCubature
 
 prod_closed_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
 
-
 function Base.prod(::ClosedProd, left::Weibull, right::Weibull)
-    ef_left = convert(KnownExponentialFamilyDistribution,left)
+    ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
     conditioner_left = getconditioner(ef_left)
     conditioner_right = getconditioner(ef_right)
@@ -18,20 +16,47 @@ function Base.prod(::ClosedProd, left::Weibull, right::Weibull)
     η_right = getnaturalparameters(ef_right)
     supp = DomainSets.HalfLine()
     if conditioner_left == conditioner_right
-        basemeasure = (x) -> x^(2*(conditioner_left-1))
+        basemeasure = (x) -> x^(2 * (conditioner_left - 1))
         sufficientstatistics = (x) -> x^(conditioner_left)
-        logpartition = (η) -> log(abs(first(η))^(1/conditioner_left)) + loggamma(2-1/conditioner_left) - 2*log(abs(first(η))) - log(conditioner_left)
+        logpartition =
+            (η) ->
+                log(abs(first(η))^(1 / conditioner_left)) + loggamma(2 - 1 / conditioner_left) -
+                2 * log(abs(first(η))) - log(conditioner_left)
         naturalparameters = η_left + η_right
-        
-        return ExponentialFamilyDistribution(Float64, basemeasure, sufficientstatistics,naturalparameters,logpartition,supp)
+
+        return ExponentialFamilyDistribution(
+            Float64,
+            basemeasure,
+            sufficientstatistics,
+            naturalparameters,
+            logpartition,
+            supp
+        )
     else
-      
         basemeasure = (x) -> x^(conditioner_left + conditioner_right - 2)
         sufficientstatistics = (x) -> [x^conditioner_left, x^conditioner_right]
         naturalparameters = [first(η_left), first(η_right)]
-        logpartition =  (η) -> log(first(hquadrature(x -> basemeasure(tan(x*pi/2))*exp(η'*sufficientstatistics(tan(x*pi/2)))*(pi/2)*(1/cos(x*pi/2)^2), 0, 1)))
+        logpartition =
+            (η) -> log(
+                first(
+                    hquadrature(
+                        x ->
+                            basemeasure(tan(x * pi / 2)) * exp(η' * sufficientstatistics(tan(x * pi / 2))) *
+                            (pi / 2) * (1 / cos(x * pi / 2)^2),
+                        0,
+                        1
+                    )
+                )
+            )
 
-        return  ExponentialFamilyDistribution(Float64, basemeasure, sufficientstatistics,naturalparameters,logpartition,supp)
+        return ExponentialFamilyDistribution(
+            Float64,
+            basemeasure,
+            sufficientstatistics,
+            naturalparameters,
+            logpartition,
+            supp
+        )
     end
 end
 
