@@ -31,11 +31,7 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
 
     function basemeasure(x)
         p_left, p_right, p_x = promote(rleft, rright, x)
-        b1 = binomial(p_x + p_left - 1, p_x)
-        b2 = binomial(p_x + p_right - 1, p_x)
-        result, flag = Base.mul_with_overflow(b1, b2)
-        flag && return basemeasure(BigInt(left_trials), BigInt(right_trials), BigInt(x))
-        return result
+        binomial_prod(p_x + p_left - 1, p_x + p_right - 1, p_x)
     end
 
     function logpartition(η)
@@ -47,13 +43,10 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
 
         term1 = _₂F₁(m, n, 1, exp_η)
 
-        binomial1 = BigInt(binomial(m + max_m_n, max_m_n_plus1))
-        binomial2 = BigInt(binomial(n + max_m_n, max_m_n_plus1))
-
         term2 = exp(η * (maximum([m, n]) + 1))
 
         term3 =
-            binomial1 * binomial2 * _₃F₂(
+            binomial_prod(m + max_m_n, n + max_m_n, max_m_n_plus1) * _₃F₂(
                 1,
                 m + max_m_n_plus1,
                 n + max_m_n_plus1,
