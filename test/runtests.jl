@@ -37,4 +37,5 @@ using Test
     include("distributions/test_weibull.jl")
     include("distributions/test_laplace.jl")
     include("distributions/test_chi_squared.jl")
+    include("distributions/test_weibull.jl")
 end

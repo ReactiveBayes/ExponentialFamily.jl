@@ -69,8 +69,8 @@ import ExponentialFamily: basemeasure, isproper
 
     @testset "isproper" begin
         for η in -12:4:-0.5, k in 1.0:4:10
-            ef_proper = KnownExponentialFamilyDistribution(Weibull, [η], k )
-            ef_improper = KnownExponentialFamilyDistribution(Weibull, [-η], k )
+            ef_proper = KnownExponentialFamilyDistribution(Weibull, [η], k)
+            ef_improper = KnownExponentialFamilyDistribution(Weibull, [-η], k)
             @test isproper(ef_proper) == true
             @test isproper(ef_improper) == false
         end
