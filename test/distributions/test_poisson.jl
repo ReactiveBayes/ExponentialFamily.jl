@@ -9,7 +9,6 @@ import SpecialFunctions: logfactorial, besseli
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import DomainSets: NaturalNumbers
 
-
 @testset "Poisson" begin
     @testset "Constructors" begin
         @test KnownExponentialFamilyDistribution(Poisson, [10]) == KnownExponentialFamilyDistribution(Poisson, [10])

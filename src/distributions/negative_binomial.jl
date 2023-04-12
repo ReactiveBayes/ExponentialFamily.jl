@@ -1,6 +1,8 @@
 export NegativeBinomial
 import Distributions: NegativeBinomial, probs
 import StatsFuns: logit, logistic
+import DomainSets: NaturalNumbers
+import HypergeometricFunctions: _₂F₁, _₃F₂
 
 vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
 
@@ -18,14 +20,56 @@ end
 prod_closed_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
-    rleft, left_p = params(left)
-    rright, right_p = params(right)
-    @assert rleft == rright "Number of trials in $(left) and $(right) is not equal"
+    rleft, rright = Integer(first(params(left))), Integer(first(params(right)))
 
-    pprod = left_p * right_p
-    norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
-    @assert norm > zero(norm) "Product of $(left) and $(right) results in non-normalizable distribution"
-    return NegativeBinomial(rleft, pprod / norm)
+    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
+    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+
+    naturalparameters = [η_left + η_right]
+
+    sufficientstatistics = (x) -> x
+
+    function basemeasure(x)
+        p_left, p_right, p_x = promote(rleft, rright, x)
+        binomial_prod(p_x + p_left - 1, p_x + p_right - 1, p_x)
+    end
+
+    function logpartition(η)
+        m, n = rright, rleft
+        max_m_n = max(m, n)
+        exp_η = exp(η)
+        max_m_n_plus1 = max_m_n + 1
+        max_m_n_plus2 = max_m_n + 2
+
+        term1 = _₂F₁(m, n, 1, exp_η)
+
+        term2 = exp(η * (maximum([m, n]) + 1))
+
+        term3 =
+            binomial_prod(m + max_m_n, n + max_m_n, max_m_n_plus1) * _₃F₂(
+                1,
+                m + max_m_n_plus1,
+                n + max_m_n_plus1,
+                max_m_n_plus2,
+                max_m_n_plus2,
+                exp_η
+            )
+
+        result = log(term1 - term2 * term3)
+
+        return result
+    end
+
+    supp = NaturalNumbers()
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NegativeBinomial)
@@ -44,7 +88,7 @@ function check_valid_conditioner(::Type{<:NegativeBinomial}, conditioner)
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
-    getconditioner(exponentialfamily) > zero(Int64) ? true : false
+    Base.isgreater(first(getnaturalparameters(exponentialfamily)), 0)
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
     -getconditioner(exponentialfamily) * log(one(Float64) - exp(first(getnaturalparameters(exponentialfamily))))
