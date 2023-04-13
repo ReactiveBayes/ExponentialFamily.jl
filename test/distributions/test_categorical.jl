@@ -53,7 +53,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
-        
+
         @test basemeasure(η1, rand()) == 1.0
         @test basemeasure(η2, rand()) == 1.0
     end
