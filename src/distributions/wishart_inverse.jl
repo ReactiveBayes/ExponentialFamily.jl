@@ -147,9 +147,9 @@ end
 
 Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
 
-function logpdf_sample_friendly(dist::InverseWishartMessage)
-    friendly = convert(InverseWishart, dist)
-    return (friendly, friendly)
+function logpdf_sample_optimized(dist::InverseWishart)
+    optimized_dist = convert(InverseWishartMessage, dist)
+    return (optimized_dist, optimized_dist)
 end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason

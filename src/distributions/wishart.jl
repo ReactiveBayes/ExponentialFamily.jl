@@ -89,9 +89,13 @@ function Base.convert(::Type{WishartMessage}, dist::Wishart)
     return WishartMessage(ν, cholinv(S))
 end
 
-function logpdf_sample_friendly(dist::WishartMessage)
-    friendly = convert(Wishart, dist)
-    return (friendly, friendly)
+function Distributions.rand!(rng::AbstractRNG, sampleable::WishartMessage, x::AbstractVector{<:AbstractMatrix})
+    return rand!(rng, InverseWishartMessage(params(sampleable)...), x)
+end
+
+function logpdf_sample_optimized(dist::WishartMessage)
+    optimized_dist = convert(Wishart, dist)
+    return (optimized_dist, optimized_dist)
 end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason

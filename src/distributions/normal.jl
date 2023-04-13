@@ -369,21 +369,16 @@ function compute_logscale(
     return -(v_logdet + n * log2π) / 2 - dot(m, v_inv, m) / 2
 end
 
-## Friendly functions
-
-logpdf_sample_friendly(dist::Normal)   = (dist, dist)
-logpdf_sample_friendly(dist::MvNormal) = (dist, dist)
-
-function logpdf_sample_friendly(dist::UnivariateNormalDistributionsFamily)
+function logpdf_sample_optimized(dist::UnivariateNormalDistributionsFamily)
     μ, σ = mean_std(dist)
-    friendly = Normal(μ, σ)
-    return (friendly, friendly)
+    optimized_dist = Normal(μ, σ)
+    return (optimized_dist, optimized_dist)
 end
 
-function logpdf_sample_friendly(dist::MultivariateNormalDistributionsFamily)
+function logpdf_sample_optimized(dist::MultivariateNormalDistributionsFamily)
     μ, Σ = mean_cov(dist)
-    friendly = MvNormal(μ, Σ)
-    return (friendly, friendly)
+    optimized_dist = MvNormal(μ, Σ)
+    return (optimized_dist, optimized_dist)
 end
 
 # Sample related

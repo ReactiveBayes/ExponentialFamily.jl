@@ -149,9 +149,9 @@ Promotes `samplefloattype` of the `distributions` to a single type. See also `pr
 promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
 
 """
-    logpdf_sample_friendly(distribution) 
+    logpdf_sample_optimized(distribution) 
     
-`logpdf_sample_friendly` function takes as an input a `distribution` and returns corresponding optimized two versions 
+`logpdf_sample_optimized` function takes as an input a `distribution` and returns corresponding optimized two versions 
 for taking `logpdf()` and sampling with `rand!` respectively. By default returns the same distribution, but some distributions 
 may override default behaviour for better efficiency.
 
@@ -165,7 +165,7 @@ MvNormalMeanPrecision(
 )
 
 
-julia> ExponentialFamily.logpdf_sample_friendly(d)
+julia> ExponentialFamily.logpdf_sample_optimized(d)
 (FullNormal(
 dim: 2
 μ: [0.0, 0.0]
@@ -179,7 +179,7 @@ dim: 2
 )
 ```
 """
-logpdf_sample_friendly(something) = (something, something)
+logpdf_sample_optimized(something) = (something, something)
 
 """
     FactorizedJoint
