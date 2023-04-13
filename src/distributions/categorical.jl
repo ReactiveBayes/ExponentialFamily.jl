@@ -1,5 +1,5 @@
 export Categorical
-export logpartition
+export logpartition, logpdf_sample_friendly
 
 import Distributions: Categorical, probs
 
@@ -36,5 +36,11 @@ check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 logpartition(::KnownExponentialFamilyDistribution{Categorical}) = zero(Float64)
 
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
+
+function logpdf_sample_friendly(dist::Categorical)
+    p = probvec(dist)
+    friendly = Categorical(p)
+    return (friendly, friendly)
+end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x) = 1.0

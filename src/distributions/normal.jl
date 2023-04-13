@@ -369,6 +369,27 @@ function compute_logscale(
     return -(v_logdet + n * log2π) / 2 - dot(m, v_inv, m) / 2
 end
 
+## Friendly functions
+
+logpdf_sample_friendly(dist::Normal)   = (dist, dist)
+logpdf_sample_friendly(dist::MvNormal) = (dist, dist)
+
+function logpdf_sample_friendly(dist::UnivariateNormalDistributionsFamily)
+    μ, σ = mean_std(dist)
+    friendly = Normal(μ, σ)
+    return (friendly, friendly)
+end
+
+function logpdf_sample_friendly(dist::MultivariateNormalDistributionsFamily)
+    μ, Σ = mean_cov(dist)
+    friendly = MvNormal(μ, Σ)
+    return (friendly, friendly)
+end
+
+# Sample related
+
+## Univariate case
+
 function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}) where {T}
     μ, σ = mean_std(dist)
     return μ + σ * randn(rng, T)

@@ -18,6 +18,12 @@ function Base.prod(::ClosedProd, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 
+function logpdf_sample_friendly(dist::Erlang)
+    k, λ = params(dist)
+    friendly = Erlang(k, λ)
+    return (friendly, friendly)
+end
+
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) =

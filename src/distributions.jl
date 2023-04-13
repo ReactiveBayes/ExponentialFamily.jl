@@ -149,6 +149,39 @@ Promotes `samplefloattype` of the `distributions` to a single type. See also `pr
 promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
 
 """
+    logpdf_sample_friendly(distribution) 
+    
+`logpdf_sample_friendly` function takes as an input a `distribution` and returns corresponding optimized two versions 
+for taking `logpdf()` and sampling with `rand!` respectively. By default returns the same distribution, but some distributions 
+may override default behaviour for better efficiency.
+
+# Example
+
+```jldoctest
+julia> d = vague(MvNormalMeanPrecision, 2)
+MvNormalMeanPrecision(
+μ: [0.0, 0.0]
+Λ: [1.0e-12 0.0; 0.0 1.0e-12]
+)
+
+
+julia> ExponentialFamily.logpdf_sample_friendly(d)
+(FullNormal(
+dim: 2
+μ: [0.0, 0.0]
+Σ: [1.0e12 -0.0; -0.0 1.0e12]
+)
+, FullNormal(
+dim: 2
+μ: [0.0, 0.0]
+Σ: [1.0e12 -0.0; -0.0 1.0e12]
+)
+)
+```
+"""
+logpdf_sample_friendly(something) = (something, something)
+
+"""
     FactorizedJoint
 
 `FactorizedJoint` represents a joint distribution of independent random variables. Use `getindex()` function or square-brackets indexing to access
