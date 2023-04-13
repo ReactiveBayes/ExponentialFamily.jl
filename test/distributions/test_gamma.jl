@@ -116,7 +116,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
     end
 
-    @testset "GammaShapeRateKnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         for i in 2:10
             @test convert(Distribution, KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈
                   GammaShapeRate(i + 1, i)

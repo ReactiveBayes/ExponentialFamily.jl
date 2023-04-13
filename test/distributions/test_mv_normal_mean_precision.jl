@@ -97,7 +97,7 @@ using Distributions
               MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
     end
 
-    @testset "Primitive types conversion" begin
+    @testset "convert" begin
         @test convert(MvNormalMeanPrecision, zeros(2), Matrix(Diagonal(ones(2)))) ==
               MvNormalMeanPrecision(zeros(2), Matrix(Diagonal(ones(2))))
         @test begin

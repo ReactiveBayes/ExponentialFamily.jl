@@ -37,7 +37,7 @@ import ExponentialFamily:
         @test compute_logscale(Categorical([1.0, 0.0, 0.0]), Bernoulli(0.5), Categorical([1.0, 0, 0])) ≈ log(0.5)
     end
 
-    @testset "naturalparameter related" begin
+    @testset "natural parameters related" begin
         @test logpartition(convert(KnownExponentialFamilyDistribution, Bernoulli(0.5))) ≈ log(2)
         b_99 = Bernoulli(0.99)
         for i in 1:9
@@ -49,12 +49,10 @@ import ExponentialFamily:
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
                   KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
-
         end
         @test isproper(KnownExponentialFamilyDistribution(Bernoulli, [10])) === true
         @test basemeasure(b_99, 0.1) == 1.0
         @test basemeasure(KnownExponentialFamilyDistribution(Bernoulli, [10]), 0.2) == 1.0
-
     end
 
     @testset "prod" begin

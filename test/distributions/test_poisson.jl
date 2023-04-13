@@ -15,13 +15,11 @@ import DomainSets: NaturalNumbers
         @test KnownExponentialFamilyDistribution(Poisson, 10) == KnownExponentialFamilyDistribution(Poisson, 10)
     end
 
-    @testset "PoissonKnownExponentialFamilyDistribution" begin
+    @testset "convert" begin
         for i in 1:10
             @test convert(Distribution, KnownExponentialFamilyDistribution(Poisson, [log(i)])) ≈ Poisson(i)
             @test Distributions.logpdf(KnownExponentialFamilyDistribution(Poisson, [log(i)]), 10) ≈
                   Distributions.logpdf(Poisson(i), 10)
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i + 1)])) === false
 
             @test convert(KnownExponentialFamilyDistribution, Poisson(i)) ==
                   KnownExponentialFamilyDistribution(Poisson, [log(i)])
@@ -55,14 +53,16 @@ import DomainSets: NaturalNumbers
         end
     end
 
-    @testset "Natural parameterization tests" begin
+    @testset "natural parameters related" begin
         @test Distributions.logpdf(Poisson(4), 1) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(4)), 1)
         @test Distributions.logpdf(Poisson(5), 1) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
-    end
+        @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
+        @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i + 1)])) === false
 
-    @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
+        @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
+    end
 end
 
 end

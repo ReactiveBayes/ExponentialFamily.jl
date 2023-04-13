@@ -31,7 +31,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test probvec(Categorical([0.8, 0.1, 0.1])) == [0.8, 0.1, 0.1]
     end
 
-    @testset "naturalparameters related" begin
+    @testset "natural parameters related" begin
         ηcat = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
         dist = Categorical([0.5, 0.5])
         η1   = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])

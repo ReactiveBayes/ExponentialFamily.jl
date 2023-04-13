@@ -33,45 +33,43 @@ import SpecialFunctions: loggamma
         @test mean(mirrorlog, Beta(4.5, 0.3)) ≈ -4.963371962929249
     end
 
-
     @testset "prod" begin
         @test prod(ClosedProd(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
         @test prod(ClosedProd(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
         @test prod(ClosedProd(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
     end
 
-    @testset "naturalparameter related" begin
+    @testset "natural parameters related" begin
         for i in 0:10, j in 0:10
             @test convert(Distribution, KnownExponentialFamilyDistribution(Beta, [i, j])) == Beta(i + 1, j + 1)
             @test convert(KnownExponentialFamilyDistribution, Beta(i + 1, j + 1)) ==
                   KnownExponentialFamilyDistribution(Beta, [i, j])
         end
-    
+
         @test logpartition(KnownExponentialFamilyDistribution(Beta, [0, 0])) ≈ 0
         @test logpartition(KnownExponentialFamilyDistribution(Beta, [1, 1])) ≈ -loggamma(4)
-    
+
         for i in 0:10, j in 0:10
             @test logpdf(KnownExponentialFamilyDistribution(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
             @test logpdf(KnownExponentialFamilyDistribution(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
         end
-    
+
         for i in 0:10
             @test isproper(KnownExponentialFamilyDistribution(Beta, [i, i])) === true
         end
         for i in 1:10
             @test isproper(KnownExponentialFamilyDistribution(Beta, [-i, -i])) === false
         end
-    
+
         for i in 1:10, j in 1:10
             @test basemeasure(KnownExponentialFamilyDistribution(Beta, [i, j]), rand()) == 1.0
             @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
         end
-    
+
         left = convert(KnownExponentialFamilyDistribution, Beta(2))
         right = convert(KnownExponentialFamilyDistribution, Beta(5))
         @test prod(left, right) == convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Beta(2), Beta(5)))
     end
-    
 end
 
 end

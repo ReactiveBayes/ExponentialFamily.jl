@@ -49,7 +49,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
     end
 
-    @testset "naturalparameter related NegativeBinomial" begin
+    @testset "natural parameters related" begin
         d1 = NegativeBinomial(5, 1 / 3)
         d2 = NegativeBinomial(5, 1 / 2)
         η1 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 3)], 5)

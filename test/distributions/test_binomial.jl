@@ -25,7 +25,7 @@ import HypergeometricFunctions: _₂F₁
         @test probvec(vague_dist) == (0.5, 0.5)
     end
 
-    @testset "naturalparameter related" begin
+    @testset "natural parameters related" begin
         d1 = Binomial(5, 1 / 3)
         d2 = Binomial(5, 1 / 2)
         η1 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
@@ -45,7 +45,7 @@ import HypergeometricFunctions: _₂F₁
 
         @test basemeasure(d1, 5) == 1
         @test basemeasure(d2, 2) == 10
-       
+
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
 

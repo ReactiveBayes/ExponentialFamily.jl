@@ -22,7 +22,7 @@ import ExponentialFamily:
                   KnownExponentialFamilyDistribution(Chisq, [i / 2 - 1])
 
             @test Distributions.logpdf(Chisq(10), 1.0) ≈
-                Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(10)), 1.0)
+                  Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(10)), 1.0)
             @test Distributions.logpdf(Chisq(5), 1.0) ≈
                   Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(5)), 1.0)
         end

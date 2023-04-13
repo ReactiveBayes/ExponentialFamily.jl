@@ -87,7 +87,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
     end
 
-    @testset "KnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         @test convert(KnownExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
               KnownExponentialFamilyDistribution(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
         b_01 = MatrixDirichlet([10.0 10.0; 10.0 10.0])

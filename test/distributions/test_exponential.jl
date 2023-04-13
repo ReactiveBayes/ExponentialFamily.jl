@@ -37,15 +37,7 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
         @test mean(log, Exponential(0.1)) ≈ -2.8798007578955787
     end
 
-    @testset "Constructor(::ExponentialKnownExponentialFamilyDistribution)" begin
-        @test convert(KnownExponentialFamilyDistribution, Exponential(5)) ==
-              KnownExponentialFamilyDistribution(Exponential, [-0.2])
-        @test convert(KnownExponentialFamilyDistribution, Exponential(1e12)) ==
-              KnownExponentialFamilyDistribution(Exponential, [-1e-12])
-        @test basemeasure(Exponential(5), rand()) == 1.0
-    end
-
-    @testset "logpdf(::ExponentialKnownExponentialFamilyDistribution)" begin
+    @testset "logpdf" begin
         distribution = Exponential(5)
         @test logpdf(distribution, 1) ≈ logpdf(convert(KnownExponentialFamilyDistribution, distribution), 1)
         distribution = Exponential(10)
@@ -58,7 +50,7 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
         @test logpdf(distribution, 2) ≈ logpdf(convert(KnownExponentialFamilyDistribution, distribution), 2)
     end
 
-    @testset "logpartition(::ExponentialKnownExponentialFamilyDistribution)" begin
+    @testset "logpartition" begin
         distribution = Exponential(5)
         @test logpartition(distribution) ≈ logpartition(convert(KnownExponentialFamilyDistribution, distribution))
         distribution = Exponential(10)
@@ -71,7 +63,7 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
         @test logpartition(distribution) ≈ logpartition(convert(KnownExponentialFamilyDistribution, distribution))
     end
 
-    @testset ":+(::ExponentialKnownExponentialFamilyDistribution, ::ExponentialKnownExponentialFamilyDistribution)" begin
+    @testset "getters" begin
         left = convert(KnownExponentialFamilyDistribution, Exponential(4))
         right = convert(KnownExponentialFamilyDistribution, Exponential(3))
         @test getnaturalparameters(prod(left, right)) ≈ [-0.5833333333333333]
@@ -85,19 +77,13 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
         @test getnaturalparameters(prod(left, right)) ≈ [-2]
     end
 
-    # @testset ":-(::ExponentialKnownExponentialFamilyDistribution, ::ExponentialKnownExponentialFamilyDistribution)" begin
-    #     left = convert(KnownExponentialFamilyDistribution, Exponential(1))
-    #     right = convert(KnownExponentialFamilyDistribution, Exponential(4))
-    #     @test getnaturalparameters(left - right) ≈ [-0.75]
-
-    #     left = convert(KnownExponentialFamilyDistribution, Exponential(4))
-    #     right = convert(KnownExponentialFamilyDistribution, Exponential(5))
-    #     @test getnaturalparameters(left - right) ≈ [-0.05]
-
-    #     left = convert(KnownExponentialFamilyDistribution, Exponential(1))
-    #     right = convert(KnownExponentialFamilyDistribution, Exponential(1))
-    #     @test getnaturalparameters(left - right) ≈ [0]
-    # end
+    @testset "convert" begin
+        @test convert(KnownExponentialFamilyDistribution, Exponential(5)) ==
+              KnownExponentialFamilyDistribution(Exponential, [-0.2])
+        @test convert(KnownExponentialFamilyDistribution, Exponential(1e12)) ==
+              KnownExponentialFamilyDistribution(Exponential, [-1e-12])
+        @test basemeasure(Exponential(5), rand()) == 1.0
+    end
 end
 
 end
