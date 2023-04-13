@@ -10,7 +10,7 @@ import ExponentialFamily:
     xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution
 
 @testset "Chisq" begin
-    @testset "ChisqKnownExponentialFamilyDistribution" begin
+    @testset "naturalparameters" begin
         for i in 3:10
             @test convert(Distribution, KnownExponentialFamilyDistribution(Chisq, [i])) ≈ Chisq(2 * (i + 1))
             @test Distributions.logpdf(KnownExponentialFamilyDistribution(Chisq, [i]), 10) ≈
@@ -20,7 +20,14 @@ import ExponentialFamily:
 
             @test convert(KnownExponentialFamilyDistribution, Chisq(i)) ==
                   KnownExponentialFamilyDistribution(Chisq, [i / 2 - 1])
+
+            @test Distributions.logpdf(Chisq(10), 1.0) ≈
+                Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(10)), 1.0)
+            @test Distributions.logpdf(Chisq(5), 1.0) ≈
+                  Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(5)), 1.0)
         end
+
+        @test basemeasure(Chisq(5), 3) == exp(-3 / 2)
     end
 
     @testset "prod" begin
@@ -40,15 +47,6 @@ import ExponentialFamily:
             @test prod_dist.support === support(left)
         end
     end
-
-    @testset "Natural parameterization tests" begin
-        @test Distributions.logpdf(Chisq(10), 1.0) ≈
-              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(10)), 1.0)
-        @test Distributions.logpdf(Chisq(5), 1.0) ≈
-              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(5)), 1.0)
-    end
-
-    @test basemeasure(Chisq(5), 3) == exp(-3 / 2)
 end
 
 end
