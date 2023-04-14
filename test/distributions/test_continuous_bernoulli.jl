@@ -18,21 +18,13 @@ import ExponentialFamily:
         @test failprob(d) === 0.5
     end
 
-    @testset "prod ContinuousBernoulli-ContinuousBernoulli" begin
-        @test prod(ClosedProd(), ContinuousBernoulli(0.5), ContinuousBernoulli(0.5)) ≈ ContinuousBernoulli(0.5)
-        @test prod(ClosedProd(), ContinuousBernoulli(0.1), ContinuousBernoulli(0.6)) ≈
-              ContinuousBernoulli(0.14285714285714285)
-        @test prod(ClosedProd(), ContinuousBernoulli(0.78), ContinuousBernoulli(0.05)) ≈
-              ContinuousBernoulli(0.1572580645161291)
-    end
-
     @testset "probvec" begin
         @test probvec(ContinuousBernoulli(0.5)) === (0.5, 0.5)
         @test probvec(ContinuousBernoulli(0.3)) === (0.7, 0.3)
         @test probvec(ContinuousBernoulli(0.6)) === (0.4, 0.6)
     end
 
-    @testset "KnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))) ≈ log(2)
         @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.2))) ≈
               log((-3 / 4) / log(1 / 4))
@@ -46,18 +38,22 @@ import ExponentialFamily:
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
                   KnownExponentialFamilyDistribution(ContinuousBernoulli, [logit(i / 10.0)])
-
-            # @test prod(ClosedProd(), convert(Distribution, convert(KnownExponentialFamilyDistribution, b_99) - bnp), b) ≈ b_99
         end
         @test isproper(KnownExponentialFamilyDistribution(ContinuousBernoulli, [10])) === true
         @test basemeasure(b_99, 0.1) == 1.0
         @test basemeasure(KnownExponentialFamilyDistribution(ContinuousBernoulli, [10]), 0.2) == 1.0
+    end
 
-        @testset "prod(::KnownExponentialFamilyDistribution{ContinuousBernoulli}, ::KnownExponentialFamilyDistribution{ContinuousBernoulli})" begin
-            left = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))
-            right = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
-            @test prod(left, right) == convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
-        end
+    @testset "prod" begin
+        @test prod(ClosedProd(), ContinuousBernoulli(0.5), ContinuousBernoulli(0.5)) ≈ ContinuousBernoulli(0.5)
+        @test prod(ClosedProd(), ContinuousBernoulli(0.1), ContinuousBernoulli(0.6)) ≈
+              ContinuousBernoulli(0.14285714285714285)
+        @test prod(ClosedProd(), ContinuousBernoulli(0.78), ContinuousBernoulli(0.05)) ≈
+              ContinuousBernoulli(0.1572580645161291)
+
+        left = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))
+        right = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
+        @test prod(left, right) == convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
     end
 
     @testset "rand" begin

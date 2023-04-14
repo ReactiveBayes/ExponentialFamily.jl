@@ -59,7 +59,7 @@ import Distributions: cdf
         @test var(d3) == [0.25, 0.25]
     end
 
-    @testset "KnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         d1           = vague(Contingency, 2)
         d2           = vague(Contingency, 2)
         ηcontingency = KnownExponentialFamilyDistribution(Contingency, log.([0.1 0.7; 0.05 0.15]))

@@ -23,23 +23,7 @@ import ExponentialFamily: basemeasure, isproper
         end
     end
 
-    @testset "logpartition" begin
-        @test logpartition(KnownExponentialFamilyDistribution(Weibull, [-1], 1)) ≈ 0
-    end
-
-    @testset "isproper" begin
-        for η in -10:0.5:10, k in 0.5:0.5:10
-            @test isproper(KnownExponentialFamilyDistribution(Weibull, [η], k)) == (η < 0)
-        end
-    end
-
-    @testset "basemeasure" begin
-        for η in -10:0.5:-0.5, k in 0.5:0.5:10, x in 0.5:0.5:10
-            @test basemeasure(KnownExponentialFamilyDistribution(Weibull, [η], k), x) ≈ x^(k - 1)
-        end
-    end
-
-    @testset "same k prod" begin
+    @testset "prod (same k)" begin
         for η in -10:0.5:-0.5, k in 1.0:0.5:10, x in 0.5:0.5:10
             ef_left = convert(Distribution, KnownExponentialFamilyDistribution(Weibull, [η], k))
             ef_right = convert(Distribution, KnownExponentialFamilyDistribution(Weibull, [-η^2], k))
@@ -54,7 +38,7 @@ import ExponentialFamily: basemeasure, isproper
         end
     end
 
-    @testset "different k prod" begin
+    @testset "prod (different k)" begin
         for η in -12:4:-0.5, k in 1.0:4:10, x in 0.5:4:10
             ef_left = convert(Distribution, KnownExponentialFamilyDistribution(Weibull, [η], k * 2))
             ef_right = convert(Distribution, KnownExponentialFamilyDistribution(Weibull, [-η^2], k))
@@ -64,6 +48,22 @@ import ExponentialFamily: basemeasure, isproper
             @test getnaturalparameters(res) ≈ [η, -η^2]
             @test first(hquadrature(x -> pdf(res, tan(x * pi / 2)) * (pi / 2) * (1 / cos(pi * x / 2))^2, 0.0, 1.0)) ≈
                   1.0
+        end
+    end
+
+    @testset "logpartition" begin
+        @test logpartition(KnownExponentialFamilyDistribution(Weibull, [-1], 1)) ≈ 0
+    end
+
+    @testset "isproper" begin
+        for η in -10:0.5:10, k in 0.5:0.5:10
+            @test isproper(KnownExponentialFamilyDistribution(Weibull, [η], k)) == (η < 0)
+        end
+    end
+
+    @testset "basemeasure" begin
+        for η in -10:0.5:-0.5, k in 0.5:0.5:10, x in 0.5:0.5:10
+            @test basemeasure(KnownExponentialFamilyDistribution(Weibull, [η], k), x) ≈ x^(k - 1)
         end
     end
 

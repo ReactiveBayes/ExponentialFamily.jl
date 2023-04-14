@@ -31,7 +31,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
               sufficientstatistics(1.0)
     end
 
-    @testset "RayleighKnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(Distribution, KnownExponentialFamilyDistribution(Rayleigh, [-i])) ==

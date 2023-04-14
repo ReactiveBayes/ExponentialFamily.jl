@@ -52,7 +52,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         )
     end
 
-    @testset "naturalparameter related Multinomial" begin
+    @testset "natural parameters related " begin
         d1 = Multinomial(5, [0.1, 0.4, 0.5])
         d2 = Multinomial(5, [0.2, 0.4, 0.4])
         η1 = KnownExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
@@ -76,12 +76,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test prod(η1, η2) ==
               KnownExponentialFamilyDistribution(Multinomial, [log(0.1) + log(0.2), 2log(0.4), log(0.5) + log(0.4)], 5)
-        # @test η1 - η2 == KnownExponentialFamilyDistribution(Multinomial, [log(0.1) - log(0.2), 0.0, log(0.5) - log(0.4)], 5)
-        # @test η1 + η2 - η2 ≈ η1
-        # @test η1 + η2 - η1 ≈ η2
-        # η3 = KnownExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
-        # η4 = KnownExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 6)
-        # @test η3 + η4 == [η3, η4]
         @test logpdf(η1, [1, 2, 2]) == logpdf(d1, [1, 2, 2])
         @test logpdf(η2, [1, 2, 2]) == logpdf(d2, [1, 2, 2])
 

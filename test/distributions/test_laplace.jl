@@ -52,8 +52,8 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
               sufficientstatistics(1.0)
     end
 
-    @testset "LaplaceKnownExponentialFamilyDistribution" begin
-        @testset "Constructor" begin
+    @testset "natural parameters related" begin
+        @testset "convert" begin
             for i in 1:10
                 @test convert(Distribution, KnownExponentialFamilyDistribution(Laplace, [-i], 2.0)) ==
                       Laplace(2.0, 1 / i)
