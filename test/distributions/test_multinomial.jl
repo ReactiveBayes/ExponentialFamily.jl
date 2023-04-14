@@ -52,7 +52,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         )
     end
 
-    @testset "naturalparameterrelated " begin
+    @testset "natural parameter related " begin
         d1 = Multinomial(5, [0.1, 0.4, 0.5])
         d2 = Multinomial(5, [0.2, 0.4, 0.4])
         η1 = KnownExponentialFamilyDistribution(Multinomial, [log(0.1), log(0.4), log(0.5)], 5)
