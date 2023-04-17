@@ -90,7 +90,7 @@ function Base.convert(::Type{WishartMessage}, dist::Wishart)
 end
 
 function Distributions.rand!(rng::AbstractRNG, sampleable::WishartMessage, x::AbstractVector{<:AbstractMatrix})
-    return rand!(rng, InverseWishartMessage(params(sampleable)...), x)
+    return inv.(rand!(rng, InverseWishart(params(sampleable)...), x))
 end
 
 function logpdf_sample_optimized(dist::WishartMessage)
