@@ -54,6 +54,42 @@ end
         end
     end
 
+    @testset "sampling" begin
+        nsamples = 100
+        for i in 1:10, j in 1:10
+            # Parameters for the Normal-Gamma distribution
+            μ = 2.0
+            λ = 1.0
+            α = 3.0 + i
+            β = 2.0 + j
+
+            # Create a Normal-Gamma distribution
+            dist = NormalGamma(μ, λ, α, β)
+
+            # Generate a large number of samples
+            n_samples = 10000
+            samples = [rand(dist) for _ in 1:n_samples]
+
+            # Calculate the sample means and variances
+            sample_mean_x = mean(x -> x[1], samples)
+            sample_var_x = var(getindex.(samples, 1))
+            sample_mean_v = mean(x -> x[2], samples)
+            sample_var_v = var(getindex.(samples, 2))
+
+            # Expected means and variances
+            expected_mean_x = μ
+            expected_var_x = β / (α - 1) / λ
+            expected_mean_v = α / β
+            expected_var_v = α / β^2
+
+            # Compare the sample means and variances to the expected values
+            @test isapprox(sample_mean_x, expected_mean_x, atol = 0.1)
+            @test isapprox(sample_var_x, expected_var_x, atol = 0.1)
+            @test isapprox(sample_mean_v, expected_mean_v, atol = 0.1)
+            @test isapprox(sample_var_v, expected_var_v, atol = 0.1)
+        end
+    end
+
     @testset "prod" begin
         for _ in 1:10
             m1 = rand()
