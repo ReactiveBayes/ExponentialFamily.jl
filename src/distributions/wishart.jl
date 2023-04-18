@@ -126,8 +126,8 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::WishartMessage, x::Ab
     return x
 end
 
-function logpdf_sample_optimized(dist::WishartMessage)
-    optimized_dist = convert(Wishart, dist)
+function logpdf_sample_optimized(dist::Wishart)
+    optimized_dist = convert(WishartMessage, dist)
     return (optimized_dist, optimized_dist)
 end
 
