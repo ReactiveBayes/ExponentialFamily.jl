@@ -5,6 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 using LinearAlgebra
+using StableRNGs
 
 import ExponentialFamily: WishartMessage, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import StatsFuns: logmvgamma
@@ -44,6 +45,31 @@ import StatsFuns: logmvgamma
 
         @test typeof(d) <: Wishart
         @test mean(d) == Matrix(Diagonal(3 * 1e12 * ones(3)))
+    end
+
+    @testset "rand" begin
+        for d in (2, 3, 4, 5)
+            v = rand() + d
+            L = rand(d, d)
+            S = L' * L + d * diageye(d)
+            invS = cholinv(S)
+            cS = copy(S)
+            cinvS = copy(invS)
+            container1 = [zeros(d, d) for _ in 1:100]
+            container2 = [zeros(d, d) for _ in 1:100]
+
+            # Check inplace versions
+            @test rand!(StableRNG(321), Wishart(v, S), container1) ≈
+                  rand!(StableRNG(321), WishartMessage(v, invS), container2)
+
+            # Check that matrices are not corrupted
+            @test all(S .=== cS)
+            @test all(invS .=== cinvS)
+
+            # Check non-inplace versions
+            @test rand(StableRNG(321), Wishart(v, S), length(container1)) ≈
+                  rand(StableRNG(321), WishartMessage(v, invS), length(container2))
+        end
     end
 
     @testset "prod" begin

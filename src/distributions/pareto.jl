@@ -8,11 +8,6 @@ Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
 prod_closed_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ClosedProd()
 
-function logpdf_sample_friendly(dist::Pareto)
-    friendly = convert(Pareto, dist)
-    return (friendly, friendly)
-end
-
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Pareto) =
     KnownExponentialFamilyDistribution(Pareto, [-shape(dist) - 1], scale(dist))
 

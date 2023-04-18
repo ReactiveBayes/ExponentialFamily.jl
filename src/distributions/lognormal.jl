@@ -59,5 +59,3 @@ function basemeasure(d::LogNormal, x)
     var = varlogx(d)
     return 1 / (sqrt(2pi * var))
 end
-
-plus(::KnownExponentialFamilyDistribution{LogNormal}, ::KnownExponentialFamilyDistribution{LogNormal}) = Plus()

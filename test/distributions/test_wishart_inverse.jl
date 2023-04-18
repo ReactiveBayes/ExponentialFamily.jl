@@ -125,16 +125,25 @@ import StatsFuns: logmvgamma
         @test prod(ClosedProd(), d1, d2) ≈ InverseWishartMessage(6.0, 2 * diageye(3))
     end
 
-    @testset "rand!" begin
+    @testset "rand" begin
         for d in (2, 3, 4, 5)
             v = rand() + d
             L = rand(d, d)
             S = L' * L + d * diageye(d)
+            cS = copy(S)
             container1 = [zeros(d, d) for _ in 1:100]
             container2 = [zeros(d, d) for _ in 1:100]
 
+            # Check in-place version
             @test rand!(StableRNG(321), InverseWishart(v, S), container1) ≈
                   rand!(StableRNG(321), InverseWishartMessage(v, S), container2)
+
+            # Check that the matrix has not been corrupted
+            @test all(S .=== cS)
+
+            # Check non-inplace version
+            @test rand(StableRNG(321), InverseWishart(v, S), length(container1)) ≈
+                  rand(StableRNG(321), InverseWishartMessage(v, S), length(container2))
         end
     end
 

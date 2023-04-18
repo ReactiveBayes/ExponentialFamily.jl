@@ -68,7 +68,13 @@ function Distributions.mean(::typeof(cholinv), dist::InverseWishartDistributions
     return mean(Wishart(ν, cholinv(S)))
 end
 
+function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartMessage{T}, n::Int) where {T}
+    container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
+    return rand!(rng, sampleable, container)
+end
+
 function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage, x::AbstractVector{<:AbstractMatrix})
+    # This is an adapted version of sampling from Distributions.jl
     (df, S⁻¹) = Distributions.params(sampleable)
     S = cholinv(S⁻¹)
     L = Distributions.PDMats.chol_lower(fastcholesky(S))
@@ -82,12 +88,12 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage
     A     = similar(S)
     l     = length(S)
     axes2 = axes(A, 2)
+    r     = rank(S)
 
     for C in x
         if singular
-            r = rank(S)
-            randn!(rng, view(A, :, axes2[1:r]))
-            fill!(view(A, :, axes2[(r+1):end]), zero(eltype(A)))
+            randn!(rng, view(A, :, view(axes2, 1:r)))
+            fill!(view(A, :, view(axes2, (r+1):lastindex(axes2))), zero(eltype(A)))
         else
             Distributions._wishart_genA!(rng, A, df)
         end
@@ -147,9 +153,9 @@ end
 
 Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
 
-function logpdf_sample_friendly(dist::InverseWishartMessage)
-    friendly = convert(InverseWishart, dist)
-    return (friendly, friendly)
+function logpdf_sample_optimized(dist::InverseWishart)
+    optimized_dist = convert(InverseWishartMessage, dist)
+    return (optimized_dist, optimized_dist)
 end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
