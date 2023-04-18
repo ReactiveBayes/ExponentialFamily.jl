@@ -111,5 +111,6 @@ Everywhere in the package, we stick to a convention that we represent exponentia
 So the `logpartition` sign should align with this form.
 """
 function logpartition end
+
 function basemeasure end
 function sufficientstatistics end

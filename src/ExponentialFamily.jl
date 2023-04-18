@@ -46,5 +46,6 @@ include("distributions/weibull.jl")
 include("distributions/laplace.jl")
 include("distributions/poisson.jl")
 include("distributions/chi_squared.jl")
+include("distributions/mv_normal_wishart.jl")
 
 end

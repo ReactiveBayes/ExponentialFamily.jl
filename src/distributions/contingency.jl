@@ -160,22 +160,31 @@ isproper(::KnownExponentialFamilyDistribution{Contingency}) = true
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
-    probvector   = vec(contingency_matrix(dist))
-    sampleindex  = rand(rng, Categorical(probvector))
-    cartesianind = indexin(probvector[sampleindex], contingency_matrix(dist))
-    return [cartesianind[1][1], cartesianind[1][2]]
-end
-
-function Random.rand(rng::AbstractRNG, dist::Contingency{T}, size::Int64) where {T}
-    container = Matrix{T}(undef, 2, size)
+    container = Vector{T}(undef, 2)
     return rand!(rng, dist, container)
 end
 
-function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractArray{T}) where {T <: Real}
-    preallocated = similar(container)
-    @inbounds for i in 1:size(preallocated, 2)
-        temp = rand(rng, dist)
-        @views container[:, i] = temp
+function Random.rand(rng::AbstractRNG, dist::Contingency{T}, nsamples::Int64) where {T}
+    container = Vector{Vector{T}}(undef, nsamples)
+    for i in eachindex(container)
+        container[i] = Vector{T}(undef, 2)
+        rand!(rng, dist, container[i])
+    end
+    return container
+end
+
+function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVector{T}) where {T <: Real}
+    probvector   = vec(contingency_matrix(dist))
+    sampleindex  = rand(rng, Categorical(probvector))
+    cartesianind = indexin(probvector[sampleindex], contingency_matrix(dist))
+    container[1] = cartesianind[1][1]
+    container[2] = cartesianind[1][2]
+    return container
+end
+
+function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVector{T}) where {T <: AbstractVector}
+    for i in eachindex(container)
+        rand!(rng, dist, container[i])
     end
     return container
 end

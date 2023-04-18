@@ -119,9 +119,8 @@ import Distributions: cdf
         nsamples = 1000
         rng = collect(1:100)
         for i in 1:100
-            samples = eachcol(rand(MersenneTwister(rng[i]), dist, nsamples))
+            samples = rand(MersenneTwister(rng[i]), dist, nsamples)
             mestimated = mean(samples)
-
             @test isapprox(mestimated, mean(dist), atol = 1e-1)
             @test isapprox(
                 sum((sample - mestimated) * (sample - mestimated)' for sample in samples) / (nsamples),
