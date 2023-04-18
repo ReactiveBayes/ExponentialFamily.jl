@@ -35,7 +35,7 @@ import SpecialFunctions: besselj
         )
     end
 
-    @testset "VonMisesFisherKnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:6:360
                 @test convert(Distribution, KnownExponentialFamilyDistribution(VonMisesFisher, 3 * [cos(i), sin(i)])) ≈

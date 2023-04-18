@@ -44,7 +44,7 @@ import SpecialFunctions: besselj0
         )
     end
 
-    @testset "VonMisesKnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10, j in 1:10
                 @test convert(Distribution, KnownExponentialFamilyDistribution(VonMises, [i, j])) ==

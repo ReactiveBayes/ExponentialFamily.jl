@@ -7,7 +7,7 @@ using ExponentialFamily
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Pareto" begin
-    @testset "Pareto vague" begin
+    @testset "Stats methods" begin
         d = Pareto(3.0)
         @test Pareto() == Pareto(1.0)
         @test typeof(vague(Pareto)) <: Pareto
@@ -17,23 +17,25 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test mean(d) == 1.5
         @test var(d) == 0.75
     end
-    @testset "Pareto prod" begin
+
+    @testset "isproper" begin
+        @test isproper(KnownExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
+        @test_throws AssertionError KnownExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
+        @test_throws MethodError KnownExponentialFamilyDistribution(Pareto, [1.3])
+    end
+
+    @testset "prod" begin
         @test prod(ClosedProd(), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
         @test prod(ClosedProd(), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
         @test prod(ClosedProd(), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
         @test prod(ClosedProd(), Pareto(3), Pareto(2)) == Pareto(6.0)
     end
 
-    @testset "Natural parameterization related Pareto" begin
+    @testset "natural parameters related" begin
         @test Distributions.logpdf(Pareto(10.0, 1.0), 1.0) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Pareto(10.0, 1.0)), 1.0)
         @test Distributions.logpdf(Pareto(5.0, 1.0), 1.0) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Pareto(5.0, 1.0)), 1.0)
-    end
-    @testset "isproper" begin
-        @test isproper(KnownExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
-        @test_throws AssertionError KnownExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
-        @test_throws MethodError KnownExponentialFamilyDistribution(Pareto, [1.3])
     end
 end
 end

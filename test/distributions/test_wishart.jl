@@ -68,7 +68,7 @@ import StatsFuns: logmvgamma
         @test ndims(vague(Wishart, 5)) === 5
     end
 
-    @testset "WishartKnownExponentialFamilyDistribution" begin
+    @testset "natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(

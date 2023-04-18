@@ -7,7 +7,7 @@ using ExponentialFamily
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Geometric" begin
-    @testset "Geometric vague" begin
+    @testset "vague" begin
         d = Geometric(0.6)
 
         @test Geometric() == Geometric(0.5)
@@ -18,13 +18,17 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test probvec(d) == (0.4, 0.6)
     end
 
-    @testset "Geometric prod" begin
+    @testset "prod" begin
         @test prod(ClosedProd(), Geometric(0.5), Geometric(0.6)) == Geometric(0.8)
         @test prod(ClosedProd(), Geometric(0.3), Geometric(0.8)) == Geometric(0.8600000000000001)
         @test prod(ClosedProd(), Geometric(0.5), Geometric(0.5)) == Geometric(0.75)
+
+        η1 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
+        η2 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
+        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
     end
 
-    @testset "naturalparameter related Geometric" begin
+    @testset "natural parameters related" begin
         d1 = Geometric(0.6)
         d2 = Geometric(0.3)
         η1 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
@@ -43,9 +47,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(d2, 1) == 1.0
         @test basemeasure(η1, 4) == 1.0
         @test basemeasure(η2, 2) == 1.0
-
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
-        # @test η1 - η2 == KnownExponentialFamilyDistribution(Geometric, [log(0.4) - log(0.7)])
 
         @test logpdf(η1, 3) == logpdf(d1, 3)
         @test logpdf(η2, 3) == logpdf(d2, 3)

@@ -48,7 +48,6 @@ function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution, 
     statistics = getsufficientstatistics(exponentialfamily)
     basemeasure = getbasemeasure(exponentialfamily)
     logpartition = getlogpartition(exponentialfamily)
-
     return log(basemeasure(x)) + dot(η, statistics(x)) - logpartition(η)
 end
 
