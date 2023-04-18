@@ -89,8 +89,41 @@ function Base.convert(::Type{WishartMessage}, dist::Wishart)
     return WishartMessage(ν, cholinv(S))
 end
 
+function Distributions.rand(rng::AbstractRNG, sampleable::WishartMessage{T}, n::Int) where {T}
+    container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
+    return rand!(rng, sampleable, container)
+end
+
 function Distributions.rand!(rng::AbstractRNG, sampleable::WishartMessage, x::AbstractVector{<:AbstractMatrix})
-    return inv.(rand!(rng, InverseWishart(params(sampleable)...), x))
+    # This is an adapted version of sampling from Distributions.jl
+    (df, S) = Distributions.params(sampleable)
+    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+
+    p = size(S, 1)
+    singular = df <= p - 1
+    if singular
+        isinteger(df) || throw(ArgumentError("df of a singular Wishart distribution must be an integer (got $df)"))
+    end
+
+    A     = similar(S)
+    l     = length(S)
+    axes2 = axes(A, 2)
+    r     = rank(S)
+
+    for C in x
+        if singular
+            randn!(rng, view(A, :, view(axes2, 1:r)))
+            fill!(view(A, :, view(axes2, (r+1):lastindex(axes2))), zero(eltype(A)))
+        else
+            Distributions._wishart_genA!(rng, A, df)
+        end
+        # Distributions.unwhiten!(S, A)
+        lmul!(L, A)
+
+        mul!(C, A, A', 1, 0)
+    end
+
+    return x
 end
 
 function logpdf_sample_optimized(dist::WishartMessage)
