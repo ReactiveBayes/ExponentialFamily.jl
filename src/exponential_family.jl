@@ -112,5 +112,25 @@ Everywhere in the package, we stick to a convention that we represent exponentia
 So the `logpartition` sign should align with this form.
 """
 function logpartition end
+function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+    ηef = getnaturalparameters(ef)
+    reconstructargument!(ηef, ηef, ηvec)
+    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+end
+
+function reconstructargument!(η, ηef, ηvec; start = 1)
+    @inbounds for i in eachindex(η)
+        stop = start + length(ηef[i]) - 1
+        ind = start:stop
+        if length(ηef[i]) == 1
+            η[i] = first(ηvec[ind])
+        else
+            @views η[i] = reshape(ηvec[ind], size(ηef[i]))
+        end
+        start = stop + 1
+    end
+    return η
+end
+
 function basemeasure end
 function sufficientstatistics end
