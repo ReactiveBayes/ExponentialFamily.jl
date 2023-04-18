@@ -33,7 +33,7 @@ function Distributions.pdf(dist::NormalGamma, x::AbstractVector{<:Real})
     return basemeasure(dist, x) * exp(η'Tx - logpartition(ef))
 end
 
-Distributions.logpdf(dist::NormalGamma, x) = log(pdf(dist, x))
+Distributions.logpdf(dist::NormalGamma, x::AbstractVector{<:Real}) = log(pdf(dist, x))
 
 sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}) =
     (x, τ) -> [τ * x, τ * x^2, log(τ), τ]

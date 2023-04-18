@@ -77,8 +77,8 @@ end
             Ψ = m * m' + I
             dist = MvNormalWishart(m, Ψ, κ, j + 1)
             ef = convert(KnownExponentialFamilyDistribution, dist)
-            pdf(dist, [m, Ψ]) ≈ normal_wishart_pdf(m, Ψ, m, κ, float(j + 1), Ψ)
-            logpdf(dist, [m, Ψ]) ≈ log(normal_wishart_pdf(m, Ψ, m, κ, float(j + 1), Ψ))
+            @test pdf(dist, [m, Ψ]) ≈ normal_wishart_pdf(m, Ψ, m, κ, float(j + 1), Ψ)
+            @test logpdf(dist, [m, Ψ]) ≈ log(normal_wishart_pdf(m, Ψ, m, κ, float(j + 1), Ψ))
         end
     end
 
@@ -109,7 +109,7 @@ end
             dist2 = MvNormalWishart(m2, Ψ2, κ, j + 3)
             ef1 = convert(KnownExponentialFamilyDistribution, dist1)
             ef2 = convert(KnownExponentialFamilyDistribution, dist2)
-            prod(ClosedProd(), dist1, dist2) == convert(Distribution, prod(ClosedProd(), ef1, ef2))
+            @test prod(ClosedProd(), dist1, dist2) == convert(Distribution, prod(ClosedProd(), ef1, ef2))
         end
     end
 end
