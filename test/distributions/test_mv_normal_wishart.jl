@@ -22,6 +22,29 @@ function normal_wishart_pdf(x::Vector{Float64},
     return pdf(MvNormalMeanPrecision(mu, kappa * lambda), x) * pdf(Wishart(nu, Ψ), lambda)
 end
 
+function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+    ηef = getnaturalparameters(ef)
+    reconstructargument!(ηef, ηef, ηvec)
+    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+end
+
+## This function reconstructs an AbstractArray from a Vector such that
+## shape of the reconstructed AbstractArray is given by the shape and size of a template 
+## AbstractArray.
+function reconstructargument!(η, ηef, ηvec; start = 1)
+    @inbounds for i in eachindex(η)
+        stop = start + length(ηef[i]) - 1
+        ind = start:stop
+        if length(ηef[i]) == 1
+            η[i] = first(ηvec[ind])
+        else
+            @views η[i] = reshape(ηvec[ind], size(ηef[i]))
+        end
+        start = stop + 1
+    end
+    return η
+end
+
 @testset "MvNormalWishart" begin
     @testset "common" begin
         m = rand(2)
