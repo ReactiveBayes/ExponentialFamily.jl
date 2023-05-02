@@ -180,6 +180,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
                 end
             end
         end
+        # see https://github.com/biaslab/ReactiveMP.jl/issues/314
         dist = GammaShapeRate(257.37489915581654, 3.0)
         @test pdf(dist,86.2027941354432) == 0.07400338986721687
     end
