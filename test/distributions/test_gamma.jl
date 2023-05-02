@@ -179,6 +179,9 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
                 check_basic_statistics(left, right)
             end
         end
+
+        dist = GammaShapeRate(257.37489915581654, 3.0)
+        @test pdf(dist,86.2027941354432) == 0.07400338986721687
     end
 
     @testset "prod" begin
