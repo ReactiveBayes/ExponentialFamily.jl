@@ -153,7 +153,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         @test informationmatrix(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
     end
 
-    @testset "information matrix (GammaShapeRate" begin
+    @testset "information matrix (GammaShapeRate)" begin
         @test informationmatrix(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
     end
 
