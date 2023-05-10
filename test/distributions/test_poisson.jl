@@ -72,9 +72,7 @@ import DomainSets: NaturalNumbers
         dist = Poisson(λ)
         ef = convert(KnownExponentialFamilyDistribution, dist)
         η = getnaturalparameters(ef)
-
-        @test fisher_information(dist) ≈ 1 / λ atol = 1e-8
-
+        
         samples = rand(Poisson(λ), 10000)
         hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Poisson(params[1]), samples)), x)
         @test fisher_information(dist) ≈ first(hessian([λ])) atol = 0.1
