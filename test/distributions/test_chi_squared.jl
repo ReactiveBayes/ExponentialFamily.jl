@@ -4,10 +4,11 @@ using Test
 using ExponentialFamily
 using Random
 using Distributions
+using ForwardDiff
 
 import SpecialFunctions: logfactorial, loggamma
 import ExponentialFamily:
-    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution
+    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution, informationmatrix
 
 @testset "Chisq" begin
     @testset "naturalparameters" begin
@@ -28,6 +29,15 @@ import ExponentialFamily:
         end
 
         @test basemeasure(Chisq(5), 3) == exp(-3 / 2)
+    end
+
+    @testset "information matrix" begin
+        f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
+        autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+        for i in 3:10
+            @test informationmatrix(KnownExponentialFamilyDistribution(Chisq, [i])) ≈ autograd_inforamation_matrix([i])
+        end
+    end
     end
 
     @testset "prod" begin
