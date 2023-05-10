@@ -55,7 +55,6 @@ end
     end
 
     @testset "sampling" begin
-        nsamples = 100
         for i in 1:10, j in 1:10
             # Parameters for the Normal-Gamma distribution
             μ = 2.0
@@ -67,7 +66,7 @@ end
             dist = NormalGamma(μ, λ, α, β)
 
             # Generate a large number of samples
-            n_samples = 10000
+            n_samples = 100000
             samples = [rand(dist) for _ in 1:n_samples]
 
             # Calculate the sample means and variances
