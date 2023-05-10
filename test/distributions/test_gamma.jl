@@ -5,6 +5,8 @@ using ExponentialFamily
 using Random
 using Distributions
 using ForwardDiff
+using Zygote
+using StableRNGs
 
 import SpecialFunctions: loggamma
 import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, informationmatrix
@@ -142,6 +144,13 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
     end
 
     @testset "information matrix (GammaShapeScale)" begin
+        rng = StableRNG(42)
+        for (i, j) in Iterators.product(1:10, 1:10)
+            samples = rand(rng, GammaShapeScale(i, j), 20000)
+            hessian_at_sample = (x, sample) -> -Zygote.hessian((params) -> logpdf(Gamma(params[1], params[2]), sample), [i, j])
+            estimator = mean(map((sample) -> hessian_at_sample([i,j], sample), samples))
+            @test informationmatrix(GammaShapeScale(i, j)) ≈ estimator atol = 0.1
+        end
         @test informationmatrix(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
     end
 
