@@ -132,12 +132,21 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         end
     end
 
-    @testset "information matrix" begin
+    @testset "information matrix (natural paramteres)" begin
         f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(GammaShapeRate, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
         for i in 2:10
-            @test informationmatrix(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈ autograd_inforamation_matrix([i, -i])
+            @test informationmatrix(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈
+                  autograd_inforamation_matrix([i, -i])
         end
+    end
+
+    @testset "information matrix (GammaShapeScale)" begin
+        @test informationmatrix(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
+    end
+
+    @testset "information matrix (GammaShapeRate" begin
+        @test informationmatrix(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
     end
 
     @testset "Base methods" begin
@@ -180,9 +189,9 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
 
         types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
         rng   = MersenneTwister(1234)
-        for i=1:100
+        for i in 1:100
             for type in types
-                left = convert(type, 100*rand(rng, Float64), 100*rand(rng, Float64))
+                left = convert(type, 100 * rand(rng, Float64), 100 * rand(rng, Float64))
                 for type in types
                     right = convert(type, left)
                     check_basic_statistics(left, right)
@@ -191,7 +200,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         end
         # see https://github.com/biaslab/ReactiveMP.jl/issues/314
         dist = GammaShapeRate(257.37489915581654, 3.0)
-        @test pdf(dist,86.2027941354432) == 0.07400338986721687
+        @test pdf(dist, 86.2027941354432) == 0.07400338986721687
     end
 
     @testset "prod" begin
