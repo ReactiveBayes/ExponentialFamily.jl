@@ -4,9 +4,10 @@ using Test
 using ExponentialFamily
 using Random
 using Distributions
+using ForwardDiff
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters
+import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, informationmatrix
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -128,6 +129,14 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
                   KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])
             @test convert(KnownExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈
                   KnownExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
+        end
+    end
+
+    @testset "information matrix" begin
+        f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(GammaShapeRate, η))
+        autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+        for i in 2:10
+            @test informationmatrix(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈ autograd_inforamation_matrix([i, -i])
         end
     end
 
