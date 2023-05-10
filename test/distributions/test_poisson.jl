@@ -73,7 +73,7 @@ import DomainSets: NaturalNumbers
         η = getnaturalparameters(ef)
 
         @test fisher_information(dist) ≈ 1 / rate atol = 1e-8
-        @test fisher_information(ef) ≈ 1 / exp(first(η)) atol = 1e-8
+        @test fisher_information(ef) ≈ exp(first(η)) atol = 1e-8
     end
 end
 
