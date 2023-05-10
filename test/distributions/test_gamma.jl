@@ -171,14 +171,18 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
 
         types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
         rng   = MersenneTwister(1234)
-
-        for type in types
-            left = convert(type, rand(rng, Float64), rand(rng, Float64))
+        for i=1:100
             for type in types
-                right = convert(type, left)
-                check_basic_statistics(left, right)
+                left = convert(type, 100*rand(rng, Float64), 100*rand(rng, Float64))
+                for type in types
+                    right = convert(type, left)
+                    check_basic_statistics(left, right)
+                end
             end
         end
+        # see https://github.com/biaslab/ReactiveMP.jl/issues/314
+        dist = GammaShapeRate(257.37489915581654, 3.0)
+        @test pdf(dist,86.2027941354432) == 0.07400338986721687
     end
 
     @testset "prod" begin
