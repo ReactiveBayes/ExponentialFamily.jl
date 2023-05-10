@@ -6,7 +6,7 @@ using Random
 using Distributions
 
 import SpecialFunctions: logfactorial, besseli
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisher_information
 import DomainSets: NaturalNumbers
 
 @testset "Poisson" begin
@@ -58,10 +58,22 @@ import DomainSets: NaturalNumbers
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(4)), 1)
         @test Distributions.logpdf(Poisson(5), 1) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
-        @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
-        @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i + 1)])) === false
+        for i in 2:10
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i)])) === false
+        end
 
         @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
+    end
+
+    @testset "fisher information" begin
+        rate = 5.0
+        dist = Poisson(rate)
+        ef = convert(KnownExponentialFamilyDistribution, dist)
+        η = getnaturalparameters(ef)
+        
+        @test fisher_information(dist) ≈ 1 / rate atol=1e-8
+        @test fisher_information(ef) ≈ 1 / exp(first(η)) atol=1e-8
     end
 end
 
