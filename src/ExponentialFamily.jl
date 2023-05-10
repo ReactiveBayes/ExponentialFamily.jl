@@ -49,4 +49,6 @@ include("distributions/chi_squared.jl")
 include("distributions/mv_normal_wishart.jl")
 include("distributions/normal_gamma.jl")
 
+include("monte_carlo_information_matrix.jl")
+
 end
