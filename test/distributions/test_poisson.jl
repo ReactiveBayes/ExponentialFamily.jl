@@ -4,6 +4,7 @@ using Test
 using ExponentialFamily
 using Random
 using Distributions
+using ForwardDiff
 
 import SpecialFunctions: logfactorial, besseli
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisher_information
@@ -67,13 +68,20 @@ import DomainSets: NaturalNumbers
     end
 
     @testset "fisher information" begin
-        rate = 5.0
-        dist = Poisson(rate)
+        λ = 10.0
+        dist = Poisson(λ)
         ef = convert(KnownExponentialFamilyDistribution, dist)
         η = getnaturalparameters(ef)
 
-        @test fisher_information(dist) ≈ 1 / rate atol = 1e-8
-        @test fisher_information(ef) ≈ exp(first(η)) atol = 1e-8
+        @test fisher_information(dist) ≈ 1 / λ atol = 1e-8
+
+        samples = rand(Poisson(λ), 10000)
+        hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Poisson(params[1]), samples)), x)
+        @test fisher_information(dist) ≈ first(hessian([λ])) atol = 0.1
+
+        f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
+        autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+        @test fisher_information(ef) ≈ first(autograd_information(η)) atol = 1e-8
     end
 end
 

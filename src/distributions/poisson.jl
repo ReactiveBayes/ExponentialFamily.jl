@@ -45,7 +45,7 @@ function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialF
 end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
-    first(getnaturalparameters(exponentialfamily))
+    exp(first(getnaturalparameters(exponentialfamily)))
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
     first(getnaturalparameters(exponentialfamily)) >= 0
