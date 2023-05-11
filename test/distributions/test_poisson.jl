@@ -78,7 +78,7 @@ import DomainSets: NaturalNumbers
 
             samples = rand(rng, Poisson(λ), 10000)
 
-            totalHessian = zero(typeof(λ), 1, 1)
+            totalHessian = zeros(typeof(λ), 1, 1)
             for sample in samples
                 totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Poisson(params[1]), sample), [λ])
             end
