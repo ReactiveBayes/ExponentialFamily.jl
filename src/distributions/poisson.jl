@@ -52,7 +52,7 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = 1.0 / factorial(x)
 
-fisher_information(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
+fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
     exp(first(getnaturalparameters(exponentialfamily)))
 
-fisher_information(dist::Poisson) = 1 / rate(dist)
+fisherinformation(dist::Poisson) = 1 / rate(dist)
