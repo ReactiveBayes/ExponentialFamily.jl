@@ -8,7 +8,7 @@ using ForwardDiff
 
 import SpecialFunctions: logfactorial, loggamma
 import ExponentialFamily:
-    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution, informationmatrix
+    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution, fisherinformation
 
 @testset "Chisq" begin
     @testset "naturalparameters" begin
@@ -35,7 +35,7 @@ import ExponentialFamily:
         f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
         for i in 3:10
-            @test informationmatrix(KnownExponentialFamilyDistribution(Chisq, [i])) ≈ autograd_inforamation_matrix([i])
+            @test fisherinformation(KnownExponentialFamilyDistribution(Chisq, [i])) ≈ autograd_inforamation_matrix([i])[1, 1]
         end
     end
     end
@@ -59,4 +59,3 @@ import ExponentialFamily:
     end
 end
 
-end
