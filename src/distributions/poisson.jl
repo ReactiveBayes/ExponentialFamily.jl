@@ -45,9 +45,14 @@ function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialF
 end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
-    first(getnaturalparameters(exponentialfamily))
+    exp(first(getnaturalparameters(exponentialfamily)))
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
     first(getnaturalparameters(exponentialfamily)) >= 0
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = 1.0 / factorial(x)
+
+fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
+    exp(first(getnaturalparameters(exponentialfamily)))
+
+fisherinformation(dist::Poisson) = 1 / rate(dist)
