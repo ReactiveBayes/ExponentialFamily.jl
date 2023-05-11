@@ -31,7 +31,7 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x) = 1.0
-function fisherinformation(ef::KnownExponentialFamilyDistribution)
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Pareto})
     η = first(getnaturalparameters(ef))
     return 1 / (-1 - η)^2
 end
