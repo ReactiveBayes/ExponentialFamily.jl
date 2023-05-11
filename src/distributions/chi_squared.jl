@@ -50,7 +50,11 @@ end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) = exp(-x / 2)
 
-function informationmatrix(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
+function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
     η = first(getnaturalparameters(exponentialfamily))
-    return [trigamma(η + 1);;]
+    return trigamma(η + 1)
+end
+
+function fisherinformation(dist::Chisq)
+    return trigamma(dof(dist) / 2)
 end
