@@ -77,8 +77,12 @@ import DomainSets: NaturalNumbers
             η = getnaturalparameters(ef)
 
             samples = rand(rng, Poisson(λ), 10000)
-            hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Poisson(params[1]), samples)), x)
-            @test fisherinformation(dist) ≈ first(hessian([λ])) atol = 0.1
+
+            totalHessian = zero(typeof(λ), 1, 1)
+            for sample in samples
+                totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Poisson(params[1]), sample), [λ])
+            end
+            @test fisherinformation(dist) ≈ mean(totalHessian / length(samples)) atol = 0.1
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
