@@ -9,7 +9,7 @@ using Zygote
 using StableRNGs
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, informationmatrix
+import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -138,7 +138,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(GammaShapeRate, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
         for i in 2:10
-            @test informationmatrix(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈
+            @test fisherinformation(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈
                   autograd_inforamation_matrix([i, -i])
         end
     end
@@ -146,7 +146,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
     @testset "information matrix (GammaShapeScale)" begin
         rng = StableRNG(42)
         for (i, j) in Iterators.product(1:3, 1:3)
-            @test informationmatrix(GammaShapeScale(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
+            @test fisherinformation(GammaShapeScale(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
                 rng,
                 Zygote.hessian,
                 (param) -> GammaShapeScale(param...),
@@ -154,13 +154,13 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
                 500
             ) atol = 0.201
         end
-        @test informationmatrix(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
+        @test fisherinformation(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
     end
 
     @testset "information matrix (GammaShapeRate)" begin
         rng = StableRNG(42)
         for (i, j) in Iterators.product(1:3, 1:3)
-            @test informationmatrix(GammaShapeRate(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
+            @test fisherinformation(GammaShapeRate(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
                 rng,
                 Zygote.hessian,
                 (param) -> GammaShapeRate(param...),
@@ -168,7 +168,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
                 500
             ) atol = 0.201
         end
-        @test informationmatrix(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
+        @test fisherinformation(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
     end
 
     @testset "Base methods" begin

@@ -116,6 +116,6 @@ function basemeasure end
 function sufficientstatistics end
 
 """
-Fisher information matrix with respect to the natural parameters of the exponential family distribution.
+Fisher information
 """
-function informationmatrix end
+function fisherinformation end
