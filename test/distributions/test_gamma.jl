@@ -4,9 +4,12 @@ using Test
 using ExponentialFamily
 using Random
 using Distributions
+using ForwardDiff
+using Zygote
+using StableRNGs
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters
+import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -131,6 +134,43 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         end
     end
 
+    @testset "information matrix (natural paramteres)" begin
+        f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(GammaShapeRate, η))
+        autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+        for i in 2:10
+            @test fisherinformation(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈
+                  autograd_inforamation_matrix([i, -i])
+        end
+    end
+
+    @testset "information matrix (GammaShapeScale)" begin
+        rng = StableRNG(42)
+        for (i, j) in Iterators.product(1:3, 1:3)
+            @test fisherinformation(GammaShapeScale(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
+                rng,
+                Zygote.hessian,
+                (param) -> GammaShapeScale(param...),
+                [i, j],
+                500
+            ) atol = 0.201
+        end
+        @test fisherinformation(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
+    end
+
+    @testset "information matrix (GammaShapeRate)" begin
+        rng = StableRNG(42)
+        for (i, j) in Iterators.product(1:3, 1:3)
+            @test fisherinformation(GammaShapeRate(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
+                rng,
+                Zygote.hessian,
+                (param) -> GammaShapeRate(param...),
+                [i, j],
+                500
+            ) atol = 0.201
+        end
+        @test fisherinformation(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
+    end
+
     @testset "Base methods" begin
         @test convert(GammaShapeScale{Float32}, GammaShapeScale()) == GammaShapeScale{Float32}(1.0f0, 1.0f0)
         @test convert(GammaShapeScale{Float64}, GammaShapeScale(1.0, 10.0)) == GammaShapeScale{Float64}(1.0, 10.0)
@@ -171,9 +211,9 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
 
         types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
         rng   = MersenneTwister(1234)
-        for i=1:100
+        for i in 1:100
             for type in types
-                left = convert(type, 100*rand(rng, Float64), 100*rand(rng, Float64))
+                left = convert(type, 100 * rand(rng, Float64), 100 * rand(rng, Float64))
                 for type in types
                     right = convert(type, left)
                     check_basic_statistics(left, right)
@@ -182,7 +222,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         end
         # see https://github.com/biaslab/ReactiveMP.jl/issues/314
         dist = GammaShapeRate(257.37489915581654, 3.0)
-        @test pdf(dist,86.2027941354432) == 0.07400338986721687
+        @test pdf(dist, 86.2027941354432) == 0.07400338986721687
     end
 
     @testset "prod" begin
