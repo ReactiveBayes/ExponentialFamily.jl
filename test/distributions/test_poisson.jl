@@ -60,6 +60,7 @@ import DomainSets: NaturalNumbers
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(4)), 1)
         @test Distributions.logpdf(Poisson(5), 1) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
+
         for i in 2:10
             @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
             @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i)])) === false
