@@ -39,7 +39,7 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
     (first(getnaturalparameters(exponentialfamily)) <= zero(Float64))
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0
 
-fisher_information(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
+fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
     inv(first(getnaturalparameters(exponentialfamily))^2)
 
-fisher_information(dist::Exponential) = inv(dist.θ^2)
+fisherinformation(dist::Exponential) = inv(dist.θ^2)
