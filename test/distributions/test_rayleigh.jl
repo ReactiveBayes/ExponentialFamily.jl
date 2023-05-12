@@ -6,9 +6,10 @@ using Distributions
 using Random
 using ForwardDiff
 using DomainSets
+using StableRNGs
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
-    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisher_information
+    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation
 
 @testset "Rayleigh" begin
     @testset "vague" begin
@@ -72,18 +73,25 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
         end
 
         @testset "fisher information" begin
-            λ = 10.0
-            dist = Rayleigh(λ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
+            rng = StableRNG(0)
+            n_samples = 10000
+            for λ in 1:10
+                dist = Rayleigh(λ)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                η = getnaturalparameters(ef)
 
-            samples = rand(Rayleigh(λ), 10000)
-            hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Rayleigh(params[1]), samples)), x)
-            @test fisher_information(dist) ≈ first(hessian([λ])) atol = 0.1
+                samples = rand(rng, Rayleigh(λ), n_samples)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Rayleigh, η))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisher_information(ef) ≈ first(autograd_information(η)) atol = 1e-8
+                totalHessian = zeros(typeof(λ), 1, 1)
+                for sample in samples
+                    totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Rayleigh(params[1]), sample), [λ])
+                end
+                @test fisherinformation(dist) ≈ first(totalHessian) / n_samples atol = 0.1
+
+                f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Rayleigh, η))
+                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+                @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            end
         end
     end
 end

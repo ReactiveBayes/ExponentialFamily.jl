@@ -47,6 +47,6 @@ logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = log(-2first(get
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) = x
 
-fisher_information(dist::Rayleigh) = -1 / scale(dist)^2
+fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
 
-fisher_information(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -inv(first(getnaturalparameters(ef))^2)
+fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -inv(first(getnaturalparameters(ef))^2)
