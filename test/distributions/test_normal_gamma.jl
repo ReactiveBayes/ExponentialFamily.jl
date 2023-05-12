@@ -6,6 +6,7 @@ using StatsFuns: logmvgamma
 using LinearAlgebra
 using ForwardDiff
 using ExponentialFamily
+using StableRNGs
 import ExponentialFamily:
     NormalGamma, KnownExponentialFamilyDistribution, params, location
 import ExponentialFamily:
@@ -55,6 +56,7 @@ end
     end
 
     @testset "sampling" begin
+        rng = StableRNG(42)
         for i in 1:10, j in 1:10
             # Parameters for the Normal-Gamma distribution
             μ = 2.0
@@ -67,7 +69,7 @@ end
 
             # Generate a large number of samples
             n_samples = 100000
-            samples = [rand(dist) for _ in 1:n_samples]
+            samples = rand(rng, dist, n_samples)
 
             # Calculate the sample means and variances
             sample_mean_x = mean(x -> x[1], samples)
