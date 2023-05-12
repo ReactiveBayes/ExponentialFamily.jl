@@ -89,7 +89,7 @@ end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial})
     η = first(getnaturalparameters(exponentialfamily))
-    return Base.isequal(η, 0) || Base.isless(η, 0)
+    return η ≤ 0
 end
    
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =

@@ -81,12 +81,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test pdf(η2, 4) == pdf(d2, 4)
 
         @test isproper(KnownExponentialFamilyDistribution(NegativeBinomial, [0], 5)) == true
+        @test isproper(KnownExponentialFamilyDistribution(NegativeBinomial, [NaN], 5)) == false
         for x in 1:10
             ef_proper = KnownExponentialFamilyDistribution(NegativeBinomial, [-x], 5)
             ef_improper = KnownExponentialFamilyDistribution(NegativeBinomial, [x], 5)
             @test isproper(ef_proper) == true
             @test isproper(ef_improper) == false
         end
+        
     end
 end
 end
