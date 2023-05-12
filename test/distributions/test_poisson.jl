@@ -63,7 +63,8 @@ import DomainSets: NaturalNumbers
 
         for i in 2:10
             @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i)])) === false
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, [NaN])) === false
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, [Inf])) === false
         end
 
         @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
