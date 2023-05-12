@@ -91,7 +91,7 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Negative
     η = first(getnaturalparameters(exponentialfamily))
     return η ≤ 0
 end
-   
+
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
     -getconditioner(exponentialfamily) * log(one(Float64) - exp(first(getnaturalparameters(exponentialfamily))))
 
