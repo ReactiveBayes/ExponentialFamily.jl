@@ -145,28 +145,24 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
 
     @testset "information matrix (GammaShapeScale)" begin
         rng = StableRNG(42)
+        n_samples = 1000
         for (i, j) in Iterators.product(1:3, 1:3)
-            @test fisherinformation(GammaShapeScale(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
-                rng,
-                Zygote.hessian,
-                (param) -> GammaShapeScale(param...),
-                [i, j],
-                500
-            ) atol = 0.201
+            samples = rand(rng, GammaShapeScale(i, j), n_samples)
+            hessian_at_sample = (sample) -> Zygote.hessian((params) -> logpdf(GammaShapeScale(params[1], params[2]), sample), [i, j])
+            expected_hessian = -mean(hessian_at_sample, samples)
+            @test fisherinformation(GammaShapeScale(i, j)) ≈ expected_hessian atol = 0.201
         end
         @test fisherinformation(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
     end
 
     @testset "information matrix (GammaShapeRate)" begin
         rng = StableRNG(42)
+        n_samples = 1000
         for (i, j) in Iterators.product(1:3, 1:3)
-            @test fisherinformation(GammaShapeRate(i, j)) ≈ ExponentialFamily.monte_carlo_information_matrix(
-                rng,
-                Zygote.hessian,
-                (param) -> GammaShapeRate(param...),
-                [i, j],
-                500
-            ) atol = 0.201
+            samples = rand(rng, GammaShapeRate(i, j), n_samples)
+            hessian_at_sample = (sample) -> ForwardDiff.hessian((params) -> logpdf(GammaShapeRate(params[1], params[2]), sample), [i, j])
+            expected_hessian = -mean(hessian_at_sample, samples)
+            @test fisherinformation(GammaShapeRate(i, j)) ≈ expected_hessian atol = 0.201
         end
         @test fisherinformation(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
     end
