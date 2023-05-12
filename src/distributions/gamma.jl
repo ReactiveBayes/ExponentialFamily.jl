@@ -101,9 +101,9 @@ Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::GammaDistribution
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η = getnaturalparameters(exponentialfamily)
-    a = first(η)
-    b = getindex(η, 2)
-    return loggamma(a + one(a)) - (a + one(a)) * log(-b)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    return loggamma(η1 + one(η1)) - (η1 + one(η1)) * log(-η2)
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
@@ -115,3 +115,24 @@ end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) =
     1.0
+
+function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(exponentialfamily)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    return [trigamma(η1 + one(η1)) -one(η2)/η2; -one(η2)/η2 (η1+one(η1))/(η2^2)]
+end
+
+function fisherinformation(dist::GammaShapeScale)
+    return [
+        trigamma(shape(dist)) one(scale(dist))/scale(dist)
+        one(scale(dist))/scale(dist) shape(dist)/(scale(dist)^2)
+    ]
+end
+
+function fisherinformation(dist::GammaShapeRate)
+    return [
+        trigamma(shape(dist)) -one(rate(dist))/rate(dist)
+        -one(rate(dist))/rate(dist) shape(dist)/(rate(dist)^2)
+    ]
+end

@@ -4,9 +4,11 @@ using Test
 using ExponentialFamily
 using Random
 using Distributions
+using ForwardDiff
+using StableRNGs
 
 import SpecialFunctions: logfactorial, besseli
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 import DomainSets: NaturalNumbers
 
 @testset "Poisson" begin
@@ -64,6 +66,24 @@ import DomainSets: NaturalNumbers
         end
         @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(0)])) === false
         @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
+    end
+
+    @testset "fisher information" begin
+        rng = StableRNG(42)
+        n_samples = 10000
+        for λ in 1:10
+            dist = Poisson(λ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            samples = rand(rng, Poisson(λ), 10000)
+            hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Poisson(params[1]), samples)), x)
+            @test fisherinformation(dist) ≈ first(hessian([λ])) atol = 0.1
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+        end
     end
 end
 
