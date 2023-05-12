@@ -4,9 +4,10 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using ForwardDiff
 import StatsFuns: logit
 import DomainSets: NaturalNumbers
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "NegativeBinomial" begin
     @testset "probvec" begin
@@ -79,6 +80,17 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test pdf(η1, 2) == pdf(d1, 2)
         @test pdf(η2, 4) == pdf(d2, 4)
+    end
+
+    @testset "fisher information" begin
+        for η in 1:10, r in 1:10
+            # autograd fails here
+            ef = KnownExponentialFamilyDistribution(NegativeBinomial, [-η], r)
+            dist = NegativeBinomial(r, exp(-η))
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(NegativeBinomial, η, r))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information([-η])[1, 1]
+        end
     end
 end
 end

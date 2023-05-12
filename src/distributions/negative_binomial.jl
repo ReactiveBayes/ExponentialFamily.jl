@@ -101,3 +101,14 @@ function basemeasure(d::NegativeBinomial, x)
     r, _ = params(d)
     return binomial(Int(x + r - 1), x)
 end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{NegativeBinomial})
+    r = getconditioner(ef)
+    η = first(getnaturalparameters(ef))
+    return r * exp(η) / (one(Float64) - exp(η))^2
+end
+
+function fisherinformation(dist::NegativeBinomial)
+    r, p = params(dist)
+    return r / (p * (one(p) - p)^2)
+end
