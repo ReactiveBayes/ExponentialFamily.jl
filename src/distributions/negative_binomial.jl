@@ -112,5 +112,5 @@ end
 
 function fisherinformation(dist::NegativeBinomial)
     r, p = params(dist)
-    return r / (p * (one(p) - p)^2)
+    r / (p^2 * (one(p) - p))
 end
