@@ -84,6 +84,6 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Weib
     return -log(-first(getnaturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
 end
 
-fisher_information(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) = inv(first(getnaturalparameters(exponentialfamily)))
+fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) = inv(first(getnaturalparameters(exponentialfamily))^2)
 
-fisher_information(dist::Weibull) = [1 1; 1 1]
+fisherinformation(dist::Weibull) = [1 1; 1 1]
