@@ -4,10 +4,12 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using ForwardDiff
 using DomainSets
+using StableRNGs
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
-    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics
+    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation
 
 @testset "Rayleigh" begin
     @testset "vague" begin
@@ -67,6 +69,28 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
             for (i) in (1:10)
                 @test basemeasure(KnownExponentialFamilyDistribution(Rayleigh, [-i]), i^2) == i^2
                 @test basemeasure(Rayleigh(i), i / 2) == i / 2
+            end
+        end
+
+        @testset "fisher information" begin
+            rng = StableRNG(0)
+            n_samples = 10000
+            for λ in 1:10
+                dist = Rayleigh(λ)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                η = getnaturalparameters(ef)
+
+                samples = rand(rng, Rayleigh(λ), n_samples)
+
+                totalHessian = zeros(typeof(λ), 1, 1)
+                for sample in samples
+                    totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Rayleigh(params[1]), sample), [λ])
+                end
+                @test fisherinformation(dist) ≈ first(totalHessian) / n_samples atol = 0.1
+
+                f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Rayleigh, η))
+                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+                @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
             end
         end
     end
