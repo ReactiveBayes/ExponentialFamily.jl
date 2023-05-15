@@ -95,7 +95,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
     @testset "fisher information" begin
         for η in 1:10, r in 1:10
-            # autograd fails here
             ef = KnownExponentialFamilyDistribution(NegativeBinomial, [-η], r)
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(NegativeBinomial, η, r))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
