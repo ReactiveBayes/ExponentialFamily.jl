@@ -6,7 +6,7 @@ using Distributions
 using Random
 
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure
-import SpecialFunctions: besselj0
+import SpecialFunctions: besseli
 @testset "VonMises" begin
 
     # VonMises comes from Distributions.jl and most of the things should be covered there
@@ -59,8 +59,8 @@ import SpecialFunctions: besselj0
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(VonMises, [2 / √(2), 2 / √(2)])) ≈ log(besselj0(2))
-            @test logpartition(KnownExponentialFamilyDistribution(VonMises, [1, 1])) ≈ log(besselj0(sqrt(2)))
+            @test logpartition(KnownExponentialFamilyDistribution(VonMises, [2 / √(2), 2 / √(2)])) ≈ log(besseli(0,2))
+            @test logpartition(KnownExponentialFamilyDistribution(VonMises, [1, 1])) ≈ log(besseli(0,sqrt(2)))
         end
 
         @testset "logpdf" begin
@@ -87,6 +87,8 @@ import SpecialFunctions: besselj0
                 @test basemeasure(VonMises(i + 1, j + 1), rand()) == 1 / 2pi
             end
         end
+
+        
     end
 end
 
