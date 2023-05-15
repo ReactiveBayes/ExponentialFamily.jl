@@ -86,4 +86,14 @@ end
 
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) = inv(first(getnaturalparameters(exponentialfamily))^2)
 
-fisherinformation(dist::Weibull) = [1 1; 1 1]
+function fisherinformation(dist::Weibull)
+    α = shape(dist)
+    θ = scale(dist)
+    
+    x11 = (x/θ)^α*(-log(x/θ)^2) - l/α^2
+    x12 = (x/α)^α + α*(x/θ)^α*log(x/θ) - 1
+    x21 = x12
+    x22 = (-α*(α*(x/θ) + (x/θ)^α-1) )/θ^2   
+
+    return [x11 x12; x21 x22]
+end
