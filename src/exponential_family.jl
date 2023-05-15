@@ -1,5 +1,5 @@
 using Distributions, LinearAlgebra
-
+\
 """
     ExponentialFamilyDistribution{T, H, S, P, Z, A}
 
@@ -114,3 +114,8 @@ function logpartition end
 
 function basemeasure end
 function sufficientstatistics end
+
+"""
+Fisher information
+"""
+function fisherinformation end
