@@ -4,7 +4,10 @@ using Test
 using Random
 using Distributions
 using ExponentialFamily
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+using ForwardDiff
+using StableRNGs
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, getconditioner
 
 @testset "Pareto" begin
     @testset "Stats methods" begin
@@ -36,6 +39,28 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Pareto(10.0, 1.0)), 1.0)
         @test Distributions.logpdf(Pareto(5.0, 1.0), 1.0) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Pareto(5.0, 1.0)), 1.0)
+    end
+
+    @testset "fisher information" begin
+        rng = StableRNG(42)
+        n_samples = 1000
+        for λ in 1:10, u in 1:10
+            dist = Pareto(λ, u)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            samples = rand(rng, Pareto(λ, u), n_samples)
+
+            totalHessian = zeros(2, 2)
+            for sample in samples
+                totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Pareto(params[1], params[2]), sample), [λ, u])
+            end
+            @test fisherinformation(dist) ≈ totalHessian / n_samples atol = 1e-8
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Pareto, η, getconditioner(ef)))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+        end
     end
 end
 end

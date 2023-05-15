@@ -25,6 +25,7 @@ using Test
     include("distributions/test_normal_mean_precision.jl")
     include("distributions/test_normal_weighted_mean_precision.jl")
     include("distributions/test_normal.jl")
+    include("distributions/test_poisson.jl")
     include("distributions/test_wishart.jl")
     include("distributions/test_wishart_inverse.jl")
     include("distributions/test_erlang.jl")

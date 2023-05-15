@@ -63,14 +63,14 @@ function Base.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeRate)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-Distributions.pdf(dist::GammaShapeRate, x::Real)    = exp(logpdf(dist,x))
+Distributions.pdf(dist::GammaShapeRate, x::Real)    = exp(logpdf(dist, x))
 Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
 
 function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)
     return convert(eltype(dist), rand(rng, convert(GammaShapeScale, dist)))
 end
 
-function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Integer)
+function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Int64)
     return convert(AbstractArray{eltype(dist)}, rand(rng, convert(GammaShapeScale, dist), n))
 end
 
