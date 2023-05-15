@@ -3,8 +3,10 @@ module LogNormalTest
 using Test
 using Random
 using Distributions
+using StableRNGs
+using ForwardDiff
 using ExponentialFamily
-import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisherinformation,getnaturalparameters
 
 @testset "LogNormal" begin
     @testset "constructors" begin
@@ -42,12 +44,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
     end
 
     @testset "convert" begin
-        @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ LogNormal(1, sqrt(0.5))
+        @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ LogNormal(1/2, sqrt(0.5))
         @test Distributions.logpdf(KnownExponentialFamilyDistribution(LogNormal, [2, -2]), 10) ≈
-              Distributions.logpdf(LogNormal(0.75, sqrt(0.25)), 10)
+              Distributions.logpdf(LogNormal(0.5, sqrt(0.25)), 10)
 
         @test convert(KnownExponentialFamilyDistribution, LogNormal(1.0, sqrt(2.0))) ≈
-              KnownExponentialFamilyDistribution(LogNormal, [-0.5, -0.25])
+              KnownExponentialFamilyDistribution(LogNormal, [0.5, -0.25])
     end
 
     @testset "isproper" begin
@@ -56,14 +58,41 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure
     end
 
     @testset "logpartition" begin
-        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) ≈ 0.5
-        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ 1.0
+        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) ≈ 1/8 - log(4)/2
+        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ 1/4 - log(2)/2
     end
 
     @testset "basemeasure" begin
-        @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), rand(1)) == 1.0
-        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), rand(1)) == 1.0
-        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), rand(1)) == 1 / sqrt(pi)
+        point = rand(1)
+        @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), point) == 1.0/point
+        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), point) == 1.0/point
+        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), point) == 1/(sqrt(pi))/point
+    end
+
+    @testset "fisher information" begin
+        rng = StableRNG(42)
+        n_samples = 1000
+
+        transformation(η) = [-(η[1]) / (2 * η[2]), sqrt(-1 / (2 * η[2]))]
+        for λ in 1:10, σ in 1:10
+            dist = LogNormal(λ, σ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            # samples = rand(rng, LogNormal(λ, σ), n_samples)
+
+            # totalHessian = zeros(2, 2)
+            # for sample in samples
+            #     totalHessian -= ForwardDiff.hessian((params) -> logpdf.(LogNormal(params[1], params[2]), sample), [λ, σ])
+            # end
+            # @test fisherinformation(dist) ≈ totalHessian / n_samples rtol = 1e-1
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(LogNormal, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+            J = ForwardDiff.jacobian(transformation, η)
+            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-8
+        end
     end
 end
 end
