@@ -32,21 +32,23 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "natural parameters related" begin
-        ηcat = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
+        ηcat = KnownExponentialFamilyDistribution(Categorical, log.([0.5/0.5, 0.5/0.5]))
         dist = Categorical([0.5, 0.5])
-        η1   = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
-        η2   = KnownExponentialFamilyDistribution(Categorical, [log(0.5), log(0.5)])
+        η1   = KnownExponentialFamilyDistribution(Categorical, log.([0.5/0.5, 0.5/0.5]))
+        η2   = KnownExponentialFamilyDistribution(Categorical, log.([0.5/0.5, 0.5/0.5]))
 
         @test convert(Distribution, ηcat) == dist
         @test convert(KnownExponentialFamilyDistribution, dist) ==
-              KnownExponentialFamilyDistribution(Categorical, log.([0.5, 0.5]))
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Categorical, [2log(0.5), 2log(0.5)])
+              KnownExponentialFamilyDistribution(Categorical, log.([0.5/0.5, 0.5/0.5]))
+        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Categorical, [0.0, 0.0])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
 
         @test basemeasure(η1, rand()) == 1.0
         @test basemeasure(η2, rand()) == 1.0
+
+        @test logpartition(ηcat) == log(2)
     end
 
     @testset "prod" begin

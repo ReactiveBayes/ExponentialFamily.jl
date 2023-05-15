@@ -23,17 +23,22 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Categorical)
-    logprobabilities = log.(probvec(dist))
-    return KnownExponentialFamilyDistribution(Categorical, logprobabilities)
+    p = probvec(dist)
+    η = log.(p / p[end])
+    return KnownExponentialFamilyDistribution(Categorical, η)
 end
 
-function Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Categorical})
-    return Categorical(softmax(getnaturalparameters(η)))
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Categorical})
+    η = getnaturalparameters(exponentialfamily)
+    return Categorical(softmax(η))
 end
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-logpartition(::KnownExponentialFamilyDistribution{Categorical}) = zero(Float64)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Categorical})
+    η = getnaturalparameters(exponentialfamily)
+    return log(sum(exp.(η)))
+end
 
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
 

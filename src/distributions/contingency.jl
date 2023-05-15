@@ -98,15 +98,20 @@ function Distributions.entropy(distribution::Contingency)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Contingency)
-    logcontingency = log.(contingency_matrix(dist))
-    return KnownExponentialFamilyDistribution(Contingency, logcontingency)
+    P = contingency_matrix(dist)
+    η = log.(P / P[end])
+    return KnownExponentialFamilyDistribution(Contingency, η)
 end
 
-function Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Contingency})
-    return Contingency(softmax(getnaturalparameters(η)))
+function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Contingency})
+    η = getnaturalparameters(exponentialfamily)
+    return Contingency(softmax(η))
 end
 
-logpartition(::KnownExponentialFamilyDistribution{Contingency}) = zero(Float64)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Contingency})
+    η = getnaturalparameters(exponentialfamily)
+    return log(sum(exp.(η)))
+end
 
 check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > one(Int64)) && (getindex(size(v), 2) > one(Int64))
 
