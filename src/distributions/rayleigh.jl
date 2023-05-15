@@ -46,3 +46,7 @@ check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = log(-2first(getnaturalparameters(ef)))
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) = x
+
+fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
+
+fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -inv(first(getnaturalparameters(ef))^2)
