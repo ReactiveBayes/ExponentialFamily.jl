@@ -4,6 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using StableRNGs
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 
 @testset "Multinomial" begin
@@ -33,7 +34,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         prod_dist = prod(ClosedProd(), left, right)
 
         d = Multinomial(n, ones(3) ./ 3)
-        sample_space = unique(rand(d, 4000), dims = 2)
+        sample_space = unique(rand(StableRNG(1),d, 4000), dims = 2)
         sample_space = [sample_space[:, i] for i in 1:size(sample_space, 2)]
 
         sample_x = [[2, 5, 3], [1, 2, 7], [0, 4, 6], [1, 4, 5]]
@@ -45,7 +46,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                     prod_dist.naturalparameters' * prod_dist.sufficientstatistics(x) -
                     prod_dist.logpartition(prod_dist.naturalparameters)
                 )
-            @test sum(hist_sum(x_sample) for x_sample in sample_space) ≈ 1.0 atol = 1e-5
+            @test sum(hist_sum(x_sample) for x_sample in sample_space) ≈ 1.0 atol = 1e-10
         end
 
         @test_throws AssertionError prod(
