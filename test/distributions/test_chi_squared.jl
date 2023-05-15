@@ -34,7 +34,7 @@ import ExponentialFamily:
         @test basemeasure(Chisq(5), 3) == exp(-3 / 2)
     end
 
-    @testset "information matrix KnownExponentialFamilyDistribution{Chisq}" begin
+    @testset "fisherinformation KnownExponentialFamilyDistribution{Chisq}" begin
         f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
         for i in 3:10
@@ -43,7 +43,7 @@ import ExponentialFamily:
         end
     end
 
-    @testset "information matrix (Chisq)" begin
+    @testset "fisherinformation (Chisq)" begin
         rng = StableRNG(42)
         n_samples = 1000
         for ν in 1:10
