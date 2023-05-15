@@ -10,7 +10,7 @@ using StableRNGs
 import ExponentialFamily:
     NormalGamma, KnownExponentialFamilyDistribution, params, location
 import ExponentialFamily:
-    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics
+    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics, fisherinformation
 using Distributions
 using Random
 
@@ -52,6 +52,20 @@ end
             ef = convert(KnownExponentialFamilyDistribution, dist)
             @test pdf(dist, [m, s]) ≈ normal_gamma_pdf(m, s, m, s, a, b)
             @test logpdf(dist, [m, s]) ≈ log(normal_gamma_pdf(m, s, m, s, a, b))
+        end
+    end
+
+    @testset "fisher information" begin
+        for i in 1:0.1:5
+            m = rand()
+            s = rand()
+            a = i
+            b = i
+            dist = NormalGamma(m, s, a, b)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(NormalGamma, η))
+            autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+            @test fisherinformation(ef) ≈ autograd_inforamation_matrix(getnaturalparameters(ef))
         end
     end
 
