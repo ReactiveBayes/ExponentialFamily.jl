@@ -56,5 +56,5 @@ function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution
 end
 
 function fisherinformation(dist::Chisq)
-    return trigamma(dof(dist) / 2)
+    return trigamma(dof(dist) / 2) / 4
 end

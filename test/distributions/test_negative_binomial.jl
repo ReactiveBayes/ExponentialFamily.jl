@@ -88,7 +88,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test isproper(ef_proper) == true
             @test isproper(ef_improper) == false
         end
-        
     end
 end
 end
