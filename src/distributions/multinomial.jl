@@ -19,11 +19,11 @@ function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
     K = length(left.p)
     η_left = getnaturalparameters(convert(KnownExponentialFamilyDistribution, left))
     η_right = getnaturalparameters(convert(KnownExponentialFamilyDistribution, right))
-    
+
     naturalparameters = η_left + η_right
     sufficientstatistics = (x) -> x
     basemeasure = (x) -> factorial(trials)^2 / (prod(factorial.(x)))^2
-    logpartition = computeLogpartition(K,trials) 
+    logpartition = computeLogpartition(K, trials)
     supp = 0:trials
     return ExponentialFamilyDistribution(
         Float64,
@@ -62,7 +62,7 @@ end
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Multinomial})
     η = getnaturalparameters(exponentialfamily)
     n = getconditioner(exponentialfamily)
-    return n*log(sum(exp.(η)))
+    return n * log(sum(exp.(η)))
 end
 
 function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x)
@@ -70,16 +70,16 @@ function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, 
     return factorial(n) / prod(factorial.(x))
 end
 
-function computeLogpartition(K,n)
+function computeLogpartition(K, n)
     d = Multinomial(n, ones(K) ./ K)
-    samples = unique(rand(d,4000),dims=2)
-    samples = [samples[:,i] for i in 1:size(samples,2)]
-    return let samples = samples  
+    samples = unique(rand(d, 4000), dims = 2)
+    samples = [samples[:, i] for i in 1:size(samples, 2)]
+    return let samples = samples
         (η) -> begin
             result = mapreduce(+, samples) do xi
-                return (factorial(n) / prod(factorial.(xi)))^2 * exp(η' * xi) 
+                return (factorial(n) / prod(factorial.(xi)))^2 * exp(η' * xi)
             end
-        return log(result)
+            return log(result)
         end
     end
 end
