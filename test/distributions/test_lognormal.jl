@@ -4,6 +4,7 @@ using Test
 using Random
 using Distributions
 using StableRNGs
+using Zygote
 using ForwardDiff
 using ExponentialFamily
 import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisherinformation,getnaturalparameters
@@ -63,7 +64,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisher
     end
 
     @testset "basemeasure" begin
-        point = rand(1)
+        point = rand()
         @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), point) == 1.0/point
         @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), point) == 1.0/point
         @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), point) == 1/(sqrt(pi))/point
@@ -79,13 +80,13 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisher
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            # samples = rand(rng, LogNormal(λ, σ), n_samples)
+            samples = rand(rng, LogNormal(λ, σ), n_samples)
 
-            # totalHessian = zeros(2, 2)
-            # for sample in samples
-            #     totalHessian -= ForwardDiff.hessian((params) -> logpdf.(LogNormal(params[1], params[2]), sample), [λ, σ])
-            # end
-            # @test fisherinformation(dist) ≈ totalHessian / n_samples rtol = 1e-1
+            totalHessian = zeros(2, 2)
+            for sample in samples
+                totalHessian -= Zygote.hessian((params) -> logpdf(LogNormal(params[1], params[2]), sample), [λ, σ])
+            end
+            @test fisherinformation(dist) ≈ totalHessian / n_samples rtol = 0.2
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(LogNormal, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
