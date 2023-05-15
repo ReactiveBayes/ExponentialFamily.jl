@@ -148,7 +148,8 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         n_samples = 1000
         for (i, j) in Iterators.product(1:3, 1:3)
             samples = rand(rng, GammaShapeScale(i, j), n_samples)
-            hessian_at_sample = (sample) -> Zygote.hessian((params) -> logpdf(GammaShapeScale(params[1], params[2]), sample), [i, j])
+            hessian_at_sample =
+                (sample) -> Zygote.hessian((params) -> logpdf(GammaShapeScale(params[1], params[2]), sample), [i, j])
             expected_hessian = -mean(hessian_at_sample, samples)
             @test fisherinformation(GammaShapeScale(i, j)) ≈ expected_hessian atol = 0.201
         end
@@ -160,7 +161,9 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         n_samples = 1000
         for (i, j) in Iterators.product(1:3, 1:3)
             samples = rand(rng, GammaShapeRate(i, j), n_samples)
-            hessian_at_sample = (sample) -> ForwardDiff.hessian((params) -> logpdf(GammaShapeRate(params[1], params[2]), sample), [i, j])
+            hessian_at_sample =
+                (sample) ->
+                    ForwardDiff.hessian((params) -> logpdf(GammaShapeRate(params[1], params[2]), sample), [i, j])
             expected_hessian = -mean(hessian_at_sample, samples)
             @test fisherinformation(GammaShapeRate(i, j)) ≈ expected_hessian atol = 0.201
         end
