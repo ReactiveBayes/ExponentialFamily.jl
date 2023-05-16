@@ -4,9 +4,11 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using ForwardDiff
+using StableRNGs
 import StatsFuns: logit
 import DomainSets: NaturalNumbers
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "NegativeBinomial" begin
     @testset "probvec" begin
@@ -79,6 +81,35 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test pdf(η1, 2) == pdf(d1, 2)
         @test pdf(η2, 4) == pdf(d2, 4)
+
+        @test isproper(KnownExponentialFamilyDistribution(NegativeBinomial, [0], 5)) == true
+        @test isproper(KnownExponentialFamilyDistribution(NegativeBinomial, [NaN], 5)) == false
+        for x in 1:10
+            ef_proper = KnownExponentialFamilyDistribution(NegativeBinomial, [-x], 5)
+            ef_improper = KnownExponentialFamilyDistribution(NegativeBinomial, [x], 5)
+            @test isproper(ef_proper) == true
+            @test isproper(ef_improper) == false
+        end
+    end
+
+    @testset "fisher information" begin
+        for η in 1:10, r in 1:10
+            ef = KnownExponentialFamilyDistribution(NegativeBinomial, [-η], r)
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(NegativeBinomial, η, r))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information([-η])[1, 1]
+        end
+
+        rng = StableRNG(42)
+        n_samples = 10000
+        for η in 1:10, r in 1:10
+            dist = NegativeBinomial(r, exp(-η))
+            samples = rand(rng, dist, n_samples)
+            hessian_at_sample = (sample) -> ForwardDiff.hessian((params) -> logpdf(NegativeBinomial(r, params[1]), sample), [exp(-η)])
+            expected_hessian = -mean(hessian_at_sample, samples)
+            # fisher information values are big, hard to compare directly.
+            @test fisherinformation(NegativeBinomial(r, exp(-η)))/expected_hessian[1, 1] ≈ 1 atol = 0.01
+        end
     end
 end
 end
