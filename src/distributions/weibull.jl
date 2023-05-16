@@ -2,7 +2,7 @@ export Weibull
 
 import Distributions: Weibull, params
 using DomainSets
-using SpecialFunctions: loggamma
+using SpecialFunctions: loggamma, digamma, trigamma
 using HCubature
 
 prod_closed_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
@@ -87,13 +87,16 @@ end
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) = inv(first(getnaturalparameters(exponentialfamily))^2)
 
 function fisherinformation(dist::Weibull)
-    α = shape(dist)
-    θ = scale(dist)
-    
-    x11 = (x/θ)^α*(-log(x/θ)^2) - l/α^2
-    x12 = (x/α)^α + α*(x/θ)^α*log(x/θ) - 1
-    x21 = x12
-    x22 = (-α*(α*(x/θ) + (x/θ)^α-1) )/θ^2   
+    k = shape(dist)
+    λ = scale(dist)
 
-    return [x11 x12; x21 x22]
+    β = k
+    θ = 1 / λ
+    
+    a11 = 1/β^2*(trigamma(1) + digamma(2)^2)
+    a12 = 1/θ*(1 + digamma(1))
+    a21 = a12
+    a22 = β^2/θ^2  
+
+    return [a11 a12; a21 a22]
 end

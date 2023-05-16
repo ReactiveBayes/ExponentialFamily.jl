@@ -81,7 +81,8 @@ import ExponentialFamily: basemeasure, isproper
         λ, k = 1.0, 2.0
         dist = Weibull(λ, k)
         ef = convert(KnownExponentialFamilyDistribution, dist)
-        η = getnaturalparameters(ef)
+        η = first(getnaturalparameters(ef))
+        c = getconditioner(ef)
     
         # samples = rand(Weibull(λ, k), 10000)
         # hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Weibull(params[1], params[2]), samples)), x)
