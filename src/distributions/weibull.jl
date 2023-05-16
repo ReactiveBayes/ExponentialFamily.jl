@@ -84,19 +84,20 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Weib
     return -log(-first(getnaturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
 end
 
-fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) = inv(first(getnaturalparameters(exponentialfamily))^2)
+fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) =
+    inv(first(getnaturalparameters(exponentialfamily))^2)
 
 function fisherinformation(dist::Weibull)
-    k = shape(dist)
-    λ = scale(dist)
+    α = shape(dist)
+    θ = scale(dist)
 
-    β = k
-    θ = 1 / λ
-    
-    a11 = 1/β^2*(trigamma(1) + digamma(2)^2)
-    a12 = 1/θ*(1 + digamma(1))
+    # see (Fisher Information and the Combination of RGB Channels, Reiner Lenz & Vasileios Zografos, 2013)
+
+    γ = -digamma(1) # Euler-Mascheroni constant (see https://en.wikipedia.org/wiki/Euler%E2%80%93Mascheroni_constant)
+    a11 = (1 - 2γ + γ^2 + π^2 / 6) / (α^2)
+    a12 = (γ - 1) / θ
     a21 = a12
-    a22 = β^2/θ^2  
+    a22 = α^2 / (θ^2)
 
     return [a11 a12; a21 a22]
 end
