@@ -26,7 +26,7 @@ check_valid_natural(::Type{<:LogNormal}, params) = length(params) === 2
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::LogNormal)
     μ, scale = params(dist)
     var = scale^2
-    return KnownExponentialFamilyDistribution(LogNormal, [ μ / var, -1 / (2 * var)])
+    return KnownExponentialFamilyDistribution(LogNormal, [μ / var, -1 / (2 * var)])
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
@@ -40,7 +40,7 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{LogN
     η = getnaturalparameters(exponentialfamily)
     η1 = first(η)
     η2 = getindex(η, 2)
-    return -(η1)^2 / (4 * η2) - log(-2η2)/2
+    return -(η1)^2 / (4 * η2) - log(-2η2) / 2
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
@@ -52,19 +52,19 @@ end
 function basemeasure(d::KnownExponentialFamilyDistribution{LogNormal}, x)
     η = getnaturalparameters(d)
     η2 = getindex(η, 2)
-    return sqrt(-η2 / pi)/x
+    return sqrt(-η2 / pi) / x
 end
 
 function basemeasure(d::LogNormal, x)
     var = varlogx(d)
-    return 1 / (sqrt(2pi * var)*x)
+    return 1 / (sqrt(2pi * var) * x)
 end
 
-function fisherinformation(d::LogNormal) 
+function fisherinformation(d::LogNormal)
     σ = d.σ
     return [1/(σ^2) 0.0; 0.0 2/(σ^2)]
 end
-function fisherinformation(ef::KnownExponentialFamilyDistribution{LogNormal}) 
+function fisherinformation(ef::KnownExponentialFamilyDistribution{LogNormal})
     η = getnaturalparameters(ef)
     η1 = getindex(η, 1)
     η2 = getindex(η, 2)
