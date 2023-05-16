@@ -2,7 +2,7 @@ export Weibull
 
 import Distributions: Weibull, params
 using DomainSets
-using SpecialFunctions: loggamma, digamma, trigamma
+using SpecialFunctions: digamma
 using HCubature
 
 prod_closed_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
