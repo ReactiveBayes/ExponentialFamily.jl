@@ -60,11 +60,13 @@ import DomainSets: NaturalNumbers
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(4)), 1)
         @test Distributions.logpdf(Poisson(5), 1) ≈
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
-        for i in 1:10
+
+        for i in 2:10
             @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [-log(i + 1)])) === true
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, [NaN])) === false
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, [Inf])) === false
         end
-        @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(0)])) === false
+
         @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
     end
 
@@ -76,9 +78,13 @@ import DomainSets: NaturalNumbers
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            samples = rand(rng, Poisson(λ), 10000)
-            hessian = (x) -> -ForwardDiff.hessian((params) -> mean(logpdf.(Poisson(params[1]), samples)), x)
-            @test fisherinformation(dist) ≈ first(hessian([λ])) atol = 0.1
+            samples = rand(rng, Poisson(λ), n_samples)
+
+            totalHessian = zeros(typeof(λ), 1, 1)
+            for sample in samples
+                totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Poisson(params[1]), sample), [λ])
+            end
+            @test fisherinformation(dist) ≈ first(totalHessian) / n_samples atol = 0.1
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
