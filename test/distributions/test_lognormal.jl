@@ -7,7 +7,7 @@ using StableRNGs
 using Zygote
 using ForwardDiff
 using ExponentialFamily
-import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisherinformation,getnaturalparameters
+import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure, fisherinformation, getnaturalparameters
 
 @testset "LogNormal" begin
     @testset "constructors" begin
@@ -45,7 +45,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisher
     end
 
     @testset "convert" begin
-        @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ LogNormal(1/2, sqrt(0.5))
+        @test convert(Distribution, KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈
+              LogNormal(1 / 2, sqrt(0.5))
         @test Distributions.logpdf(KnownExponentialFamilyDistribution(LogNormal, [2, -2]), 10) ≈
               Distributions.logpdf(LogNormal(0.5, sqrt(0.25)), 10)
 
@@ -59,15 +60,15 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisher
     end
 
     @testset "logpartition" begin
-        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) ≈ 1/8 - log(4)/2
-        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ 1/4 - log(2)/2
+        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -2])) ≈ 1 / 8 - log(4) / 2
+        @test logpartition(KnownExponentialFamilyDistribution(LogNormal, [1, -1])) ≈ 1 / 4 - log(2) / 2
     end
 
     @testset "basemeasure" begin
         point = rand()
-        @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), point) == 1.0/point
-        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), point) == 1.0/point
-        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), point) == 1/(sqrt(pi))/point
+        @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), point) == 1.0 / point
+        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), point) == 1.0 / point
+        @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), point) == 1 / (sqrt(pi)) / point
     end
 
     @testset "fisher information" begin
@@ -92,7 +93,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure,fisher
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
             J = ForwardDiff.jacobian(transformation, η)
-            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-8
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 end
