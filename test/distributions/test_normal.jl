@@ -306,6 +306,15 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 @test isproper(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, i])) === false
             end
         end
+
+        @testset "fisherinformation" begin
+            for (η1, η2) in Iterators.product(1:10, -10:1:-1)
+                ef = KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [η1, η2])
+                f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, η))
+                autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+                @test fisherinformation(ef) ≈ autograd_inforamation_matrix([η1, η2])
+            end 
+        end
     end
 
     @testset "MultivariateNormalKnownExponentialFamilyDistribution" begin

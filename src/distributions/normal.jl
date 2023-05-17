@@ -490,3 +490,11 @@ basemeasure(
     x
 ) =
     (2pi)^(-length(x) / 2)
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{<:NormalDistributionsFamily})
+    weightedmean, minushalfprecision = getnaturalparameters(ef)
+    return [
+        -1/(2*minushalfprecision) weightedmean/(2*minushalfprecision^2)
+        weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
+    ]
+end
