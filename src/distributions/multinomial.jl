@@ -84,3 +84,30 @@ function computeLogpartition(K, n)
         end
     end
 end
+
+function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Multinomial})
+    η = getnaturalparameters(expfamily)
+    n = getconditioner(expfamily)
+    I = Matrix{Float64}(undef, length(η), length(η))
+    for i in 1:length(η), j in 1:length(η)
+        if i == j
+            I[i, j] = exp(η[i])*(sum(exp.(η)) - exp(η[i])) / (sum(exp.(η)))^2
+        else
+            I[i, j] = -exp(η[i])*exp(η[j]) / (sum(exp.(η)))^2
+        end
+    end
+    return n * I
+end
+
+function fisherinformation(dist::Multinomial)
+    n, p = params(dist)
+    I = Matrix{Float64}(undef, length(p), length(p))
+    for i in 1:length(p), j in 1:length(p)
+        if i == j
+            I[i, j] = (1-p[i])/p[i]
+        else
+            I[i, j] = -1
+        end
+    end
+    return n * I
+end
