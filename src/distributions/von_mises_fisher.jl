@@ -34,10 +34,39 @@ check_valid_natural(::Type{<:VonMisesFisher}, v) = length(v) >= 2
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{VonMisesFisher})
     η = getnaturalparameters(exponentialfamily)
-    ## because cos^2+sin^2 = 1 this trick obtains κ 
-    κ = sqrt(η' * η)
+    ## because ||μ|| = 1 this trick obtains κ 
+    κ = norm(η)
     p = length(η)
     return log(besselj(0.5p - 1, κ))
 end
+
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x) =
     (1 / 2pi)^(length(x) / 2)
+
+function fisherinformation(dist::VonMises)
+    _, k = params(dist)
+    bessel0 = besseli(0, k)
+    bessel1 = besseli(1, k)
+    bessel2 = (1 / 2) * (besseli(0, k) + besseli(2, k))
+    return [(k)*bessel1/bessel0 0.0; 0.0 bessel2/bessel0-(bessel1/bessel0)^2]
+end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMisesFisher})
+    η = getnaturalparameters(ef)
+    η1 = getindex(η, 1)
+    η2 = getindex(η, 2)
+    u = norm(η)
+    bessel0 = besseli(0, u)
+    bessel1 = besseli(1, u)
+    bessel2 = (1 / 2) * (besseli(0, u) + besseli(2, u))
+
+    h11 =
+        (bessel2 / bessel0) * (η1^2 / u^2) - (bessel1 / bessel0)^2 * (η1^2 / u^2) +
+        (bessel1 / bessel0) * (1 / u - (η1^2 / u^3))
+    h22 =
+        (bessel2 / bessel0) * (η2^2 / u^2) - (bessel1 / bessel0)^2 * (η2^2 / u^2) +
+        (bessel1 / bessel0) * (1 / u - (η2^2 / u^3))
+    h12 = (η1 * η2 / u^2) * (bessel2 / bessel0 - (bessel1 / bessel0)^2 - bessel1 / (u * bessel0))
+
+    return [h11 h12; h12 h22]
+end
