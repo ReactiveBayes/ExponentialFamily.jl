@@ -2,6 +2,10 @@ module NormalMeanPrecisionTest
 
 using Test
 using ExponentialFamily
+using ForwardDiff
+using StableRNGs
+
+import ExponentialFamily: fisherinformation
 
 @testset "NormalMeanPrecision" begin
     @testset "Constructor" begin

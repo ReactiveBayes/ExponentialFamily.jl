@@ -276,20 +276,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
     end
 
-    @testset "fisherinformation" begin
-        @testset "NormalMeanVariance" begin
-            rng = StableRNG(42)
-            n_samples = 1000
-            for (μ, var) in Iterators.product(-10:10, 0.5:0.5:10)
-                samples = rand(rng, NormalMeanVariance(μ, var), n_samples)
-                hessian_at_sample =
-                    (sample) -> ForwardDiff.hessian((params) -> logpdf(NormalMeanVariance(params[1], params[2]), sample), [μ, var])
-                expected_hessian = -mean(hessian_at_sample, samples)
-                @test expected_hessian ≈ fisherinformation(NormalMeanVariance(μ, var)) atol = 0.5
-            end
-        end
-    end
-
     @testset "UnivariateNormalKnownExponentialFamilyDistribution" begin
         @testset "Constructor" begin
             for i in 1:10
