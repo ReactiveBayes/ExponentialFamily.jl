@@ -4,8 +4,9 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import StatsFuns: logit
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+using ForwardDiff
+import StatsFuns: logit, logistic
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 import HypergeometricFunctions: _₂F₁
 
 @testset "Binomial" begin
@@ -71,6 +72,24 @@ import HypergeometricFunctions: _₂F₁
                     prod_dist.logpartition(prod_dist.naturalparameters[1])
                 )
             @test sum(hist_sum(x) for x in 0:20) ≈ 1.0 atol = 1e-5
+        end
+    end
+
+    @testset "fisher information" begin
+        function transformation(params)
+            return logistic(params[1])
+        end
+
+        for n in 2:10, κ in 0.01:0.1:1.0
+            dist = Binomial(n, κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η,n))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 end
