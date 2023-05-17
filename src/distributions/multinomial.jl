@@ -89,11 +89,11 @@ function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Multino
     η = getnaturalparameters(expfamily)
     n = getconditioner(expfamily)
     I = Matrix{Float64}(undef, length(η), length(η))
-    for i in 1:length(η), j in 1:length(η)
-        if i == j
-            I[i, j] = exp(η[i])*(sum(exp.(η)) - exp(η[i])) / (sum(exp.(η)))^2
-        else
+    @inbounds for i in 1:length(η)
+        I[i, i] = exp(η[i])*(sum(exp.(η)) - exp(η[i])) / (sum(exp.(η)))^2
+        for j in 1:i-1
             I[i, j] = -exp(η[i])*exp(η[j]) / (sum(exp.(η)))^2
+            I[j, i] = I[i, j]
         end
     end
     return n * I
@@ -102,12 +102,13 @@ end
 function fisherinformation(dist::Multinomial)
     n, p = params(dist)
     I = Matrix{Float64}(undef, length(p), length(p))
-    for i in 1:length(p), j in 1:length(p)
-        if i == j
-            I[i, j] = (1-p[i])/p[i]
-        else
+    @inbounds for i in 1:length(p)
+        I[i, i] = (1-p[i])/p[i]
+        for j in 1:i-1
             I[i, j] = -1
+            I[j, i] = I[i, j]
         end
     end
     return n * I
 end
+
