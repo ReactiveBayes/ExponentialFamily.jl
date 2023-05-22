@@ -5,6 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 using StableRNGs
+using Zygote
 using ForwardDiff
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
@@ -94,18 +95,10 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
         @testset "fisher information" begin
             rng = StableRNG(42)
             n_samples = 1000
-            for λ in 1:1, u in 1.0:0.5:2.0
+            for λ in 1:10, u in 1.0:0.5:5.0
                 dist = Laplace(u, λ)
                 ef = convert(KnownExponentialFamilyDistribution, dist)
                 η = getnaturalparameters(ef)
-
-                ##We can not use the following test because the hessians are weak and autodiffs can not handle that
-                # samples = rand(rng, Laplace(u, λ), n_samples)
-                # totalHessian = zeros(2, 2)
-                # for sample in samples
-                #     totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Laplace(params[1], params[2]), sample), [u, λ])
-                # end
-                # @test fisherinformation(dist) ≈ totalHessian / n_samples atol = 1e-8
 
                 f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Laplace, η, getconditioner(ef)))
                 autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)

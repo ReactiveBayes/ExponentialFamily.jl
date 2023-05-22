@@ -75,8 +75,8 @@ end
 fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / first(getnaturalparameters(ef))^2
 
 function fisherinformation(dist::Laplace)
-    #Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
-    #Expectation of sign function will be zero and expectation of square of sign will be 1. 
+    # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
+    # Expectation of sign function will be zero and expectation of square of sign will be 1. 
     b = scale(dist)
     return [1/b^2 0; 0 1/b^2]
 end
