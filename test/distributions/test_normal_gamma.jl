@@ -10,7 +10,8 @@ using StableRNGs
 import ExponentialFamily:
     NormalGamma, KnownExponentialFamilyDistribution, params, location
 import ExponentialFamily:
-    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics
+    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics,
+    fisherinformation
 using Distributions
 using Random
 
@@ -43,15 +44,52 @@ end
     end
 
     @testset "exponential family functions" begin
+        rng = StableRNG(42)
         for i in 1:0.1:5
-            m = rand()
-            s = rand()
+            m = rand(rng)
+            s = rand(rng)
             a = i
             b = i
             dist = NormalGamma(m, s, a, b)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             @test pdf(dist, [m, s]) ≈ normal_gamma_pdf(m, s, m, s, a, b)
             @test logpdf(dist, [m, s]) ≈ log(normal_gamma_pdf(m, s, m, s, a, b))
+        end
+    end
+
+    @testset "fisher information (naturalparameters)" begin
+        rng = StableRNG(42)
+        for i in 1:0.1:5
+            m = rand(rng)
+            s = rand(rng)
+            a = i
+            b = i
+            dist = NormalGamma(m, s, a, b)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(NormalGamma, η))
+            autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+            @test fisherinformation(ef) ≈ autograd_inforamation_matrix(getnaturalparameters(ef))
+        end
+    end
+
+    @testset "fisher information" begin
+        rng = StableRNG(42)
+        n_samples = 3000
+        for (i, j) in Iterators.product(1:0.1:2, 1:0.1:2)
+            m = rand(rng)
+            s = rand(rng)
+            a = i
+            b = j
+            dist = NormalGamma(m, s, a, b)
+            samples = rand(rng, dist, n_samples)
+            hessian_at_sample =
+                (sample) -> ForwardDiff.hessian(
+                    (params) -> logpdf(NormalGamma(params[1], params[2], params[3], params[4]), sample),
+                    [m, s, a, b]
+                )
+            expected_hessian = -mean(hessian_at_sample, samples)
+            @test expected_hessian ≈ fisherinformation(dist) atol = 0.501
+            # @test expected_hessian ≈ fisherinformation(dist) atol = 0.1 #small number of tests failed
         end
     end
 

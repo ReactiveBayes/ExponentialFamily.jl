@@ -105,10 +105,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         for η in 1:10, r in 1:10
             dist = NegativeBinomial(r, exp(-η))
             samples = rand(rng, dist, n_samples)
-            hessian_at_sample = (sample) -> ForwardDiff.hessian((params) -> logpdf(NegativeBinomial(r, params[1]), sample), [exp(-η)])
+            hessian_at_sample =
+                (sample) -> ForwardDiff.hessian((params) -> logpdf(NegativeBinomial(r, params[1]), sample), [exp(-η)])
             expected_hessian = -mean(hessian_at_sample, samples)
             # fisher information values are big, hard to compare directly.
-            @test fisherinformation(NegativeBinomial(r, exp(-η)))/expected_hessian[1, 1] ≈ 1 atol = 0.01
+            @test fisherinformation(NegativeBinomial(r, exp(-η))) / expected_hessian[1, 1] ≈ 1 atol = 0.01
         end
     end
 end

@@ -35,7 +35,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         prod_dist = prod(ClosedProd(), left, right)
 
         d = Multinomial(n, ones(3) ./ 3)
-        sample_space = unique(rand(StableRNG(1),d, 4000), dims = 2)
+        sample_space = unique(rand(StableRNG(1), d, 4000), dims = 2)
         sample_space = [sample_space[:, i] for i in 1:size(sample_space, 2)]
 
         sample_x = [[2, 5, 3], [1, 2, 7], [0, 4, 6], [1, 4, 5]]
