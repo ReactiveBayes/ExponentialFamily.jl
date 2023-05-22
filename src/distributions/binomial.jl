@@ -71,15 +71,15 @@ function basemeasure(d::Binomial, x)
 end
 
 function fisherinformation(dist::Binomial)
-    n,p = params(dist)
-    return n/(p*(1-p))
+    n, p = params(dist)
+    return n / (p * (1 - p))
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial}) 
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
     η = first(getnaturalparameters(ef))
     eη = exp(η)
-    aux = eη/(1+eη)
+    aux = eη / (1 + eη)
     n = getconditioner(ef)
 
-    return n*aux*(1-aux)
+    return n * aux * (1 - aux)
 end

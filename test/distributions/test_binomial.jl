@@ -85,7 +85,7 @@ import HypergeometricFunctions: _₂F₁
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η,n))
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η, n))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
             J = ForwardDiff.gradient(transformation, η)
