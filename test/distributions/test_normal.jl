@@ -341,6 +341,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @testset "logpartition" begin
             @test logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈
                   -(log(2) - 1 / 8)
+            dist = MvNormalMeanPrecision(ones(2), diageye(2))
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            logpartition(ef) = 1.0
         end
 
         @testset "isproper" begin
