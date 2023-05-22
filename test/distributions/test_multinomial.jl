@@ -5,7 +5,8 @@ using ExponentialFamily
 using Distributions
 using Random
 using StableRNGs
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+using ForwardDiff
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "Multinomial" begin
     @testset "probvec" begin
@@ -90,6 +91,28 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test pdf(η1, [1, 2, 2]) == pdf(d1, [1, 2, 2])
         @test pdf(η2, [1, 2, 2]) == pdf(d2, [1, 2, 2])
+    end
+
+    @testset "fisher information" begin
+        function transformation(η)
+            expη = exp.(η)
+            expη / sum(expη)
+        end
+
+        rng = StableRNG(42)
+        for n in 2:5
+            p = rand(rng, Dirichlet(ones(n)))
+            dist = Multinomial(n, p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Multinomial, η, n))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+
+            J = ForwardDiff.jacobian(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+        end
     end
 end
 end
