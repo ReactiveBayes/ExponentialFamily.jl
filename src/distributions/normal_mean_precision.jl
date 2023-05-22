@@ -56,5 +56,5 @@ end
 
 function fisherinformation(dist::NormalMeanPrecision)
     _, w = params(dist)
-    return [1/w 0; 0 1/(2*w^4)]
+    return [w 0; 0 1/(2*w^2)]
 end
