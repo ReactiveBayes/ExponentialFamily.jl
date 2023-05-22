@@ -1,7 +1,7 @@
 export Multinomial
 
 import Distributions: Multinomial, probs
-import StableRNGs: StableRNG 
+import StableRNGs: StableRNG
 
 vague(::Type{<:Multinomial}, n::Int, dims::Int) = Multinomial(n, ones(dims) ./ dims)
 
@@ -73,7 +73,7 @@ end
 
 function computeLogpartition(K, n)
     d = Multinomial(n, ones(K) ./ K)
-    samples = unique(rand(StableRNG(1),d, 4000), dims = 2)
+    samples = unique(rand(StableRNG(1), d, 4000), dims = 2)
     samples = [samples[:, i] for i in 1:size(samples, 2)]
     return let samples = samples
         (η) -> begin
