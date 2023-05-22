@@ -45,3 +45,17 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = 1.0
+function fisherinformation(ef::KnownExponentialFamilyDistribution)
+    η = getnaturalparameters(ef)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+
+    return [trigamma(η1) -inv(η2); -inv(η2) (η1+1)/(η2^2)]
+end
+
+function fisherinformation(dist::Erlang)
+    k = shape(dist)
+    λ = rate(dist)
+
+    return [trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
+end
