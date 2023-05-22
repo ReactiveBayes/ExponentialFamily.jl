@@ -313,7 +313,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, η))
                 autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
                 @test fisherinformation(ef) ≈ autograd_inforamation_matrix([η1, η2])
-            end 
+            end
         end
     end
 
