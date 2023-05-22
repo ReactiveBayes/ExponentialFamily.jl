@@ -45,8 +45,16 @@ end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
     η = first(getnaturalparameters(exponentialfamily))
-
     return (η > -1 / 2)
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) = exp(-x / 2)
+
+function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
+    η = first(getnaturalparameters(exponentialfamily))
+    return trigamma(η + 1)
+end
+
+function fisherinformation(dist::Chisq)
+    return trigamma(dof(dist) / 2) / 4
+end

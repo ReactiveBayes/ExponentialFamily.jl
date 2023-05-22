@@ -87,8 +87,10 @@ function check_valid_conditioner(::Type{<:NegativeBinomial}, conditioner)
     isinteger(conditioner) && conditioner > zero(conditioner)
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
-    Base.isgreater(first(getnaturalparameters(exponentialfamily)), 0)
+function isproper(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial})
+    η = first(getnaturalparameters(exponentialfamily))
+    return η ≤ 0
+end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
     -getconditioner(exponentialfamily) * log(one(Float64) - exp(first(getnaturalparameters(exponentialfamily))))
@@ -100,4 +102,15 @@ function basemeasure(d::NegativeBinomial, x)
     @assert typeof(x) <: Integer "x must be integer"
     r, _ = params(d)
     return binomial(Int(x + r - 1), x)
+end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{NegativeBinomial})
+    r = getconditioner(ef)
+    η = first(getnaturalparameters(ef))
+    return r * exp(η) / (one(Float64) - exp(η))^2
+end
+
+function fisherinformation(dist::NegativeBinomial)
+    r, p = params(dist)
+    r / (p^2 * (one(p) - p))
 end

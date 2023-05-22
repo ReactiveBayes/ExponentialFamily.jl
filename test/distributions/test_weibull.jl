@@ -6,10 +6,13 @@ using Distributions
 using Random
 using HCubature
 using SpecialFunctions
+using Zygote
+using StableRNGs
 
 import ExponentialFamily: KnownExponentialFamilyDistribution, ExponentialFamilyDistribution, getnaturalparameters,
-    getsufficientstatistics, getlogpartition, getbasemeasure
+    getsufficientstatistics, getlogpartition, getbasemeasure, fisherinformation
 import ExponentialFamily: basemeasure, isproper
+import StatsFuns: xlogy
 
 @testset "Weibull" begin
 
@@ -73,6 +76,34 @@ import ExponentialFamily: basemeasure, isproper
             ef_improper = KnownExponentialFamilyDistribution(Weibull, [-η], k)
             @test isproper(ef_proper) == true
             @test isproper(ef_improper) == false
+        end
+    end
+
+    @testset "fisher information" begin
+        function lpdf(d::Weibull, x::Real)
+            α, θ = params(d)
+            z = abs(x) / θ
+            log(α / θ) + xlogy(α - 1, z) - z^α
+        end
+
+        rng = StableRNG(42)
+        n_samples = 100000
+
+        for (λ, k) in Iterators.product(1:5, 1:5)
+            dist = Weibull(λ, k)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = first(getnaturalparameters(ef))
+
+            samples = rand(rng, Weibull(λ, k), n_samples)
+            totalHessian = zeros(typeof(λ), 2, 2)
+            for sample in samples
+                totalHessian -= Zygote.hessian((x) -> lpdf(Weibull(x[1], x[2]), sample), [λ, k])
+            end
+            @test fisherinformation(dist) ≈ totalHessian / n_samples rtol = 0.05
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Weibull, η, k))
+            autograd_information = (η) -> Zygote.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
         end
     end
 end

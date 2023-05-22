@@ -4,8 +4,11 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using ForwardDiff
+using StableRNGs
 
-import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily:
+    mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "Exponential" begin
 
@@ -84,6 +87,26 @@ import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnatu
               KnownExponentialFamilyDistribution(Exponential, [-1e-12])
         @test basemeasure(Exponential(5), rand()) == 1.0
     end
-end
 
+    @testset "fisher information" begin
+        rng = StableRNG(42)
+        n_samples = 10000
+        for θ in 1:20
+            dist = Exponential(θ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            samples = rand(rng, Exponential(θ), n_samples)
+            totalHessian = zeros(typeof(θ), 1, 1)
+            for sample in samples
+                totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Exponential(params[1]), sample), [θ])
+            end
+            @test fisherinformation(dist) ≈ first(totalHessian) / n_samples atol = 0.1
+
+            f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(Exponential, η))
+            autograd_inforamation = (η) -> ForwardDiff.hessian(f_logpartion, η)
+            @test fisherinformation(ef) ≈ first(autograd_inforamation(η))
+        end
+    end
+end
 end

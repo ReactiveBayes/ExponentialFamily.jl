@@ -2,7 +2,7 @@ export Weibull
 
 import Distributions: Weibull, params
 using DomainSets
-using SpecialFunctions: loggamma
+using SpecialFunctions: digamma
 using HCubature
 
 prod_closed_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
@@ -82,4 +82,22 @@ end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
     return -log(-first(getnaturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
+end
+
+fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) =
+    inv(first(getnaturalparameters(exponentialfamily))^2)
+
+function fisherinformation(dist::Weibull)
+    α = shape(dist)
+    θ = scale(dist)
+
+    # see (Fisher Information and the Combination of RGB Channels, Reiner Lenz & Vasileios Zografos, 2013)
+
+    γ = -digamma(1) # Euler-Mascheroni constant (see https://en.wikipedia.org/wiki/Euler%E2%80%93Mascheroni_constant)
+    a11 = (1 - 2γ + γ^2 + π^2 / 6) / (α^2)
+    a12 = (γ - 1) / θ
+    a21 = a12
+    a22 = α^2 / (θ^2)
+
+    return [a11 a12; a21 a22]
 end

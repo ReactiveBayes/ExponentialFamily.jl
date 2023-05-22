@@ -4,10 +4,14 @@ using Test
 using ExponentialFamily
 using Random
 using Distributions
+using ForwardDiff
+using StableRNGs
+using ForwardDiff
 
 import SpecialFunctions: logfactorial, loggamma
 import ExponentialFamily:
-    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution
+    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution,
+    fisherinformation
 
 @testset "Chisq" begin
     @testset "naturalparameters" begin
@@ -28,6 +32,27 @@ import ExponentialFamily:
         end
 
         @test basemeasure(Chisq(5), 3) == exp(-3 / 2)
+    end
+
+    @testset "fisherinformation KnownExponentialFamilyDistribution{Chisq}" begin
+        f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
+        autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+        for i in 3:10
+            @test fisherinformation(KnownExponentialFamilyDistribution(Chisq, [i])) ≈
+                  autograd_inforamation_matrix([i])[1, 1]
+        end
+    end
+
+    @testset "fisherinformation (Chisq)" begin
+        rng = StableRNG(42)
+        n_samples = 1000
+        for ν in 1:10
+            samples = rand(rng, Chisq(ν), n_samples)
+            hessian_at_sample = (sample) -> ForwardDiff.hessian((params) -> logpdf(Chisq(params[1]), sample), [ν])
+            expected_hessian = -mean(hessian_at_sample, samples)
+            chisq_fisher = fisherinformation(Chisq(ν))
+            @test fisherinformation(Chisq(ν)) ≈ expected_hessian[1, 1] atol = 0.01
+        end
     end
 
     @testset "prod" begin

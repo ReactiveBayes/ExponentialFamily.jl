@@ -69,3 +69,17 @@ basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}, x) 
 function basemeasure(d::Binomial, x)
     binomial(d.n, x)
 end
+
+function fisherinformation(dist::Binomial)
+    n,p = params(dist)
+    return n/(p*(1-p))
+end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial}) 
+    η = first(getnaturalparameters(ef))
+    eη = exp(η)
+    aux = eη/(1+eη)
+    n = getconditioner(ef)
+
+    return n*aux*(1-aux)
+end
