@@ -1,5 +1,5 @@
 export Laplace
-import Distributions: Laplace, params
+import Distributions: Laplace, params, logpdf
 using DomainSets
 
 vague(::Type{<:Laplace}) = Laplace(0.0, huge)
@@ -64,8 +64,19 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
     first(getnaturalparameters(exponentialfamily)) < 0
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
-    log(-2 * first(getnaturalparameters(exponentialfamily)))
+    log(-2 / first(getnaturalparameters(exponentialfamily)))
 basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}, x) =
     1.0
 
 basemeasure(d::Laplace, x) = 1.0
+function Distributions.logpdf(d::Laplace, x::Real)
+    return -(abs(x - d.μ) / d.θ + log(2scale(d)))
+end
+fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / first(getnaturalparameters(ef))^2
+
+function fisherinformation(dist::Laplace)
+    # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
+    # Expectation of sign function will be zero and expectation of square of sign will be 1. 
+    b = scale(dist)
+    return [1/b^2 0; 0 1/b^2]
+end

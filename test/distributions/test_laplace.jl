@@ -4,10 +4,13 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-using DomainSets
+using StableRNGs
+using Zygote
+using ForwardDiff
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
-    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, getconditioner
+    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, getconditioner, fisherinformation,
+    logpdf
 
 @testset "Laplace" begin
     @testset "vague" begin
@@ -65,7 +68,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
 
         @testset "logpartition" begin
             @test logpartition(KnownExponentialFamilyDistribution(Laplace, [-1.0], 1.0)) ≈ log(2)
-            @test logpartition(KnownExponentialFamilyDistribution(Laplace, [-2.0], 1.0)) ≈ log(4)
+            @test logpartition(KnownExponentialFamilyDistribution(Laplace, [-2.0], 1.0)) ≈ log(1)
         end
 
         @testset "logpdf" begin
@@ -87,6 +90,19 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
         @testset "basemeasure" begin
             for (i) in (1:10)
                 @test basemeasure(KnownExponentialFamilyDistribution(Laplace, [-i], 1.0), i^2) == 1.0
+            end
+        end
+        @testset "fisher information" begin
+            rng = StableRNG(42)
+            n_samples = 1000
+            for λ in 1:10, u in 1.0:0.5:5.0
+                dist = Laplace(u, λ)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                η = getnaturalparameters(ef)
+
+                f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Laplace, η, getconditioner(ef)))
+                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+                @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
             end
         end
     end
