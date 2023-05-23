@@ -137,6 +137,13 @@ Arguments
 •  start (optional): An integer argument used to set the starting index of ηvec.
 """
 function reconstructargument!(η, ηef, ηvec; start = 1)
+    # Check if η and ηef have compatible dimensions
+    @assert length(η) == length(ηef) "η and ηef must have the same length"
+
+    # Check if η and ηvec have compatible dimensions
+    expected_size = sum([length(elem) for elem in ηef])
+    @assert length(ηvec) == expected_size "Expected size of ηef $(expected_size), but the ηvec has length $(length(ηvec))"
+
     @inbounds for i in eachindex(η)
         stop = start + length(ηef[i]) - 1
         ind = start:stop
