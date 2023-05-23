@@ -28,3 +28,13 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometri
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x) = 1.0
+
+function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Geometric})
+    η = first(getnaturalparameters(exponentialfamily))
+    exp(η) / (one(Float64) - exp(η))^2
+end
+
+function fisherinformation(dist::Geometric)
+    p = succprob(dist)
+    one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2
+end

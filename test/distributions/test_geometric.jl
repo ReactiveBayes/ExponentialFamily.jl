@@ -4,7 +4,9 @@ using Test
 using Random
 using Distributions
 using ExponentialFamily
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+using StableRNGs
+using ForwardDiff
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "Geometric" begin
     @testset "vague" begin
@@ -56,6 +58,25 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test isproper(KnownExponentialFamilyDistribution(Geometric, [log(0.6)])) == true
         @test isproper(KnownExponentialFamilyDistribution(Geometric, [1.3])) == false
+    end
+
+    @testset "fisher information" begin
+        rng = StableRNG(42)
+        n_samples = 10000
+
+        transformation(η) = one(Float64) - exp(η[1])
+        for p in 0.1:0.05:0.9
+            dist = Geometric(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Geometric, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information(η)[1] atol = 1e-8
+
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+        end
     end
 end
 end
