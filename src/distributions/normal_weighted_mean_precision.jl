@@ -32,6 +32,7 @@ Distributions.std(dist::NormalWeightedMeanPrecision)     = sqrt(var(dist))
 Distributions.cov(dist::NormalWeightedMeanPrecision)     = var(dist)
 Distributions.invcov(dist::NormalWeightedMeanPrecision)  = dist.w
 Distributions.entropy(dist::NormalWeightedMeanPrecision) = (1 + log2π - log(precision(dist))) / 2
+Distributions.params(dist::NormalWeightedMeanPrecision)  = (weightedmean(dist), precision(dist))
 
 Distributions.pdf(dist::NormalWeightedMeanPrecision, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) * precision(dist) / 2)) * sqrt(precision(dist))
 Distributions.logpdf(dist::NormalWeightedMeanPrecision, x::Real) = -(log2π - log(precision(dist)) + abs2(x - mean(dist)) * precision(dist)) / 2
@@ -58,4 +59,12 @@ function Base.prod(::ClosedProd, left::NormalWeightedMeanPrecision, right::Norma
     xi = weightedmean(left) + weightedmean(right)
     w  = precision(left) + precision(right)
     return NormalWeightedMeanPrecision(xi, w)
+end
+
+function fisherinformation(dist::NormalWeightedMeanPrecision)
+    xi, w = params(dist)
+    return [
+        1/w -xi/(w^2)
+        -xi/(w^2) (xi^2+0.5*w)/w^3
+    ]
 end
