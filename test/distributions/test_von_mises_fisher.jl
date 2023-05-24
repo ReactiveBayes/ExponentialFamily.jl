@@ -4,9 +4,12 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
+using ForwardDiff
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure
-import SpecialFunctions: besselj
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure, fisherinformation, norm
+import SpecialFunctions: besseli
+import StatsFuns: softmax
 @testset "VonMisesFisher" begin
 
     # VonMisesFisher comes from Distributions.jl and most of the things should be covered there
@@ -48,9 +51,9 @@ import SpecialFunctions: besselj
 
         @testset "logpartition" begin
             @test logpartition(KnownExponentialFamilyDistribution(VonMisesFisher, 2 * [sin(15), cos(15)])) ≈
-                  log(besselj(0, 2.0))
+                  log(besseli(0, 2.0))
             @test logpartition(KnownExponentialFamilyDistribution(VonMisesFisher, 6 * [sin(25), cos(25)])) ≈
-                  log(besselj(0, 6.0))
+                  log(besseli(0, 6.0))
         end
 
         @testset "logpdf" begin
@@ -79,6 +82,28 @@ import SpecialFunctions: besselj
             for (i, j) in (1:10, 1:10)
                 @test basemeasure(KnownExponentialFamilyDistribution(VonMisesFisher, [i, j]), rand(2)) == 1 / 2pi
                 @test basemeasure(VonMisesFisher([sin(i), cos(i)],), rand(2)) == 1 / 2pi
+            end
+        end
+
+        @testset "fisher information" begin
+            function transformation(params)
+                κ = sqrt(params' * params)
+                μ = params / κ
+                return [μ; κ]
+            end
+
+            for l in 2:10, κ in 1.0:0.4:5.0
+                μ = rand(l)
+                μ = μ / norm(μ)
+                dist = VonMisesFisher(μ, κ)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                η = getnaturalparameters(ef)
+
+                f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(VonMisesFisher, η))
+                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+                @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+                J = ForwardDiff.jacobian(transformation, η)
+                @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
             end
         end
     end
