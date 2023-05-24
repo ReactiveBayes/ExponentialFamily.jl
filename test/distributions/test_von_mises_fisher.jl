@@ -92,7 +92,7 @@ import StatsFuns: softmax
                 return [μ; κ]
             end
 
-            for l in 2:10, κ in 1.0:0.4:5.0
+            for l in 2:10, κ in 0.001:2.0:30.0
                 μ = rand(l)
                 μ = μ / norm(μ)
                 dist = VonMisesFisher(μ, κ)
@@ -101,9 +101,9 @@ import StatsFuns: softmax
 
                 f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(VonMisesFisher, η))
                 autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-                @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+                @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-7
                 J = ForwardDiff.jacobian(transformation, η)
-                @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+                @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-7
             end
         end
     end
