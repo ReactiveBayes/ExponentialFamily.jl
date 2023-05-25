@@ -1,5 +1,5 @@
 using Distributions, LinearAlgebra
-\
+
 """
     ExponentialFamilyDistribution{T, H, S, P, Z, A}
 
@@ -119,3 +119,40 @@ function sufficientstatistics end
 Fisher information
 """
 function fisherinformation end
+
+"""
+Reconstructs an AbstractArray from a flattened Vector of values ηvec so that its shape matches that of the AbstractArray η.
+
+If a unique element of η corresponds to a scalar value, the scalar is assigned directly to the corresponding index of η. If the unique element of η is a
+non-scalar value, the function reshapes the appropriate slice of ηvec to match the shape of that element and assigns it to the corresponding indices of η.
+
+Use the optional start argument to specify the beginning index when flattening η.
+
+This function is useful for converting vectorized parameters into an appropriate size of natural parameters for a particular distribution.
+
+Arguments
+===========
+•  η: Mutable AbstractArray to store the reconstructed values. The size and shape of η should match the desired size and shape of the reconstructed AbstractArray.
+•  ηvec: A Vector containing the flattened values of the target AbstractArray.
+•  start (optional): An integer argument used to set the starting index of ηvec.
+"""
+function reconstructargument!(η, ηef, ηvec; start = 1)
+    # Check if η and ηef have compatible dimensions
+    @assert length(η) == length(ηef) "η and ηef must have the same length"
+
+    # Check if η and ηvec have compatible dimensions
+    expected_size = sum([length(elem) for elem in ηef])
+    @assert length(ηvec) == expected_size "Expected size of ηef $(expected_size), but the ηvec has length $(length(ηvec))"
+
+    @inbounds for i in eachindex(η)
+        stop = start + length(ηef[i]) - 1
+        ind = start:stop
+        if length(ηef[i]) == 1
+            η[i] = first(ηvec[ind])
+        else
+            @views η[i] = reshape(ηvec[ind], size(ηef[i]))
+        end
+        start = stop + 1
+    end
+    return η
+end
