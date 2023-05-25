@@ -142,3 +142,20 @@ function Random.rand!(rng::AbstractRNG, dist::ContinuousBernoulli, container::Ab
     end
     return container
 end
+
+fisherinformation(ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = fisherinformation(isvague(ef), ef)
+fisherinformation(::VagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = 0.0
+function fisherinformation(::NonVagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli})
+    η = first(getnaturalparameters(ef))
+    return inv(η^2) - exp(η) / (exp(η) - 1)^2
+end
+
+fisherinformation(dist::ContinuousBernoulli) = fisherinformation(isvague(dist), dist)
+fisherinformation(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 0.0
+function fisherinformation(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
+    λ = succprob(dist)
+    m = mean(dist)
+    tmp1 = (2 - 4λ) * atanh(1 - 2λ) - 1
+    tmp2 = 4 * (λ - 1)^2 * λ^2 * (atanh(1 - 2λ)^2)
+    return m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2
+end

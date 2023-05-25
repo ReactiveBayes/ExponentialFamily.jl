@@ -5,8 +5,10 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
+using ForwardDiff
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
+    fisherinformation
 
 @testset "ContinuousBernoulli" begin
     @testset "vague" begin
@@ -70,6 +72,24 @@ import ExponentialFamily:
                 var(dist),
                 atol = 1e-1
             )
+        end
+    end
+
+    @testset "fisher information" begin
+        function transformation(params)
+            return logistic(params[1])
+        end
+
+        for κ in 0.0001:0.01:0.9
+            dist = ContinuousBernoulli(κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-9
+            J = first(ForwardDiff.gradient(transformation, η))
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
         end
     end
 end
