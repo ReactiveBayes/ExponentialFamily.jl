@@ -162,7 +162,7 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::WishartM
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Wishart)
-    dof = dist.ν
+    dof = dist.df
     invscale = cholinv(dist.S)
     p = first(size(invscale))
     return KnownExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
@@ -198,3 +198,20 @@ function isproper(params::KnownExponentialFamilyDistribution{<:WishartMessage})
 end
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
+
+mvtrigamma(p, x) = sum(trigamma(x + (1-i)/2) for i in 1:p)
+
+function fisherinformation(dist::Wishart)
+    df, S = dist.df, dist.S
+    p = first(size(S))
+    G = kron(inv(S), inv(S))
+    return [mvtrigamma(p, df/2)/4 vec(inv(S)/2)'; vec(inv(S)/2) 2df*G]
+end
+
+function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartMessage})
+    η = getnaturalparameters(params)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    p = first(size(η2))
+    return [mvtrigamma(p, (η1 + (p+1)/2)) -vec(inv(η2))'; -vec(inv(η2)) (η1 + (p + 1) / 2)*kron(inv(η2), inv(η2))]
+end
