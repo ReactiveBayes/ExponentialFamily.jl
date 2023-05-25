@@ -6,8 +6,10 @@ using Distributions
 using Random
 using LinearAlgebra
 using StableRNGs
+using ForwardDiff
 
-import ExponentialFamily: WishartMessage, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: WishartMessage, KnownExponentialFamilyDistribution, reconstructargument!,
+    getnaturalparameters, basemeasure, fisherinformation
 import StatsFuns: logmvgamma
 
 @testset "Wishart" begin
@@ -145,6 +147,37 @@ import StatsFuns: logmvgamma
                     WishartMessage,
                     [3.0, [-2i 0.0; 0.0 -2i]] + [3.0, [-i 0.0; 0.0 -i]]
                 )
+            end
+        end
+
+        @testset "fisher information" begin
+            function vlogpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+                ηef = getnaturalparameters(ef)
+                reconstructargument!(ηef, ηef, ηvec)
+                return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+            end
+
+            function transformation(params)
+                η1, η2 = params[1], params[2:end]
+                p = Int64(sqrt(length(η2)))
+                η2 = reshape(η2, (p, p))
+                return [2 * η1 + p + 1; vec(0.5cholinv(-η2))]
+            end
+
+            rng = StableRNG(42)
+
+            for df in 3:10
+                L = randn(rng, df - 1, df - 1)
+                S = L * L'
+                dist = Wishart(df, S)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                fisher_infromation = fisherinformation(ef)
+                η = getnaturalparameters(ef)
+                η_vec = vcat(η[1], vec(η[2]))
+                autograd_information = ForwardDiff.hessian(x -> vlogpartition(ef, x), η_vec)
+                fisher_infromation .- autograd_information
+                J = ForwardDiff.jacobian(transformation, η_vec)
+                J' * fisherinformation(dist) * J .- fisher_infromation
             end
         end
     end
