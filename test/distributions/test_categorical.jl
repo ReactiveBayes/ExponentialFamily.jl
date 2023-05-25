@@ -3,8 +3,10 @@ module CategoricalTest
 using Test
 using ExponentialFamily
 using Distributions
+using StableRNGs
 using Random
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+using ForwardDiff
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "Categorical" begin
 
@@ -58,6 +60,28 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
               Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
         @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ==
               Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
+    end
+
+    @testset "fisher information" begin
+        function transformation(η)
+            expη = exp.(η)
+            expη / sum(expη)
+        end
+
+        rng = StableRNG(42)
+        for n in 2:5
+            p = rand(rng, Dirichlet(ones(n)))
+            dist = Categorical(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Categorical, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-10
+
+            J = ForwardDiff.jacobian(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-10
+        end
     end
 end
 
