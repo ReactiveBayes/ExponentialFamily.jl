@@ -110,7 +110,6 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             J = first(ForwardDiff.gradient(transformation, η))
             @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
         end
