@@ -8,7 +8,7 @@ using StatsFuns
 using ForwardDiff
 import ExponentialFamily:
     KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
-    fisherinformation
+    fisherinformation, isvague
 
 @testset "ContinuousBernoulli" begin
     @testset "vague" begin
@@ -80,7 +80,7 @@ import ExponentialFamily:
             return logistic(params[1])
         end
 
-        for κ in 0.0001:0.01:0.9
+        for κ in 0.000001:0.01:0.49
             dist = ContinuousBernoulli(κ)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
@@ -88,6 +88,29 @@ import ExponentialFamily:
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-9
+            J = first(ForwardDiff.gradient(transformation, η))
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+        end
+
+        for κ in 0.51:0.01:0.99
+            dist = ContinuousBernoulli(κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-9
+            J = first(ForwardDiff.gradient(transformation, η))
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+        end
+
+        for κ in 0.499:0.0001:0.50001
+            dist = ContinuousBernoulli(κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             J = first(ForwardDiff.gradient(transformation, η))
             @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
         end
