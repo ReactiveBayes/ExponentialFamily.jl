@@ -7,41 +7,41 @@ import StatsFuns: logπ, logmvgamma
 import SpecialFunctions: digamma, loggamma
 
 """
-    InverseWishartMessage
+    InverseWishartImproper
 
 Same as `InverseWishart` from `Distributions.jl`, but does not check input arguments and allows creating improper `InverseWishart` message.
-For model creation use `InverseWishart` from `Distributions.jl`. Regular user should never interact with `InverseWishartMessage`.
+For model creation use `InverseWishart` from `Distributions.jl`. Regular user should never interact with `InverseWishartImproper`.
 """
-struct InverseWishartMessage{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+struct InverseWishartImproper{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν::T
     S::A
 end
 
-function InverseWishartMessage(ν::Real, S::AbstractMatrix{<:Real})
+function InverseWishartImproper(ν::Real, S::AbstractMatrix{<:Real})
     T = promote_type(typeof(ν), eltype(S))
-    return InverseWishartMessage(convert(T, ν), convert(AbstractArray{T}, S))
+    return InverseWishartImproper(convert(T, ν), convert(AbstractArray{T}, S))
 end
 
-InverseWishartMessage(ν::Integer, S::AbstractMatrix{Real}) = InverseWishartMessage(float(ν), S)
+InverseWishartImproper(ν::Integer, S::AbstractMatrix{Real}) = InverseWishartImproper(float(ν), S)
 
-Distributions.params(dist::InverseWishartMessage) = (dist.ν, dist.S)
-Distributions.mean(dist::InverseWishartMessage)   = mean(convert(InverseWishart, dist))
-Distributions.var(dist::InverseWishartMessage)    = var(convert(InverseWishart, dist))
-Distributions.cov(dist::InverseWishartMessage)    = cov(convert(InverseWishart, dist))
-Distributions.mode(dist::InverseWishartMessage)   = mode(convert(InverseWishart, dist))
+Distributions.params(dist::InverseWishartImproper) = (dist.ν, dist.S)
+Distributions.mean(dist::InverseWishartImproper)   = mean(convert(InverseWishart, dist))
+Distributions.var(dist::InverseWishartImproper)    = var(convert(InverseWishart, dist))
+Distributions.cov(dist::InverseWishartImproper)    = cov(convert(InverseWishart, dist))
+Distributions.mode(dist::InverseWishartImproper)   = mode(convert(InverseWishart, dist))
 
-mean_cov(dist::InverseWishartMessage) = mean_cov(convert(InverseWishart, dist))
+mean_cov(dist::InverseWishartImproper) = mean_cov(convert(InverseWishart, dist))
 
-Base.size(dist::InverseWishartMessage)           = size(dist.S)
-Base.size(dist::InverseWishartMessage, dim::Int) = size(dist.S, dim)
+Base.size(dist::InverseWishartImproper)           = size(dist.S)
+Base.size(dist::InverseWishartImproper, dim::Int) = size(dist.S, dim)
 
-const InverseWishartDistributionsFamily{T} = Union{InverseWishart{T}, InverseWishartMessage{T}}
+const InverseWishartDistributionsFamily{T} = Union{InverseWishart{T}, InverseWishartImproper{T}}
 
-to_marginal(dist::InverseWishartMessage) = convert(InverseWishart, dist)
+to_marginal(dist::InverseWishartImproper) = convert(InverseWishart, dist)
 
-function Base.convert(::Type{InverseWishartMessage{T}}, distribution::InverseWishartMessage) where {T}
+function Base.convert(::Type{InverseWishartImproper{T}}, distribution::InverseWishartImproper) where {T}
     (ν, S) = params(distribution)
-    return InverseWishartMessage(convert(T, ν), convert(AbstractMatrix{T}, S))
+    return InverseWishartImproper(convert(T, ν), convert(AbstractMatrix{T}, S))
 end
 
 # from "Parametric Bayesian Estimation of Differential Entropy and Relative Entropy" Gupta et al.
@@ -68,12 +68,12 @@ function Distributions.mean(::typeof(cholinv), dist::InverseWishartDistributions
     return mean(Wishart(ν, cholinv(S)))
 end
 
-function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartMessage{T}, n::Int) where {T}
+function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartImproper{T}, n::Int) where {T}
     container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
     return rand!(rng, sampleable, container)
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartMessage, x::AbstractVector{<:AbstractMatrix})
+function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartImproper, x::AbstractVector{<:AbstractMatrix})
     # This is an adapted version of sampling from Distributions.jl
     (df, S⁻¹) = Distributions.params(sampleable)
     S = cholinv(S⁻¹)
@@ -111,7 +111,7 @@ end
 
 function Distributions.pdf!(
     out::AbstractArray{<:Real},
-    distribution::InverseWishartMessage,
+    distribution::InverseWishartImproper,
     samples::AbstractArray{<:AbstractMatrix{<:Real}, O}
 ) where {O}
     @assert length(out) === length(samples) "Invalid dimensions in pdf!"
@@ -146,23 +146,23 @@ vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 
-function Base.convert(::Type{InverseWishart}, dist::InverseWishartMessage)
+function Base.convert(::Type{InverseWishart}, dist::InverseWishartImproper)
     (ν, S) = params(dist)
     return InverseWishart(ν, Matrix(Hermitian(S)))
 end
 
-Base.convert(::Type{InverseWishartMessage}, dist::InverseWishart) = InverseWishartMessage(params(dist)...)
+Base.convert(::Type{InverseWishartImproper}, dist::InverseWishart) = InverseWishartImproper(params(dist)...)
 
 function logpdf_sample_optimized(dist::InverseWishart)
-    optimized_dist = convert(InverseWishartMessage, dist)
+    optimized_dist = convert(InverseWishartImproper, dist)
     return (optimized_dist, optimized_dist)
 end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
-# We want to compute `prod` only for `InverseWishartMessage` messages as they are significantly faster in creation
-prod_closed_rule(::Type{<:InverseWishartMessage}, ::Type{<:InverseWishartMessage}) = ClosedProd()
+# We want to compute `prod` only for `InverseWishartImproper` messages as they are significantly faster in creation
+prod_closed_rule(::Type{<:InverseWishartImproper}, ::Type{<:InverseWishartImproper}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::InverseWishartMessage, right::InverseWishartMessage)
+function Base.prod(::ClosedProd, left::InverseWishartImproper, right::InverseWishartImproper)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two InverseWishart distributions of different sizes"
 
     d = size(left, 1)
@@ -174,19 +174,19 @@ function Base.prod(::ClosedProd, left::InverseWishartMessage, right::InverseWish
 
     df = ldf + rdf + d + 1
 
-    return InverseWishartMessage(df, V)
+    return InverseWishartImproper(df, V)
 end
 
-check_valid_natural(::Type{<:Union{InverseWishartMessage, InverseWishart}}, params) = length(params) === 2
+check_valid_natural(::Type{<:Union{InverseWishartImproper, InverseWishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Union{InverseWishartMessage, InverseWishart})
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart})
     dof = dist.ν
     scale = dist.S
     p = first(size(scale))
-    return KnownExponentialFamilyDistribution(InverseWishartMessage, [-(dof + p + 1) / 2, -scale / 2])
+    return KnownExponentialFamilyDistribution(InverseWishartImproper, [-(dof + p + 1) / 2, -scale / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:InverseWishartMessage})
+function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -194,7 +194,7 @@ function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistri
     return InverseWishart(-(2 * η1 + p + 1), -2η2)
 end
 
-function logpartition(params::KnownExponentialFamilyDistribution{<:InverseWishartMessage})
+function logpartition(params::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -204,7 +204,7 @@ function logpartition(params::KnownExponentialFamilyDistribution{<:InverseWishar
     return term1 + term2
 end
 
-function isproper(params::KnownExponentialFamilyDistribution{<:InverseWishartMessage})
+function isproper(params::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -213,8 +213,8 @@ end
 
 basemeasure(
     ::Union{
-        <:KnownExponentialFamilyDistribution{<:InverseWishartMessage},
-        <:Union{InverseWishartMessage, InverseWishart}
+        <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
+        <:Union{InverseWishartImproper, InverseWishart}
     },
     x
 ) = 1.0

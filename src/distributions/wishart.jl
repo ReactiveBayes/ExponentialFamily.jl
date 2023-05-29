@@ -6,48 +6,48 @@ import LinearAlgebra
 import SpecialFunctions: digamma
 
 """
-    WishartMessage
+    WishartImproper
 
 Same as `Wishart` from `Distributions.jl`, but does not check input arguments and allows creating improper `Wishart` message.
-For model creation use `Wishart` from `Distributions.jl`. Regular user should never interact with `WishartMessage`.
+For model creation use `Wishart` from `Distributions.jl`. Regular user should never interact with `WishartImproper`.
 
-Note that internally `WishartMessage` stores (and creates with) inverse of its-scale matrix, but (for backward compatibility) `params()` function returns the scale matrix itself. 
+Note that internally `WishartImproper` stores (and creates with) inverse of its-scale matrix, but (for backward compatibility) `params()` function returns the scale matrix itself. 
 This is done for better stability in the message passing update rules for `ReactiveMP.jl`.
 """
-struct WishartMessage{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+struct WishartImproper{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν    :: T
     invS :: A
 end
 
-function WishartMessage(ν::Real, invS::AbstractMatrix{<:Real})
+function WishartImproper(ν::Real, invS::AbstractMatrix{<:Real})
     T = promote_type(typeof(ν), eltype(invS))
-    return WishartMessage(convert(T, ν), convert(AbstractArray{T}, invS))
+    return WishartImproper(convert(T, ν), convert(AbstractArray{T}, invS))
 end
 
-WishartMessage(ν::Integer, invS::AbstractMatrix{Real}) = WishartMessage(float(ν), invS)
+WishartImproper(ν::Integer, invS::AbstractMatrix{Real}) = WishartImproper(float(ν), invS)
 
-Distributions.params(dist::WishartMessage)  = (dist.ν, cholinv(dist.invS))
-Distributions.mean(dist::WishartMessage)    = mean(convert(Wishart, dist))
-Distributions.var(dist::WishartMessage)     = var(convert(Wishart, dist))
-Distributions.cov(dist::WishartMessage)     = cov(convert(Wishart, dist))
-Distributions.mode(dist::WishartMessage)    = mode(convert(Wishart, dist))
-Distributions.entropy(dist::WishartMessage) = entropy(convert(Wishart, dist))
+Distributions.params(dist::WishartImproper)  = (dist.ν, cholinv(dist.invS))
+Distributions.mean(dist::WishartImproper)    = mean(convert(Wishart, dist))
+Distributions.var(dist::WishartImproper)     = var(convert(Wishart, dist))
+Distributions.cov(dist::WishartImproper)     = cov(convert(Wishart, dist))
+Distributions.mode(dist::WishartImproper)    = mode(convert(Wishart, dist))
+Distributions.entropy(dist::WishartImproper) = entropy(convert(Wishart, dist))
 
-mean_cov(dist::WishartMessage) = mean_cov(convert(Wishart, dist))
+mean_cov(dist::WishartImproper) = mean_cov(convert(Wishart, dist))
 
-Base.size(dist::WishartMessage)           = size(dist.invS)
-Base.size(dist::WishartMessage, dim::Int) = size(dist.invS, dim)
+Base.size(dist::WishartImproper)           = size(dist.invS)
+Base.size(dist::WishartImproper, dim::Int) = size(dist.invS, dim)
 
-const WishartDistributionsFamily{T} = Union{Wishart{T}, WishartMessage{T}}
+const WishartDistributionsFamily{T} = Union{Wishart{T}, WishartImproper{T}}
 
-to_marginal(dist::WishartMessage) = convert(Wishart, dist)
+to_marginal(dist::WishartImproper) = convert(Wishart, dist)
 
-function Base.convert(::Type{WishartMessage{T}}, distribution::WishartMessage) where {T}
+function Base.convert(::Type{WishartImproper{T}}, distribution::WishartImproper) where {T}
     (ν, invS) = (distribution.ν, distribution.invS)
-    return WishartMessage(convert(T, ν), convert(AbstractMatrix{T}, invS))
+    return WishartImproper(convert(T, ν), convert(AbstractMatrix{T}, invS))
 end
 
-function Distributions.mean(::typeof(logdet), distribution::WishartMessage)
+function Distributions.mean(::typeof(logdet), distribution::WishartImproper)
     d       = size(distribution, 1)
     ν, invS = (distribution.ν, distribution.invS)
     T       = promote_type(typeof(ν), eltype(invS))
@@ -65,7 +65,7 @@ function Distributions.mean(::typeof(inv), distribution::WishartDistributionsFam
     return mean(cholinv, distribution)
 end
 
-function Distributions.mean(::typeof(cholinv), distribution::WishartMessage)
+function Distributions.mean(::typeof(cholinv), distribution::WishartImproper)
     ν, invS = (distribution.ν, distribution.invS)
     return mean(InverseWishart(ν, invS))
 end
@@ -79,22 +79,22 @@ vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* diageye(dims))
 
 Base.ndims(dist::Wishart) = size(dist, 1)
 
-function Base.convert(::Type{Wishart}, dist::WishartMessage)
+function Base.convert(::Type{Wishart}, dist::WishartImproper)
     (ν, S) = params(dist)
     return Wishart(ν, Matrix(Hermitian(S)))
 end
 
-function Base.convert(::Type{WishartMessage}, dist::Wishart)
+function Base.convert(::Type{WishartImproper}, dist::Wishart)
     (ν, S) = params(dist)
-    return WishartMessage(ν, cholinv(S))
+    return WishartImproper(ν, cholinv(S))
 end
 
-function Distributions.rand(rng::AbstractRNG, sampleable::WishartMessage{T}, n::Int) where {T}
+function Distributions.rand(rng::AbstractRNG, sampleable::WishartImproper{T}, n::Int) where {T}
     container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
     return rand!(rng, sampleable, container)
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::WishartMessage, x::AbstractVector{<:AbstractMatrix})
+function Distributions.rand!(rng::AbstractRNG, sampleable::WishartImproper, x::AbstractVector{<:AbstractMatrix})
     # This is an adapted version of sampling from Distributions.jl
     (df, S) = Distributions.params(sampleable)
     L = Distributions.PDMats.chol_lower(fastcholesky(S))
@@ -127,15 +127,15 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::WishartMessage, x::Ab
 end
 
 function logpdf_sample_optimized(dist::Wishart)
-    optimized_dist = convert(WishartMessage, dist)
+    optimized_dist = convert(WishartImproper, dist)
     return (optimized_dist, optimized_dist)
 end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
-# We want to compute `prod` only for `WishartMessage` messages as they are significantly faster in creation
-prod_closed_rule(::Type{<:WishartMessage}, ::Type{<:WishartMessage}) = ClosedProd()
+# We want to compute `prod` only for `WishartImproper` messages as they are significantly faster in creation
+prod_closed_rule(::Type{<:WishartImproper}, ::Type{<:WishartImproper}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::WishartMessage, right::WishartMessage)
+function Base.prod(::ClosedProd, left::WishartImproper, right::WishartImproper)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
 
     d = size(left, 1)
@@ -149,26 +149,26 @@ function Base.prod(::ClosedProd, left::WishartMessage, right::WishartMessage)
     invV = linvS + rinvS
     df   = ldf + rdf - d - 1
 
-    return WishartMessage(df, invV)
+    return WishartImproper(df, invV)
 end
 
-check_valid_natural(::Type{<:Union{WishartMessage, Wishart}}, params) = length(params) === 2
+check_valid_natural(::Type{<:Union{WishartImproper, Wishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::WishartMessage)
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::WishartImproper)
     dof = dist.ν
     invscale = dist.invS
     p = first(size(invscale))
-    return KnownExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
+    return KnownExponentialFamilyDistribution(WishartImproper, [(dof - p - 1) / 2, -invscale / 2])
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Wishart)
     dof = dist.df
     invscale = cholinv(dist.S)
     p = first(size(invscale))
-    return KnownExponentialFamilyDistribution(WishartMessage, [(dof - p - 1) / 2, -invscale / 2])
+    return KnownExponentialFamilyDistribution(WishartImproper, [(dof - p - 1) / 2, -invscale / 2])
 end
 
-function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:WishartMessage})
+function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:WishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -177,10 +177,10 @@ function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistri
     if isproper(params)
         return Wishart(2 * η1 + p + 1, 0.5cholinv(-η2))
     end
-    return WishartMessage(2 * η1 + p + 1, 0.5cholinv(-η2))
+    return WishartImproper(2 * η1 + p + 1, 0.5cholinv(-η2))
 end
 
-function logpartition(params::KnownExponentialFamilyDistribution{<:WishartMessage})
+function logpartition(params::KnownExponentialFamilyDistribution{<:WishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
@@ -190,14 +190,14 @@ function logpartition(params::KnownExponentialFamilyDistribution{<:WishartMessag
     return term1 + term2
 end
 
-function isproper(params::KnownExponentialFamilyDistribution{<:WishartMessage})
+function isproper(params::KnownExponentialFamilyDistribution{<:WishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
     isposdef(-η2) && (0 < η1)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartMessage}, <:Union{WishartMessage, Wishart}}, x) = 1.0
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartImproper}, <:Union{WishartImproper, Wishart}}, x) = 1.0
 
 mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
 
@@ -208,7 +208,7 @@ function fisherinformation(dist::Wishart)
     return [mvtrigamma(p, df / 2)/4 vec(inv(S) / 2)'; vec(inv(S) / 2) 2df*G]
 end
 
-function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartMessage})
+function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartImproper})
     η = getnaturalparameters(params)
     η1 = first(η)
     η2 = getindex(η, 2)
