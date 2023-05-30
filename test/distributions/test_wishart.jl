@@ -9,7 +9,7 @@ using StableRNGs
 using ForwardDiff
 
 import ExponentialFamily: WishartImproper, KnownExponentialFamilyDistribution, reconstructargument!,
-    getnaturalparameters, basemeasure, fisherinformation
+    getnaturalparameters, basemeasure, fisherinformation, DuplicationMatrix
 import StatsFuns: logmvgamma
 
 @testset "Wishart" begin
@@ -85,7 +85,10 @@ import StatsFuns: logmvgamma
             cholinv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
         )
         @test prod(ClosedProd(), WishartImproper(4, inv_v1), WishartImproper(4, inv_v3)) ≈
-              WishartImproper(5, cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725]))
+              WishartImproper(
+            5,
+            cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
+        )
         @test prod(ClosedProd(), WishartImproper(5, inv_v2), WishartImproper(4, inv_v3)) ≈
               WishartImproper(6, cholinv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
     end
@@ -151,9 +154,11 @@ import StatsFuns: logmvgamma
         end
 
         @testset "fisher information" begin
-            function vlogpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+            function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
                 ηef = getnaturalparameters(ef)
-                reconstructargument!(ηef, ηef, ηvec)
+                p = Int(size(ηef[2], 1))
+                ηvec_ = DuplicationMatrix(p) * ηvec[2:end]
+                reconstructargument!(ηef, ηef, [ηvec[1]; ηvec_])
                 return logpartition(KnownExponentialFamilyDistribution(T, ηef))
             end
 
