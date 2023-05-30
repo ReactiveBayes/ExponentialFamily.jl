@@ -9,8 +9,21 @@ using StableRNGs
 using ForwardDiff
 
 import ExponentialFamily: WishartImproper, KnownExponentialFamilyDistribution, reconstructargument!,
-    getnaturalparameters, basemeasure, fisherinformation, DuplicationMatrix
+    getnaturalparameters, basemeasure, fisherinformation, DuplicationMatrix, logpartition
 import StatsFuns: logmvgamma
+
+function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+    ηef = getnaturalparameters(ef)
+    reconstructargument!(ηef, ηef, ηvec)
+    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+end
+
+function transformation(params)
+    η1, η2 = params[1], params[2:end]
+    p = Int(sqrt(length(η2)))
+    η2 = reshape(η2, (p, p))
+    return [2 * η1 + p + 1; vec(0.5inv(-η2))]
+end
 
 @testset "Wishart" begin
 
@@ -154,35 +167,31 @@ import StatsFuns: logmvgamma
         end
 
         @testset "fisher information" begin
-            function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-                ηef = getnaturalparameters(ef)
-                p = Int(size(ηef[2], 1))
-                ηvec_ = DuplicationMatrix(p) * ηvec[2:end]
-                reconstructargument!(ηef, ηef, [ηvec[1]; ηvec_])
-                return logpartition(KnownExponentialFamilyDistribution(T, ηef))
-            end
-
-            function transformation(params)
-                η1, η2 = params[1], params[2:end]
-                p = Int64(sqrt(length(η2)))
-                η2 = reshape(η2, (p, p))
-                return [2 * η1 + p + 1; vec(0.5cholinv(-η2))]
-            end
-
             rng = StableRNG(42)
-
-            for df in 3:10
-                L = randn(rng, df - 1, df - 1)
-                S = L * L'
-                dist = Wishart(df, S)
+            for df in 2:20
+                L = randn(rng, df, df)
+                A = L * L' + 1e-8 * diageye(df)
+                dist = Wishart(df, A)
                 ef = convert(KnownExponentialFamilyDistribution, dist)
-                fisher_infromation = fisherinformation(ef)
                 η = getnaturalparameters(ef)
                 η_vec = vcat(η[1], vec(η[2]))
-                autograd_information = ForwardDiff.hessian(x -> vlogpartition(ef, x), η_vec)
-                fisher_infromation .- autograd_information
+                fef = fisherinformation(ef)
+                fdist = fisherinformation(dist)
+                ## We do not test the analytic solution agains autograd because autograd hessian return values that are permuted and
+                ## causes fisherinformation to be non-positive definite.
                 J = ForwardDiff.jacobian(transformation, η_vec)
-                J' * fisherinformation(dist) * J .- fisher_infromation
+                @test fef ≈ J' * fdist * J rtol = 1e-8
+
+                f_logpartition = (η_vec) -> logpartition(ef, η_vec)
+                autograd_information = (η_vec) -> ForwardDiff.hessian(f_logpartition, η_vec)
+                ag_fi = autograd_information(η_vec)
+
+                svdfisheref = svd(fef)
+                svdautograd = svd(ag_fi)
+                ## Julia returns very small complex values which causes problems. Therefore we take the real parts. 
+                eigenfisheref = real.(eigvals(fef))
+                @test all(x -> x > 0, eigenfisheref)
+                @test svdfisheref.S ≈ svdautograd.S
             end
         end
     end
