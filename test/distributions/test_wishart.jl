@@ -6,9 +6,24 @@ using Distributions
 using Random
 using LinearAlgebra
 using StableRNGs
+using ForwardDiff
 
-import ExponentialFamily: WishartMessage, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: WishartImproper, KnownExponentialFamilyDistribution, reconstructargument!,
+    getnaturalparameters, basemeasure, fisherinformation, logpartition
 import StatsFuns: logmvgamma
+
+function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+    ηef = getnaturalparameters(ef)
+    reconstructargument!(ηef, ηef, ηvec)
+    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+end
+
+function transformation(params)
+    η1, η2 = params[1], params[2:end]
+    p = Int(sqrt(length(η2)))
+    η2 = reshape(η2, (p, p))
+    return [2 * η1 + p + 1; vec(0.5inv(-η2))]
+end
 
 @testset "Wishart" begin
 
@@ -60,7 +75,7 @@ import StatsFuns: logmvgamma
 
             # Check inplace versions
             @test rand!(StableRNG(321), Wishart(v, S), container1) ≈
-                  rand!(StableRNG(321), WishartMessage(v, invS), container2)
+                  rand!(StableRNG(321), WishartImproper(v, invS), container2)
 
             # Check that matrices are not corrupted
             @test all(S .=== cS)
@@ -68,7 +83,7 @@ import StatsFuns: logmvgamma
 
             # Check non-inplace versions
             @test rand(StableRNG(321), Wishart(v, S), length(container1)) ≈
-                  rand(StableRNG(321), WishartMessage(v, invS), length(container2))
+                  rand(StableRNG(321), WishartImproper(v, invS), length(container2))
         end
     end
 
@@ -77,15 +92,18 @@ import StatsFuns: logmvgamma
         inv_v2 = cholinv([10.2 -3.3; -3.3 5.0])
         inv_v3 = cholinv([8.1 -2.7; -2.7 9.0])
 
-        @test prod(ClosedProd(), WishartMessage(3, inv_v1), WishartMessage(3, inv_v2)) ≈
-              WishartMessage(
+        @test prod(ClosedProd(), WishartImproper(3, inv_v1), WishartImproper(3, inv_v2)) ≈
+              WishartImproper(
             3,
             cholinv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
         )
-        @test prod(ClosedProd(), WishartMessage(4, inv_v1), WishartMessage(4, inv_v3)) ≈
-              WishartMessage(5, cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725]))
-        @test prod(ClosedProd(), WishartMessage(5, inv_v2), WishartMessage(4, inv_v3)) ≈
-              WishartMessage(6, cholinv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
+        @test prod(ClosedProd(), WishartImproper(4, inv_v1), WishartImproper(4, inv_v3)) ≈
+              WishartImproper(
+            5,
+            cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
+        )
+        @test prod(ClosedProd(), WishartImproper(5, inv_v2), WishartImproper(4, inv_v3)) ≈
+              WishartImproper(6, cholinv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
     end
 
     @testset "ndims" begin
@@ -99,7 +117,7 @@ import StatsFuns: logmvgamma
             for i in 1:10
                 @test convert(
                     Distribution,
-                    KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                    KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]])
                 ) ≈
                       Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
             end
@@ -107,7 +125,7 @@ import StatsFuns: logmvgamma
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]])
                 distribution = Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -116,22 +134,22 @@ import StatsFuns: logmvgamma
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
+            @test logpartition(KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
                   logmvgamma(2, 3.0 + (2 + 1) / 2)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])) === true
-                @test isproper(KnownExponentialFamilyDistribution(WishartMessage, [3.0, [i 0.0; 0.0 -i]])) === false
-                @test isproper(KnownExponentialFamilyDistribution(WishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) === false
+                @test isproper(KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]])) === true
+                @test isproper(KnownExponentialFamilyDistribution(WishartImproper, [3.0, [i 0.0; 0.0 -i]])) === false
+                @test isproper(KnownExponentialFamilyDistribution(WishartImproper, [-1.0, [-i 0.0; 0.0 -i]])) === false
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
                 @test basemeasure(
-                    KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]]),
+                    KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
                     rand(3, 3)
                 ) == 1
             end
@@ -139,12 +157,41 @@ import StatsFuns: logmvgamma
 
         @testset "base operations" begin
             for i in 1:10
-                np1 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-i 0.0; 0.0 -i]])
-                np2 = KnownExponentialFamilyDistribution(WishartMessage, [3.0, [-2i 0.0; 0.0 -2i]])
+                np1 = KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]])
+                np2 = KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-2i 0.0; 0.0 -2i]])
                 @test prod(np1, np2) == KnownExponentialFamilyDistribution(
-                    WishartMessage,
+                    WishartImproper,
                     [3.0, [-2i 0.0; 0.0 -2i]] + [3.0, [-i 0.0; 0.0 -i]]
                 )
+            end
+        end
+
+        @testset "fisher information" begin
+            rng = StableRNG(42)
+            for df in 2:20
+                L = randn(rng, df, df)
+                A = L * L' + 1e-8 * diageye(df)
+                dist = Wishart(df, A)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                η = getnaturalparameters(ef)
+                η_vec = vcat(η[1], vec(η[2]))
+                fef = fisherinformation(ef)
+                fdist = fisherinformation(dist)
+                ## We do not test the analytic solution agains autograd because autograd hessian return values that are permuted and
+                ## causes fisherinformation to be non-positive definite.
+                J = ForwardDiff.jacobian(transformation, η_vec)
+                @test fef ≈ J' * fdist * J rtol = 1e-8
+
+                f_logpartition = (η_vec) -> logpartition(ef, η_vec)
+                autograd_information = (η_vec) -> ForwardDiff.hessian(f_logpartition, η_vec)
+                ag_fi = autograd_information(η_vec)
+
+                svdfisheref = svd(fef)
+                svdautograd = svd(ag_fi)
+                ## Julia returns very small complex values which causes problems. Therefore we take the real parts. 
+                eigenfisheref = real.(eigvals(fef))
+                @test all(x -> x > 0, eigenfisheref)
+                @test svdfisheref.S ≈ svdautograd.S
             end
         end
     end
