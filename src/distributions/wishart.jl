@@ -202,24 +202,6 @@ basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartImproper}, <:U
 
 mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
 
-# function fisherinformation(dist::Wishart)
-#     df, S = dist.df, dist.S
-#     p = first(size(S))
-#     D = DuplicationMatrix(p)
-#     invS = inv(S)
-#     return [mvtrigamma(p, df / 2)/4 1/2*(D'*vec(invS))'; 1/2*D'vec(invS) df/2*D'kron(invS, invS)*D]
-# end
-
-# function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartImproper})
-#     η = getnaturalparameters(params)
-#     η1 = first(η)
-#     η2 = getindex(η, 2)
-#     p = first(size(η2))
-#     D = DuplicationMatrix(p)
-#     invη2 = inv(η2)
-#     return [mvtrigamma(p, (η1 + (p + 1) / 2)) -(D'vec(invη2))'; -D'vec(invη2) (η1+(p+1)/2)*D'kron(invη2, invη2)*D]
-# end
-
 function fisherinformation(dist::Wishart)
     df, S = dist.df, dist.S
     p = first(size(S))
