@@ -498,3 +498,18 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{<:NormalWeight
         weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
     ]
 end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecision})
+    weightedmean, minushalfprecision = getnaturalparameters(ef)
+    return zeros(eltype(weightedmean), length(weightedmean) + length(weightedmean)^2, length(weightedmean) + length(weightedmean)^2)
+end
+
+function mean(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecision})
+    weightedmean, minushalfprecision = getnaturalparameters(ef)
+    return (-2*minushalfprecision) \ weightedmean 
+end
+
+function cov(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecision})
+    _, minushalfprecision = getnaturalparameters(ef)
+    return inv(-2*minushalfprecision)
+end

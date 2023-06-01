@@ -4,6 +4,9 @@ using Test
 using ExponentialFamily
 using LinearAlgebra
 using Distributions
+using ForwardDiff
+
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin
@@ -104,6 +107,41 @@ using Distributions
             m = rand(5)
             c = Matrix(Symmetric(rand(5, 5)))
             convert(MvNormalMeanCovariance, m, c) == MvNormalMeanCovariance(m, c)
+        end
+    end
+
+    @testset "fisherinformation" begin
+        function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+            natural_params = getnaturalparameters(ef)
+            mean_size = length(natural_params[1])
+            @views wmean = ηvec[1:mean_size]
+            @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
+            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
+            return logpartition(ef)
+        end
+
+        function transformation(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+            natural_params = getnaturalparameters(ef)
+            mean_size = length(natural_params[1])
+            @views wmean = ηvec[1:mean_size]
+            @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
+            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
+            mean_cov = mean(ef), cov(ef)
+            return [mean_cov[1]..., mean_cov[2]...]
+        end
+
+        for (m, sigma) in zip(1:10, 1:10)
+            dist = MvNormalMeanCovariance([m, m], [sigma 0; 0 sigma])
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            vec = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
+            autograd_hessian = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), vec)
+            J = ForwardDiff.jacobian((vec) -> transformation(ef, vec), vec)
+            @test [mean(dist)..., cov(dist)...] ≈ transformation(ef, vec)
+            @info "test"
+            display(autograd_hessian)
+            display(J' * fisherinformation(dist) * J)
+            display(fisherinformation(dist))
+            # @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-7 
         end
     end
 end

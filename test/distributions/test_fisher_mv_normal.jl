@@ -22,10 +22,16 @@ end
 @testset "Normal" begin
     @testset "MultivariateNormalKnownExponentialFamilyDistribution" begin
         for (m, sigma) in zip(1:10, 1:10)
-            dist = convert(KnownExponentialFamilyDistribution, MvNormalMeanCovariance([m, m], [sigma 0.1; 0.1 sigma]))
+            cov = [sigma 0; 0 sigma]
+            dist = convert(KnownExponentialFamilyDistribution, MvNormalMeanCovariance([0, 0], cov))
             vec = [getnaturalparameters(dist)[1]..., getnaturalparameters(dist)[2]...]
-            autograd_hessian = ForwardDiff.gradient(x -> reconstructed_logpartition(dist, x), vec)
+            autograd_hessian = ForwardDiff.hessian(x -> reconstructed_logpartition(dist, x), vec)
             @info (dist, autograd_hessian)
+            @info autograd_hessian
+            display(autograd_hessian)
+            display(cov)
+            display(2*kron(cov, cov))
+            display(getnaturalparameters(dist)[2])
             @info fisherinformation(dist)
         end
     end
