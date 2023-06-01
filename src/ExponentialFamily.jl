@@ -6,6 +6,7 @@ export tiny, huge
 include("distributions.jl")
 include("exponential_family.jl")
 include("prod.jl")
+include("tensorindexes.jl")
 
 include("helpers/fixes.jl")
 include("helpers/algebra/cholesky.jl")

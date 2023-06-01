@@ -107,14 +107,6 @@ function Base.prod(
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
-function tensor_index(i, j, n)
-    k = ceil(Int, i/n)
-    l = ceil(Int, j/n)
-    m = i - (k-1)*n
-    n = j - (l-1)*n
-    return k, l, m, n
-end
-
 function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
     μ, Σ = mean(dist), cov(dist)
     hessian = zeros(T, length(μ) + length(Σ) , length(μ) + length(Σ))
@@ -123,10 +115,10 @@ function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
 
     for i in (dim + 1):(dim^2+dim)
         for j in (dim + 1):(dim^2+dim)
-            k, l, m, n = tensor_index(i-dim, j-dim, dim)
+            k, l, m, n = tensordoubleindex(i-dim, j-dim, dim)
             if (k == l) && (m == n) && (k == m)
                 hessian[i, j] = 0.5 * Σ[k, k]^2
-            elseif k == l && m == n
+            elseif k == l || m == n
                 hessian[i, j] = Σ[k, m] * Σ[l, n]
             else
                 hessian[i, j] = Σ[k, m] * Σ[l, n] + Σ[l, m] * Σ[k, n]
