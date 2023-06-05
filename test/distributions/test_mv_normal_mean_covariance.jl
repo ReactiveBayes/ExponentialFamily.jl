@@ -138,9 +138,13 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             J = ForwardDiff.jacobian((vec) -> transformation(ef, vec), vec)
             @test [mean(dist)..., cov(dist)...] ≈ transformation(ef, vec)
             @info "test"
+            @info dist
             display(autograd_hessian)
             display(J' * fisherinformation(dist) * J)
-            # @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-7 
+            display(kron(inv(cov(dist)), inv(cov(dist))))
+            display(fisherinformation(dist) )
+            @info svd(J' * fisherinformation(dist) * J).S
+            @info svd(autograd_hessian).S
         end
     end
 end
