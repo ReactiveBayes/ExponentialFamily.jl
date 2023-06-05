@@ -113,15 +113,17 @@ function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
     hessian[1:length(μ), 1:length(μ)] = inv(Σ)
     dim = length(μ)
 
+    P = inv(Σ)
+
     for i in (dim + 1):(dim^2+dim)
         for j in (dim + 1):(dim^2+dim)
             k, l, m, n = tensordoubleindex(i-dim, j-dim, dim)
             if (k == l) && (m == n) && (k == m)
-                hessian[i, j] = 0.5 * Σ[k, k]^2
-            elseif k == l || m == n
-                hessian[i, j] = Σ[k, m] * Σ[l, n]
+                hessian[i, j] = 0.5 * P[k, k]^2
+            elseif (k == l || m != n) || (k != l || m == n)
+                hessian[i, j] = 0.5*P[k, m] * P[l, n]
             else
-                hessian[i, j] = Σ[k, m] * Σ[l, n] + Σ[l, m] * Σ[k, n]
+                hessian[i, j] = P[k, m] * P[l, n] + P[l, m] * P[k, n]
             end
         end
     end

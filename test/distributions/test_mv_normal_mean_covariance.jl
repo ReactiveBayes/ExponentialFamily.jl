@@ -140,7 +140,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @info "test"
             display(autograd_hessian)
             display(J' * fisherinformation(dist) * J)
-            display(fisherinformation(dist))
             # @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-7 
         end
     end
