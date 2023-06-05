@@ -7,18 +7,18 @@ using Random
 using LinearAlgebra
 using StableRNGs
 
-import ExponentialFamily: InverseWishartMessage, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
-@testset "InverseWishartMessage" begin
+@testset "InverseWishartImproper" begin
     @testset "common" begin
-        @test InverseWishartMessage <: Distribution
-        @test InverseWishartMessage <: ContinuousDistribution
-        @test InverseWishartMessage <: MatrixDistribution
+        @test InverseWishartImproper <: Distribution
+        @test InverseWishartImproper <: ContinuousDistribution
+        @test InverseWishartImproper <: MatrixDistribution
 
-        @test value_support(InverseWishartMessage) === Continuous
-        @test variate_form(InverseWishartMessage) === Matrixvariate
+        @test value_support(InverseWishartImproper) === Continuous
+        @test variate_form(InverseWishartImproper) === Matrixvariate
     end
 
     @testset "statistics" begin
@@ -27,7 +27,7 @@ import StatsFuns: logmvgamma
         for ν in 4:10
             L = randn(rng, ν - 2, ν - 2)
             S = L * L'
-            d = InverseWishartMessage(ν, S)
+            d = InverseWishartImproper(ν, S)
 
             @test mean(d) == mean(InverseWishart(params(d)...))
             @test mode(d) == mode(InverseWishart(params(d)...))
@@ -37,7 +37,7 @@ import StatsFuns: logmvgamma
         for ν in 5:10
             L = randn(rng, ν - 4, ν - 4)
             S = L * L'
-            d = InverseWishartMessage(ν, S)
+            d = InverseWishartImproper(ν, S)
 
             @test cov(d) == cov(InverseWishart(params(d)...))
             @test var(d) == var(InverseWishart(params(d)...))
@@ -45,7 +45,7 @@ import StatsFuns: logmvgamma
     end
 
     @testset "vague" begin
-        @test_throws MethodError vague(InverseWishartMessage)
+        @test_throws MethodError vague(InverseWishartImproper)
 
         dims = 3
         d1 = vague(InverseWishart, dims)
@@ -70,12 +70,12 @@ import StatsFuns: logmvgamma
 
     @testset "entropy" begin
         @test entropy(
-            InverseWishartMessage(
+            InverseWishartImproper(
                 2.0,
                 [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
             )
         ) ≈ 10.111427477184794
-        @test entropy(InverseWishartMessage(5.0, diageye(4))) ≈ 8.939145914882221
+        @test entropy(InverseWishartImproper(5.0, diageye(4))) ≈ 8.939145914882221
     end
 
     @testset "convert" begin
@@ -83,7 +83,7 @@ import StatsFuns: logmvgamma
         for ν in 2:10
             L = randn(rng, ν, ν)
             S = L * L'
-            d = InverseWishartMessage(ν, S)
+            d = InverseWishartImproper(ν, S)
             @test convert(InverseWishart, d) == InverseWishart(ν, S)
         end
     end
@@ -92,37 +92,37 @@ import StatsFuns: logmvgamma
         rng = StableRNG(123)
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
-        @test isapprox(mean(logdet, InverseWishartMessage(ν, S)), mean(logdet.(samples)), atol = 1e-2)
+        @test isapprox(mean(logdet, InverseWishartImproper(ν, S)), mean(logdet.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
-        @test isapprox(mean(logdet, InverseWishartMessage(ν, S)), mean(logdet.(samples)), atol = 1e-2)
+        @test isapprox(mean(logdet, InverseWishartImproper(ν, S)), mean(logdet.(samples)), atol = 1e-2)
     end
 
     @testset "mean(::typeof(inv))" begin
         rng = StableRNG(321)
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
-        @test isapprox(mean(inv, InverseWishartMessage(ν, S)), mean(inv.(samples)), atol = 1e-2)
-        @test isapprox(mean(cholinv, InverseWishartMessage(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
+        @test isapprox(mean(inv, InverseWishartImproper(ν, S)), mean(inv.(samples)), atol = 1e-2)
+        @test isapprox(mean(cholinv, InverseWishartImproper(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
-        @test isapprox(mean(inv, InverseWishartMessage(ν, S)), mean(inv.(samples)), atol = 1e-2)
-        @test isapprox(mean(cholinv, InverseWishartMessage(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
+        @test isapprox(mean(inv, InverseWishartImproper(ν, S)), mean(inv.(samples)), atol = 1e-2)
+        @test isapprox(mean(cholinv, InverseWishartImproper(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
     end
 
     @testset "prod" begin
-        d1 = InverseWishartMessage(3.0, diageye(2))
-        d2 = InverseWishartMessage(-3.0, [0.6423504672769315 0.9203141654948761; 0.9203141654948761 1.528137747462735])
+        d1 = InverseWishartImproper(3.0, diageye(2))
+        d2 = InverseWishartImproper(-3.0, [0.6423504672769315 0.9203141654948761; 0.9203141654948761 1.528137747462735])
 
         @test prod(ClosedProd(), d1, d2) ≈
-              InverseWishartMessage(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
+              InverseWishartImproper(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
 
-        d1 = InverseWishartMessage(4.0, diageye(3))
-        d2 = InverseWishartMessage(-2.0, diageye(3))
+        d1 = InverseWishartImproper(4.0, diageye(3))
+        d2 = InverseWishartImproper(-2.0, diageye(3))
 
-        @test prod(ClosedProd(), d1, d2) ≈ InverseWishartMessage(6.0, 2 * diageye(3))
+        @test prod(ClosedProd(), d1, d2) ≈ InverseWishartImproper(6.0, 2 * diageye(3))
     end
 
     @testset "rand" begin
@@ -136,14 +136,14 @@ import StatsFuns: logmvgamma
 
             # Check in-place version
             @test rand!(StableRNG(321), InverseWishart(v, S), container1) ≈
-                  rand!(StableRNG(321), InverseWishartMessage(v, S), container2)
+                  rand!(StableRNG(321), InverseWishartImproper(v, S), container2)
 
             # Check that the matrix has not been corrupted
             @test all(S .=== cS)
 
             # Check non-inplace version
             @test rand(StableRNG(321), InverseWishart(v, S), length(container1)) ≈
-                  rand(StableRNG(321), InverseWishartMessage(v, S), length(container2))
+                  rand(StableRNG(321), InverseWishartImproper(v, S), length(container2))
         end
     end
 
@@ -160,7 +160,7 @@ import StatsFuns: logmvgamma
 
             result = zeros(n)
 
-            @test all(pdf(InverseWishart(v, S), samples) .≈ pdf!(result, InverseWishartMessage(v, S), samples))
+            @test all(pdf(InverseWishart(v, S), samples) .≈ pdf!(result, InverseWishartImproper(v, S), samples))
         end
     end
 
@@ -169,14 +169,14 @@ import StatsFuns: logmvgamma
             for i in 1:10
                 @test convert(
                     Distribution,
-                    KnownExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
+                    KnownExponentialFamilyDistribution(InverseWishartImproper, [-3.0, [-i 0.0; 0.0 -i]])
                 ) ≈ InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = KnownExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = KnownExponentialFamilyDistribution(InverseWishartImproper, [-3.0, [-i 0.0; 0.0 -i]])
                 distribution = InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -186,18 +186,18 @@ import StatsFuns: logmvgamma
 
         @testset "logpartition" begin
             @test logpartition(
-                KnownExponentialFamilyDistribution(InverseWishartMessage, [-3.0, [-1.0 0.0; 0.0 -1.0]])
+                KnownExponentialFamilyDistribution(InverseWishartImproper, [-3.0, [-1.0 0.0; 0.0 -1.0]])
             ) ≈
                   logmvgamma(2, 1.5)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]])) ===
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]])) ===
                       false
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 -i]])) ===
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [i 0.0; 0.0 -i]])) ===
                       false
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartMessage, [-1.0, [-i 0.0; 0.0 -i]])) ===
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, [-1.0, [-i 0.0; 0.0 -i]])) ===
                       true
             end
         end
@@ -205,7 +205,7 @@ import StatsFuns: logmvgamma
         @testset "basemeasure" begin
             for i in 1:10
                 @test basemeasure(
-                    KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [-i 0.0; 0.0 -i]]),
+                    KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
                     rand(3, 3)
                 ) == 1
             end
@@ -213,10 +213,10 @@ import StatsFuns: logmvgamma
 
         @testset "base operations" begin
             for i in 1:10
-                np1 = KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [i 0.0; 0.0 i]])
-                np2 = KnownExponentialFamilyDistribution(InverseWishartMessage, [3.0, [2i 0.0; 0.0 2i]])
+                np1 = KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [i 0.0; 0.0 i]])
+                np2 = KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [2i 0.0; 0.0 2i]])
                 @test prod(np1, np2) == KnownExponentialFamilyDistribution(
-                    InverseWishartMessage,
+                    InverseWishartImproper,
                     [3.0, [i 0.0; 0.0 i]] + [3.0, [2i 0.0; 0.0 2i]]
                 )
             end
