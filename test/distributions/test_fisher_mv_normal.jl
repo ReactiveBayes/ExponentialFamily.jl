@@ -8,7 +8,8 @@ using ForwardDiff
 using Random
 using StableRNGs
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, reconstructargument!
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, reconstructargument!
 
 function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
     natural_params = getnaturalparameters(ef)
