@@ -238,18 +238,20 @@ end
 
         @testset "fisherinformation" begin
             rng = StableRNG(42)
-            for df in 2:20
-                L = randn(rng, df, df)
-                A = L * L' + 1e-8 * diageye(df)
-                dist = InverseWishart(df, A)
-                ef = convert(KnownExponentialFamilyDistribution, dist)
-                η = getnaturalparameters(ef)
-                η_vec = vcat(η[1], vec(η[2]))
-                fef = fisherinformation(ef)
-                fdist = fisherinformation(dist)
-                
-                J = ForwardDiff.jacobian(transformation, η_vec)
-                @test fef ./ (J' * fdist * J) ≈ ones(size(fef))
+            for d in 2:30
+                for df in d:30
+                    L = randn(rng, d, d)
+                    A = L * L' + 1e-8 * diageye(d)
+                    dist = InverseWishart(df, A)
+                    ef = convert(KnownExponentialFamilyDistribution, dist)
+                    η = getnaturalparameters(ef)
+                    η_vec = vcat(η[1], vec(η[2]))
+                    fef = fisherinformation(ef)
+                    fdist = fisherinformation(dist)
+                    
+                    J = ForwardDiff.jacobian(transformation, η_vec)
+                    @test fef ./ (J' * fdist * J) ≈ ones(size(fef))
+                end
             end
         end
     end
