@@ -45,7 +45,7 @@ function Base.convert(::Type{InverseWishartImproper{T}}, distribution::InverseWi
 end
 
 # from "Parametric Bayesian Estimation of Differential Entropy and Relative Entropy" Gupta et al.
-function Distributions.entropy(dist::InverseWishartDistributionsFamily)
+function Distributions.entropy(dist::InverseWishartImproper)
     d = size(dist, 1)
     ν, S = params(dist)
     d * (d - 1) / 4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i) / 2), +, 1:d) + ν / 2 * d +
@@ -53,17 +53,17 @@ function Distributions.entropy(dist::InverseWishartDistributionsFamily)
     (ν + d + 1) / 2 * mapreduce(i -> digamma((ν - d + i) / 2), +, 1:d)
 end
 
-function Distributions.mean(::typeof(logdet), dist::InverseWishartDistributionsFamily)
+function Distributions.mean(::typeof(logdet), dist::InverseWishartImproper)
     d = size(dist, 1)
     ν, S = params(dist)
     return -(mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) - logdet(S))
 end
 
-function Distributions.mean(::typeof(inv), dist::InverseWishartDistributionsFamily)
+function Distributions.mean(::typeof(inv), dist::InverseWishartImproper)
     return mean(cholinv, dist)
 end
 
-function Distributions.mean(::typeof(cholinv), dist::InverseWishartDistributionsFamily)
+function Distributions.mean(::typeof(cholinv), dist::InverseWishartImproper)
     ν, S = params(dist)
     return mean(Wishart(ν, cholinv(S)))
 end
@@ -179,9 +179,16 @@ end
 
 check_valid_natural(::Type{<:Union{InverseWishartImproper, InverseWishart}}, params) = length(params) === 2
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart})
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::InverseWishartImproper)
     dof = dist.ν
     scale = dist.S
+    p = first(size(scale))
+    return KnownExponentialFamilyDistribution(InverseWishartImproper, [-(dof + p + 1) / 2, -scale / 2])
+end
+
+function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::InverseWishart)
+    dof = dist.df
+    scale = dist.Ψ
     p = first(size(scale))
     return KnownExponentialFamilyDistribution(InverseWishartImproper, [-(dof + p + 1) / 2, -scale / 2])
 end
@@ -191,7 +198,7 @@ function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistri
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
-    return InverseWishart(-(2 * η1 + p + 1), -2η2)
+    return InverseWishart(-(2 * η1 + p + 1), -2*η2)
 end
 
 function logpartition(params::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
@@ -218,3 +225,27 @@ basemeasure(
     },
     x
 ) = 1.0
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
+    η = getnaturalparameters(ef)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+    p = first(size(η2))
+    invη2 = inv(η2)
+    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+end
+
+function fisherinformation(dist::InverseWishart)
+    ν = dist.df
+    S = dist.Ψ
+    p = first(size(S))
+    invscale = inv(S)
+
+    hessian = ones(eltype(S), p^2+1, p^2+1)
+    hessian[1, 1] = mvtrigamma(p, -ν/2)/4
+    hessian[1, 2:p^2+1] =  vec(invscale)/2
+    hessian[2:p^2+1, 1] = vec(invscale)/2
+    hessian[2:p^2+1, 2:p^2+1] = ν/2*kron(invscale, invscale)
+    hessian[2:p^2+1, 2:p^2+1] = -1 * hessian[2:p^2+1, 2:p^2+1]
+    return hessian
+end
