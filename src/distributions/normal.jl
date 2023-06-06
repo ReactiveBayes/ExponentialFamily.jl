@@ -499,63 +499,29 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{<:NormalWeight
     ]
 end
 
+function PermutationMatrix(m, n)
+    P = Matrix{Int}(undef, m*n, m*n)
+    for i in 1:m*n
+        for j in 1:m*n
+            if j == 1 + m*(i-1) - (m*n -1)*floor((i-1)/n)
+                P[i, j] = 1
+            else
+                P[i, j] = 0
+            end
+        end
+    end
+    P
+end
+
 function fisherinformation(ef::KnownExponentialFamilyDistribution{<:MvNormalWeightedMeanPrecision})
-    η = getnaturalparameters(ef)
-    θ = first(η)
-    minushalfprecision = getindex(η, 2)
-    Σ = -2 * inv(minushalfprecision)
-
-    hessian = zeros(eltype(θ), length(θ) + length(minushalfprecision) , length(θ) + length(minushalfprecision))
-    dim = length(θ)
-    hessian[1:dim, 1:dim] = 0.5*inv(-minushalfprecision)
-    
-
-    for i in 1:dim
-        for (l, j) in enumerate((dim+1):dim:(dim^2+dim))
-            k = i
-            hessian[i, j:(j+dim-1)] = Σ[:, k] * Σ[l, :]'* θ
-        end
-    end
-
-    for j in 1:dim
-        for (m, i) in enumerate((dim+1):dim:(dim^2+dim))
-            n = j
-            hessian[i:(i+dim-1), j] = θ' * Σ[:, m] * Σ[n, :]'
-        end
-    end
-
-    for i in (dim + 1):(dim^2+dim)
-        for j in (dim + 1):(dim^2+dim)
-            k, l, m, n = tensordoubleindex(i-dim, j-dim, dim)
-            if (k == l) && (m == n) && (k == m)
-                hessian[i, j] = 8 * Σ[k, k]*θ' * (Σ[:, k] * Σ[k, :]') * θ
-            elseif k == l && m != n
-                matrix = Σ[k, m]*(Σ[:, k] * Σ[n, :]') + Σ[k, n]*Σ[:, k] * Σ[m, :]'
-                hessian[i, j] = 8 * θ'*matrix * θ
-            elseif k != l && m == n
-                matrix = Σ[l, m]*Σ[:, k] * Σ[m, :]' + Σ[k, m]*Σ[:, l] * Σ[m, :]'
-                hessian[i, j] = 8 * θ'* matrix * θ
-            else
-                matrix = Σ[l, m]*Σ[:, k] * Σ[n, :]' + Σ[l, n]*Σ[:, k] * Σ[m, :]' + Σ[k, m]*Σ[:, l] * Σ[n, :]' + Σ[k, n]*Σ[:, l] * Σ[m, :]'
-                hessian[i, j] = 8 * θ'*matrix*θ
-            end
-        end
-    end
-
-    for i in (dim + 1):(dim^2+dim)
-        for j in (dim + 1):(dim^2+dim)
-            k, l, m, n = tensordoubleindex(i-dim, j-dim, dim)
-            if (k == l) && (m == n) && (k == m)
-                hessian[i, j] += 4*Σ[k, k]*Σ[k, k]
-            elseif k == l || m == n
-                hessian[i, j] += 4*(Σ[k, m]*Σ[l, n] + Σ[l, m]*Σ[k, n])
-            else
-                hessian[i, j] += 8*(Σ[k, m]*Σ[l, n] + Σ[l, m]*Σ[k, n])
-            end
-        end
-    end
-
-    return hessian
+    η1, η2 = getnaturalparameters(ef)[1], getnaturalparameters(ef)[2]
+    invη2 = inv(η2)
+    n = size(η1, 1)
+    ident = diageye(n)
+    Iₙ = PermutationMatrix(1, 1)
+    offdiag = 1/4*(invη2*kron(ident, transpose(invη2*η1))+invη2*kron(η1'*invη2, ident))*kron(ident, kron(Iₙ, ident))
+    G = -1/4*(kron(invη2, invη2)*kron(ident, η1)*kron(ident, transpose(invη2*η1))+kron(invη2, invη2)*kron(η1, ident)*kron(η1'*invη2, ident))*kron(ident, kron(Iₙ, ident)) + 1/2*kron(invη2, invη2)
+    [-1/2*invη2 offdiag; offdiag' G]
 end
 
 function mean(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecision})
