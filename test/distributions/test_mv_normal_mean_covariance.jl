@@ -135,8 +135,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         function friendlygaussianlpdf(params, x)
             k = length(x)
             μ, Σ = params[1:k], reshape(params[k+1:end], k, k)
-            coef = (2π)^(-k/2) * det(Σ)^(-1/2)
-            exponent = -0.5*(x - μ)'*inv(Σ)*(x - μ)
+            coef = (2π)^(-k / 2) * det(Σ)^(-1 / 2)
+            exponent = -0.5 * (x - μ)' * inv(Σ) * (x - μ)
             return log(coef * exp(exponent))
         end
 
@@ -145,14 +145,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         for i in 1:5, d in 2:3
             μ = rand(rng, d)
             L = randn(rng, d, d)
-            Σ = L*L'
+            Σ = L * L'
             dist = MvNormalMeanCovariance(μ, Σ)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             v = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
             fi_ag = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), v)
             # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
             # The matrices are identical up to permutations, resulting in eigenvalues that are the same up to a sign.
-            fi_ef =  fisherinformation(ef)
+            fi_ef = fisherinformation(ef)
             @test sort(eigvals(fi_ef)) ≈ sort(abs.(eigvals(fi_ag))) atol = 1e-6
         end
 
@@ -161,7 +161,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         for i in 1:5, d in 2:2
             μ = rand(rng, d)
             L = randn(rng, d, d)
-            Σ = L*L'
+            Σ = L * L'
             n_samples = 100000
             dist = MvNormalMeanCovariance(μ, Σ)
 
