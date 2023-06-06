@@ -106,3 +106,12 @@ function Base.prod(
 
     return MvNormalWeightedMeanPrecision(xi, W)
 end
+
+function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
+    μ, Σ = mean(dist), cov(dist)
+    invΣ = inv(Σ)
+    n = size(μ, 1)
+    offdiag = zeros(n, n^2)
+    G = (1 / 2) * kron(invΣ, invΣ)
+    [invΣ offdiag; offdiag' G]
+end

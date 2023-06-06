@@ -4,6 +4,10 @@ using Test
 using ExponentialFamily
 using LinearAlgebra
 using Distributions
+using ForwardDiff
+using StableRNGs
+
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin
@@ -104,6 +108,77 @@ using Distributions
             m = rand(5)
             c = Matrix(Symmetric(rand(5, 5)))
             convert(MvNormalMeanCovariance, m, c) == MvNormalMeanCovariance(m, c)
+        end
+    end
+
+    @testset "fisherinformation" begin
+        function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+            natural_params = getnaturalparameters(ef)
+            mean_size = length(natural_params[1])
+            @views wmean = ηvec[1:mean_size]
+            @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
+            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
+            return logpartition(ef)
+        end
+
+        function transformation(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+            natural_params = getnaturalparameters(ef)
+            mean_size = length(natural_params[1])
+            @views wmean = ηvec[1:mean_size]
+            @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
+            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
+            mean_cov = mean(ef), cov(ef)
+            return [mean_cov[1]..., mean_cov[2]...]
+        end
+
+        # Autograd friendly version of Gaussian logpdf
+        function friendlygaussianlpdf(params, x)
+            k = length(x)
+            μ, Σ = params[1:k], reshape(params[k+1:end], k, k)
+            coef = (2π)^(-k / 2) * det(Σ)^(-1 / 2)
+            exponent = -0.5 * (x - μ)' * inv(Σ) * (x - μ)
+            return log(coef * exp(exponent))
+        end
+
+        # We test Gaussian up to size 3 as autograd gets very slow for anything larger than that
+        rng = StableRNG(42)
+        for i in 1:5, d in 2:3
+            μ = rand(rng, d)
+            L = randn(rng, d, d)
+            Σ = L * L'
+            dist = MvNormalMeanCovariance(μ, Σ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            v = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
+            fi_ag = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), v)
+            # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
+            # The matrices are identical up to permutations, resulting in eigenvalues that are the same up to a sign.
+            fi_ef = fisherinformation(ef)
+            @test sort(eigvals(fi_ef)) ≈ sort(abs.(eigvals(fi_ag))) atol = 1e-6
+        end
+
+        # We normally perform test with jacobian transformation, but autograd fails to compute jacobians with duplicated elements.
+        # For d > 2 the error becomes larger, so we set d = 2
+        for i in 1:5, d in 2:2
+            μ = rand(rng, d)
+            L = randn(rng, d, d)
+            Σ = L * L'
+            n_samples = 100000
+            dist = MvNormalMeanCovariance(μ, Σ)
+
+            samples = rand(rng, dist, n_samples)
+            samples = [samples[:, i] for i in 1:n_samples]
+
+            v_ = [μ..., vec(Σ)...]
+            totalHessian = zeros(length(v_), length(v_))
+            for sample in samples
+                totalHessian -= ForwardDiff.hessian(x -> friendlygaussianlpdf(x, sample), v_)
+            end
+            computed_hessian = totalHessian /= n_samples
+
+            # The error will be higher for sampling tests, tolerance adjusted accordingly.
+            fi_dist = fisherinformation(dist)
+            @test sort(eigvals(fi_dist)) ≈ sort(abs.(eigvals(computed_hessian))) rtol = 1e-1
+            @test sort(svd(fi_dist).S) ≈ sort(svd(computed_hessian).S) rtol = 1e-1
         end
     end
 end
