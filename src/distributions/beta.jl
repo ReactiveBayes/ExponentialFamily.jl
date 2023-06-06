@@ -8,11 +8,10 @@ vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 
 prod_closed_rule(::Type{<:Beta}, ::Type{<:Beta}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::Beta, right::Beta)
-    left_a, left_b   = params(left)
-    right_a, right_b = params(right)
-    T                = promote_samplefloattype(left, right)
-    return Beta(left_a + right_a - one(T), left_b + right_b - one(T))
+function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{Beta}, right::KnownExponentialFamilyDistribution{Beta})
+    ηleft = getnaturalparameters(left)
+    ηright = getnaturalparameters(right)
+    return KnownExponentialFamilyDistribution(Beta, ηleft+ηright)
 end
 
 function compute_logscale(new_dist::Beta, left_dist::Beta, right_dist::Beta)
