@@ -6,10 +6,24 @@ using Distributions
 using Random
 using LinearAlgebra
 using StableRNGs
+using ForwardDiff
 
-import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, logpartition, reconstructargument!
 import Distributions: pdf!
 import StatsFuns: logmvgamma
+
+function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+    ηef = getnaturalparameters(ef)
+    reconstructargument!(ηef, ηef, ηvec)
+    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+end
+
+function transformation(params)
+    η1, η2 = params[1], params[2:end]
+    p = Int(sqrt(length(η2)))
+    η2 = reshape(η2, (p, p))
+    return [-(2 * η1 + p + 1); vec(-2*η2)]
+end
 
 @testset "InverseWishartImproper" begin
     @testset "common" begin
@@ -219,6 +233,25 @@ import StatsFuns: logmvgamma
                     InverseWishartImproper,
                     [3.0, [i 0.0; 0.0 i]] + [3.0, [2i 0.0; 0.0 2i]]
                 )
+            end
+        end
+
+        @testset "fisherinformation" begin
+            rng = StableRNG(42)
+            for d in 2:30
+                for df in d:30
+                    L = randn(rng, d, d)
+                    A = L * L' + 1e-8 * diageye(d)
+                    dist = InverseWishart(df, A)
+                    ef = convert(KnownExponentialFamilyDistribution, dist)
+                    η = getnaturalparameters(ef)
+                    η_vec = vcat(η[1], vec(η[2]))
+                    fef = fisherinformation(ef)
+                    fdist = fisherinformation(dist)
+                    
+                    J = ForwardDiff.jacobian(transformation, η_vec)
+                    @test fef ./ (J' * fdist * J) ≈ ones(size(fef))
+                end
             end
         end
     end
