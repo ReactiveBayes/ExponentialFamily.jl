@@ -8,14 +8,12 @@ vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
 prod_closed_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ClosedProd()
-function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
-    left_p  = succprob(left)
-    right_p = succprob(right)
 
-    pprod = left_p * right_p
-    norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
-    @assert norm > zero(norm) "Product of $(left) and $(right) results in non-normalizable distribution"
-    return Bernoulli(pprod / norm)
+function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{Bernoulli}, right::KnownExponentialFamilyDistribution{Bernoulli})
+    η_left = getnaturalparameters(left)
+    η_right = getnaturalparameters(right)
+
+    return KnownExponentialFamilyDistribution(Bernoulli, η_left + η_right)
 end
 
 prod_closed_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ClosedProd()

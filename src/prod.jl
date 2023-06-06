@@ -237,22 +237,23 @@ function prod(
 ) where {T1, T2}
     return prod(prod_closed_rule(T1, T2), left, right)
 end
-function prod(
-    ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
-) where {T}
-    leftconditioner = getconditioner(left)
-    rightconditioner = getconditioner(right)
 
-    @assert leftconditioner === rightconditioner "Conditioners of $(left) and $(right) must be the same in order for a product to be defined between them."
+# function prod(
+#     ::ClosedProd,
+#     left::KnownExponentialFamilyDistribution{T},
+#     right::KnownExponentialFamilyDistribution{T}
+# ) where {T}
+#     leftconditioner = getconditioner(left)
+#     rightconditioner = getconditioner(right)
 
-    KnownExponentialFamilyDistribution(
-        T,
-        getnaturalparameters(left) + getnaturalparameters(right),
-        getconditioner(left)
-    )
-end
+#     @assert leftconditioner === rightconditioner "Conditioners of $(left) and $(right) must be the same in order for a product to be defined between them."
+
+#     KnownExponentialFamilyDistribution(
+#         T,
+#         getnaturalparameters(left) + getnaturalparameters(right),
+#         getconditioner(left)
+#     )
+# end
 function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
     efleft = convert(KnownExponentialFamilyDistribution, left)
     efright = convert(KnownExponentialFamilyDistribution, right)
