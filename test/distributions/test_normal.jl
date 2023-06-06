@@ -8,7 +8,9 @@ using ForwardDiff
 using Random
 using StableRNGs
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily:
+    ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
+    basemeasure, fisherinformation
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -276,7 +278,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
     end
 
-    @testset "UnivariateNormalKnownExponentialFamilyDistribution" begin
+    @testset "univariate natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(Distribution, KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) ==
@@ -286,11 +288,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 @test convert(KnownExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
                       KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
             end
-        end
-
-        @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈
-                  -(log(2) - 1 / 8)
         end
 
         @testset "logpdf" begin
@@ -317,7 +314,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
     end
 
-    @testset "MultivariateNormalKnownExponentialFamilyDistribution" begin
+    @testset "multivariate natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10
                 @test convert(
@@ -350,9 +347,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @testset "logpartition" begin
             @test logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈
                   -(log(2) - 1 / 8)
-            dist = MvNormalMeanPrecision(ones(2), diageye(2))
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            logpartition(ef) = 1.0
         end
 
         @testset "isproper" begin

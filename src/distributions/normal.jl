@@ -498,3 +498,45 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{<:NormalWeight
         weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
     ]
 end
+
+function PermutationMatrix(m, n)
+    P = Matrix{Int}(undef, m * n, m * n)
+    for i in 1:m*n
+        for j in 1:m*n
+            if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
+                P[i, j] = 1
+            else
+                P[i, j] = 0
+            end
+        end
+    end
+    P
+end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{<:MvNormalWeightedMeanPrecision})
+    η1, η2 = getnaturalparameters(ef)[1], getnaturalparameters(ef)[2]
+    invη2 = inv(η2)
+    n = size(η1, 1)
+    ident = diageye(n)
+    Iₙ = PermutationMatrix(1, 1)
+    offdiag =
+        1 / 4 * (invη2 * kron(ident, transpose(invη2 * η1)) + invη2 * kron(η1' * invη2, ident)) *
+        kron(ident, kron(Iₙ, ident))
+    G =
+        -1 / 4 *
+        (
+            kron(invη2, invη2) * kron(ident, η1) * kron(ident, transpose(invη2 * η1)) +
+            kron(invη2, invη2) * kron(η1, ident) * kron(η1' * invη2, ident)
+        ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+    [-1/2*invη2 offdiag; offdiag' G]
+end
+
+function mean(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecision})
+    weightedmean, minushalfprecision = getnaturalparameters(ef)
+    return (-2 * minushalfprecision) \ weightedmean
+end
+
+function cov(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecision})
+    _, minushalfprecision = getnaturalparameters(ef)
+    return inv(-2 * minushalfprecision)
+end
