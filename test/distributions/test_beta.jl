@@ -77,10 +77,15 @@ import SpecialFunctions: loggamma
                     ηright  = getnaturalparameters(efright)
                     @test prod(ClosedProd(), efleft,efright) == KnownExponentialFamilyDistribution(Beta, ηleft+ηright)
                     @test prod(efleft,efright) == KnownExponentialFamilyDistribution(Beta, ηleft+ηright)
-                    @test prod(ClosedProd(), left,right) == convert(Distribution, KnownExponentialFamilyDistribution(Beta, ηleft+ηright))
+                    if isless(αleft+αright - 1,0) || isless(βleft+βright-1,0)
+                        @test_throws DomainError prod(ClosedProd(), left,right) == convert(Distribution, KnownExponentialFamilyDistribution(Beta, ηleft+ηright)) 
+                    else
+                        @test prod(ClosedProd(), left,right) ≈ convert(Distribution, KnownExponentialFamilyDistribution(Beta, ηleft+ηright))
+                    end
                 end
             end
         end
+
     end
 end
 
