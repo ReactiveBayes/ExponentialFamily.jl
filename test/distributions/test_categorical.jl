@@ -53,13 +53,33 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test logpartition(ηcat) == log(2)
     end
 
-    @testset "prod" begin
+    @testset "prod Distribution" begin
         @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
               Categorical([0.1, 0.4, 0.5])
         @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
               Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ==
-              Categorical([0.6666666666666666, 0.24999999999999994, 0.08333333333333333])
+        @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ≈
+              Categorical([2/3, 1/4, 1/12])
+            
+    end
+
+    @testset "prod KnownExponentialFamilyDistribution" begin 
+        for d = 2:20
+            pleft     = rand(d)
+            pleft     = pleft ./ sum(pleft)
+            distleft  = Categorical(pleft)
+            efleft    = convert(KnownExponentialFamilyDistribution, distleft)
+            ηleft     = getnaturalparameters(efleft)
+            pright    = rand(d)
+            pright    = pright ./ sum(pright)
+            distright = Categorical(pright)
+            efright   = convert(KnownExponentialFamilyDistribution, distright)
+            ηright    = getnaturalparameters(efright)
+            efprod    = prod(efleft,efright)
+            distprod  = prod(ClosedProd(), distleft, distright)
+            @test efprod == KnownExponentialFamilyDistribution(Categorical, ηleft+ηright)
+            @test convert(Distribution,efprod) ≈ distprod
+        end
     end
 
     @testset "fisher information" begin
