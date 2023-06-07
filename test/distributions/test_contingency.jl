@@ -131,6 +131,27 @@ import Distributions: cdf
             )
         end
     end
+
+    @testset "prod KnownExponentialFamilyDistribution" begin
+        for i=2:50
+            p1 = rand(i,i)
+            p2 = rand(i,i)
+            p1 = p1 ./ sum(p1)
+            p2 = p2 ./ sum(p2)
+            distleft = Contingency(p1)
+            distright = Contingency(p2)
+            efleft  = convert(KnownExponentialFamilyDistribution, distleft)
+            efright = convert(KnownExponentialFamilyDistribution, distright)
+
+            ηleft = getnaturalparameters(efleft)
+            ηright = getnaturalparameters(efright)
+
+            efprod = prod(efleft,efright)
+            distprod = prod(ClosedProd(), distleft, distright)
+            @test efprod == KnownExponentialFamilyDistribution(Contingency, ηleft + ηright)
+            @test distprod ≈ convert(Distribution, efprod)
+        end
+    end
 end
 
 end
