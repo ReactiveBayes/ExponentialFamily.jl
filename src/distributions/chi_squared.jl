@@ -7,6 +7,26 @@ Distributions.cov(dist::Chisq) = var(dist)
 
 prod_closed_rule(::Type{<:Chisq}, ::Type{<:Chisq}) = ClosedProd()
 
+function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
+    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
+    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+
+    naturalparameters = [η_left + η_right]
+    basemeasure = (x) -> exp(-x)
+    sufficientstatistics = (x) -> log(x)
+    logpartition = (η) -> loggamma(η + 1)
+    supp = support(left)
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
+end
+
 function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: Chisq}
     η_left = first(getnaturalparameters(left))
     η_right = first(getnaturalparameters(right))
