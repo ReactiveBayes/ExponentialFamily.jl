@@ -22,37 +22,54 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
     end
 
     @testset "prod" begin
-        l_left = Laplace(1.0, 0.2)
-        l_right = Laplace(1.0, 0.1)
-        @test prod(ClosedProd(), l_left, l_right) == Laplace(1.0, 1 / 15)
+        for i=1:100
+            μleft  = 100*randn()
+            μright = 100*randn()
+            σleft  = 100*rand()
+            σright = 100*rand()
+            l_left = Laplace(μleft, σleft)
+            l_right = Laplace(μleft, σright)
+            l_right2 = Laplace(μright, σright)
+            ef_left = convert(KnownExponentialFamilyDistribution, l_left)
+            ef_right = convert(KnownExponentialFamilyDistribution, l_right)
+            ef_right2 = convert(KnownExponentialFamilyDistribution, l_right2)
+            (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
+            (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
+            (η_right2, conditioner_right2) = (getnaturalparameters(ef_right2), getconditioner(ef_right2))
+            @test prod(ef_left,ef_right) == KnownExponentialFamilyDistribution(Laplace, η_left+η_right, conditioner_left )
+            @test prod(ClosedProd(), l_left, l_right) ≈ convert(Distribution, prod(ef_left,ef_right))
 
-        l_right2 = Laplace(2.0, 0.6)
-        ef_left = convert(KnownExponentialFamilyDistribution, l_left)
-        ef_right = convert(KnownExponentialFamilyDistribution, l_right2)
-        (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
-        (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
-        basemeasure = (x) -> 1.0
-        sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right)]
-        sorted_conditioner = sort([conditioner_left, conditioner_right])
-        function logpartition(η)
-            A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
-            A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
-            A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right)
-            B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
-            B2 =
-                (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
-                (η[1] - η[2])
-            B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
+            basemeasure = (x) -> 1.0
+            sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right2)]
+            sorted_conditioner = sort([conditioner_left, conditioner_right2])
+            function logpartition(η)
+                A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right2)
+                A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right2)
+                A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right2)
+                B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
+                B2 =
+                    (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
+                    (η[1] - η[2])
+                B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
 
-            return log(A1 * B1 + A2 * B2 + A3 * B3)
+                return log(A1 * B1 + A2 * B2 + A3 * B3)
+            end
+            naturalparameters = [η_left, η_right2]
+            supp = support(l_left)
+            dist_prod = prod(ClosedProd(), l_left, l_right2)
+            ef_prod   = prod(ef_left,ef_right2)
+            @test getnaturalparameters(dist_prod) == naturalparameters
+            @test support(dist_prod) == supp
+            @test getbasemeasure(dist_prod)(1.0) == basemeasure(1.0)
+            @test getsufficientstatistics(dist_prod)(1.0) ==
+                sufficientstatistics(1.0)
+
+            @test getnaturalparameters(ef_prod) == naturalparameters
+            @test support(ef_prod) == supp
+            @test getbasemeasure(ef_prod)(1.0) == basemeasure(1.0)
+            @test getsufficientstatistics(ef_prod)(1.0) ==
+                sufficientstatistics(1.0)
         end
-        naturalparameters = [η_left, η_right]
-        supp = support(l_left)
-        @test getnaturalparameters(prod(ClosedProd(), l_left, l_right2)) == naturalparameters
-        @test support(prod(ClosedProd(), l_left, l_right2)) == supp
-        @test getbasemeasure(prod(ClosedProd(), l_left, l_right2))(1.0) == basemeasure(1.0)
-        @test getsufficientstatistics(prod(ClosedProd(), l_left, l_right2))(1.0) ==
-              sufficientstatistics(1.0)
     end
 
     @testset "natural parameters related" begin
