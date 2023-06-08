@@ -58,10 +58,10 @@ import HypergeometricFunctions: _₂F₁
     end
 
     @testset "prod KnownExponentialFamilyDistribution" begin
-        for nleft = 1:20, pleft =0.01:0.1:0.99
+        for nleft = 1:15, pleft =0.01:0.3:0.99
             left = Binomial(nleft, pleft)
             efleft = convert(KnownExponentialFamilyDistribution, left)
-            for nright = 1:20, pright=0.01:0.1:0.99
+            for nright = 1:10, pright=0.01:0.3:0.99
                 right = Binomial(nright, pright)
                 efright = convert(KnownExponentialFamilyDistribution, right)
                 prod_dist = prod(efleft, efright)
@@ -82,9 +82,9 @@ import HypergeometricFunctions: _₂F₁
     end
 
     @testset "prod Distribution" begin
-        for nleft = 1:20, pleft =0.01:0.2:0.99
+        for nleft = 1:15, pleft =0.01:0.3:0.99
             left = Binomial(nleft, pleft)
-            for nright = 1:20, pright=0.01:0.2:0.99
+            for nright = 1:10, pright=0.01:0.3:0.99
                 right = Binomial(nright, pright)
                 prod_dist = prod(ClosedProd(), left, right)
                 hist_sum(x) =

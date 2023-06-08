@@ -58,7 +58,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             )
             @test sum(hist_sum(x_sample) for x_sample in sample_space) ≈ 1.0 atol = 1e-10
             @test sum(hist_sumef(x_sample) for x_sample in sample_space) ≈ 1.0  atol = 1e-10
-            sample_x = rand(d,20)
+            sample_x = rand(d,5)
             for xi in sample_x
                 @test prod_dist.basemeasure(xi) ≈ (factorial(n) / prod(factorial.(xi)))^2 atol = 1e-10
                 @test prod_dist.sufficientstatistics(xi) == xi

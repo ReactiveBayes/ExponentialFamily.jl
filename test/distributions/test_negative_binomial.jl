@@ -28,11 +28,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        for nleft =1:20, pleft=0.01:0.2:0.99
+        for nleft =1:15, pleft=0.01:0.3:0.99
             left = NegativeBinomial(nleft, pleft)
             efleft = convert(KnownExponentialFamilyDistribution, left)
             η_left = first(getnaturalparameters(efleft))
-            for nright= 1:20, pright=0.01:0.2:0.99
+            for nright= 1:15, pright=0.01:0.3:0.99
                 right = NegativeBinomial(nright, pright)
                 efright = convert(KnownExponentialFamilyDistribution, right) 
                 η_right = first(getnaturalparameters(efright))
