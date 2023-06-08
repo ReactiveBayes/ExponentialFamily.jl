@@ -44,7 +44,7 @@ prod(::ClosedProd, ::Missing, ::Missing) = missing
 """
     NoClosedProdException(left, right)
 
-This exception is thrown in the `prod` function in case if an analytical prod between `left` and `right` is not available or not implemented.
+This exception is thrown in the `prod` function in case if a cloed prod between `left` and `right` is not available or not implemented.
 
 See also: [`ClosedProd`](@ref), [`prod`]
 """
@@ -55,7 +55,7 @@ end
 
 function Base.showerror(io::IO, err::NoClosedProdException)
     print(io, "NoClosedProdException: ")
-    print(io, "  No analytical rule available to compute a product of $(err.left) and $(err.right).")
+    print(io, "  No closed product rule available to compute a product of $(err.left) and $(err.right).")
     print(
         io,
         "  Possible fix: implement `prod(::ClosedProd, left::$(typeof(err.left)), right::$(typeof(err.right))) = ...`"
@@ -99,13 +99,12 @@ struct ProdPreserveTypeRight end
 
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
-struct ConditionallyClosedProd end
 struct ProdClosedRuleUnknown end
 """
     prod_closed_rule(::Type, ::Type)
-Returns either `ProdClosed` or `ProdCloseddRuleUnknown` for two given distribution types.
-Returns `ProdAnalyticalRuleUnknown` by default.
-See also: [`prod`](@ref), [`ProdAnalytical`](@ref), [`ProdGeneric`](@ref)
+Returns either `ProdClosed` or `ProdClosedRuleUnknown` for two given distribution types.
+Returns `ProdClosedRuleUnknown` by default.
+See also: [`prod`](@ref), [`ProdClosed`](@ref), [`ProdGeneric`](@ref)
 """
 prod_closed_rule(::Type, ::Type) = ProdClosedRuleUnknown()
 
@@ -147,7 +146,7 @@ _check_dist_product_value_support(::Type{S1}, ::Type{S2}) where {S1 <: ValueSupp
 """
     ProdGeneric{C}
 
-`ProdGeneric` is one of the strategies for `prod` function. This strategy does not fail in case of no analytical rule is available, but simply creates a product tree, there all nodes represent the `prod` function and all leaves are valid `Distribution` object.
+`ProdGeneric` is one of the strategies for `prod` function. This strategy does not fail in case of no closed rule is available, but simply creates a product tree, there all nodes represent the `prod` function and all leaves are valid `Distribution` object.
 This object does not define any statistical properties (such as `mean` or `var` etc) and cannot be used during the inference procedure. However this object plays imporant part in the functional form constraints implementation. 
 In a few words this object keeps all the information of a product of messages and propagates this information in the functional form constraint.
 
@@ -172,29 +171,14 @@ prod(::ProdGeneric, ::Missing, ::Missing) = missing
 prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, prod_closed_rule(L, R), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
-prod(generic::ProdGeneric, ::ConditionallyClosedProd, left, right) = ExponentialFamilyProduct(left, right)
 
-# In case of ProdPointMass we want to propagate a single `ExponentialFamilyProduct` as much as possible and do not create a big tree of product which will reduce performance significantly
 # In this methods the general rule is the folowing: If we see that one of the arguments of `ExponentialFamilyProduct` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
 prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T} =
     prod(generic, prod_closed_rule(L, T), prod_closed_rule(R, T), left, right)
+
 prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} =
     prod(generic, prod_closed_rule(T, L), prod_closed_rule(T, R), left, right)
-
-prod(generic::ProdGeneric, ::ConditionallyClosedProd, ::ConditionallyClosedProd, left::ExponentialFamilyProduct, right) =
-    ExponentialFamilyProduct(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::ConditionallyClosedProd, left::ExponentialFamilyProduct, right) =
-    ExponentialFamilyProduct(prod(get_constraint(generic), getleft(left), right), getright(left))
-prod(generic::ProdGeneric, ::ConditionallyClosedProd, ::ClosedProd, left::ExponentialFamilyProduct, right) =
-    ExponentialFamilyProduct(getleft(left), prod(get_constraint(generic), getright(left), right))
-
-prod(generic::ProdGeneric, ::ConditionallyClosedProd, ::ConditionallyClosedProd, left, right::ExponentialFamilyProduct) =
-    ExponentialFamilyProduct(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::ConditionallyClosedProd, left, right::ExponentialFamilyProduct) =
-    ExponentialFamilyProduct(prod(get_constraint(generic), left, getleft(right)), getright(right))
-prod(generic::ProdGeneric, ::ConditionallyClosedProd, ::ClosedProd, left, right::ExponentialFamilyProduct) =
-    ExponentialFamilyProduct(getleft(right), prod(get_constraint(generic), left, getright(right)))
 
 function prod(
     generic::ProdGeneric,
