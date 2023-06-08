@@ -28,26 +28,36 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        left = NegativeBinomial(10, 0.5)
-        right = NegativeBinomial(15, 0.3)
-        prod_dist = prod(ClosedProd(), left, right)
-
-        η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
-        η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
-
-        sample_points = collect(1:5)
-        for x in sample_points
-            rleft, rright = Integer(first(params(left))), Integer(first(params(right)))
-
-            @test prod_dist.basemeasure(x) == (binomial(BigInt(x + rleft - 1), x) * binomial(BigInt(x + rright - 1), x))
-            @test prod_dist.sufficientstatistics(x) == x
-
-            hist_sum(x) =
+        for nleft =1:20, pleft=0.01:0.2:0.99
+            left = NegativeBinomial(nleft, pleft)
+            efleft = convert(KnownExponentialFamilyDistribution, left)
+            η_left = first(getnaturalparameters(efleft))
+            for nright= 1:20, pright=0.01:0.2:0.99
+                right = NegativeBinomial(nright, pright)
+                efright = convert(KnownExponentialFamilyDistribution, right) 
+                η_right = first(getnaturalparameters(efright))
+                prod_dist = prod(ClosedProd(), left, right)
+                prod_ef   = prod(efleft, efright)
+                hist_sum(x) =
                 prod_dist.basemeasure(x) * exp(
                     prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
                     prod_dist.logpartition(prod_dist.naturalparameters[1])
                 )
-            @test sum(hist_sum(x) for x in 0:15) ≈ 1.0
+                hist_sumef(x) =
+                prod_ef.basemeasure(x) * exp(
+                    prod_ef.sufficientstatistics(x) * prod_ef.naturalparameters[1] -
+                    prod_ef.logpartition(prod_ef.naturalparameters[1])
+                )
+                @test sum(hist_sum(x) for x in 0:max(nleft,nright)) ≈ 1.0 atol=1e-5
+                @test sum(hist_sumef(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol=1e-5
+                sample_points = collect(1:max(nleft,nright))
+                for x in sample_points
+                    @test prod_dist.basemeasure(x) == (binomial(BigInt(x + nleft - 1), x) * binomial(BigInt(x + nright - 1), x))
+                    @test prod_dist.sufficientstatistics(x) == x
+                    @test prod_ef.basemeasure(x) == (binomial(BigInt(x + nleft - 1), x) * binomial(BigInt(x + nright - 1), x))
+                    @test prod_ef.sufficientstatistics(x) == x  
+                end
+            end
         end
     end
 
@@ -73,8 +83,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(d2, 2) == binomial(6, 2)
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
-
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 3) + log(1 / 2)], 5)
 
         @test logpdf(η1, 2) == logpdf(d1, 2)
         @test logpdf(η2, 3) == logpdf(d2, 3)

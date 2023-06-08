@@ -21,9 +21,12 @@ function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, ri
     
     η_left = getnaturalparameters(left)
     η_right = getnaturalparameters(right)
+    
     K = length(η_left)
     naturalparameters = η_left + η_right
     sufficientstatistics = (x) -> x
+    ## If conditioner is larger than 12 factorial will be problematic. Casting to BigInt will resolve the issue.
+    ##TODO: fix this issue in future PRs
     basemeasure = (x) -> factorial(conditioner_left)^2 / (prod(factorial.(x)))^2
     logpartition = computeLogpartition(K, conditioner_left)
     supp = 0:conditioner_left
@@ -46,6 +49,8 @@ function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
 
     naturalparameters = η_left + η_right
     sufficientstatistics = (x) -> x
+    ## If number of trials is larger than 12 factorial will be problematic. Casting to BigInt will resolve the issue.
+    ##TODO: fix this issue in future PRs
     basemeasure = (x) -> factorial(trials)^2 / (prod(factorial.(x)))^2
     logpartition = computeLogpartition(K, trials)
     supp = 0:trials

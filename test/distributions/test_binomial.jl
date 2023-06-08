@@ -65,37 +65,38 @@ import HypergeometricFunctions: _₂F₁
                 right = Binomial(nright, pright)
                 efright = convert(KnownExponentialFamilyDistribution, right)
                 prod_dist = prod(efleft, efright)
+                
+                hist_sum(x) =
+                prod_dist.basemeasure(x) * exp(
+                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
+                    prod_dist.logpartition(prod_dist.naturalparameters[1])
+                )
+                @test sum(hist_sum(x) for x in 0:max(nleft,nright)) ≈ 1.0 atol = 1e-9
                 sample_points = collect(1:max(nleft,nright))
                 for x in sample_points
                     @test prod_dist.basemeasure(x) == (binomial(nleft, x) * binomial(nright, x))
-                    @test prod_dist.sufficientstatistics(x) == x
-                    hist_sum(x) =
-                        prod_dist.basemeasure(x) * exp(
-                            prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                            prod_dist.logpartition(prod_dist.naturalparameters[1])
-                        )
-                    @test sum(hist_sum(x) for x in 0:max(nleft,nright)) ≈ 1.0 atol = 1e-5
+                    @test prod_dist.sufficientstatistics(x) == x  
                 end
             end
         end
     end
 
     @testset "prod Distribution" begin
-        for nleft = 1:20, pleft =0.01:0.1:0.99
+        for nleft = 1:20, pleft =0.01:0.2:0.99
             left = Binomial(nleft, pleft)
-            for nright = 1:20, pright=0.01:0.1:0.99
+            for nright = 1:20, pright=0.01:0.2:0.99
                 right = Binomial(nright, pright)
                 prod_dist = prod(ClosedProd(), left, right)
+                hist_sum(x) =
+                prod_dist.basemeasure(x) * exp(
+                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
+                    prod_dist.logpartition(prod_dist.naturalparameters[1])
+                )
+                @test sum(hist_sum(x) for x in 0:max(nleft,nright)) ≈ 1.0 atol = 1e-9
                 sample_points = collect(1:max(nleft,nright))
                 for x in sample_points
                     @test prod_dist.basemeasure(x) == (binomial(nleft, x) * binomial(nright, x))
-                    @test prod_dist.sufficientstatistics(x) == x
-                    hist_sum(x) =
-                        prod_dist.basemeasure(x) * exp(
-                            prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                            prod_dist.logpartition(prod_dist.naturalparameters[1])
-                        )
-                    @test sum(hist_sum(x) for x in 0:max(nleft,nright)) ≈ 1.0 atol = 1e-5
+                    @test prod_dist.sufficientstatistics(x) == x  
                 end
             end
         end

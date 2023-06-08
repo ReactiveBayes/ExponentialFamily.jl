@@ -30,35 +30,41 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
     @testset "prod" begin
         for n = 2:12
-            left = Multinomial(n, [0.2, 0.4, 0.4])
-            right = Multinomial(n, [0.1, 0.3, 0.6])
+            plength = Int64(ceil(rand(Uniform(1,n))))
+            pleft  =  rand(plength)
+            pleft  = pleft./sum(pleft)
+            pright =  rand(plength)
+            pright = pright./sum(pright)
+            left = Multinomial(n, pleft)
+            right = Multinomial(n, pright)
             efleft = convert(KnownExponentialFamilyDistribution,left)
             efright = convert(KnownExponentialFamilyDistribution,right)
             prod_dist = prod(ClosedProd(), left, right)
             prod_ef   = prod(efleft, efright)
-            d = Multinomial(n, ones(3) ./ 3)
+            d = Multinomial(n, ones(plength) ./ plength)
             sample_space = unique(rand(StableRNG(1), d, 4000), dims = 2)
             sample_space = [sample_space[:, i] for i in 1:size(sample_space, 2)]
 
-            sample_x = [[2, 5, 3], [1, 2, 7], [0, 4, 6], [1, 4, 5]]
+            
+            hist_sum(x) =
+            prod_dist.basemeasure(x) * exp(
+                prod_dist.naturalparameters' * prod_dist.sufficientstatistics(x) -
+                prod_dist.logpartition(prod_dist.naturalparameters)
+            )
+            hist_sumef(x) =
+            prod_ef.basemeasure(x) * exp(
+                prod_ef.naturalparameters' * prod_ef.sufficientstatistics(x) -
+                prod_ef.logpartition(prod_ef.naturalparameters)
+            )
+            @test sum(hist_sum(x_sample) for x_sample in sample_space) ≈ 1.0 atol = 1e-10
+            @test sum(hist_sumef(x_sample) for x_sample in sample_space) ≈ 1.0  atol = 1e-10
+            sample_x = rand(d,20)
             for xi in sample_x
                 @test prod_dist.basemeasure(xi) ≈ (factorial(n) / prod(factorial.(xi)))^2 atol = 1e-10
                 @test prod_dist.sufficientstatistics(xi) == xi
-                hist_sum(x) =
-                    prod_dist.basemeasure(x) * exp(
-                        prod_dist.naturalparameters' * prod_dist.sufficientstatistics(x) -
-                        prod_dist.logpartition(prod_dist.naturalparameters)
-                    )
-                @test sum(hist_sum(x_sample) for x_sample in sample_space) ≈ 1.0 atol = 1e-10
-
+               
                 @test prod_ef.basemeasure(xi) ≈ (factorial(n) / prod(factorial.(xi)))^2 atol = 1e-10
-                @test prod_ef.sufficientstatistics(xi) == xi
-                hist_sumef(x) =
-                    prod_ef.basemeasure(x) * exp(
-                        prod_ef.naturalparameters' * prod_ef.sufficientstatistics(x) -
-                        prod_ef.logpartition(prod_dist.naturalparameters)
-                    )
-                @test sum(hist_sumef(x_sample) for x_sample in sample_space) ≈ 1.0  atol = 1e-10
+                @test prod_ef.sufficientstatistics(xi) == xi    
             end
         end
 
