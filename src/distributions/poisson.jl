@@ -8,6 +8,26 @@ Distributions.cov(dist::Poisson) = var(dist)
 
 prod_closed_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
 
+function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: Poisson}
+    η_left = first(getnaturalparameters(left))
+    η_right = first(getnaturalparameters(right))
+
+    naturalparameters = [η_left + η_right]
+    basemeasure = (x) -> 1 / factorial(x)^2
+    sufficientstatistics = (x) -> x
+    logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
+    supp = DomainSets.NaturalNumbers()
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
+end
+
 function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
     η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
     η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
