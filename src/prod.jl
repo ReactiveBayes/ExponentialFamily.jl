@@ -227,11 +227,11 @@ function prod(
     left::KnownExponentialFamilyDistribution{T},
     right::KnownExponentialFamilyDistribution{T}
 ) where {T}
-        KnownExponentialFamilyDistribution(
-            T,
-            getnaturalparameters(left) + getnaturalparameters(right),
-            getconditioner(left)
-        )
+    KnownExponentialFamilyDistribution(
+        T,
+        getnaturalparameters(left) + getnaturalparameters(right),
+        getconditioner(left)
+    )
 end
 
 function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}

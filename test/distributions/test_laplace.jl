@@ -22,11 +22,11 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
     end
 
     @testset "prod" begin
-        for i=1:100
-            μleft  = 100*randn()
-            μright = 100*randn()
-            σleft  = 100*rand()
-            σright = 100*rand()
+        for i in 1:100
+            μleft = 100 * randn()
+            μright = 100 * randn()
+            σleft = 100 * rand()
+            σright = 100 * rand()
             l_left = Laplace(μleft, σleft)
             l_right = Laplace(μleft, σright)
             l_right2 = Laplace(μright, σright)
@@ -36,8 +36,9 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
             (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
             (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
             (η_right2, conditioner_right2) = (getnaturalparameters(ef_right2), getconditioner(ef_right2))
-            @test prod(ef_left,ef_right) == KnownExponentialFamilyDistribution(Laplace, η_left+η_right, conditioner_left )
-            @test prod(ClosedProd(), l_left, l_right) ≈ convert(Distribution, prod(ef_left,ef_right))
+            @test prod(ef_left, ef_right) ==
+                  KnownExponentialFamilyDistribution(Laplace, η_left + η_right, conditioner_left)
+            @test prod(ClosedProd(), l_left, l_right) ≈ convert(Distribution, prod(ef_left, ef_right))
 
             basemeasure = (x) -> 1.0
             sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right2)]
@@ -57,18 +58,18 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
             naturalparameters = [η_left, η_right2]
             supp = support(l_left)
             dist_prod = prod(ClosedProd(), l_left, l_right2)
-            ef_prod   = prod(ef_left,ef_right2)
+            ef_prod = prod(ef_left, ef_right2)
             @test getnaturalparameters(dist_prod) == naturalparameters
             @test support(dist_prod) == supp
             @test getbasemeasure(dist_prod)(1.0) == basemeasure(1.0)
             @test getsufficientstatistics(dist_prod)(1.0) ==
-                sufficientstatistics(1.0)
+                  sufficientstatistics(1.0)
 
             @test getnaturalparameters(ef_prod) == naturalparameters
             @test support(ef_prod) == supp
             @test getbasemeasure(ef_prod)(1.0) == basemeasure(1.0)
             @test getsufficientstatistics(ef_prod)(1.0) ==
-                sufficientstatistics(1.0)
+                  sufficientstatistics(1.0)
         end
     end
 

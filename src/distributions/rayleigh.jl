@@ -7,7 +7,11 @@ vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
 prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: Rayleigh}
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Rayleigh}
     η1 = first(getnaturalparameters(left))
     η2 = first(getnaturalparameters(right))
     naturalparameters = [η1 + η2]

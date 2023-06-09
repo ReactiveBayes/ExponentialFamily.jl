@@ -7,8 +7,11 @@ using HCubature
 
 prod_closed_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: Weibull}
-   
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Weibull}
     conditioner_left = getconditioner(left)
     conditioner_right = getconditioner(right)
     η_left = getnaturalparameters(left)

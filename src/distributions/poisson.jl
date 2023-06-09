@@ -8,7 +8,11 @@ Distributions.cov(dist::Poisson) = var(dist)
 
 prod_closed_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: Poisson}
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Poisson}
     η_left = first(getnaturalparameters(left))
     η_right = first(getnaturalparameters(right))
 

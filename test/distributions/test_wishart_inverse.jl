@@ -8,7 +8,8 @@ using LinearAlgebra
 using StableRNGs
 using ForwardDiff
 
-import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, logpartition, reconstructargument!
+import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure,
+    fisherinformation, logpartition, reconstructargument!
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
@@ -22,7 +23,7 @@ function transformation(params)
     η1, η2 = params[1], params[2:end]
     p = Int(sqrt(length(η2)))
     η2 = reshape(η2, (p, p))
-    return [-(2 * η1 + p + 1); vec(-2*η2)]
+    return [-(2 * η1 + p + 1); vec(-2 * η2)]
 end
 
 @testset "InverseWishartImproper" begin
@@ -248,7 +249,7 @@ end
                     η_vec = vcat(η[1], vec(η[2]))
                     fef = fisherinformation(ef)
                     fdist = fisherinformation(dist)
-                    
+
                     J = ForwardDiff.jacobian(transformation, η_vec)
                     @test fef ./ (J' * fdist * J) ≈ ones(size(fef))
                 end

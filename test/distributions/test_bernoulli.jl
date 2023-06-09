@@ -56,14 +56,15 @@ import ExponentialFamily:
     end
 
     @testset "prod with KnownExponentialFamilyDistribution" begin
-        for pleft=0.01:0.01:0.99
-            ηleft  = log(pleft/(1-pleft))
+        for pleft in 0.01:0.01:0.99
+            ηleft  = log(pleft / (1 - pleft))
             efleft = KnownExponentialFamilyDistribution(Bernoulli, ηleft)
-            for pright = 0.01:0.01:0.99
-                ηright = log(pright/(1-pright))
+            for pright in 0.01:0.01:0.99
+                ηright = log(pright / (1 - pright))
                 efright = KnownExponentialFamilyDistribution(Bernoulli, ηright)
-                @test prod(ClosedProd(), efleft,efright) == KnownExponentialFamilyDistribution(Bernoulli, ηleft+ηright)
-                @test prod(efleft,efright) == KnownExponentialFamilyDistribution(Bernoulli, ηleft+ηright)
+                @test prod(ClosedProd(), efleft, efright) ==
+                      KnownExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+                @test prod(efleft, efright) == KnownExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
             end
         end
     end

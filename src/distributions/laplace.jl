@@ -6,7 +6,11 @@ vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
 prod_closed_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
 
-function Base.prod(::ClosedProd, ef_left::KnownExponentialFamilyDistribution{T}, ef_right::KnownExponentialFamilyDistribution{T}) where {T <: Laplace}
+function Base.prod(
+    ::ClosedProd,
+    ef_left::KnownExponentialFamilyDistribution{T},
+    ef_right::KnownExponentialFamilyDistribution{T}
+) where {T <: Laplace}
     (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
     (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
     if conditioner_left == conditioner_right
@@ -104,9 +108,7 @@ basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}, x) =
     1.0
 
 basemeasure(d::Laplace, x) = 1.0
-function Distributions.logpdf(d::Laplace, x::Real)
-    return -(abs(x - d.μ) / d.θ + log(2scale(d)))
-end
+
 fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / first(getnaturalparameters(ef))^2
 
 function fisherinformation(dist::Laplace)

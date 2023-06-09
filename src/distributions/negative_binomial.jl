@@ -18,7 +18,11 @@ function convert_eltype(
 end
 
 prod_closed_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
-function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: NegativeBinomial}
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: NegativeBinomial}
     rleft, rright = Integer(first(getconditioner(left))), Integer(first(getconditioner(right)))
 
     η_left = first(getnaturalparameters(left))
@@ -34,29 +38,7 @@ function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, ri
     end
 
     function logpartition(η)
-        m, n = rright, rleft
-        max_m_n = max(m, n)
-        exp_η = exp(η)
-        max_m_n_plus1 = max_m_n + 1
-        max_m_n_plus2 = max_m_n + 2
-
-        term1 = _₂F₁(m, n, 1, exp_η)
-
-        term2 = exp(η * (maximum([m, n]) + 1))
-
-        term3 =
-            binomial_prod(m + max_m_n, n + max_m_n, max_m_n_plus1) * _₃F₂(
-                1,
-                m + max_m_n_plus1,
-                n + max_m_n_plus1,
-                max_m_n_plus2,
-                max_m_n_plus2,
-                exp_η
-            )
-
-        result = log(term1 - term2 * term3)
-
-        return result
+        return log(sum(binomial_prod(x + rleft - 1, x + rright - 1, x) * exp(η * x) for x in 0:max(rright, rleft)))
     end
 
     supp = NaturalNumbers()
@@ -72,56 +54,10 @@ function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, ri
 end
 
 function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial)
-    rleft, rright = Integer(first(params(left))), Integer(first(params(right)))
+    ef_left = convert(KnownExponentialFamilyDistribution, left)
+    ef_right = convert(KnownExponentialFamilyDistribution, right)
 
-    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
-    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
-
-    naturalparameters = [η_left + η_right]
-
-    sufficientstatistics = (x) -> x
-
-    function basemeasure(x)
-        p_left, p_right, p_x = promote(rleft, rright, x)
-        binomial_prod(p_x + p_left - 1, p_x + p_right - 1, p_x)
-    end
-
-    function logpartition(η)
-        m, n = rright, rleft
-        max_m_n = max(m, n)
-        exp_η = exp(η)
-        max_m_n_plus1 = max_m_n + 1
-        max_m_n_plus2 = max_m_n + 2
-
-        term1 = _₂F₁(m, n, 1, exp_η)
-
-        term2 = exp(η * (maximum([m, n]) + 1))
-
-        term3 =
-            binomial_prod(m + max_m_n, n + max_m_n, max_m_n_plus1) * _₃F₂(
-                1,
-                m + max_m_n_plus1,
-                n + max_m_n_plus1,
-                max_m_n_plus2,
-                max_m_n_plus2,
-                exp_η
-            )
-
-        result = log(term1 - term2 * term3)
-
-        return result
-    end
-
-    supp = NaturalNumbers()
-
-    return ExponentialFamilyDistribution(
-        Float64,
-        basemeasure,
-        sufficientstatistics,
-        naturalparameters,
-        logpartition,
-        supp
-    )
+    return prod(ef_left, ef_right)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NegativeBinomial)

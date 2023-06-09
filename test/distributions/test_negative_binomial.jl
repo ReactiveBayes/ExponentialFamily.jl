@@ -12,7 +12,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
 @testset "NegativeBinomial" begin
     @testset "probvec" begin
-        @test all(probvec(NegativeBinomial(2, 0.8)) .≈ (0.2, 0.8)) # check
+        @test all(probvec(NegativeBinomial(2, 0.8)) .≈ (0.2, 0.8))
         @test probvec(NegativeBinomial(2, 0.2)) == (0.8, 0.2)
         @test probvec(NegativeBinomial(2, 0.1)) == (0.9, 0.1)
         @test probvec(NegativeBinomial(2)) == (0.5, 0.5)
@@ -28,34 +28,36 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        for nleft =1:15, pleft=0.01:0.3:0.99
+        for nleft in 1:15, pleft in 0.01:0.3:0.99
             left = NegativeBinomial(nleft, pleft)
             efleft = convert(KnownExponentialFamilyDistribution, left)
             η_left = first(getnaturalparameters(efleft))
-            for nright= 1:15, pright=0.01:0.3:0.99
+            for nright in 1:15, pright in 0.01:0.3:0.99
                 right = NegativeBinomial(nright, pright)
-                efright = convert(KnownExponentialFamilyDistribution, right) 
+                efright = convert(KnownExponentialFamilyDistribution, right)
                 η_right = first(getnaturalparameters(efright))
                 prod_dist = prod(ClosedProd(), left, right)
-                prod_ef   = prod(efleft, efright)
+                prod_ef = prod(efleft, efright)
                 hist_sum(x) =
-                prod_dist.basemeasure(x) * exp(
-                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                    prod_dist.logpartition(prod_dist.naturalparameters[1])
-                )
+                    prod_dist.basemeasure(x) * exp(
+                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
+                        prod_dist.logpartition(prod_dist.naturalparameters[1])
+                    )
                 hist_sumef(x) =
-                prod_ef.basemeasure(x) * exp(
-                    prod_ef.sufficientstatistics(x) * prod_ef.naturalparameters[1] -
-                    prod_ef.logpartition(prod_ef.naturalparameters[1])
-                )
-                @test sum(hist_sum(x) for x in 0:max(nleft,nright)) ≈ 1.0 atol=1e-5
-                @test sum(hist_sumef(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol=1e-5
-                sample_points = collect(1:max(nleft,nright))
+                    prod_ef.basemeasure(x) * exp(
+                        prod_ef.sufficientstatistics(x) * prod_ef.naturalparameters[1] -
+                        prod_ef.logpartition(prod_ef.naturalparameters[1])
+                    )
+                @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-5
+                @test sum(hist_sumef(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-5
+                sample_points = collect(1:max(nleft, nright))
                 for x in sample_points
-                    @test prod_dist.basemeasure(x) == (binomial(BigInt(x + nleft - 1), x) * binomial(BigInt(x + nright - 1), x))
+                    @test prod_dist.basemeasure(x) ==
+                          (binomial(BigInt(x + nleft - 1), x) * binomial(BigInt(x + nright - 1), x))
                     @test prod_dist.sufficientstatistics(x) == x
-                    @test prod_ef.basemeasure(x) == (binomial(BigInt(x + nleft - 1), x) * binomial(BigInt(x + nright - 1), x))
-                    @test prod_ef.sufficientstatistics(x) == x  
+                    @test prod_ef.basemeasure(x) ==
+                          (binomial(BigInt(x + nleft - 1), x) * binomial(BigInt(x + nright - 1), x))
+                    @test prod_ef.sufficientstatistics(x) == x
                 end
             end
         end

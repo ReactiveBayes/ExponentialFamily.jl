@@ -14,14 +14,18 @@ end
 
 prod_closed_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::KnownExponentialFamilyDistribution{T}, right::KnownExponentialFamilyDistribution{T}) where {T <: Multinomial}
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Multinomial}
     conditioner_left = getconditioner(left)
     conditioner_right = getconditioner(right)
     @assert conditioner_left == conditioner_right "$(left) and $(right) must have the same conditioner"
-    
+
     η_left = getnaturalparameters(left)
     η_right = getnaturalparameters(right)
-    
+
     K = length(η_left)
     naturalparameters = η_left + η_right
     sufficientstatistics = (x) -> x

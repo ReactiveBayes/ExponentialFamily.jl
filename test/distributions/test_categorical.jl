@@ -59,12 +59,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
               Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
         @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ≈
-              Categorical([2/3, 1/4, 1/12])
-            
+              Categorical([2 / 3, 1 / 4, 1 / 12])
     end
 
-    @testset "prod KnownExponentialFamilyDistribution" begin 
-        for d = 2:20
+    @testset "prod KnownExponentialFamilyDistribution" begin
+        for d in 2:20
             pleft     = rand(d)
             pleft     = pleft ./ sum(pleft)
             distleft  = Categorical(pleft)
@@ -75,10 +74,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             distright = Categorical(pright)
             efright   = convert(KnownExponentialFamilyDistribution, distright)
             ηright    = getnaturalparameters(efright)
-            efprod    = prod(efleft,efright)
+            efprod    = prod(efleft, efright)
             distprod  = prod(ClosedProd(), distleft, distright)
-            @test efprod == KnownExponentialFamilyDistribution(Categorical, ηleft+ηright)
-            @test convert(Distribution,efprod) ≈ distprod
+            @test efprod == KnownExponentialFamilyDistribution(Categorical, ηleft + ηright)
+            @test convert(Distribution, efprod) ≈ distprod
         end
     end
 
