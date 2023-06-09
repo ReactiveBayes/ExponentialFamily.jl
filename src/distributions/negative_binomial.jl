@@ -2,7 +2,6 @@ export NegativeBinomial
 import Distributions: NegativeBinomial, probs
 import StatsFuns: logit, logistic
 import DomainSets: NaturalNumbers
-import HypergeometricFunctions: _₂F₁, _₃F₂
 
 vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
 
