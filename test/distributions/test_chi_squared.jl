@@ -56,13 +56,16 @@ import ExponentialFamily:
     end
 
     @testset "prod" begin
-        for i in 3:10
+        for i in 3:20
             left = Chisq(i + 1)
             right = Chisq(i)
+            efleft = convert(KnownExponentialFamilyDistribution, left)
+            efright = convert(KnownExponentialFamilyDistribution, right)
             prod_dist = prod(ClosedProd(), left, right)
+            prod_ef = prod(efleft, efright)
 
-            η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
-            η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+            η_left = first(getnaturalparameters(efleft))
+            η_right = first(getnaturalparameters(efright))
             naturalparameters = [η_left + η_right]
 
             @test prod_dist.naturalparameters == naturalparameters
@@ -70,6 +73,12 @@ import ExponentialFamily:
             @test prod_dist.sufficientstatistics(i) ≈ log(i)
             @test prod_dist.logpartition(η_left + η_right) ≈ loggamma(η_left + η_right + 1)
             @test prod_dist.support === support(left)
+
+            @test prod_ef.naturalparameters == naturalparameters
+            @test prod_ef.basemeasure(i) ≈ exp(-i)
+            @test prod_ef.sufficientstatistics(i) ≈ log(i)
+            @test prod_ef.logpartition(η_left + η_right) ≈ loggamma(η_left + η_right + 1)
+            @test prod_ef.support === support(left)
         end
     end
 end

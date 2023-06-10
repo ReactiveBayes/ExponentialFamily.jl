@@ -14,6 +14,36 @@ end
 
 prod_closed_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Multinomial}
+    conditioner_left = getconditioner(left)
+    conditioner_right = getconditioner(right)
+    @assert conditioner_left == conditioner_right "$(left) and $(right) must have the same conditioner"
+
+    η_left = getnaturalparameters(left)
+    η_right = getnaturalparameters(right)
+
+    K = length(η_left)
+    naturalparameters = η_left + η_right
+    sufficientstatistics = (x) -> x
+    ## If conditioner is larger than 12 factorial will be problematic. Casting to BigInt will resolve the issue.
+    ##TODO: fix this issue in future PRs
+    basemeasure = (x) -> factorial(conditioner_left)^2 / (prod(factorial.(x)))^2
+    logpartition = computeLogpartition(K, conditioner_left)
+    supp = 0:conditioner_left
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        supp
+    )
+end
+
 function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
     trials = ntrials(left)
@@ -23,6 +53,8 @@ function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
 
     naturalparameters = η_left + η_right
     sufficientstatistics = (x) -> x
+    ## If number of trials is larger than 12 factorial will be problematic. Casting to BigInt will resolve the issue.
+    ##TODO: fix this issue in future PRs
     basemeasure = (x) -> factorial(trials)^2 / (prod(factorial.(x)))^2
     logpartition = computeLogpartition(K, trials)
     supp = 0:trials

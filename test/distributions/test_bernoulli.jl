@@ -55,7 +55,21 @@ import ExponentialFamily:
         @test basemeasure(KnownExponentialFamilyDistribution(Bernoulli, [10]), 0.2) == 1.0
     end
 
-    @testset "prod" begin
+    @testset "prod with KnownExponentialFamilyDistribution" begin
+        for pleft in 0.01:0.01:0.99
+            ηleft  = log(pleft / (1 - pleft))
+            efleft = KnownExponentialFamilyDistribution(Bernoulli, ηleft)
+            for pright in 0.01:0.01:0.99
+                ηright = log(pright / (1 - pright))
+                efright = KnownExponentialFamilyDistribution(Bernoulli, ηright)
+                @test prod(ClosedProd(), efleft, efright) ==
+                      KnownExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+                @test prod(efleft, efright) == KnownExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+            end
+        end
+    end
+
+    @testset "prod with Distribution" begin
         @test prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
         @test prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
         @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)

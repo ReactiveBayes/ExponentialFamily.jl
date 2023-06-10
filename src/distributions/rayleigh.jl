@@ -7,6 +7,29 @@ vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
 prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ClosedProd()
 
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Rayleigh}
+    η1 = first(getnaturalparameters(left))
+    η2 = first(getnaturalparameters(right))
+    naturalparameters = [η1 + η2]
+    basemeasure = (x) -> 4 * x^2 / sqrt(pi)
+    sufficientstatistics = (x) -> x^2
+    logpartition = (η) -> log(η^(-3 / 2))
+    support = DomainSets.HalfLine()
+
+    return ExponentialFamilyDistribution(
+        Float64,
+        basemeasure,
+        sufficientstatistics,
+        naturalparameters,
+        logpartition,
+        support
+    )
+end
+
 function Base.prod(::ClosedProd, left::Rayleigh, right::Rayleigh)
     σ1 = first(params(left))
     σ2 = first(params(right))

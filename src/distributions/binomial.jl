@@ -16,10 +16,21 @@ end
 prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
-    left_trials, right_trials = ntrials(left), ntrials(right)
+    efleft = convert(KnownExponentialFamilyDistribution, left)
+    efright = convert(KnownExponentialFamilyDistribution, right)
 
-    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
-    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+    return prod(efleft, efright)
+end
+
+function Base.prod(
+    ::ClosedProd,
+    left::KnownExponentialFamilyDistribution{T},
+    right::KnownExponentialFamilyDistribution{T}
+) where {T <: Binomial}
+    left_trials, right_trials = getconditioner(left), getconditioner(right)
+
+    η_left = first(getnaturalparameters(left))
+    η_right = first(getnaturalparameters(right))
 
     naturalparameters = [η_left + η_right]
 
@@ -30,7 +41,7 @@ function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
 
     sufficientstatistics = (x) -> x
     logpartition = (η) -> log(_₂F₁(-left_trials, -right_trials, 1, exp(η)))
-    supp = support(left)
+    supp = 0:max(left_trials, right_trials)
 
     return ExponentialFamilyDistribution(
         Float64,

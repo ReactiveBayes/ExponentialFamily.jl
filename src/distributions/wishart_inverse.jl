@@ -198,7 +198,7 @@ function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistri
     η1 = first(η)
     η2 = getindex(η, 2)
     p = first(size(η2))
-    return InverseWishart(-(2 * η1 + p + 1), -2*η2)
+    return InverseWishart(-(2 * η1 + p + 1), -2 * η2)
 end
 
 function logpartition(params::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
@@ -241,11 +241,11 @@ function fisherinformation(dist::InverseWishart)
     p = first(size(S))
     invscale = inv(S)
 
-    hessian = ones(eltype(S), p^2+1, p^2+1)
-    hessian[1, 1] = mvtrigamma(p, -ν/2)/4
-    hessian[1, 2:p^2+1] =  vec(invscale)/2
-    hessian[2:p^2+1, 1] = vec(invscale)/2
-    hessian[2:p^2+1, 2:p^2+1] = ν/2*kron(invscale, invscale)
+    hessian = ones(eltype(S), p^2 + 1, p^2 + 1)
+    hessian[1, 1] = mvtrigamma(p, -ν / 2) / 4
+    hessian[1, 2:p^2+1] = vec(invscale) / 2
+    hessian[2:p^2+1, 1] = vec(invscale) / 2
+    hessian[2:p^2+1, 2:p^2+1] = ν / 2 * kron(invscale, invscale)
     hessian[2:p^2+1, 2:p^2+1] = -1 * hessian[2:p^2+1, 2:p^2+1]
     return hessian
 end

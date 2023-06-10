@@ -66,9 +66,30 @@ import SpecialFunctions: loggamma
             @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
         end
 
-        left = convert(KnownExponentialFamilyDistribution, Beta(2))
-        right = convert(KnownExponentialFamilyDistribution, Beta(5))
-        @test prod(left, right) == convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), Beta(2), Beta(5)))
+        @testset "prod with KnownExponentialFamilyDistribution" begin
+            for αleft in 0.01:1:50, βleft in 0.01:1:10
+                left   = Beta(αleft, βleft)
+                efleft = convert(KnownExponentialFamilyDistribution, left)
+                ηleft  = getnaturalparameters(efleft)
+                for αright in 0.01:1:50, βright in 0.01:1:10
+                    right   = Beta(αright, βright)
+                    efright = convert(KnownExponentialFamilyDistribution, right)
+                    ηright  = getnaturalparameters(efright)
+                    @test prod(ClosedProd(), efleft, efright) ==
+                          KnownExponentialFamilyDistribution(Beta, ηleft + ηright)
+                    @test prod(efleft, efright) == KnownExponentialFamilyDistribution(Beta, ηleft + ηright)
+                    if isless(αleft + αright - 1, 0) || isless(βleft + βright - 1, 0)
+                        @test_throws DomainError prod(ClosedProd(), left, right) == convert(
+                            Distribution,
+                            KnownExponentialFamilyDistribution(Beta, ηleft + ηright)
+                        )
+                    else
+                        @test prod(ClosedProd(), left, right) ≈
+                              convert(Distribution, KnownExponentialFamilyDistribution(Beta, ηleft + ηright))
+                    end
+                end
+            end
+        end
     end
 end
 

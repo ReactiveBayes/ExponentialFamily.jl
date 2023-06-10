@@ -6,6 +6,45 @@ vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
 prod_closed_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
 
+function Base.prod(
+    ::ClosedProd,
+    ef_left::KnownExponentialFamilyDistribution{T},
+    ef_right::KnownExponentialFamilyDistribution{T}
+) where {T <: Laplace}
+    (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
+    (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
+    if conditioner_left == conditioner_right
+        return KnownExponentialFamilyDistribution(Laplace, η_left + η_right, conditioner_left)
+    else
+        basemeasure = (x) -> 1.0
+        sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right)]
+        sorted_conditioner = sort([conditioner_left, conditioner_right])
+        function logpartition(η)
+            A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
+            A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
+            A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right)
+            B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
+            B2 =
+                (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
+                (η[1] - η[2])
+            B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
+
+            return log(A1 * B1 + A2 * B2 + A3 * B3)
+        end
+        naturalparameters = [η_left, η_right]
+        supp = support(T)
+
+        return ExponentialFamilyDistribution(
+            Float64,
+            basemeasure,
+            sufficientstatistics,
+            naturalparameters,
+            logpartition,
+            supp
+        )
+    end
+end
+
 function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
     location_left, scale_left = params(left)
     location_right, scale_right = params(right)
@@ -69,9 +108,7 @@ basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}, x) =
     1.0
 
 basemeasure(d::Laplace, x) = 1.0
-function Distributions.logpdf(d::Laplace, x::Real)
-    return -(abs(x - d.μ) / d.θ + log(2scale(d)))
-end
+
 fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / first(getnaturalparameters(ef))^2
 
 function fisherinformation(dist::Laplace)

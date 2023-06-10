@@ -8,6 +8,7 @@ vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
 prod_closed_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ClosedProd()
+
 function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
     right_p = succprob(right)
