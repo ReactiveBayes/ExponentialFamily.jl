@@ -48,11 +48,11 @@ import ExponentialFamily:
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
-                  KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
+                  KnownExponentialFamilyDistribution(Bernoulli, logit(i / 10.0))
         end
-        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, [10])) === true
-        @test basemeasure(b_99, 0.1) == 1.0
-        @test basemeasure(KnownExponentialFamilyDistribution(Bernoulli, [10]), 0.2) == 1.0
+        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, 10)) === true
+        @test_throws AssertionError basemeasure(b_99, 0.1)
+        @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Bernoulli, 10), 0.2) 
     end
 
     @testset "prod with KnownExponentialFamilyDistribution" begin

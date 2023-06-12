@@ -63,7 +63,7 @@ compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bern
     compute_logscale(new_dist, right_dist, left_dist)
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
-    return -log(logistic(-first(getnaturalparameters(exponentialfamily))))
+    return -log(logistic(-getnaturalparameters(exponentialfamily)))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
@@ -73,7 +73,7 @@ end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Bernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    KnownExponentialFamilyDistribution(Bernoulli, [log(succprob(dist) / (one(Float64) - succprob(dist)))])
+    KnownExponentialFamilyDistribution(Bernoulli, log(succprob(dist) / (one(Float64) - succprob(dist))))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli}) = true
@@ -82,7 +82,7 @@ check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
 function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) 
     @assert x ∈ support(Bernoulli)
-    return x
+    return 1.0
 end
 function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) 
     @assert x ∈ support(Bernoulli)
