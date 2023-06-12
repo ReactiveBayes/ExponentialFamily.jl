@@ -76,51 +76,53 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
     @testset "natural parameters related" begin
         @testset "convert" begin
             for i in 1:10
-                @test convert(Distribution, KnownExponentialFamilyDistribution(Laplace, [-i], 2.0)) ==
+                @test convert(Distribution, KnownExponentialFamilyDistribution(Laplace, -i, 2.0)) ==
                       Laplace(2.0, 1 / i)
 
                 @test convert(KnownExponentialFamilyDistribution, Laplace(sqrt(i), i)) ==
-                      KnownExponentialFamilyDistribution(Laplace, [-1 / i], sqrt(i))
+                      KnownExponentialFamilyDistribution(Laplace, -1 / i, sqrt(i))
             end
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(Laplace, [-1.0], 1.0)) ≈ log(2)
-            @test logpartition(KnownExponentialFamilyDistribution(Laplace, [-2.0], 1.0)) ≈ log(1)
+            @test logpartition(KnownExponentialFamilyDistribution(Laplace, -1.0, 1.0)) ≈ log(2)
+            @test logpartition(KnownExponentialFamilyDistribution(Laplace, -2.0, 1.0)) ≈ log(1)
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                @test logpdf(KnownExponentialFamilyDistribution(Laplace, [-i], 0.0), 0.01) ≈
+                @test logpdf(KnownExponentialFamilyDistribution(Laplace, -i, 0.0), 0.01) ≈
                       logpdf(Laplace(0.0, 1 / i), 0.01)
-                @test logpdf(KnownExponentialFamilyDistribution(Laplace, [-i], 1.0), 0.5) ≈
+                @test logpdf(KnownExponentialFamilyDistribution(Laplace, -i, 1.0), 0.5) ≈
                       logpdf(Laplace(1.0, 1 / i), 0.5)
             end
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(Laplace, [-i], 1.0)) === true
-                @test isproper(KnownExponentialFamilyDistribution(Laplace, [i], 2.0)) === false
+                @test isproper(KnownExponentialFamilyDistribution(Laplace, -i, 1.0)) === true
+                @test isproper(KnownExponentialFamilyDistribution(Laplace, i, 2.0)) === false
             end
         end
 
         @testset "basemeasure" begin
             for (i) in (1:10)
-                @test basemeasure(KnownExponentialFamilyDistribution(Laplace, [-i], 1.0), i^2) == 1.0
+                @test basemeasure(KnownExponentialFamilyDistribution(Laplace, -i, 1.0), i^2) == 1.0
             end
         end
+        
         @testset "fisher information" begin
-            rng = StableRNG(42)
-            n_samples = 1000
             for λ in 1:10, u in 1.0:0.5:5.0
                 dist = Laplace(u, λ)
                 ef = convert(KnownExponentialFamilyDistribution, dist)
                 η = getnaturalparameters(ef)
-
+                transformation(η) = [u, -inv(η)]
                 f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Laplace, η, getconditioner(ef)))
-                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+                df = (η) -> ForwardDiff.derivative(f_logpartition, η)
+                autograd_information = (η) -> ForwardDiff.derivative(df, η)
                 @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+                J = ForwardDiff.derivative(transformation, η)
+                @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-8
             end
         end
     end

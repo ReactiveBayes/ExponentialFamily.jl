@@ -88,11 +88,11 @@ end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Laplace)
     μ, θ = params(dist)
-    return KnownExponentialFamilyDistribution(Laplace, [-inv(θ)], μ)
+    return KnownExponentialFamilyDistribution(Laplace, -inv(θ), μ)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Laplace})
-    return Laplace(getconditioner(exponentialfamily), -inv(first(getnaturalparameters(exponentialfamily))))
+    return Laplace(getconditioner(exponentialfamily), -inv(getnaturalparameters(exponentialfamily)))
 end
 
 check_valid_natural(::Type{<:Laplace}, params) = length(params) == 1
@@ -100,16 +100,16 @@ check_valid_natural(::Type{<:Laplace}, params) = length(params) == 1
 check_valid_conditioner(::Type{<:Laplace}, conditioner) = true
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
-    first(getnaturalparameters(exponentialfamily)) < 0
+    getnaturalparameters(exponentialfamily) < 0
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
-    log(-2 / first(getnaturalparameters(exponentialfamily)))
+    log(-2 / getnaturalparameters(exponentialfamily))
 basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}, x) =
     1.0
 
 basemeasure(d::Laplace, x) = 1.0
 
-fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / first(getnaturalparameters(ef))^2
+fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / getnaturalparameters(ef)^2
 
 function fisherinformation(dist::Laplace)
     # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
