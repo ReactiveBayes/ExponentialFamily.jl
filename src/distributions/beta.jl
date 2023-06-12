@@ -56,3 +56,4 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
     )
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) = 1.0
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) = [log(x), log(1-x)]

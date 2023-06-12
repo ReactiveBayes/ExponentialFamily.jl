@@ -249,3 +249,12 @@ function fisherinformation(dist::InverseWishart)
     hessian[2:p^2+1, 2:p^2+1] = -1 * hessian[2:p^2+1, 2:p^2+1]
     return hessian
 end
+
+
+sufficientstatistics(
+    ::Union{
+        <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
+        <:Union{InverseWishartImproper, InverseWishart}
+    },
+    x
+) = [chollogdet(x), cholinv(x)]

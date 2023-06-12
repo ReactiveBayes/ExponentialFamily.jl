@@ -101,3 +101,6 @@ function fisherinformation(dist::NegativeBinomial)
     r, p = params(dist)
     r / (p^2 * (one(p) - p))
 end
+
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial}, x) = x

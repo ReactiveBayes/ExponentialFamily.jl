@@ -38,3 +38,5 @@ function fisherinformation(dist::Geometric)
     p = succprob(dist)
     one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Int64) = x-1 

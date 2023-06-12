@@ -69,3 +69,17 @@ function fisherinformation(dist::Categorical)
     end
     return I
 end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Int64) 
+    K = length(getnaturalparameters(ef))
+    ss = zeros(K)
+    [ss[k] = 1 for k=1:K if x==k]
+    return ss
+end
+
+function sufficientstatistics(dist::Categorical, x::Int64) 
+    K = length(probvec(dist))
+    ss = zeros(K)
+    [ss[k] = 1 for k=1:K if x==k]
+    return ss
+end

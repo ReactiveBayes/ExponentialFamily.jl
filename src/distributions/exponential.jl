@@ -43,3 +43,4 @@ fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Exponent
     inv(first(getnaturalparameters(exponentialfamily))^2)
 
 fisherinformation(dist::Exponential) = inv(dist.θ^2)
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = x

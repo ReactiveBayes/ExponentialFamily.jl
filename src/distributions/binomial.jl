@@ -94,3 +94,6 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
 
     return n * aux * (1 - aux)
 end
+
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x) = x

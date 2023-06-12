@@ -69,3 +69,5 @@ end
 function fisherinformation(dist::Chisq)
     return trigamma(dof(dist) / 2) / 4
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) = log(x)

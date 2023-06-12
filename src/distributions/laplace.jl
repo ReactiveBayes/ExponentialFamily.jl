@@ -117,3 +117,13 @@ function fisherinformation(dist::Laplace)
     b = scale(dist)
     return [1/b^2 0; 0 1/b^2]
 end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Laplace},x)
+    μ =  getconditioner(ef)
+    return abs(x-μ)
+end
+
+function sufficientstatistics(dist::Laplace,x)
+    μ, _ = params(dist)
+    return abs(x-μ)
+end

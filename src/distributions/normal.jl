@@ -540,3 +540,13 @@ function cov(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecisio
     _, minushalfprecision = getnaturalparameters(ef)
     return inv(-2 * minushalfprecision)
 end
+
+sufficientstatistics(
+    ::Union{<:KnownExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily}, <:MultivariateNormalDistributionsFamily},
+    x::Vector{T}
+) where {T} =  [x, x*x']
+
+sufficientstatistics(
+    ::Union{<:KnownExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily}, <:UnivariateNormalDistributionsFamily},
+    x::Vector{T}
+) where {T} =  [x, x^2]

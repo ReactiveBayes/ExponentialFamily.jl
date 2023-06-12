@@ -49,3 +49,4 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > one(Int64))
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) = 1.0
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x::Vector{T}) where {T} = log.(x) 

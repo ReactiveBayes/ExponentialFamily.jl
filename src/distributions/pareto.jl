@@ -42,3 +42,5 @@ function fisherinformation(dist::Pareto)
 
     return [1/α^2 -1/x; -1/x α/x^2]
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x) = log(x)

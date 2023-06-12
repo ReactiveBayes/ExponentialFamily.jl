@@ -113,6 +113,8 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaD
     return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
+sufficientstatistics(::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, x) = [log(x), x]
+
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) =
     1.0
 

@@ -195,3 +195,28 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVe
 end
 
 prod_closed_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency},x::Vector{Int64})
+    @assert first(size(x)) === 2 "$(x) should be length 2 vector "
+    K = first(size(getnaturalparameters(ef)))
+    ss = zeros(K,K)
+    for m=1:K
+        for n=1:K
+            if x[1] == m && x[2] ==n
+                ss[m,k] = 1.0
+            end
+        end
+    end
+end
+
+function sufficientstatistics(dist::Contingency,x::Vector{Int64})
+    @assert first(size(x)) === 2 "$(x) should be length 2 vector "
+    K = first(size(contingency_matrix(dist)))
+    ss = zeros(K,K)
+    for m=1:K
+        for n=1:K
+            if x[1] == m && x[2] ==n
+                ss[m,k] = 1.0
+            end
+        end
+    end
+end

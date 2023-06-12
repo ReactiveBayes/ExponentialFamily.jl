@@ -82,3 +82,4 @@ fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}
     exp(first(getnaturalparameters(exponentialfamily)))
 
 fisherinformation(dist::Poisson) = 1 / rate(dist)
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = x

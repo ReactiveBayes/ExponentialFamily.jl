@@ -24,7 +24,6 @@ TinyHugeNumbers = "783c9a47-75a3-44ac-a16b-f1ab7b3acf04"
 
 [compat]
 Distributions = "0.25"
-ForwardDiff = "0.10"
 JuliaFormatter = "1"
 LoopVectorization = "0.12"
 PositiveFactorizations = "0.2"

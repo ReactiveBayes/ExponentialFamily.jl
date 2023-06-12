@@ -156,3 +156,13 @@ function fisherinformation(dist::Weibull)
 
     return [a11 a12; a21 a22]
 end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Weibull}, x)
+    k = getconditioner(ef)
+    return x^k
+end
+
+function sufficientstatistics(dist::Weibull, x)
+    k = shape(dist)
+    return x^k 
+end

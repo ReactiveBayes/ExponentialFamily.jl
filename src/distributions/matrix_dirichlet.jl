@@ -60,3 +60,4 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:MatrixDirichlet
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Matrix)
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}, x) = 1.0
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}, x::Vector{T}) where {T} = log.(x) 

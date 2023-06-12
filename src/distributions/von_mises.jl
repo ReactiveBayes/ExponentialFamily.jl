@@ -59,3 +59,5 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMises})
 
     return [h11 h12; h12 h22]
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{VonMises}, <:VonMises}, x) = [cos(x), sin(x)]

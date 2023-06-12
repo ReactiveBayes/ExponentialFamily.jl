@@ -85,3 +85,5 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMisesFisher
 
     return f4 * df1 * f2 + f4 * f1 * df2 + f1 * f2 * df4 - f4 * df3 - f3 * df4
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector{T}) where {T} = x

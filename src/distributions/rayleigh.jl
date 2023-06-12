@@ -73,3 +73,5 @@ basemeasure(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh},
 fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -inv(first(getnaturalparameters(ef))^2)
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) = x^2

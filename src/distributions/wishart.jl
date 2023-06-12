@@ -217,3 +217,6 @@ function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartI
     invη2 = inv(η2)
     return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
+
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{<:WishartImproper}, <:Union{WishartImproper, Wishart}}, x) = [chollogdet(x), x]

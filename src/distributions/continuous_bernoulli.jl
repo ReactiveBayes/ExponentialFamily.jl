@@ -159,3 +159,5 @@ function fisherinformation(::NonVagueContinuousBernoulli, dist::ContinuousBernou
     tmp2 = 4 * (λ - 1)^2 * λ^2 * (atanh(1 - 2λ)^2)
     return m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = x

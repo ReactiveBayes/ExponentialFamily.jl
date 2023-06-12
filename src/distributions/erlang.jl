@@ -59,3 +59,5 @@ function fisherinformation(dist::Erlang)
 
     return [trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = [log(x), x]

@@ -64,9 +64,12 @@ function fisherinformation(d::LogNormal)
     σ = d.σ
     return [1/(σ^2) 0.0; 0.0 2/(σ^2)]
 end
+
 function fisherinformation(ef::KnownExponentialFamilyDistribution{LogNormal})
     η = getnaturalparameters(ef)
     η1 = getindex(η, 1)
     η2 = getindex(η, 2)
     return [-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
 end
+
+sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}, x) = [log(x), log(x)^2]

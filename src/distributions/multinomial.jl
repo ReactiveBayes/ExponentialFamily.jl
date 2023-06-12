@@ -143,3 +143,5 @@ function fisherinformation(dist::Multinomial)
     end
     return n * I
 end
+
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector{Int64}) = x
