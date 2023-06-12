@@ -55,5 +55,11 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
         getindex(getnaturalparameters(exponentialfamily), 2) + one(Float64)
     )
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) = 1.0
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) = [log(x), log(1-x)]
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) 
+    @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta))
+    return 1
+end
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)  
+    @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta))
+    return [log(x), log(1.0 - x)]
+end
