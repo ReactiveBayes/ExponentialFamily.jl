@@ -16,14 +16,14 @@ import ExponentialFamily:
 @testset "Chisq" begin
     @testset "naturalparameters" begin
         for i in 3:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(Chisq, [i])) ≈ Chisq(2 * (i + 1))
-            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Chisq, [i]), 10) ≈
+            @test convert(Distribution, KnownExponentialFamilyDistribution(Chisq, i)) ≈ Chisq(2 * (i + 1))
+            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Chisq, i), 10) ≈
                   Distributions.logpdf(Chisq(2 * (i + 1)), 10)
-            @test isproper(KnownExponentialFamilyDistribution(Chisq, [i])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Chisq, [-2 * i])) === false
+            @test isproper(KnownExponentialFamilyDistribution(Chisq, i)) === true
+            @test isproper(KnownExponentialFamilyDistribution(Chisq, -2 * i)) === false
 
             @test convert(KnownExponentialFamilyDistribution, Chisq(i)) ==
-                  KnownExponentialFamilyDistribution(Chisq, [i / 2 - 1])
+                  KnownExponentialFamilyDistribution(Chisq, i / 2 - 1)
 
             @test Distributions.logpdf(Chisq(10), 1.0) ≈
                   Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(10)), 1.0)
@@ -35,23 +35,28 @@ import ExponentialFamily:
     end
 
     @testset "fisherinformation KnownExponentialFamilyDistribution{Chisq}" begin
-        f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
-        autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
+        f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
+        df = (η) -> ForwardDiff.derivative(f_logpartition, η)
+        autograd_inforamation_matrix = (η) -> ForwardDiff.derivative(df, η)
         for i in 3:10
-            @test fisherinformation(KnownExponentialFamilyDistribution(Chisq, [i])) ≈
-                  autograd_inforamation_matrix([i])[1, 1]
+            @test fisherinformation(KnownExponentialFamilyDistribution(Chisq, i)) ≈
+                  autograd_inforamation_matrix(i)
         end
     end
+
+    transformation(η) = 2*(η + 1 )
 
     @testset "fisherinformation (Chisq)" begin
         rng = StableRNG(42)
         n_samples = 1000
         for ν in 1:10
-            samples = rand(rng, Chisq(ν), n_samples)
-            hessian_at_sample = (sample) -> ForwardDiff.hessian((params) -> logpdf(Chisq(params[1]), sample), [ν])
-            expected_hessian = -mean(hessian_at_sample, samples)
-            chisq_fisher = fisherinformation(Chisq(ν))
-            @test fisherinformation(Chisq(ν)) ≈ expected_hessian[1, 1] atol = 0.01
+            dist = Chisq(ν)
+            ef   = convert(KnownExponentialFamilyDistribution,Chisq(ν))
+            chisq_fisher = fisherinformation(dist)
+            ef_fisher    = fisherinformation(ef)
+            η = getnaturalparameters(ef)
+            J = ForwardDiff.derivative(transformation,η)
+            @test chisq_fisher*J^2 ≈ ef_fisher atol = 0.01
         end
     end
 
@@ -66,7 +71,7 @@ import ExponentialFamily:
 
             η_left = first(getnaturalparameters(efleft))
             η_right = first(getnaturalparameters(efright))
-            naturalparameters = [η_left + η_right]
+            naturalparameters = η_left + η_right
 
             @test prod_dist.naturalparameters == naturalparameters
             @test prod_dist.basemeasure(i) ≈ exp(-i)
