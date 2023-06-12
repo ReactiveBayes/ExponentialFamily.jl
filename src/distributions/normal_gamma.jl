@@ -38,6 +38,8 @@ Distributions.logpdf(dist::NormalGamma, x::AbstractVector{<:Real}) = log(pdf(dis
 sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}) =
     (x, τ) -> [τ * x, τ * x^2, log(τ), τ]
 
+sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{NormalGamma}, <:NormalGamma},x) = sufficientstatistics(union)(x...)
+
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NormalGamma)
     μ, λ, α, β = params(dist)
     η1 = λ * μ

@@ -46,6 +46,7 @@ Distributions.logpdf(dist::MvNormalWishart, x) = log(pdf(dist, x))
 sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}) =
     (x, Λ) -> [Λ * x, Λ, x' * Λ * x, chollogdet(Λ)]
 
+sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}, x) = sufficientstatistics(union)(x...)
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MvNormalWishart)
     μ, Ψ, κ, ν = params(dist)
     η1 = κ * μ
