@@ -96,10 +96,8 @@ Base.:(≈)(left::KnownExponentialFamilyDistribution, right::KnownExponentialFam
     getnaturalparameters(left) ≈ getnaturalparameters(right) && getconditioner(left) == getconditioner(right) &&
     distributiontype(left) == distributiontype(right)
 
-Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
-    Distributions.logpdf(Base.convert(Distribution, exponentialfamily), x)
-Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
-    Distributions.pdf(Base.convert(Distribution, exponentialfamily), x)
+Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = log(basemeasure(exponentialfamily,x)) + getnaturalparameters(exponentialfamily)'*sufficientstatistics(exponentialfamily, x) - logpartition(exponentialfamily)
+Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily,x))
 Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
     Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
