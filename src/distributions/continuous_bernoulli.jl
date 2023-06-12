@@ -15,7 +15,6 @@ vague(::Type{<:ContinuousBernoulli}) = ContinuousBernoulli(0.5)
 succprob(dist::ContinuousBernoulli) = dist.λ
 failprob(dist::ContinuousBernoulli) = one(Float64) - succprob(dist)
 probvec(dist::ContinuousBernoulli) = (failprob(dist), succprob(dist))
-Distributions.support(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}) = RealInterval(0,1)
 
 struct VagueContinuousBernoulli end
 struct NonVagueContinuousBernoulli end
@@ -117,7 +116,7 @@ end
 
 function basemeasure(::NonVagueContinuousBernoulli,::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x)
     @assert 0 <= x <= 1 "sufficientstatistics should be evaluated at a point between 0 and 1."
-    return 1
+    return 1.0
 end
 
 function isvague(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
