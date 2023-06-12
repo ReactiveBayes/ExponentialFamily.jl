@@ -80,5 +80,11 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli}) = tru
 
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) = 1.0
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) = x
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) 
+    @assert x ∈ support(Bernoulli)
+    return x
+end
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) 
+    @assert x ∈ support(Bernoulli)
+    return x
+end
