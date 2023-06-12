@@ -28,8 +28,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "natural parameters related" begin
         d1 = Binomial(5, 1 / 3)
         d2 = Binomial(5, 1 / 2)
-        η1 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
-        η2 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 2)], 5)
+        η1 = KnownExponentialFamilyDistribution(Binomial, logit(1 / 3), 5)
+        η2 = KnownExponentialFamilyDistribution(Binomial, logit(1 / 2), 5)
 
         @test convert(KnownExponentialFamilyDistribution, d1) == η1
         @test convert(KnownExponentialFamilyDistribution, d2) == η2
@@ -37,8 +37,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
 
-        η3 = KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5)
-        η4 = KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 10)
+        η3 = KnownExponentialFamilyDistribution(Binomial, log(exp(1) - 1), 5)
+        η4 = KnownExponentialFamilyDistribution(Binomial, log(exp(1) - 1), 10)
 
         @test logpartition(η3) ≈ 5.0
         @test logpartition(η4) ≈ 10.0
@@ -49,11 +49,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test basemeasure(η1, 5) == basemeasure(d1, 5)
         @test basemeasure(η2, 2) == basemeasure(d2, 2)
 
-        @test logpdf(η1, 2) == logpdf(d1, 2)
-        @test logpdf(η2, 3) == logpdf(d2, 3)
+        @test logpdf(η1, 2) ≈ logpdf(d1, 2)
+        @test logpdf(η2, 3) ≈ logpdf(d2, 3)
 
-        @test pdf(η1, 2) == pdf(d1, 2)
-        @test pdf(η2, 4) == pdf(d2, 4)
+        @test pdf(η1, 2) ≈ pdf(d1, 2)
+        @test pdf(η2, 4) ≈ pdf(d2, 4)
     end
 
     @testset "prod KnownExponentialFamilyDistribution" begin
@@ -67,8 +67,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                        prod_dist.logpartition(prod_dist.naturalparameters[1])
+                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
+                        prod_dist.logpartition(prod_dist.naturalparameters)
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
                 sample_points = collect(1:max(nleft, nright))
@@ -88,8 +88,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 prod_dist = prod(ClosedProd(), left, right)
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                        prod_dist.logpartition(prod_dist.naturalparameters[1])
+                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
+                        prod_dist.logpartition(prod_dist.naturalparameters)
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
                 sample_points = collect(1:max(nleft, nright))
@@ -103,7 +103,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
     @testset "fisher information" begin
         function transformation(params)
-            return logistic(params[1])
+            return logistic(params)
         end
 
         for n in 2:10, κ in 0.01:0.1:1.0
@@ -112,9 +112,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η, n))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            df                   = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
             @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
-            J = ForwardDiff.gradient(transformation, η)
+            J = ForwardDiff.derivative(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
