@@ -15,6 +15,7 @@ vague(::Type{<:ContinuousBernoulli}) = ContinuousBernoulli(0.5)
 succprob(dist::ContinuousBernoulli) = dist.λ
 failprob(dist::ContinuousBernoulli) = one(Float64) - succprob(dist)
 probvec(dist::ContinuousBernoulli) = (failprob(dist), succprob(dist))
+Distributions.support(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}) = RealInterval(0,1)
 
 struct VagueContinuousBernoulli end
 struct NonVagueContinuousBernoulli end
@@ -50,7 +51,7 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    η = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, dist)))
+    η = getnaturalparameters(convert(KnownExponentialFamilyDistribution, dist))
     eη = exp(η)
     return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
@@ -99,17 +100,28 @@ end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::ContinuousBernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    KnownExponentialFamilyDistribution(ContinuousBernoulli, [log(succprob(dist) / (one(Float64) - succprob(dist)))])
+    KnownExponentialFamilyDistribution(ContinuousBernoulli, log(succprob(dist) / (one(Float64) - succprob(dist))))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = true
 
 check_valid_natural(::Type{<:ContinuousBernoulli}, params) = (length(params) === 1)
 
-basemeasure(T::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = 1.0
+basemeasure(exponentialfamily::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli},x) =
+    basemeasure(isvague(exponentialfamily), exponentialfamily , x)
+
+function basemeasure(::VagueContinuousBernoulli,union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x)
+    @assert 0 <= x <= 1 "sufficientstatistics should be evaluated at a point between 0 and 1."
+    return exp(logpartition(union))
+end
+
+function basemeasure(::NonVagueContinuousBernoulli,::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x)
+    @assert 0 <= x <= 1 "sufficientstatistics should be evaluated at a point between 0 and 1."
+    return 1
+end
 
 function isvague(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
-    if first(getnaturalparameters(exponentialfamily)) ≈ 0.0
+    if getnaturalparameters(exponentialfamily) ≈ 0.0
         return VagueContinuousBernoulli()
     else
         return NonVagueContinuousBernoulli()
@@ -120,7 +132,7 @@ function logpartition(
     ::NonVagueContinuousBernoulli,
     exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}
 )
-    η = first(getnaturalparameters(exponentialfamily))
+    η = getnaturalparameters(exponentialfamily)
     return log((exp(η) - 1) / η + tiny)
 end
 logpartition(::VagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) =
@@ -146,7 +158,7 @@ end
 fisherinformation(ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = fisherinformation(isvague(ef), ef)
 fisherinformation(::VagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = 1 / 12
 function fisherinformation(::NonVagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli})
-    η = first(getnaturalparameters(ef))
+    η = getnaturalparameters(ef)
     return inv(η^2) - exp(η) / (exp(η) - 1)^2
 end
 
@@ -160,4 +172,7 @@ function fisherinformation(::NonVagueContinuousBernoulli, dist::ContinuousBernou
     return m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2
 end
 
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) = x
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x) 
+    @assert 0 <= x <= 1 "sufficientstatistics should be evaluated at a point between 0 and 1."
+    return x
+end
