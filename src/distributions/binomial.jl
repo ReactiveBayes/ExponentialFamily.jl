@@ -19,7 +19,7 @@ function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     efleft = convert(KnownExponentialFamilyDistribution, left)
     efright = convert(KnownExponentialFamilyDistribution, right)
 
-    return prod(efleft, efright)
+    return prod(ClosedProd(), efleft, efright)
 end
 
 function Base.prod(

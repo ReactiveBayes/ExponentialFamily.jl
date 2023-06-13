@@ -11,7 +11,7 @@ function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
 
-    return prod(ef_left, ef_right)
+    return prod(ClosedProd(), ef_left, ef_right)
 end
 
 function Base.prod(

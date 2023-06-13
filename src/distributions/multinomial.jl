@@ -46,26 +46,9 @@ end
 
 function Base.prod(::ClosedProd, left::Multinomial, right::Multinomial)
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
-    trials = ntrials(left)
-    K = length(left.p)
-    η_left = getnaturalparameters(convert(KnownExponentialFamilyDistribution, left))
-    η_right = getnaturalparameters(convert(KnownExponentialFamilyDistribution, right))
-
-    naturalparameters = η_left + η_right
-    sufficientstatistics = (x) -> x
-    ## If number of trials is larger than 12 factorial will be problematic. Casting to BigInt will resolve the issue.
-    ##TODO: fix this issue in future PRs
-    basemeasure = (x) -> factorial(trials)^2 / (prod(factorial.(x)))^2
-    logpartition = computeLogpartition(K, trials)
-    supp = 0:trials
-    return ExponentialFamilyDistribution(
-        Float64,
-        basemeasure,
-        sufficientstatistics,
-        naturalparameters,
-        logpartition,
-        supp
-    )
+    ef_left = convert(KnownExponentialFamilyDistribution, left)
+    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    return prod(ClosedProd(), ef_left, ef_right)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Multinomial)

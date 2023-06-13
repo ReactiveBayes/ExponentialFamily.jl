@@ -45,45 +45,10 @@ function Base.prod(
     end
 end
 
-function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
-    location_left, scale_left = params(left)
-    location_right, scale_right = params(right)
-
-    if location_left == location_right
-        return Laplace(location_left, scale_left * scale_right / (scale_left + scale_right))
-    else
-        ef_left = convert(KnownExponentialFamilyDistribution, left)
-        ef_right = convert(KnownExponentialFamilyDistribution, right)
-
-        (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
-        (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
-        basemeasure = (x) -> 1.0
-        sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right)]
-        sorted_conditioner = sort([conditioner_left, conditioner_right])
-        function logpartition(η)
-            A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
-            A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
-            A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right)
-            B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
-            B2 =
-                (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
-                (η[1] - η[2])
-            B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
-
-            return log(A1 * B1 + A2 * B2 + A3 * B3)
-        end
-        naturalparameters = [η_left, η_right]
-        supp = support(left)
-
-        return ExponentialFamilyDistribution(
-            Float64,
-            basemeasure,
-            sufficientstatistics,
-            naturalparameters,
-            logpartition,
-            supp
-        )
-    end
+function Base.prod(::ClosedProd, left::T, right::T) where {T <: Laplace}
+    ef_left = convert(KnownExponentialFamilyDistribution, left)
+    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    return prod(ClosedProd(), ef_left, ef_right)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Laplace)

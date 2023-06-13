@@ -56,7 +56,7 @@ function Base.prod(::ClosedProd, left::NegativeBinomial, right::NegativeBinomial
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
 
-    return prod(ef_left, ef_right)
+    return prod(ClosedProd(), ef_left, ef_right)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NegativeBinomial)

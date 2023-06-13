@@ -36,9 +36,18 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
             (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
             (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
             (η_right2, conditioner_right2) = (getnaturalparameters(ef_right2), getconditioner(ef_right2))
-            @test prod(ef_left, ef_right) ==
+            prod_ef_1 = prod(ClosedProd(), ef_left, ef_right)
+            prod_dist_1 = prod(ClosedProd(), l_left, l_right)
+            
+            @test prod_ef_1 ==
                   KnownExponentialFamilyDistribution(Laplace, η_left + η_right, conditioner_left)
-            @test prod(ClosedProd(), l_left, l_right) ≈ convert(Distribution, prod(ef_left, ef_right))
+                  
+            @test getnaturalparameters(prod_dist_1) ≈ getnaturalparameters(prod_ef_1)
+            
+            prod_ef_2 = prod(ClosedProd(), ef_left, ef_right2)
+            prod_dist_2 = prod(ClosedProd(), l_left, l_right2)
+            
+            @test getnaturalparameters(prod_dist_2) ≈ getnaturalparameters(prod_ef_2)
 
             basemeasure = (x) -> 1.0
             sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right2)]
