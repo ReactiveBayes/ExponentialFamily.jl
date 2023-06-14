@@ -31,22 +31,9 @@ function Base.prod(
 end
 
 function Base.prod(::ClosedProd, left::Rayleigh, right::Rayleigh)
-    σ1 = first(params(left))
-    σ2 = first(params(right))
-    naturalparameters = [-0.5(σ1^2 + σ2^2) / (σ1 * σ2)^2]
-    basemeasure = (x) -> 4 * x^2 / sqrt(pi)
-    sufficientstatistics = (x) -> x^2
-    logpartition = (η) -> log(η^(-3 / 2))
-    support = DomainSets.HalfLine()
-
-    return ExponentialFamilyDistribution(
-        Float64,
-        basemeasure,
-        sufficientstatistics,
-        naturalparameters,
-        logpartition,
-        support
-    )
+    ef_left = convert(KnownExponentialFamilyDistribution, left)
+    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    return prod(ef_left, ef_right)    
 end
 
 function isproper(ef::KnownExponentialFamilyDistribution{Rayleigh})
