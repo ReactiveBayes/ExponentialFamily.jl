@@ -49,15 +49,14 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{LogNorma
     return (η2 < 0)
 end
 
-function basemeasure(d::KnownExponentialFamilyDistribution{LogNormal}, x)
-    η = getnaturalparameters(d)
-    η2 = getindex(η, 2)
-    return sqrt(-η2 / pi) / x
+function basemeasure(::KnownExponentialFamilyDistribution{LogNormal}, x)
+    @assert 0 <= x "Lognormal should be evaluated at positive values"
+    return 1/(sqrt(2*pi) *x)
 end
 
-function basemeasure(d::LogNormal, x)
-    var = varlogx(d)
-    return 1 / (sqrt(2pi * var) * x)
+function basemeasure(::LogNormal, x)
+    @assert 0 <= x "Lognormal should be evaluated at positive values"
+    return 1/(sqrt(2*pi) *x)
 end
 
 function fisherinformation(d::LogNormal)
