@@ -42,7 +42,10 @@ end
 
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x) = 1.0
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x) 
+    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
+    return 1.0
+end
 
 function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Categorical})
     η = getnaturalparameters(expfamily)
@@ -70,14 +73,16 @@ function fisherinformation(dist::Categorical)
     return I
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Int64) 
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x) 
+    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
     K = length(getnaturalparameters(ef))
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
     return ss
 end
 
-function sufficientstatistics(dist::Categorical, x::Int64) 
+function sufficientstatistics(dist::Categorical, x) 
+    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
     K = length(probvec(dist))
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]

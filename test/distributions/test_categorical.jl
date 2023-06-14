@@ -45,10 +45,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test prod(η1, η2) == KnownExponentialFamilyDistribution(Categorical, [0.0, 0.0])
 
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
-        @test logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
-
-        @test basemeasure(η1, rand()) == 1.0
-        @test basemeasure(η2, rand()) == 1.0
+        @test_throws AssertionError logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
+        
+        @test basemeasure(η1, 2) == 1.0
+        @test basemeasure(η1, 1) == 1.0
+        @test_throws AssertionError basemeasure(η1, rand()) == 1.0
+        @test_throws AssertionError basemeasure(η2, rand()) == 1.0
 
         @test logpartition(ηcat) == log(2)
     end
