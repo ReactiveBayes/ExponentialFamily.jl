@@ -22,9 +22,9 @@ import ExponentialFamily:
     end
 
     @testset "isproper" begin
-        @test isproper(KnownExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
-        @test_throws AssertionError KnownExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
-        @test_throws MethodError KnownExponentialFamilyDistribution(Pareto, [1.3])
+        @test isproper(KnownExponentialFamilyDistribution(Pareto, -2.0, 1)) == true
+        @test_throws AssertionError KnownExponentialFamilyDistribution(Pareto, -2.0, 2.1)
+        @test_throws MethodError KnownExponentialFamilyDistribution(Pareto, 1.3)
     end
 
     @testset "prod" begin
@@ -50,16 +50,18 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             samples = rand(rng, Pareto(λ, u), n_samples)
-
+            transformation(η) = [-1-η, getconditioner(ef)]
+            J = ForwardDiff.derivative(transformation, η)
             totalHessian = zeros(2, 2)
             for sample in samples
                 totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Pareto(params[1], params[2]), sample), [λ, u])
             end
             @test fisherinformation(dist) ≈ totalHessian / n_samples atol = 1e-8
-
+            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef)
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Pareto, η, getconditioner(ef)))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
         end
     end
 end
