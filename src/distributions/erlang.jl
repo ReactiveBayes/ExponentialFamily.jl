@@ -32,7 +32,7 @@ end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     η = getnaturalparameters(exponentialfamily)
-    a = first(η)
+    a = Int64(first(η))
     b = getindex(η, 2)
     return logfactorial(a) - (a + one(a)) * log(-b)
 end
@@ -44,7 +44,10 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = 1.0
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
+    @assert 0 <= x "Erlang base measure should be evaluated at positive values"
+    return 1.0
+end
 function fisherinformation(ef::KnownExponentialFamilyDistribution)
     η = getnaturalparameters(ef)
     η1 = first(η)
@@ -60,4 +63,7 @@ function fisherinformation(dist::Erlang)
     return [trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
 end
 
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) = [log(x), x]
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
+    @assert 0 <= x "Erlang sufficientstatistics should be evaluated at positive values"
+    return [log(x), x]
+end
