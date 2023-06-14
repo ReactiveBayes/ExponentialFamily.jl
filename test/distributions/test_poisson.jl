@@ -19,12 +19,12 @@ import DomainSets: NaturalNumbers
 
     @testset "convert" begin
         for i in 1:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(Poisson, [log(i)])) ≈ Poisson(i)
-            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Poisson, [log(i)]), 10) ≈
+            @test convert(Distribution, KnownExponentialFamilyDistribution(Poisson, log(i))) ≈ Poisson(i)
+            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Poisson, log(i)), 10) ≈
                   Distributions.logpdf(Poisson(i), 10)
 
             @test convert(KnownExponentialFamilyDistribution, Poisson(i)) ==
-                  KnownExponentialFamilyDistribution(Poisson, [log(i)])
+                  KnownExponentialFamilyDistribution(Poisson, log(i))
         end
     end
 
@@ -41,15 +41,15 @@ import DomainSets: NaturalNumbers
         for η in sample_points
             @test prod_dist.logpartition(η) == log(abs(besseli(0, 2 * exp(η / 2))))
         end
-        @test prod_dist.naturalparameters == [log(1) + log(1)]
+        @test prod_dist.naturalparameters == log(1) + log(1)
         @test prod_dist.support == NaturalNumbers()
 
         sample_points = collect(1:5)
         for x in sample_points
             hist_sum(x) =
                 prod_dist.basemeasure(x) * exp(
-                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                    prod_dist.logpartition(prod_dist.naturalparameters[1])
+                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
+                    prod_dist.logpartition(prod_dist.naturalparameters)
                 )
             @test sum(hist_sum(x) for x in 0:20) ≈ 1.0
         end
@@ -62,9 +62,9 @@ import DomainSets: NaturalNumbers
               Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
 
         for i in 2:10
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [NaN])) === false
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [Inf])) === false
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, log(i))) === true
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, NaN)) === false
+            @test isproper(KnownExponentialFamilyDistribution(Poisson, Inf)) === false
         end
 
         @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
@@ -86,9 +86,13 @@ import DomainSets: NaturalNumbers
             end
             @test fisherinformation(dist) ≈ first(totalHessian) / n_samples atol = 0.1
 
+            transformation(η) = exp(η)
+            J = ForwardDiff.derivative(transformation, η)
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+            @test J^2*fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 end
