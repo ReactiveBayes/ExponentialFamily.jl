@@ -211,3 +211,5 @@ deep_eltype(any)                                  = deep_eltype(typeof(any))
 
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
+
+Base.vec(d::Real) = [d]

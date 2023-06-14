@@ -9,7 +9,7 @@ using Zygote
 using StableRNGs
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation
+import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation,basemeasure
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -93,6 +93,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         @test entropy(dist1) ≈ 1.0
         @test pdf(dist1, 1.0) ≈ 0.36787944117144233
         @test logpdf(dist1, 1.0) ≈ -1.0
+        @test basemeasure(dist1, 2.9) == 1.0
 
         dist2 = GammaShapeRate(1.0, 2.0)
 

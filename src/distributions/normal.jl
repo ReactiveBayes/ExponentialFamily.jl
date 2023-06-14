@@ -548,5 +548,5 @@ sufficientstatistics(
 
 sufficientstatistics(
     ::Union{<:KnownExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily}, <:UnivariateNormalDistributionsFamily},
-    x::Vector{T}
+    x::T
 ) where {T} =  [x, x^2]

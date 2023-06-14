@@ -113,11 +113,15 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaD
     return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
-sufficientstatistics(::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, x) = [log(x), x]
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) 
+    @assert 0 <= x "Gamma sufficients statistics should be evaluated at values greater than 0"
+    return [log(x), x]
+end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) =
-    1.0
-
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) 
+    @assert 0 <= x "Gamma base measure should be evaluated at values greater than 0"
+    return 1.0
+end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η = getnaturalparameters(exponentialfamily)
     η1 = first(η)

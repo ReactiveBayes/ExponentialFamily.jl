@@ -48,7 +48,7 @@ function Base.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
-    return prod(ef_left, ef_right)
+    return prod(ClosedProd(),ef_left, ef_right)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Multinomial)
@@ -81,8 +81,15 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Mult
     return n * log(sum(exp.(η)))
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x)
+function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x) 
     n = Int(sum(x))
+    @assert n == getconditioner(ef) " sum of the elements of $(x) should be equal to the conditioner"
+    return factorial(n) / prod(factorial.(x))
+end
+
+function basemeasure(dist::Multinomial, x) 
+    n = Int(sum(x))
+    @assert n == dist.n " sum of the elements of $(x) should be equal to the conditioner"
     return factorial(n) / prod(factorial.(x))
 end
 
@@ -127,4 +134,6 @@ function fisherinformation(dist::Multinomial)
     return n * I
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector{Int64}) = x
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x) 
+    return x
+end
