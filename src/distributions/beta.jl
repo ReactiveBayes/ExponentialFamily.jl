@@ -1,7 +1,7 @@
 export Beta
 
 import Distributions: Beta, params
-import SpecialFunctions: digamma, logbeta, loggamma
+import SpecialFunctions: digamma, logbeta, loggamma,trigamma 
 import StatsFuns: betalogpdf
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
@@ -62,4 +62,24 @@ end
 function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)  
     @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta)) "sufficientstatistics for Beta should be evaluated at positive values"
     return [log(x), log(1.0 - x)]
+end
+
+function fisherinformation(dist::Beta)
+    a,b = params(dist)
+    psia = trigamma(a)
+    psib = trigamma(b)
+    psiab = trigamma(a+b)
+
+    return [psia-psiab -psiab; -psiab psib-psiab]
+end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Beta})
+    η = getnaturalparameters(ef)
+    η1 = first(η)
+    η2 = getindex(η, 2)
+
+    psia = trigamma(η1 + 1)
+    psib = trigamma(η2 + 1)
+    psiab = trigamma(η1 + η2 + 2)
+    return [psia-psiab -psiab; -psiab psib-psiab]
 end
