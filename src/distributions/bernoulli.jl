@@ -88,3 +88,14 @@ function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Berno
     @assert x ∈ support(Bernoulli)
     return x
 end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Bernoulli})
+    η = getnaturalparameters(ef)
+    f = logistic(-η)
+    return f*(1 - f)
+end
+
+function fisherinformation(dist::Bernoulli)
+    p = dist.p 
+    return inv(p*(1-p))
+end

@@ -3,10 +3,11 @@ module BernoulliTest
 using Test
 using ExponentialFamily
 using Distributions
+using ForwardDiff 
 using Random
 using StatsFuns
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, sufficientstatistics
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, sufficientstatistics, fisherinformation
 
 @testset "Bernoulli" begin
 
@@ -78,6 +79,22 @@ import ExponentialFamily:
         @test prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
         @test prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
         @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
+    end
+    
+    transformation(logprobability) = exp(logprobability) / (one(Float64) + exp(logprobability))
+    @testset "fisherinformation" begin
+        for p=0.1:0.1:0.9
+            dist = Bernoulli(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Bernoulli, η))
+            df                   = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            J = ForwardDiff.derivative(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+        end
     end
 end
 
