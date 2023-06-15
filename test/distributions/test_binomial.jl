@@ -54,6 +54,13 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test pdf(η1, 2) ≈ pdf(d1, 2)
         @test pdf(η2, 4) ≈ pdf(d2, 4)
+
+
+        binomialef = KnownExponentialFamilyDistribution(Binomial, logit(0.3), 10)
+        @test sufficientstatistics(binomialef, 1) == 1
+        @test sufficientstatistics(binomialef, 7) == 7
+        @test_throws AssertionError sufficientstatistics(binomialef, 11)
+        @test_throws AssertionError sufficientstatistics(binomialef, 1.1)
     end
 
     @testset "prod KnownExponentialFamilyDistribution" begin

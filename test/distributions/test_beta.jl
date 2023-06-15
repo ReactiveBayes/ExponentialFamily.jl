@@ -40,6 +40,13 @@ import SpecialFunctions: loggamma
     end
 
     @testset "natural parameters related" begin
+        betaef = KnownExponentialFamilyDistribution(Beta, [1, 0.2])
+        @test sufficientstatistics(betaef, 0.1) == [log(0.1), log(1.0 - 0.1)]
+        @test sufficientstatistics(betaef, 0.9) == [log(0.9), log(1.0 - 0.9)]
+        @test sufficientstatistics(betaef, 0.999) == [log(0.999), log(1.0 - 0.999)]
+        @test_throws AssertionError sufficientstatistics(betaef, 1.01)
+        @test_throws AssertionError sufficientstatistics(betaef, -0.01)
+
         for i in 0:10, j in 0:10
             @test convert(Distribution, KnownExponentialFamilyDistribution(Beta, [i, j])) == Beta(i + 1, j + 1)
             @test convert(KnownExponentialFamilyDistribution, Beta(i + 1, j + 1)) ==

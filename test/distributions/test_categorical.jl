@@ -53,6 +53,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test_throws AssertionError basemeasure(η2, rand()) == 1.0
 
         @test logpartition(ηcat) == log(2)
+
+        categoricalef = KnownExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])
+        @test sufficientstatistics(categoricalef, 3) == [0, 0 , 1, 0]
+        @test_throws AssertionError sufficientstatistics(categoricalef, 5) == [0, 0 , 0, 0]
+        @test_throws AssertionError sufficientstatistics(categoricalef, [0, 1]) == [0, 1, 0, 0]
+        @test sufficientstatistics(categoricalef, 4) == [0, 0, 0, 1]
     end
 
     @testset "prod Distribution" begin

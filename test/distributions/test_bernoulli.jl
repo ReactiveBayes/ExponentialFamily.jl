@@ -53,6 +53,11 @@ import ExponentialFamily:
         @test isproper(KnownExponentialFamilyDistribution(Bernoulli, 10)) === true
         @test_throws AssertionError basemeasure(b_99, 0.1)
         @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Bernoulli, 10), 0.2) 
+
+        bernoullief = KnownExponentialFamilyDistribution(Bernoulli, log(0.1))
+        @test sufficientstatistics(bernoullief, 1) == 1
+        @test sufficientstatistics(bernoullief, 0) == 0
+        @test_throws AssertionError sufficientstatistics(bernoullief, 0.1)
     end
 
     @testset "prod with KnownExponentialFamilyDistribution" begin

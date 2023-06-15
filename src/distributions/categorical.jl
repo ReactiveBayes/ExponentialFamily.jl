@@ -42,10 +42,6 @@ end
 
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x) 
-    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
-    return 1.0
-end
 
 function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Categorical})
     η = getnaturalparameters(expfamily)
@@ -73,18 +69,52 @@ function fisherinformation(dist::Categorical)
     return I
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x) 
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real) 
+    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
+    return 1.0
+end
+
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector) 
+    @assert typeof(x) <: Vector{<:Integer} "One-hot coded Categorical should be evaluated at integer values"
+    @assert sum(x) == 1 "One-hot coded Categorical should sum to 1"
+    return 1.0
+end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real) 
     @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
     K = length(getnaturalparameters(ef))
+    @assert x <= K "Categorical distribution should be evaluated at values that are leq than the size of $(ef)"
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
     return ss
 end
 
-function sufficientstatistics(dist::Categorical, x) 
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector) 
+    @assert typeof(x) <: Vector{<:Integer} "One-hot coded Categorical should be evaluated at integer values"
+    @assert sum(x) == 1 "One-hot coded Categorical should sum to 1"
+    K = length(getnaturalparameters(ef))
+    @assert K == length(x) "x should be same length as $(ef)"
+    ss = zeros(K)
+    [ss[k] = 1 for k=1:K if x[k]==1]
+    return ss
+end
+
+
+function sufficientstatistics(dist::Categorical, x::Real) 
     @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
     K = length(probvec(dist))
+    @assert x <= K "Categorical distribution should be evaluated at values that are leq than the size of $(ef)"
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
+    return ss
+end
+
+function sufficientstatistics(dist::Categorical, x::Vector) 
+    @assert typeof(x) <: Vector{Integer} "One-hot coded Categorical should be evaluated at integer values"
+    @assert sum(x) == 1 "One-hot coded Categorical should sum to 1"
+    K = length(probvec(dist))
+    @assert K == length(x) "x should be same length as $(ef)"
+    ss = zeros(K)
+    [ss[k] = 1 for k=1:K if x[k]==1]
     return ss
 end

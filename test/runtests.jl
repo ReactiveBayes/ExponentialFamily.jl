@@ -4,7 +4,6 @@ using Test
 @testset "ExponentialFamily" begin
     include("test_distributions.jl")
     include("test_exponential_family.jl")
-    include("test_sufficientstatistics.jl")
     include("distributions/test_common.jl")
     include("distributions/test_bernoulli.jl")
     include("distributions/test_binomial.jl")

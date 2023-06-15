@@ -32,6 +32,9 @@ import ExponentialFamily:
         end
 
         @test basemeasure(Chisq(5), 3) == exp(-3 / 2)
+        chisqef = KnownExponentialFamilyDistribution(Chisq, 3)
+        @test sufficientstatistics(chisqef, 1) == log(1)
+        @test_throws AssertionError sufficientstatistics(chisqef, -1)
     end
 
     @testset "fisherinformation KnownExponentialFamilyDistribution{Chisq}" begin
