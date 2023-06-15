@@ -6,7 +6,7 @@ using Distributions
 using StableRNGs
 using Random
 using ForwardDiff
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
 
 @testset "Categorical" begin
 

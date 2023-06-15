@@ -11,7 +11,7 @@ using ForwardDiff
 import SpecialFunctions: logfactorial, loggamma
 import ExponentialFamily:
     xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution,
-    fisherinformation
+    fisherinformation, sufficientstatistics
 
 @testset "Chisq" begin
     @testset "naturalparameters" begin

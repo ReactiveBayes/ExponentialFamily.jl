@@ -6,7 +6,7 @@ using Distributions
 using Random
 using StatsFuns
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, sufficientstatistics
 
 @testset "Bernoulli" begin
 

@@ -6,7 +6,7 @@ using Distributions
 using Random
 using ForwardDiff
 import StatsFuns: logit, logistic
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
 
 @testset "Binomial" begin
     @testset "probvec" begin

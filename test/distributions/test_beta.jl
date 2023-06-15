@@ -5,7 +5,7 @@ using ExponentialFamily
 using Distributions
 using Random
 
-import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure
+import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure, sufficientstatistics
 import SpecialFunctions: loggamma
 
 @testset "Beta" begin
