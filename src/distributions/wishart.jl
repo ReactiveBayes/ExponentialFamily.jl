@@ -206,7 +206,7 @@ function fisherinformation(dist::Wishart)
     df, S = dist.df, dist.S
     p = first(size(S))
     invS = inv(S)
-    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
+    return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
 end
 
 function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartImproper})
@@ -215,7 +215,7 @@ function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartI
     η2 = getindex(η, 2)
     p = first(size(η2))
     invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -as_vec(invη2)'; -as_vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
 
 

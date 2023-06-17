@@ -14,7 +14,7 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
 end
 
 function Distributions.support(ef::KnownExponentialFamilyDistribution{Binomial})
-    return 0:getconditioner(ef)
+    return ClosedInterval{Int}(0, getconditioner(ef))
 end
 
 prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()

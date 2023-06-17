@@ -57,7 +57,7 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
 
 function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) 
     @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta)) "basemeasure for Beta should be evaluated at positive values"
-    return 1
+    return one(typeof(x))
 end
 function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)  
     @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta)) "sufficientstatistics for Beta should be evaluated at positive values"
@@ -78,8 +78,8 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{Beta})
     η1 = first(η)
     η2 = getindex(η, 2)
 
-    psia = trigamma(η1 + 1)
-    psib = trigamma(η2 + 1)
+    psia = trigamma(η1 + one(typeof(η1)))
+    psib = trigamma(η2 + one(typeof(η2)))
     psiab = trigamma(η1 + η2 + 2)
     return [psia-psiab -psiab; -psiab psib-psiab]
 end

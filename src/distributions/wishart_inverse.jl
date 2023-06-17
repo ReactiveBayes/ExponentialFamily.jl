@@ -232,7 +232,7 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{<:InverseWisha
     η2 = getindex(η, 2)
     p = first(size(η2))
     invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -as_vec(invη2)'; -as_vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
 
 function fisherinformation(dist::InverseWishart)
@@ -243,8 +243,8 @@ function fisherinformation(dist::InverseWishart)
 
     hessian = ones(eltype(S), p^2 + 1, p^2 + 1)
     hessian[1, 1] = mvtrigamma(p, -ν / 2) / 4
-    hessian[1, 2:p^2+1] = vec(invscale) / 2
-    hessian[2:p^2+1, 1] = vec(invscale) / 2
+    hessian[1, 2:p^2+1] = as_vec(invscale) / 2
+    hessian[2:p^2+1, 1] = as_vec(invscale) / 2
     hessian[2:p^2+1, 2:p^2+1] = ν / 2 * kron(invscale, invscale)
     hessian[2:p^2+1, 2:p^2+1] = -1 * hessian[2:p^2+1, 2:p^2+1]
     return hessian

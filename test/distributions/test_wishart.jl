@@ -22,7 +22,7 @@ function transformation(params)
     η1, η2 = params[1], params[2:end]
     p = Int(sqrt(length(η2)))
     η2 = reshape(η2, (p, p))
-    return [2 * η1 + p + 1; vec(0.5inv(-η2))]
+    return [2 * η1 + p + 1; as_vec(0.5inv(-η2))]
 end
 
 @testset "Wishart" begin
@@ -174,7 +174,7 @@ end
                 dist = Wishart(df, A)
                 ef = convert(KnownExponentialFamilyDistribution, dist)
                 η = getnaturalparameters(ef)
-                η_vec = vcat(η[1], vec(η[2]))
+                η_vec = vcat(η[1], as_vec(η[2]))
                 fef = fisherinformation(ef)
                 fdist = fisherinformation(dist)
                 ## We do not test the analytic solution agains autograd because autograd hessian return values that are permuted and
