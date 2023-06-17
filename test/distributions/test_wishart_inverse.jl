@@ -9,7 +9,7 @@ using StableRNGs
 using ForwardDiff
 
 import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure,
-    fisherinformation, logpartition, reconstructargument!
+    fisherinformation, logpartition, reconstructargument!, as_vec
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 

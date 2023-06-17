@@ -1,7 +1,7 @@
 module KnownExponentialFamilyDistributionTest
 
 using ExponentialFamily, Test, StatsFuns
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec
 import Distributions: pdf, logpdf, cdf
 @testset "KnownExponentialFamilyDistribution" begin
     params1 = KnownExponentialFamilyDistribution(Bernoulli, 0.9)

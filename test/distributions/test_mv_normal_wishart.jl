@@ -9,7 +9,7 @@ using ExponentialFamily
 import ExponentialFamily:
     MvNormalWishart, KnownExponentialFamilyDistribution, params, dof, invscatter, reconstructargument!
 import ExponentialFamily:
-    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics
+    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics, as_vec
 using Distributions
 using Random
 

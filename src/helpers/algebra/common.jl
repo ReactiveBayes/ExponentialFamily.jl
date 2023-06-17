@@ -213,4 +213,4 @@ union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
 
 as_vec(d::Real) = [d]
-as_vec(d) = as_vec(d)
+as_vec(d) = vec(d)

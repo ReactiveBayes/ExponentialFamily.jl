@@ -46,7 +46,7 @@ end
 
 function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
     @assert 0 <= x "Erlang base measure should be evaluated at positive values"
-    return 1.0
+    return one(typeof(x))
 end
 function fisherinformation(ef::KnownExponentialFamilyDistribution)
     η = getnaturalparameters(ef)

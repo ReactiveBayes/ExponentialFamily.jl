@@ -9,7 +9,7 @@ using StableRNGs
 using ForwardDiff
 
 import ExponentialFamily: WishartImproper, KnownExponentialFamilyDistribution, reconstructargument!,
-    getnaturalparameters, basemeasure, fisherinformation, logpartition
+    getnaturalparameters, basemeasure, fisherinformation, logpartition, as_vec
 import StatsFuns: logmvgamma
 
 function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
