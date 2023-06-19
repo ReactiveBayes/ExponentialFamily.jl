@@ -13,12 +13,15 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
     return Binomial(n, convert(AbstractVector{T}, p))
 end
 
-function Distributions.support(ef::KnownExponentialFamilyDistribution{Binomial})
+function support(ef::KnownExponentialFamilyDistribution{Binomial})
     return ClosedInterval{Int}(0, getconditioner(ef))
 end
+function support(dist::Binomial)
+    return ClosedInterval{Int}(0, dist.n)
+end
 
-function Distributions.insupport(ef::KnownExponentialFamilyDistribution{Binomial},x)
-    return typeof(x) <: Integer && x ∈ support(ef)
+function insupport(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial},x)
+    return typeof(x) <: Integer && x ∈ support(union)
 end
 
 prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
@@ -98,16 +101,16 @@ end
 
 
 function basemeasure(dist::Binomial, x) 
-    @assert Distributions.insupport(dist,x)
+    @assert insupport(dist,x)
     return binomial(dist.n, x)
 end
 
 function basemeasure(ef::KnownExponentialFamilyDistribution{Binomial}, x) 
-    @assert Distributions.insupport(ef,x)
+    @assert insupport(ef,x)
     return binomial(getconditioner(ef), x)
 end
 
 function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x) 
-    @assert Distributions.insupport(union,x)
+    @assert insupport(union,x)
     return x
 end

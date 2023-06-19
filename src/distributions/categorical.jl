@@ -69,30 +69,30 @@ function fisherinformation(dist::Categorical)
     return I
 end
 
-function Distributions.support(ef::KnownExponentialFamilyDistribution{Categorical})
+function support(ef::KnownExponentialFamilyDistribution{Categorical})
     return  ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
 end
 
-function Distributions.insupport(ef::KnownExponentialFamilyDistribution{Categorical},x::Real)
+function insupport(ef::KnownExponentialFamilyDistribution{Categorical},x::Real)
     return typeof(x) <: Integer && x ∈ support(ef)
 end
 
-function Distributions.insupport(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical},x::Vector)
+function insupport(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical},x::Vector)
     return  typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
 end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real) 
-    @assert Distributions.insupport(union,x) "Evaluation point $(x) is not in the support of Categorical"
+    @assert insupport(union,x) "Evaluation point $(x) is not in the support of Categorical"
     return one(typeof(x))
 end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector) 
-    @assert Distributions.insupport(union,x) "Evaluation point $(x) is not in the support of Categorical"
+    @assert insupport(union,x) "Evaluation point $(x) is not in the support of Categorical"
     return one(typeof(x))
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real) 
-    @assert Distributions.insupport(ef,x) "Evaluation point $(x) is not in the support of Categorical"
+    @assert insupport(ef,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(getnaturalparameters(ef))
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
@@ -100,7 +100,7 @@ function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector) 
-    @assert Distributions.insupport(ef,x) "Evaluation point $(x) is not in the support of Categorical"
+    @assert insupport(ef,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(getnaturalparameters(ef))
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x[k]==1]
@@ -108,7 +108,7 @@ function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical
 end
 
 function sufficientstatistics(dist::Categorical, x::Real) 
-    @assert Distributions.insupport(dist,x) "Evaluation point $(x) is not in the support of Categorical"
+    @assert insupport(dist,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(probvec(dist))
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
@@ -116,7 +116,7 @@ function sufficientstatistics(dist::Categorical, x::Real)
 end
 
 function sufficientstatistics(dist::Categorical, x::Vector) 
-    @assert Distributions.insupport(dist,x) "Evaluation point $(x) is not in the support of Categorical"
+    @assert insupport(dist,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(probvec(dist))
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x[k]==1]

@@ -160,18 +160,18 @@ function fisherinformation(::NonVagueContinuousBernoulli, dist::ContinuousBernou
     return m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2
 end
 
-function Distributions.support(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli})
+function support(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli})
     return ClosedInterval{Real}(0.0, 1.0)
 end
 
-function Distributions.insupport(ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}, x::Real)
-    return x ∈ Distributions.support(ef)
+function insupport(ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}, x::Real)
+    return x ∈ support(ef)
 end
-function Distributions.insupport(dist::ContinuousBernoulli, x::Real)
-    return x ∈ Distributions.support(dist)
+function insupport(dist::ContinuousBernoulli, x::Real)
+    return x ∈ support(dist)
 end
 function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x::Real) 
-    @assert Distributions.insupport(union,x) "sufficientstatistics should be evaluated at a point between 0 and 1."
+    @assert insupport(union,x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return x
 end
 
@@ -179,11 +179,11 @@ basemeasure(exponentialfamily::Union{<:KnownExponentialFamilyDistribution{Contin
     basemeasure(isvague(exponentialfamily), exponentialfamily , x)
 
 function basemeasure(::VagueContinuousBernoulli,union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x::Real)
-    @assert Distributions.insupport(union,x) "sufficientstatistics should be evaluated at a point between 0 and 1."
+    @assert insupport(union,x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return exp(logpartition(union))
 end
 
 function basemeasure(::NonVagueContinuousBernoulli,union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli}, x::Real)
-    @assert Distributions.insupport(union,x) "sufficientstatistics should be evaluated at a point between 0 and 1."
+    @assert insupport(union,x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return one(typeof(x))
 end

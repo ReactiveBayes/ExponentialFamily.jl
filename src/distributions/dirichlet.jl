@@ -49,7 +49,7 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > one(Int64))
 
-function Distributions.insupport(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
+function insupport(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
     l = length(getnaturalparameters(ef))
     return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
 end

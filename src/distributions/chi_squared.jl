@@ -27,7 +27,7 @@ function Base.prod(
     basemeasure = (x) -> exp(-x)
     sufficientstatistics = (x) -> log(x)
     logpartition = (η) -> loggamma(η + 1)
-    supp = support(T)
+    supp = Distributions.support(T)
 
     return ExponentialFamilyDistribution(
         Float64,
@@ -61,21 +61,35 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
     return (η > -1 / 2)
 end
 
-function Distributions.support(ef::KnownExponentialFamilyDistribution{Chisq})
+function support(ef::KnownExponentialFamilyDistribution{Chisq})
     η = getnaturalparameters(ef)
-    if η ==1
+    if η == -1/2
         return OpenInterval{Real}(0, Inf)
     else
         return ClosedInterval{Real}(0, Inf)
     end
 end
 
-function Distributions.insupport(ef::KnownExponentialFamilyDistribution{Chisq},x::Real)
+function support(dist::Chisq)
+    d = dof(dist)
+    if d == 1
+        return OpenInterval{Real}(0, Inf)
+    else
+        return ClosedInterval{Real}(0, Inf)
+    end
+end
+
+
+function insupport(ef::KnownExponentialFamilyDistribution{Chisq},x::Real)
     return x ∈ support(ef)
 end
 
+function insupport(dist::Chisq,x::Real)
+    return x ∈ support(dist)
+end
+
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) 
-    @assert Distributions.insupport(union,x) "$(x) is not in the support"
+    @assert insupport(union,x) "$(x) is not in the support"
     return exp(-x / 2)
 end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
@@ -88,6 +102,6 @@ function fisherinformation(dist::Chisq)
 end
 
 function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) 
-    @assert Distributions.insupport(union,x) "$(x) is not in the support"
+    @assert insupport(union,x) "$(x) is not in the support"
     return log(x)
 end

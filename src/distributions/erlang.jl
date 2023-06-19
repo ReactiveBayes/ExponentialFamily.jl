@@ -44,14 +44,14 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-Distributions.support(ef::KnownExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
+support(::KnownExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
 
-function Distributions.insupport(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang},x)
-    return x ∈ Distributions.support(union)
+function insupport(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang},x)
+    return x ∈ support(union)
 end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
-    @assert Distributions.insupport(union,x) "Erlang base measure should be evaluated at positive values"
+    @assert insupport(union,x) "Erlang base measure should be evaluated at positive values"
     return one(typeof(x))
 end
 function fisherinformation(ef::KnownExponentialFamilyDistribution)
@@ -70,6 +70,6 @@ function fisherinformation(dist::Erlang)
 end
 
 function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
-    @assert Distributions.insupport(union,x) "Erlang sufficientstatistics should be evaluated at positive values"
+    @assert insupport(union,x) "Erlang sufficientstatistics should be evaluated at positive values"
     return [log(x), x]
 end
