@@ -81,21 +81,21 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli}) = tru
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
 function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) 
-    @assert x ∈ support(Bernoulli)
-    return 1.0
+    @assert Distributions.insupport(Bernoulli,x)
+    return one(typeof(x))
 end
 function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) 
-    @assert x ∈ support(Bernoulli)
+    @assert Distributions.insupport(Bernoulli,x)
     return x
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Bernoulli})
     η = getnaturalparameters(ef)
     f = logistic(-η)
-    return f*(1 - f)
+    return f*(one(typeof(f)) - f)
 end
 
 function fisherinformation(dist::Bernoulli)
     p = dist.p 
-    return inv(p*(1-p))
+    return inv(p*(one(typeof(p))-p))
 end

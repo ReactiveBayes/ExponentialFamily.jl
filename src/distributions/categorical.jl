@@ -69,51 +69,55 @@ function fisherinformation(dist::Categorical)
     return I
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real) 
-    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
-    return 1.0
+function Distributions.support(ef::KnownExponentialFamilyDistribution{Categorical})
+    return  ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector) 
-    @assert typeof(x) <: Vector{<:Integer} "One-hot coded Categorical should be evaluated at integer values"
-    @assert sum(x) == 1 "One-hot coded Categorical should sum to 1"
-    return 1.0
+function Distributions.insupport(ef::KnownExponentialFamilyDistribution{Categorical},x::Real)
+    return typeof(x) <: Integer && x ∈ support(ef)
+end
+
+function Distributions.insupport(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical},x::Vector)
+    return  typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real) 
+    @assert Distributions.insupport(union,x) "Evaluation point $(x) is not in the support of Categorical"
+    return one(typeof(x))
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector) 
+    @assert Distributions.insupport(union,x) "Evaluation point $(x) is not in the support of Categorical"
+    return one(typeof(x))
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real) 
-    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
+    @assert Distributions.insupport(ef,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(getnaturalparameters(ef))
-    @assert x <= K "Categorical distribution should be evaluated at values that are leq than the size of $(ef)"
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
     return ss
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector) 
-    @assert typeof(x) <: Vector{<:Integer} "One-hot coded Categorical should be evaluated at integer values"
-    @assert sum(x) == 1 "One-hot coded Categorical should sum to 1"
+    @assert Distributions.insupport(ef,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(getnaturalparameters(ef))
-    @assert K == length(x) "x should be same length as $(ef)"
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x[k]==1]
     return ss
 end
 
-
 function sufficientstatistics(dist::Categorical, x::Real) 
-    @assert typeof(x) <: Integer "Categorical should be evaluated at integer values"
+    @assert Distributions.insupport(dist,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(probvec(dist))
-    @assert x <= K "Categorical distribution should be evaluated at values that are leq than the size of $(ef)"
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x==k]
     return ss
 end
 
 function sufficientstatistics(dist::Categorical, x::Vector) 
-    @assert typeof(x) <: Vector{Integer} "One-hot coded Categorical should be evaluated at integer values"
-    @assert sum(x) == 1 "One-hot coded Categorical should sum to 1"
+    @assert Distributions.insupport(dist,x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(probvec(dist))
-    @assert K == length(x) "x should be same length as $(ef)"
     ss = zeros(K)
     [ss[k] = 1 for k=1:K if x[k]==1]
     return ss

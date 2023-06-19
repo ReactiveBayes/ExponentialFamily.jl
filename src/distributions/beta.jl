@@ -56,11 +56,11 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
     )
 
 function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) 
-    @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta)) "basemeasure for Beta should be evaluated at positive values"
+    @assert Distributions.insupport(Beta,x) "basemeasure for Beta should be evaluated at positive values"
     return one(typeof(x))
 end
 function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)  
-    @assert x < Base.maximum(support(Beta)) && x > Base.minimum(support(Beta)) "sufficientstatistics for Beta should be evaluated at positive values"
+    @assert Distributions.insupport(Beta,x) "sufficientstatistics for Beta should be evaluated at positive values"
     return [log(x), log(1.0 - x)]
 end
 

@@ -48,5 +48,18 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
     all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > one(Int64))
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) = 1.0
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x::Vector{T}) where {T} = log.(x) 
+
+function Distributions.insupport(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
+    l = length(getnaturalparameters(ef))
+    return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) 
+    @assert insupport(union, x) "$(x) is not in support of Dirichlet"
+    return 1.0
+end
+
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x) 
+    @assert insupport(union, x) "$(x) is not in support of Dirichlet"
+    return log.(x) 
+end
