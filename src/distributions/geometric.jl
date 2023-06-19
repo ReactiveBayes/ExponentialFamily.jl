@@ -15,10 +15,10 @@ Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Geometric) =
     KnownExponentialFamilyDistribution(Geometric, log(one(Float64) - succprob(dist)))
 
 Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Geometric}) =
-    Geometric(one(Float64) - exp(first(getnaturalparameters(η))))
+    Geometric(one(Float64) - exp(getnaturalparameters(η)))
 
 logpartition(η::KnownExponentialFamilyDistribution{Geometric}) =
-    -log(one(Float64) - exp(first(getnaturalparameters(η))))
+    -log(one(Float64) - exp(getnaturalparameters(η)))
 
 check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
 
@@ -27,10 +27,11 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometri
     return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x) 
-    @assert typeof(x) <: Integer "basemeasure should be evaluated at integer values for Geometric distribution"
-    @assert 0 <= x "basemeasure should be evaluated at values greater than 0 "
-    return 1.0
+insupport(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric},x::Real ) = typeof(x) <: Integer && x >= 0
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real) 
+    @assert insupport(union,x) "$(x) is not in the support of Geometric distribution"
+    return one(typeof(x))
 end 
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Geometric})
     η = getnaturalparameters(exponentialfamily)
@@ -42,10 +43,8 @@ function fisherinformation(dist::Geometric)
     one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2
 end
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x) 
-    @assert typeof(x) <: Integer "basemeasure should be evaluated at integer values for Geometric distribution"
-    @assert 0 <= x "basemeasure should be evaluated at values greater than 0 "
-    
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real) 
+    @assert insupport(union,x) "$(x) is not in the support of Geometric distribution"
     return x
 end
     
