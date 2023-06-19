@@ -106,6 +106,7 @@ import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalp
         @test entropy(dist2) ≈ 0.3068528194400547
         @test pdf(dist2, 1.0) ≈ 0.2706705664732254
         @test logpdf(dist2, 1.0) ≈ -1.3068528194400546
+        @test basemeasure(dist2, 2.0) == 1.0
 
         dist3 = GammaShapeRate(2.0, 2.0)
 

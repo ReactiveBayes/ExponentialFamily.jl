@@ -3,6 +3,7 @@ export Gamma, GammaShapeScale, GammaDistributionsFamily
 import SpecialFunctions: loggamma, digamma
 import Distributions: shape, scale, cov
 import StatsFuns: log2π
+using IntervalSets
 
 const GammaShapeScale             = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
@@ -113,16 +114,18 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaD
     return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) 
-    @assert 0 <= x "Gamma sufficients statistics should be evaluated at values greater than 0"
+support(::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) = OpenInterval{Real}(0, Inf)
+insupport(union::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}, x::Real) = x ∈ support(union)
+
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}, x::Real) 
+    @assert insupport(union,x) "Gamma sufficients statistics should be evaluated at values greater than 0"
     return [log(x), x]
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) 
-    @assert 0 <= x "Gamma base measure should be evaluated at values greater than 0"
-    return 1.0
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}, x::Real) 
+    @assert insupport(union,x) "Gamma base measure should be evaluated at values greater than 0"
+    return one(typeof(x))
 end
-
 
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η = getnaturalparameters(exponentialfamily)
