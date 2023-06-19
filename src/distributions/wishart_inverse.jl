@@ -218,13 +218,6 @@ function isproper(params::KnownExponentialFamilyDistribution{<:InverseWishartImp
     isposdef(-η2) && (η1 < 0)
 end
 
-basemeasure(
-    ::Union{
-        <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
-        <:Union{InverseWishartImproper, InverseWishart}
-    },
-    x
-) = 1.0
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
     η = getnaturalparameters(ef)
@@ -250,11 +243,32 @@ function fisherinformation(dist::InverseWishart)
     return hessian
 end
 
+function insupport(ef::KnownExponentialFamilyDistribution{InverseWishartImproper}, x::Matrix)
+    return size(getindex(getnaturalparameters(ef),2)) == size(x) && isposdef(x)
+end
 
-sufficientstatistics(
-    ::Union{
+function insupport(dist::InverseWishartImproper, x::Matrix)
+    return (size(dist.invS) == size(x)) && isposdef(x)
+end
+
+function basemeasure(
+    union::Union{
         <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
         <:Union{InverseWishartImproper, InverseWishart}
     },
     x
-) = [chollogdet(x), cholinv(x)]
+) 
+    @assert insupport(union, x) "$(x) is not in the support of inverse Wishart"
+return 1.0
+end
+
+function sufficientstatistics(
+    union::Union{
+        <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
+        <:Union{InverseWishartImproper, InverseWishart}
+    },
+    x
+) 
+    @assert insupport(union, x) "$(x) is not in the support of inverse Wishart"
+return [chollogdet(x), cholinv(x)]
+end

@@ -81,17 +81,6 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Mult
     return n * log(sum(exp.(η)))
 end
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x) 
-    n = Int(sum(x))
-    @assert n == getconditioner(ef) " sum of the elements of $(x) should be equal to the conditioner"
-    return factorial(n) / prod(factorial.(x))
-end
-
-function basemeasure(dist::Multinomial, x) 
-    n = Int(sum(x))
-    @assert n == dist.n " sum of the elements of $(x) should be equal to the conditioner"
-    return factorial(n) / prod(factorial.(x))
-end
 
 function computeLogpartition(K, n)
     d = Multinomial(n, ones(K) ./ K)
@@ -134,6 +123,30 @@ function fisherinformation(dist::Multinomial)
     return n * I
 end
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x) 
+function insupport(ef::KnownExponentialFamilyDistribution{Multinomial}, x)
+    n = Int(sum(x))
+    return n == getconditioner(ef)
+end
+
+function insupport(dist::Multinomial,x)
+    n = Int(sum(x))
+    return n == dist.n 
+end
+
+function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x) 
+    @assert insupport(ef,x) " sum of the elements of $(x) should be equal to the conditioner"
+    n = Int(sum(x))
+    return factorial(n) / prod(factorial.(x))
+end
+
+function basemeasure(dist::Multinomial, x) 
+    @assert insupport(dist,x) " sum of the elements of $(x) should be equal to the conditioner"
+    n = Int(sum(x))
+    return factorial(n) / prod(factorial.(x))
+end
+
+
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x) 
+    @assert insupport(union,x)
     return x
 end

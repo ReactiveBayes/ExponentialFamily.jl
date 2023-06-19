@@ -105,10 +105,10 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
     log(-2 / getnaturalparameters(exponentialfamily))
-basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}, x) =
-    1.0
+basemeasure(::KnownExponentialFamilyDistribution{Laplace}, x) =
+    one(typeof(x))
 
-basemeasure(d::Laplace, x) = 1.0
+basemeasure(::Laplace, x) = one(typeof(x))
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / getnaturalparameters(ef)^2
 

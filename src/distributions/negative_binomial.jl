@@ -82,14 +82,15 @@ end
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
     -getconditioner(exponentialfamily) * log(one(Float64) - exp(getnaturalparameters(exponentialfamily)))
 
-function basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}, x) 
-    @assert typeof(x) <: Integer "x must be integer for negative binomial"
-    @assert 0 <= x "x must be greater than 0 for negative binomial "
+function insupport(::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial},x::Real) 
+    return typeof(x) <: Integer && 0 <= x
+end
+function basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}, x::Real) 
+    @assert insupport(exponentialfamily,x) "$(x) is not in the support of negative binomial"
     return binomial(Int(x + getconditioner(exponentialfamily) - 1), x)
 end
-function basemeasure(d::NegativeBinomial, x)
-    @assert typeof(x) <: Integer "x must be integer for negative binomial"
-    @assert 0 <= x "x must be greater than 0 for negative binomial "
+function basemeasure(d::NegativeBinomial, x::Real)
+    @assert insupport(d,x) "$(x) is not in the support of negative binomial"
     r, _ = params(d)
     return binomial(Int(x + r - 1), x)
     
@@ -107,8 +108,7 @@ function fisherinformation(dist::NegativeBinomial)
 end
 
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial}, x) 
-    @assert typeof(x) <: Integer "x must be integer for negative binomial"
-    @assert 0 <= x "x must be greater than 0 for negative binomial "
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial}, x::Real) 
+    @assert insupport(union,x) "$(x) is not in the support of negative binomial"
     return x
 end

@@ -148,10 +148,15 @@ end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(
+                @test_throws AssertionError basemeasure(
                     KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
                     rand(3, 3)
-                ) == 1
+                ) 
+                L = rand(2,2)
+                @test basemeasure(
+                    KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
+                    L*L'
+                ) == 1.0
             end
         end
 
