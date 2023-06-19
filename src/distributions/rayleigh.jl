@@ -55,16 +55,18 @@ check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
 logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -log(-2*getnaturalparameters(ef))
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) 
-    @assert 0 <= x "Rayleigh base measure should be evaluated at values greater than 0"
-    return x
-end
-
 fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = inv(getnaturalparameters(ef)^2)
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x) 
-    @assert 0 <= x "Rayleigh sufficient statistics should be evaluated at values greater than 0"
+support(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = ClosedInterval{Real}(0, Inf)
+insupport(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh},x::Real) = x ∈ support(union) 
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real) 
+    @assert insupport(union,x) "Rayleigh sufficient statistics should be evaluated at values greater than 0"
     return x^2
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real) 
+    @assert insupport(union,x) "Rayleigh base measure should be evaluated at values greater than 0"
+    return x
 end

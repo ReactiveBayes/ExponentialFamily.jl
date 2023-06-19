@@ -40,9 +40,6 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{VonM
     return log(besseli((p / 2) - 1, κ)) - ((p / 2) - 1) * log(κ)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x) =
-    (1 / 2pi)^(length(x) / 2)
-
 function fisherinformation(dist::VonMisesFisher)
     μ, k = params(dist)
     p    = length(μ)
@@ -86,4 +83,20 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMisesFisher
     return f4 * df1 * f2 + f4 * f1 * df2 + f1 * f2 * df4 - f4 * df3 - f3 * df4
 end
 
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector{T}) where {T} = x
+function insupport(vmf::VonMisesFisher, x::Vector)
+    return length(vmf.μ) == length(x) && dot(x,x) ≈ 1.0
+end
+
+function insupport(ef::KnownExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
+    return length(getnaturalparameters(ef)) == length(x) &&  dot(x,x) ≈ 1.0
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector) 
+    @assert insupport(union,x) "$(x) is not in the support of VMF"
+    return (1 / 2pi)^(length(x) / 2)
+end
+
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)  
+    @assert insupport(union,x) "$(x) is not in the support of VMF"
+    return x
+end

@@ -63,19 +63,20 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}
     η isa Number && !isnan(η) && !isinf(η)
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) 
-    @assert typeof(x) <: Integer "basemeasure for poisson should be evaluated at integer values"
-    @assert 0 <= x "basemeasure for poisson should be evaluated at values greater than 0"
-    return 1.0 / factorial(x)
-end
-
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
     exp(getnaturalparameters(exponentialfamily))
 
 fisherinformation(dist::Poisson) = 1 / rate(dist)
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) 
-    @assert typeof(x) <: Integer "basemeasure for poisson should be evaluated at integer values"
-    @assert 0 <= x "basemeasure for poisson should be evaluated at values greater than 0"
+insupport(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) = typeof(x) <: Integer && 0 <= x 
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) 
+    @assert insupport(union,x) "$(x) is not in the support of Poisson"
+    return one(typeof(x)) / factorial(x)
+end
+
+
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) 
+    @assert insupport(union,x) "$(x) is not in the support of Poisson"
     return x
 end

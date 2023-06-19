@@ -116,14 +116,17 @@ function fisherinformation(dist::Weibull)
     return [a11 a12; a21 a22]
 end
 
+support(::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0,Inf)
+insupport(union::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull},x::Real) = x ∈ support(union)
+
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Weibull}, x)
-    @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
+    @assert insupport(ef,x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     k = getconditioner(ef)
     return x^k
 end
 
 function sufficientstatistics(dist::Weibull, x)
-    @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
+    @assert insupport(dist,x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     k = shape(dist)
     return x^k 
 end
