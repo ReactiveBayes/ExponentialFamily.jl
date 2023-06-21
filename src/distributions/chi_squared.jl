@@ -78,10 +78,6 @@ function support(dist::Chisq)
     end
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
-    return x ∈ support(ef)
-end
-
 function basemeasure(ef::KnownExponentialFamilyDistribution{Chisq}, x)
     @assert insupport(ef, x) "$(x) is not in the support"
     return exp(-x / 2)
