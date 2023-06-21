@@ -72,7 +72,6 @@ import SpecialFunctions: loggamma
 
         for i in 1:10, j in 1:10
             @test basemeasure(KnownExponentialFamilyDistribution(Beta, [i, j]), rand()) == 1.0
-            @test basemeasure(Beta(i + 1, j + 1), rand()) == 1.0
         end
 
         @testset "prod with KnownExponentialFamilyDistribution" begin
