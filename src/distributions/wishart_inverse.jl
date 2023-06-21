@@ -242,7 +242,7 @@ function fisherinformation(dist::InverseWishart)
     return hessian
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{InverseWishartImproper}, x::Matrix)
+function insupport(ef::KnownExponentialFamilyDistribution{InverseWishartImproper, P, C, Safe}, x::Matrix) where {P, C}
     return size(getindex(getnaturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
