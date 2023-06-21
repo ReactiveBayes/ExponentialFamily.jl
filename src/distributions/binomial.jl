@@ -13,12 +13,8 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
     return Binomial(n, convert(AbstractVector{T}, p))
 end
 
-function support(ef::KnownExponentialFamilyDistribution{Binomial})
-    return ClosedInterval{Int}(0, getconditioner(ef))
-end
-
-function insupport(union::KnownExponentialFamilyDistribution{Binomial}, x)
-    return x ∈ support(union)
+function insupport(ef::KnownExponentialFamilyDistribution{Binomial, P, C, Safe}, x) where {P, C}
+    return x ∈ ClosedInterval{Int}(0, getconditioner(ef)) && typeof(x) <: Int
 end
 
 prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()

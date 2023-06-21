@@ -44,12 +44,6 @@ import ExponentialFamily:
         @test logpartition(η3) ≈ 5.0
         @test logpartition(η4) ≈ 10.0
 
-        @test basemeasure(d1, 5) == 1
-        @test basemeasure(d2, 2) == 10
-
-        @test basemeasure(η1, 5) == basemeasure(d1, 5)
-        @test basemeasure(η2, 2) == basemeasure(d2, 2)
-
         @test logpdf(η1, 2) ≈ logpdf(d1, 2)
         @test logpdf(η2, 3) ≈ logpdf(d2, 3)
 

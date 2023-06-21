@@ -215,7 +215,7 @@ function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartI
     return [mvtrigamma(p, (η1 + (p + 1) / 2)) -as_vec(invη2)'; -as_vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{WishartImproper}, x::Matrix)
+function insupport(ef::KnownExponentialFamilyDistribution{WishartImproper, P, C, Safe}, x::Matrix) where {P, C}
     return size(getindex(getnaturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
