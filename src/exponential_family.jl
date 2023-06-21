@@ -63,15 +63,24 @@ Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(log
     distributions are in exponential family give a parameter is fixed.
 
 """
-struct KnownExponentialFamilyDistribution{T, P, C}
+struct KnownExponentialFamilyDistribution{T, P, C, S}
     naturalparameters::P
     conditioner::C
-    KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing) where {T, P, C} =
+    support::S
+    KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing, support::S = Safe()) where {T, P, C, S} =
         begin
             @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
             @assert check_valid_conditioner(T, conditioner) "$(conditioner) is not a valid conditioner for distribution $(T) or 'check_valid_conditioner' function is not implemented!"
-            new{T, P, C}(naturalparameters, conditioner)
+            new{T, P, C, S}(naturalparameters, conditioner, support)
         end
+end
+
+struct Safe end
+
+struct Unsafe end
+
+function insupport(::KnownExponentialFamilyDistribution{T, P, C, Unsafe}, x) where {T, P, C}
+    return true
 end
 
 variate_form(::P) where {P <: KnownExponentialFamilyDistribution}     = variate_form(P)
