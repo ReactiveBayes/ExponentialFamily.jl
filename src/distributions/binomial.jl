@@ -16,12 +16,9 @@ end
 function support(ef::KnownExponentialFamilyDistribution{Binomial})
     return ClosedInterval{Int}(0, getconditioner(ef))
 end
-function support(dist::Binomial)
-    return ClosedInterval{Int}(0, dist.n)
-end
 
-function insupport(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x)
-    return typeof(x) <: Integer && x ∈ support(union)
+function insupport(union::KnownExponentialFamilyDistribution{Binomial}, x)
+    return x ∈ support(union)
 end
 
 prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
@@ -109,7 +106,7 @@ function basemeasure(ef::KnownExponentialFamilyDistribution{Binomial}, x)
     return binomial(getconditioner(ef), x)
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x)
-    @assert insupport(union, x)
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Binomial}, x)
+    @assert insupport(ef, x)
     return x
 end

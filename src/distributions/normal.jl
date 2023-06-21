@@ -542,17 +542,11 @@ function cov(ef::KnownExponentialFamilyDistribution{MvNormalWeightedMeanPrecisio
 end
 
 sufficientstatistics(
-    ::Union{
-        <:KnownExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
-        <:MultivariateNormalDistributionsFamily
-    },
+    ::KnownExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily}
     x::Vector{T}
 ) where {T} = [x, x * x']
 
 sufficientstatistics(
-    ::Union{
-        <:KnownExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
-        <:UnivariateNormalDistributionsFamily
-    },
+    ::KnownExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
     x::T
 ) where {T} = [x, x^2]

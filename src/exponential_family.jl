@@ -67,7 +67,12 @@ struct KnownExponentialFamilyDistribution{T, P, C, S}
     naturalparameters::P
     conditioner::C
     support::S
-    KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing, support::S = Safe()) where {T, P, C, S} =
+    KnownExponentialFamilyDistribution(
+        ::Type{T},
+        naturalparameters::P,
+        conditioner::C = nothing,
+        support::S = Safe()
+    ) where {T, P, C, S} =
         begin
             @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
             @assert check_valid_conditioner(T, conditioner) "$(conditioner) is not a valid conditioner for distribution $(T) or 'check_valid_conditioner' function is not implemented!"
@@ -81,6 +86,10 @@ struct Unsafe end
 
 function insupport(::KnownExponentialFamilyDistribution{T, P, C, Unsafe}, x) where {T, P, C}
     return true
+end
+
+function insupport(ef::KnownExponentialFamilyDistribution{T, P, C, Safe}, x) where {T, P, C}
+    return x ∈ support(ef)
 end
 
 variate_form(::P) where {P <: KnownExponentialFamilyDistribution}     = variate_form(P)

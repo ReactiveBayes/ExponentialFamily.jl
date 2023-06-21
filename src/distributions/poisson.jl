@@ -68,7 +68,9 @@ fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}
 
 fisherinformation(dist::Poisson) = 1 / rate(dist)
 
-insupport(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) = typeof(x) <: Integer && 0 <= x
+function support(::KnownExponentialFamilyDistribution{Poisson})
+    return DomainSets.NaturalNumbers()
+end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Poisson"

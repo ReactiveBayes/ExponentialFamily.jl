@@ -55,11 +55,19 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
         getindex(getnaturalparameters(exponentialfamily), 2) + one(Float64)
     )
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)
+function support(ef::KnownExponentialFamilyDistribution{Beta})
+    return ClosedInterval{Real}(zero(Float64), one(Float64))
+end
+
+function insupport(ef::KnownExponentialFamilyDistribution{Beta}, x)
+    return x ∈ support(ef)
+end
+
+function basemeasure(::KnownExponentialFamilyDistribution{Beta}, x)
     @assert Distributions.insupport(Beta, x) "basemeasure for Beta should be evaluated at positive values"
     return one(typeof(x))
 end
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)
+function sufficientstatistics(::KnownExponentialFamilyDistribution{Beta}, x)
     @assert Distributions.insupport(Beta, x) "sufficientstatistics for Beta should be evaluated at positive values"
     return [log(x), log(1.0 - x)]
 end

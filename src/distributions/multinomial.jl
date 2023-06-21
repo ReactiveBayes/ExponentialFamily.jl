@@ -127,11 +127,6 @@ function insupport(ef::KnownExponentialFamilyDistribution{Multinomial}, x)
     return n == getconditioner(ef)
 end
 
-function insupport(dist::Multinomial, x)
-    n = Int(sum(x))
-    return n == dist.n
-end
-
 function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x)
     @assert insupport(ef, x) " sum of the elements of $(x) should be equal to the conditioner"
     n = Int(sum(x))

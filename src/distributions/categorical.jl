@@ -73,7 +73,7 @@ function support(ef::KnownExponentialFamilyDistribution{Categorical})
 end
 
 function insupport(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real)
-    return typeof(x) <: Integer && x ∈ support(ef)
+    return x ∈ support(ef)
 end
 
 function insupport(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
@@ -81,11 +81,6 @@ function insupport(union::Union{<:KnownExponentialFamilyDistribution{Categorical
 end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
-    @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
-    return one(typeof(x))
-end
-
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
     @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
     return one(typeof(x))
 end
@@ -101,22 +96,6 @@ end
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector)
     @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
     K = length(getnaturalparameters(ef))
-    ss = zeros(K)
-    [ss[k] = 1 for k in 1:K if x[k] == 1]
-    return ss
-end
-
-function sufficientstatistics(dist::Categorical, x::Real)
-    @assert insupport(dist, x) "Evaluation point $(x) is not in the support of Categorical"
-    K = length(probvec(dist))
-    ss = zeros(K)
-    [ss[k] = 1 for k in 1:K if x == k]
-    return ss
-end
-
-function sufficientstatistics(dist::Categorical, x::Vector)
-    @assert insupport(dist, x) "Evaluation point $(x) is not in the support of Categorical"
-    K = length(probvec(dist))
     ss = zeros(K)
     [ss[k] = 1 for k in 1:K if x[k] == 1]
     return ss

@@ -116,24 +116,20 @@ end
 
 support(::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) =
     OpenInterval{Real}(0, Inf)
-insupport(
-    union::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily},
-    x::Real
-) = x ∈ support(union)
 
 function sufficientstatistics(
-    union::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily},
+    ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily},
     x::Real
 )
-    @assert insupport(union, x) "Gamma sufficients statistics should be evaluated at values greater than 0"
+    @assert insupport(ef, x) "Gamma sufficients statistics should be evaluated at values greater than 0"
     return [log(x), x]
 end
 
 function basemeasure(
-    union::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily},
+    ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily},
     x::Real
 )
-    @assert insupport(union, x) "Gamma base measure should be evaluated at values greater than 0"
+    @assert insupport(ef, x) "Gamma base measure should be evaluated at values greater than 0"
     return one(typeof(x))
 end
 

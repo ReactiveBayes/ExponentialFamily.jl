@@ -54,12 +54,12 @@ function insupport(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
     return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x)
-    @assert insupport(union, x) "$(x) is not in support of Dirichlet"
+function basemeasure(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
+    @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
     return 1.0
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Dirichlet}, <:Dirichlet}, x)
-    @assert insupport(union, x) "$(x) is not in support of Dirichlet"
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
+    @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
     return log.(x)
 end

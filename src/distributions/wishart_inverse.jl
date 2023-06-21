@@ -246,28 +246,18 @@ function insupport(ef::KnownExponentialFamilyDistribution{InverseWishartImproper
     return size(getindex(getnaturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
-function insupport(dist::InverseWishartImproper, x::Matrix)
-    return (size(dist.invS) == size(x)) && isposdef(x)
-end
-
 function basemeasure(
-    union::Union{
-        <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
-        <:Union{InverseWishartImproper, InverseWishart}
-    },
+    ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper},
     x
 )
-    @assert insupport(union, x) "$(x) is not in the support of inverse Wishart"
+    @assert insupport(ef, x) "$(x) is not in the support of inverse Wishart"
     return 1.0
 end
 
 function sufficientstatistics(
-    union::Union{
-        <:KnownExponentialFamilyDistribution{<:InverseWishartImproper},
-        <:Union{InverseWishartImproper, InverseWishart}
-    },
+    ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper},
     x
 )
-    @assert insupport(union, x) "$(x) is not in the support of inverse Wishart"
+    @assert insupport(ef, x) "$(x) is not in the support of inverse Wishart"
     return [chollogdet(x), cholinv(x)]
 end

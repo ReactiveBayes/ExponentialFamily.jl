@@ -59,8 +59,8 @@ fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = inv(getnaturalparameters(ef)^2)
 
-support(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = ClosedInterval{Real}(0, Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real) = x ∈ support(union)
+support(::KnownExponentialFamilyDistribution{Rayleigh}) = ClosedInterval{Real}(0, Inf)
+
 function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
     @assert insupport(union, x) "Rayleigh sufficient statistics should be evaluated at values greater than 0"
     return x^2

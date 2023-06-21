@@ -82,12 +82,8 @@ function insupport(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
     return x ∈ support(ef)
 end
 
-function insupport(dist::Chisq, x::Real)
-    return x ∈ support(dist)
-end
-
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x)
-    @assert insupport(union, x) "$(x) is not in the support"
+function basemeasure(ef::KnownExponentialFamilyDistribution{Chisq}, x)
+    @assert insupport(ef, x) "$(x) is not in the support"
     return exp(-x / 2)
 end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
@@ -99,7 +95,7 @@ function fisherinformation(dist::Chisq)
     return trigamma(dof(dist) / 2) / 4
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x)
-    @assert insupport(union, x) "$(x) is not in the support"
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Chisq}, x)
+    @assert insupport(ef, x) "$(x) is not in the support"
     return log(x)
 end

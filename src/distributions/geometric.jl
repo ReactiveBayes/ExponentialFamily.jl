@@ -27,8 +27,9 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometri
     return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
 end
 
-insupport(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real) =
-    typeof(x) <: Integer && x >= 0
+function support(ef::KnownExponentialFamilyDistribution{Geometric})
+    return ClosedInterval{Int}(zero(Float64), Inf)
+end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"

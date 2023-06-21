@@ -48,12 +48,12 @@ end
 
 insupport(ef::KnownExponentialFamilyDistribution{Pareto}, x::Real) = x ∈ support(ef)
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x::Real)
+function sufficientstatistics(union::KnownExponentialFamilyDistribution{Pareto}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Pareto"
     return log(x)
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x::Real)
+function basemeasure(union::KnownExponentialFamilyDistribution{Pareto}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Pareto"
     return one(typeof(x))
 end

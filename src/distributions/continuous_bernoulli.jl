@@ -170,7 +170,7 @@ function insupport(dist::ContinuousBernoulli, x::Real)
     return x ∈ support(dist)
 end
 function sufficientstatistics(
-    union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli},
+    union::KnownExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
 )
     @assert insupport(union, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
@@ -178,25 +178,25 @@ function sufficientstatistics(
 end
 
 basemeasure(
-    exponentialfamily::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli},
+    exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
 ) =
     basemeasure(isvague(exponentialfamily), exponentialfamily, x)
 
 function basemeasure(
     ::VagueContinuousBernoulli,
-    union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli},
+    ef::KnownExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
 )
-    @assert insupport(union, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
-    return exp(logpartition(union))
+    @assert insupport(ef, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
+    return exp(logpartition(ef))
 end
 
 function basemeasure(
     ::NonVagueContinuousBernoulli,
-    union::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli},
+    ef::KnownExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
 )
-    @assert insupport(union, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
+    @assert insupport(ef, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return one(typeof(x))
 end
