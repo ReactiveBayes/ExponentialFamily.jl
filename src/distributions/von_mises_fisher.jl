@@ -87,7 +87,7 @@ function insupport(vmf::VonMisesFisher, x::Vector)
     return length(vmf.μ) == length(x) && dot(x, x) ≈ 1.0
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
+function insupport(ef::KnownExponentialFamilyDistribution{VonMisesFisher, P, C, Safe}, x::Vector) where {P, C}
     return length(getnaturalparameters(ef)) == length(x) && dot(x, x) ≈ 1.0
 end
 
