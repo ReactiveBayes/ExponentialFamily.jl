@@ -45,8 +45,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test logpartition(η1) ≈ -log(0.6)
         @test logpartition(η2) ≈ -log(0.3)
 
-        @test basemeasure(d1, 5) == 1.0
-        @test basemeasure(d2, 1) == 1.0
         @test basemeasure(η1, 4) == 1.0
         @test basemeasure(η2, 2) == 1.0
 

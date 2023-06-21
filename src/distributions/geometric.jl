@@ -27,8 +27,8 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometri
     return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
 end
 
-function support(ef::KnownExponentialFamilyDistribution{Geometric})
-    return ClosedInterval{Int}(zero(Float64), Inf)
+function insupport(::KnownExponentialFamilyDistribution{Geometric, P, C, Safe}, x) where {P, C}
+    return zero(Float64) < x && x < Inf && typeof(x) <: Int
 end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
