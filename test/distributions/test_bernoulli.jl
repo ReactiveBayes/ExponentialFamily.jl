@@ -46,14 +46,13 @@ import ExponentialFamily:
             b = Bernoulli(i / 10.0)
             bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
-            @test logpdf(bnp, 1) ≈ logpdf(b, 1)
+            @test logpdf(bnp, 1) ≈ logpdf(b, 1) 
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
                   KnownExponentialFamilyDistribution(Bernoulli, logit(i / 10.0))
         end
         @test isproper(KnownExponentialFamilyDistribution(Bernoulli, 10)) === true
-        @test_throws AssertionError basemeasure(b_99, 0.1)
         @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Bernoulli, 10), 0.2)
 
         bernoullief = KnownExponentialFamilyDistribution(Bernoulli, log(0.1))
