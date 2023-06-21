@@ -5,7 +5,6 @@ using ExponentialFamily
 using Random
 using Distributions
 using ForwardDiff
-using Zygote
 using StableRNGs
 
 import SpecialFunctions: loggamma
@@ -143,30 +142,25 @@ import ExponentialFamily:
                   autograd_inforamation_matrix([i, -i])
         end
     end
-
+    transformation1(η) = [η[1] + 1, -inv(η[2])]
     @testset "information matrix (GammaShapeScale)" begin
-        rng = StableRNG(42)
-        n_samples = 1000
         for (i, j) in Iterators.product(1:3, 1:3)
-            samples = rand(rng, GammaShapeScale(i, j), n_samples)
-            hessian_at_sample =
-                (sample) -> Zygote.hessian((params) -> logpdf(GammaShapeScale(params[1], params[2]), sample), [i, j])
-            expected_hessian = -mean(hessian_at_sample, samples)
-            @test fisherinformation(GammaShapeScale(i, j)) ≈ expected_hessian atol = 0.201
+            dist = GammaShapeScale(i, j)
+            ef   = convert(KnownExponentialFamilyDistribution, dist)
+            η    = getnaturalparameters(ef)
+            J    = ForwardDiff.jacobian(transformation1, η)
+            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-9
         end
         @test fisherinformation(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
     end
-
+    transformation2(η) = [η[1] + 1, -η[2]]
     @testset "information matrix (GammaShapeRate)" begin
-        rng = StableRNG(42)
-        n_samples = 1000
         for (i, j) in Iterators.product(1:3, 1:3)
-            samples = rand(rng, GammaShapeRate(i, j), n_samples)
-            hessian_at_sample =
-                (sample) ->
-                    ForwardDiff.hessian((params) -> logpdf(GammaShapeRate(params[1], params[2]), sample), [i, j])
-            expected_hessian = -mean(hessian_at_sample, samples)
-            @test fisherinformation(GammaShapeRate(i, j)) ≈ expected_hessian atol = 0.201
+            dist = GammaShapeRate(i, j)
+            ef   = convert(KnownExponentialFamilyDistribution, dist)
+            η    = getnaturalparameters(ef)
+            J    = ForwardDiff.jacobian(transformation2, η)
+            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-9
         end
         @test fisherinformation(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
     end
