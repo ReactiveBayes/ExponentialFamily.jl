@@ -80,6 +80,10 @@ struct KnownExponentialFamilyDistribution{T, P, C, S}
         end
 end
 
+function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing) where {T, P, C}
+    return KnownExponentialFamilyDistribution(T, naturalparameters, conditioner, Safe())
+end
+
 struct Safe end
 
 struct Unsafe end
