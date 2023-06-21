@@ -72,11 +72,11 @@ function support(ef::KnownExponentialFamilyDistribution{Categorical})
     return ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real)
+function insupport(ef::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
     return x ∈ support(ef)
 end
 
-function insupport(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
+function insupport(union::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
     return typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
 end
 

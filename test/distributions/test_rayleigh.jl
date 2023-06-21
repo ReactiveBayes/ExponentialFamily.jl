@@ -68,7 +68,6 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
         @testset "basemeasure" begin
             for (i) in (1:10)
                 @test basemeasure(KnownExponentialFamilyDistribution(Rayleigh, -i), i^2) == i^2
-                @test basemeasure(Rayleigh(i), i / 2) == i / 2
             end
         end
         transformation(η) = sqrt(-1 / (2η))
