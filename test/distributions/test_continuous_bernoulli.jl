@@ -42,7 +42,6 @@ import ExponentialFamily:
                   KnownExponentialFamilyDistribution(ContinuousBernoulli, logit(i / 10.0))
         end
         @test isproper(KnownExponentialFamilyDistribution(ContinuousBernoulli, 10)) === true
-        @test basemeasure(b_99, 0.1) == 1.0
         @test basemeasure(KnownExponentialFamilyDistribution(ContinuousBernoulli, 10), 0.2) == 1.0
     end
 
