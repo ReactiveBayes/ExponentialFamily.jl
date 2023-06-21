@@ -122,7 +122,7 @@ function fisherinformation(dist::Multinomial)
     return n * I
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Multinomial}, x)
+function insupport(ef::KnownExponentialFamilyDistribution{Multinomial, P, C, Safe}, x) where {P, C}
     n = Int(sum(x))
     return n == getconditioner(ef)
 end
