@@ -30,7 +30,6 @@ import ExponentialFamily:
                   Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Erlang(10, 4.0)), 1.0)
             @test Distributions.logpdf(Erlang(5, 2.0), 1.0) ≈
                   Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Erlang(5, 2.0)), 1.0)
-
         end
     end
 

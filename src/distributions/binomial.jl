@@ -20,7 +20,7 @@ function support(dist::Binomial)
     return ClosedInterval{Int}(0, dist.n)
 end
 
-function insupport(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial},x)
+function insupport(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x)
     return typeof(x) <: Integer && x ∈ support(union)
 end
 
@@ -99,18 +99,17 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
     return n * aux * (1 - aux)
 end
 
-
-function basemeasure(dist::Binomial, x) 
-    @assert insupport(dist,x)
+function basemeasure(dist::Binomial, x)
+    @assert insupport(dist, x)
     return binomial(dist.n, x)
 end
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Binomial}, x) 
-    @assert insupport(ef,x)
+function basemeasure(ef::KnownExponentialFamilyDistribution{Binomial}, x)
+    @assert insupport(ef, x)
     return binomial(getconditioner(ef), x)
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x) 
-    @assert insupport(union,x)
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Binomial}, <:Binomial}, x)
+    @assert insupport(union, x)
     return x
 end

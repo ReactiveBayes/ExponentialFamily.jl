@@ -6,7 +6,8 @@ using Distributions
 using Random
 using ForwardDiff
 import StatsFuns: logit, logistic
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
+import ExponentialFamily:
+    KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
 
 @testset "Binomial" begin
     @testset "probvec" begin
@@ -54,7 +55,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
         @test pdf(η1, 2) ≈ pdf(d1, 2)
         @test pdf(η2, 4) ≈ pdf(d2, 4)
-
 
         binomialef = KnownExponentialFamilyDistribution(Binomial, logit(0.3), 10)
         @test sufficientstatistics(binomialef, 1) == 1
@@ -119,7 +119,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η, n))
-            df                   = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
             autograd_information = (η) -> ForwardDiff.derivative(df, η)
             @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
             J = ForwardDiff.derivative(transformation, η)

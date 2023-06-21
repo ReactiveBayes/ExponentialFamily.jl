@@ -31,7 +31,6 @@ function logpartition(params::KnownExponentialFamilyDistribution{VonMises})
     return log(besseli(0, κ))
 end
 
-
 function fisherinformation(dist::VonMises)
     _, k = params(dist)
     bessel0 = besseli(0, k)
@@ -60,10 +59,10 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMises})
     return [h11 h12; h12 h22]
 end
 
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real) 
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real)
     return [cos(x), sin(x)]
 end
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real) 
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real)
     return 1 / 2pi
 end

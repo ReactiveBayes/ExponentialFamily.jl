@@ -64,9 +64,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "natural parameters related" begin
-        for r=1:5
-            for p=0.1:0.1:0.9
-
+        for r in 1:5
+            for p in 0.1:0.1:0.9
                 dist = NegativeBinomial(r, p)
                 ef_manual = KnownExponentialFamilyDistribution(NegativeBinomial, log(one(Float64) - p), r)
                 ef_converted = convert(KnownExponentialFamilyDistribution, dist)
@@ -74,12 +73,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 @test ef_manual == ef_converted
                 @test convert(Distribution, ef_manual) ≈ dist
                 @test logpartition(ef_converted) ≈ -r * log(p)
-                for k=3:5
-                    @test logpdf(dist, k) ≈ logpdf(ef_manual,k)
-                    @test pdf(dist,k) ≈ pdf(ef_manual,k)
-                    @test basemeasure(ef_converted, k) == binomial(Int(k+r-1),k)
+                for k in 3:5
+                    @test logpdf(dist, k) ≈ logpdf(ef_manual, k)
+                    @test pdf(dist, k) ≈ pdf(ef_manual, k)
+                    @test basemeasure(ef_converted, k) == binomial(Int(k + r - 1), k)
                 end
-                @test sum(pdf(ef_converted,x) for x in 0:200) ≈ 1.0 atol = 1e-5
+                @test sum(pdf(ef_converted, x) for x in 0:200) ≈ 1.0 atol = 1e-5
             end
         end
     end

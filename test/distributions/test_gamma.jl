@@ -9,7 +9,8 @@ using Zygote
 using StableRNGs
 
 import SpecialFunctions: loggamma
-import ExponentialFamily: xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation,basemeasure
+import ExponentialFamily:
+    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation, basemeasure
 
 @testset "Gamma" begin
     @testset "Constructor" begin

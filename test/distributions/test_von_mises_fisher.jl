@@ -58,7 +58,10 @@ import StatsFuns: softmax
 
         @testset "logpdf" begin
             for i in 1:10, j in 1:10
-                @test logpdf(KnownExponentialFamilyDistribution(VonMisesFisher, 3 * [cos(i), sin(i)]), [0.01, sqrt(1 - 0.01^2)]) ≈
+                @test logpdf(
+                    KnownExponentialFamilyDistribution(VonMisesFisher, 3 * [cos(i), sin(i)]),
+                    [0.01, sqrt(1 - 0.01^2)]
+                ) ≈
                       logpdf(VonMisesFisher([cos(i), sin(i)], 3), [0.01, sqrt(1 - 0.01^2)])
                 @test logpdf(
                     KnownExponentialFamilyDistribution(VonMisesFisher, 3 * [cos(2 * i), sin(2 * i)]),
@@ -80,7 +83,10 @@ import StatsFuns: softmax
 
         @testset "basemeasure" begin
             for (i, j) in (1:10, 1:10)
-                @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(VonMisesFisher, [i, j]), rand(2)) == 1 / 2pi
+                @test_throws AssertionError basemeasure(
+                    KnownExponentialFamilyDistribution(VonMisesFisher, [i, j]),
+                    rand(2)
+                ) == 1 / 2pi
                 @test_throws AssertionError basemeasure(VonMisesFisher([sin(i), cos(i)],), rand(2)) == 1 / 2pi
             end
         end

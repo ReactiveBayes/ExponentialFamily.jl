@@ -39,17 +39,17 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
     (getnaturalparameters(exponentialfamily) <= zero(Float64))
 
 support(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential},x) = x ∈ support(union)
+insupport(union::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = x ∈ support(union)
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) 
-    @assert insupport(union,x) "base measure should be evaluated at a point greater than 0"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x)
+    @assert insupport(union, x) "base measure should be evaluated at a point greater than 0"
     return one(typeof(x))
 end
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
     inv(getnaturalparameters(exponentialfamily)^2)
 
 fisherinformation(dist::Exponential) = inv(dist.θ^2)
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) 
-    @assert insupport(union,x) "sufficient statistics should be evaluated at a point greater than 0"
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x)
+    @assert insupport(union, x) "sufficient statistics should be evaluated at a point greater than 0"
     return x
 end

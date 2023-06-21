@@ -1,7 +1,7 @@
 export Beta
 
 import Distributions: Beta, params
-import SpecialFunctions: digamma, logbeta, loggamma,trigamma 
+import SpecialFunctions: digamma, logbeta, loggamma, trigamma
 import StatsFuns: betalogpdf
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
@@ -55,20 +55,20 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
         getindex(getnaturalparameters(exponentialfamily), 2) + one(Float64)
     )
 
-function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x) 
-    @assert Distributions.insupport(Beta,x) "basemeasure for Beta should be evaluated at positive values"
+function basemeasure(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)
+    @assert Distributions.insupport(Beta, x) "basemeasure for Beta should be evaluated at positive values"
     return one(typeof(x))
 end
-function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)  
-    @assert Distributions.insupport(Beta,x) "sufficientstatistics for Beta should be evaluated at positive values"
+function sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{Beta}, <:Beta}, x)
+    @assert Distributions.insupport(Beta, x) "sufficientstatistics for Beta should be evaluated at positive values"
     return [log(x), log(1.0 - x)]
 end
 
 function fisherinformation(dist::Beta)
-    a,b = params(dist)
+    a, b = params(dist)
     psia = trigamma(a)
     psib = trigamma(b)
-    psiab = trigamma(a+b)
+    psiab = trigamma(a + b)
 
     return [psia-psiab -psiab; -psiab psib-psiab]
 end

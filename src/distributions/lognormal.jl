@@ -50,16 +50,16 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{LogNorma
 end
 
 support(::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = ClosedInterval{Real}(0, Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal},x::Real) = x ∈ support(union)
+insupport(union::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}, x::Real) = x ∈ support(union)
 
 function basemeasure(ef::KnownExponentialFamilyDistribution{LogNormal}, x::Real)
-    @assert insupport(ef,x) "Lognormal should be evaluated at positive values"
-    return 1/(sqrt(2*pi) *x)
+    @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
+    return 1 / (sqrt(2 * pi) * x)
 end
 
 function basemeasure(dist::LogNormal, x::Real)
-    @assert insupport(dist,x) "Lognormal should be evaluated at positive values"
-    return 1/(sqrt(2*pi) *x)
+    @assert insupport(dist, x) "Lognormal should be evaluated at positive values"
+    return 1 / (sqrt(2 * pi) * x)
 end
 
 function fisherinformation(d::LogNormal)
@@ -74,7 +74,7 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{LogNormal})
     return [-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}, x::Real) 
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}, x::Real)
     @assert insupport(union, x) "Lognormal should be evaluated at positive values"
     return [log(x), log(x)^2]
 end

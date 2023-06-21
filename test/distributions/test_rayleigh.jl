@@ -93,7 +93,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
                 autograd_information = (η) -> ForwardDiff.derivative(df, η)
                 @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
                 J = ForwardDiff.derivative(transformation, η)
-                @test fisherinformation(dist)*J^2 ≈ fisherinformation(ef) atol = 1e-8
+                @test fisherinformation(dist) * J^2 ≈ fisherinformation(ef) atol = 1e-8
             end
         end
     end

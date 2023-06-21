@@ -36,7 +36,7 @@ function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
 
-    return prod(ef_left,ef_right)
+    return prod(ef_left, ef_right)
 end
 
 function logpdf_sample_friendly(dist::Poisson)
@@ -68,15 +68,14 @@ fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}
 
 fisherinformation(dist::Poisson) = 1 / rate(dist)
 
-insupport(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) = typeof(x) <: Integer && 0 <= x 
+insupport(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) = typeof(x) <: Integer && 0 <= x
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of Poisson"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Poisson"
     return one(typeof(x)) / factorial(x)
 end
 
-
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of Poisson"
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Poisson"
     return x
 end

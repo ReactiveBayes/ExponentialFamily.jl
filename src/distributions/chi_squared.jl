@@ -7,7 +7,6 @@ Distributions.cov(dist::Chisq) = var(dist)
 
 prod_closed_rule(::Type{<:Chisq}, ::Type{<:Chisq}) = ClosedProd()
 
-
 function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
@@ -63,7 +62,7 @@ end
 
 function support(ef::KnownExponentialFamilyDistribution{Chisq})
     η = getnaturalparameters(ef)
-    if η == -1/2
+    if η == -1 / 2
         return OpenInterval{Real}(0, Inf)
     else
         return ClosedInterval{Real}(0, Inf)
@@ -79,17 +78,16 @@ function support(dist::Chisq)
     end
 end
 
-
-function insupport(ef::KnownExponentialFamilyDistribution{Chisq},x::Real)
+function insupport(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
     return x ∈ support(ef)
 end
 
-function insupport(dist::Chisq,x::Real)
+function insupport(dist::Chisq, x::Real)
     return x ∈ support(dist)
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) 
-    @assert insupport(union,x) "$(x) is not in the support"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x)
+    @assert insupport(union, x) "$(x) is not in the support"
     return exp(-x / 2)
 end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
@@ -101,7 +99,7 @@ function fisherinformation(dist::Chisq)
     return trigamma(dof(dist) / 2) / 4
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x) 
-    @assert insupport(union,x) "$(x) is not in the support"
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Chisq}, <:Chisq}, x)
+    @assert insupport(union, x) "$(x) is not in the support"
     return log(x)
 end

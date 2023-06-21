@@ -30,7 +30,6 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Pareto})
     return (η <= -1)
 end
 
-
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Pareto})
     η = getnaturalparameters(ef)
     return 1 / (-1 - η)^2
@@ -49,12 +48,12 @@ end
 
 insupport(ef::KnownExponentialFamilyDistribution{Pareto}, x::Real) = x ∈ support(ef)
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of Pareto"
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Pareto"
     return log(x)
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of Pareto"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Pareto}, <:Pareto}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Pareto"
     return one(typeof(x))
 end

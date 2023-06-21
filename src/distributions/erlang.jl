@@ -46,12 +46,12 @@ end
 
 support(::KnownExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
 
-function insupport(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang},x)
+function insupport(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x)
     return x ∈ support(union)
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
-    @assert insupport(union,x) "Erlang base measure should be evaluated at positive values"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x)
+    @assert insupport(union, x) "Erlang base measure should be evaluated at positive values"
     return one(typeof(x))
 end
 function fisherinformation(ef::KnownExponentialFamilyDistribution)
@@ -69,7 +69,7 @@ function fisherinformation(dist::Erlang)
     return [trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x) 
-    @assert insupport(union,x) "Erlang sufficientstatistics should be evaluated at positive values"
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Erlang}, <:Erlang}, x)
+    @assert insupport(union, x) "Erlang sufficientstatistics should be evaluated at positive values"
     return [log(x), x]
 end

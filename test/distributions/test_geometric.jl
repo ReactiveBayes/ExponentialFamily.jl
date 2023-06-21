@@ -76,7 +76,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
 
             J = ForwardDiff.derivative(transformation, η)
-            @test J^2  * fisherinformation(dist)  ≈ fisherinformation(ef) atol = 1e-8
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 end

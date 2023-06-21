@@ -82,7 +82,7 @@ check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === noth
 
 function check_valid_natural end
 
-function getnaturalparameters(exponentialfamily::KnownExponentialFamilyDistribution; vector=false) 
+function getnaturalparameters(exponentialfamily::KnownExponentialFamilyDistribution; vector = false)
     if vector == false
         return exponentialfamily.naturalparameters
     else
@@ -104,13 +104,13 @@ Base.:(≈)(left::KnownExponentialFamilyDistribution, right::KnownExponentialFam
 
 function Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribution, x)
     base_measure = log(basemeasure(exponentialfamily, x))
-    natural_parameters = getnaturalparameters(exponentialfamily, vector=true)
-    statistics = sufficientstatistics(exponentialfamily, x, vector=true)
+    natural_parameters = getnaturalparameters(exponentialfamily, vector = true)
+    statistics = sufficientstatistics(exponentialfamily, x, vector = true)
     dot_product = dot(natural_parameters, statistics)
 
     return base_measure + dot_product - logpartition(exponentialfamily)
 end
-Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily,x))
+Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
 Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
     Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
@@ -126,11 +126,11 @@ function logpartition end
 function basemeasure end
 function sufficientstatistics end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{T},x; vector=false) where {T}
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{T}, x; vector = false) where {T}
     if vector == false
-        return sufficientstatistics(ef,x)
+        return sufficientstatistics(ef, x)
     else
-        return vcat(as_vec.(sufficientstatistics(ef,x))...)
+        return vcat(as_vec.(sufficientstatistics(ef, x))...)
     end
 end
 

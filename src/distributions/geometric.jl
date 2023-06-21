@@ -27,12 +27,13 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometri
     return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
 end
 
-insupport(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric},x::Real ) = typeof(x) <: Integer && x >= 0
+insupport(::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real) =
+    typeof(x) <: Integer && x >= 0
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of Geometric distribution"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"
     return one(typeof(x))
-end 
+end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Geometric})
     η = getnaturalparameters(exponentialfamily)
     exp(η) / (one(Float64) - exp(η))^2
@@ -43,8 +44,7 @@ function fisherinformation(dist::Geometric)
     one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of Geometric distribution"
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"
     return x
 end
-    

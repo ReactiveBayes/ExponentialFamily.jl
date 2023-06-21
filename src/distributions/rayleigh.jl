@@ -33,7 +33,7 @@ end
 function Base.prod(::ClosedProd, left::T, right::T) where {T <: Rayleigh}
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
-    return prod(ClosedProd(), ef_left, ef_right)    
+    return prod(ClosedProd(), ef_left, ef_right)
 end
 
 function isproper(ef::KnownExponentialFamilyDistribution{Rayleigh})
@@ -43,7 +43,7 @@ end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Rayleigh)
     σ = first(params(dist))
-    KnownExponentialFamilyDistribution(Rayleigh, -1 / (2*σ^2))
+    KnownExponentialFamilyDistribution(Rayleigh, -1 / (2 * σ^2))
 end
 
 function Base.convert(::Type{Distribution}, ef::KnownExponentialFamilyDistribution{Rayleigh})
@@ -53,20 +53,20 @@ end
 
 check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
-logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -log(-2*getnaturalparameters(ef))
+logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -log(-2 * getnaturalparameters(ef))
 
 fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = inv(getnaturalparameters(ef)^2)
 
 support(::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = ClosedInterval{Real}(0, Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh},x::Real) = x ∈ support(union) 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real) 
-    @assert insupport(union,x) "Rayleigh sufficient statistics should be evaluated at values greater than 0"
+insupport(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real) = x ∈ support(union)
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
+    @assert insupport(union, x) "Rayleigh sufficient statistics should be evaluated at values greater than 0"
     return x^2
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real) 
-    @assert insupport(union,x) "Rayleigh base measure should be evaluated at values greater than 0"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
+    @assert insupport(union, x) "Rayleigh base measure should be evaluated at values greater than 0"
     return x
 end

@@ -110,7 +110,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
                 @test basemeasure(KnownExponentialFamilyDistribution(Laplace, -i, 1.0), i^2) == 1.0
             end
         end
-        
+
         @testset "fisher information" begin
             for λ in 1:10, u in 1.0:0.5:5.0
                 dist = Laplace(u, λ)
@@ -122,7 +122,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
                 autograd_information = (η) -> ForwardDiff.derivative(df, η)
                 @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
                 J = ForwardDiff.derivative(transformation, η)
-                @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-8
+                @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
             end
         end
     end

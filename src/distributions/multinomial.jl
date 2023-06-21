@@ -48,7 +48,7 @@ function Base.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
-    return prod(ClosedProd(),ef_left, ef_right)
+    return prod(ClosedProd(), ef_left, ef_right)
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Multinomial)
@@ -80,7 +80,6 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Mult
     n = getconditioner(exponentialfamily)
     return n * log(sum(exp.(η)))
 end
-
 
 function computeLogpartition(K, n)
     d = Multinomial(n, ones(K) ./ K)
@@ -128,25 +127,24 @@ function insupport(ef::KnownExponentialFamilyDistribution{Multinomial}, x)
     return n == getconditioner(ef)
 end
 
-function insupport(dist::Multinomial,x)
+function insupport(dist::Multinomial, x)
     n = Int(sum(x))
-    return n == dist.n 
+    return n == dist.n
 end
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x) 
-    @assert insupport(ef,x) " sum of the elements of $(x) should be equal to the conditioner"
-    n = Int(sum(x))
-    return factorial(n) / prod(factorial.(x))
-end
-
-function basemeasure(dist::Multinomial, x) 
-    @assert insupport(dist,x) " sum of the elements of $(x) should be equal to the conditioner"
+function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x)
+    @assert insupport(ef, x) " sum of the elements of $(x) should be equal to the conditioner"
     n = Int(sum(x))
     return factorial(n) / prod(factorial.(x))
 end
 
+function basemeasure(dist::Multinomial, x)
+    @assert insupport(dist, x) " sum of the elements of $(x) should be equal to the conditioner"
+    n = Int(sum(x))
+    return factorial(n) / prod(factorial.(x))
+end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x) 
-    @assert insupport(union,x)
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x)
+    @assert insupport(union, x)
     return x
 end

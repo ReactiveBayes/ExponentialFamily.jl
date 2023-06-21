@@ -7,7 +7,7 @@ using Distributions
 using ForwardDiff
 using StableRNGs
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation,as_vec
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation, as_vec
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin

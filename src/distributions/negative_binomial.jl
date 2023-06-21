@@ -65,7 +65,10 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Negative
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial})
-    return NegativeBinomial(getconditioner(exponentialfamily), one(Float64) - exp(getnaturalparameters(exponentialfamily)))
+    return NegativeBinomial(
+        getconditioner(exponentialfamily),
+        one(Float64) - exp(getnaturalparameters(exponentialfamily))
+    )
 end
 
 check_valid_natural(::Type{<:NegativeBinomial}, params) = length(params) == 1
@@ -82,18 +85,17 @@ end
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
     -getconditioner(exponentialfamily) * log(one(Float64) - exp(getnaturalparameters(exponentialfamily)))
 
-function insupport(::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial},x::Real) 
+function insupport(::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial}, x::Real)
     return typeof(x) <: Integer && 0 <= x
 end
-function basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}, x::Real) 
-    @assert insupport(exponentialfamily,x) "$(x) is not in the support of negative binomial"
+function basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}, x::Real)
+    @assert insupport(exponentialfamily, x) "$(x) is not in the support of negative binomial"
     return binomial(Int(x + getconditioner(exponentialfamily) - 1), x)
 end
 function basemeasure(d::NegativeBinomial, x::Real)
-    @assert insupport(d,x) "$(x) is not in the support of negative binomial"
+    @assert insupport(d, x) "$(x) is not in the support of negative binomial"
     r, _ = params(d)
     return binomial(Int(x + r - 1), x)
-    
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{NegativeBinomial})
@@ -107,8 +109,10 @@ function fisherinformation(dist::NegativeBinomial)
     r / (p^2 * (one(p) - p))
 end
 
-
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial}, x::Real) 
-    @assert insupport(union,x) "$(x) is not in the support of negative binomial"
+function sufficientstatistics(
+    union::Union{<:KnownExponentialFamilyDistribution{NegativeBinomial}, <:NegativeBinomial},
+    x::Real
+)
+    @assert insupport(union, x) "$(x) is not in the support of negative binomial"
     return x
 end

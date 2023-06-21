@@ -92,7 +92,7 @@ import DomainSets: NaturalNumbers
             df = (η) -> ForwardDiff.derivative(f_logpartition, η)
             autograd_information = (η) -> ForwardDiff.derivative(df, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-            @test J^2*fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 end

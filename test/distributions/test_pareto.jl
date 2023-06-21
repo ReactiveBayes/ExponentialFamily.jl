@@ -50,14 +50,14 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             samples = rand(rng, Pareto(λ, u), n_samples)
-            transformation(η) = [-1-η, getconditioner(ef)]
+            transformation(η) = [-1 - η, getconditioner(ef)]
             J = ForwardDiff.derivative(transformation, η)
             totalHessian = zeros(2, 2)
             for sample in samples
                 totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Pareto(params[1], params[2]), sample), [λ, u])
             end
             @test fisherinformation(dist) ≈ totalHessian / n_samples atol = 1e-8
-            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef)
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Pareto, η, getconditioner(ef)))
             df = (η) -> ForwardDiff.derivative(f_logpartition, η)
             autograd_information = (η) -> ForwardDiff.derivative(df, η)

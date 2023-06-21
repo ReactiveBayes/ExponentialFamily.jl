@@ -65,7 +65,7 @@ end
 function Base.prod(::ClosedProd, left::Weibull, right::Weibull)
     ef_left = convert(KnownExponentialFamilyDistribution, left)
     ef_right = convert(KnownExponentialFamilyDistribution, right)
-    
+
     return prod(ClosedProd(), ef_left, ef_right)
 end
 
@@ -77,11 +77,11 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}
     return η < 0
 end
 
-function basemeasure(dist::Weibull, x) 
+function basemeasure(dist::Weibull, x)
     @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     return x^(shape(dist) - 1)
 end
-function basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x) 
+function basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x)
     @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     return x^(getconditioner(weibull) - 1)
 end
@@ -116,17 +116,17 @@ function fisherinformation(dist::Weibull)
     return [a11 a12; a21 a22]
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0,Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull},x::Real) = x ∈ support(union)
+support(::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
+insupport(union::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Weibull}, x)
-    @assert insupport(ef,x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
+    @assert insupport(ef, x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     k = getconditioner(ef)
     return x^k
 end
 
 function sufficientstatistics(dist::Weibull, x)
-    @assert insupport(dist,x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
+    @assert insupport(dist, x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     k = shape(dist)
-    return x^k 
+    return x^k
 end

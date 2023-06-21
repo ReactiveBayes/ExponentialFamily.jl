@@ -163,7 +163,6 @@ end
 
 isproper(::KnownExponentialFamilyDistribution{Contingency}) = true
 
-
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     container = Vector{T}(undef, 2)
     return rand!(rng, dist, container)
@@ -198,14 +197,14 @@ prod_closed_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency},x)
-    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2  "x should be a length 2 vector of integer"
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency}, x)
+    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
     K = first(size(getnaturalparameters(ef)))
-    ss = zeros(K,K)
-    for m=1:K
-        for n=1:K
-            if x[1] == m && x[2] ==n
-                ss[m,n] = 1
+    ss = zeros(K, K)
+    for m in 1:K
+        for n in 1:K
+            if x[1] == m && x[2] == n
+                ss[m, n] = 1
             end
         end
     end
@@ -213,14 +212,14 @@ function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency
     return ss
 end
 
-function sufficientstatistics(dist::Contingency,x::Vector{Int64})
-    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2  "x should be a length 2 vector of integer"
+function sufficientstatistics(dist::Contingency, x::Vector{Int64})
+    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
     K = first(size(contingency_matrix(dist)))
-    ss = zeros(K,K)
-    for m=1:K
-        for n=1:K
-            if x[1] == m && x[2] ==n
-                ss[m,n] = 1
+    ss = zeros(K, K)
+    for m in 1:K
+        for n in 1:K
+            if x[1] == m && x[2] == n
+                ss[m, n] = 1
             end
         end
     end

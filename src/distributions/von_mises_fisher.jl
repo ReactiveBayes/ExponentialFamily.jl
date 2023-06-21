@@ -84,19 +84,22 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMisesFisher
 end
 
 function insupport(vmf::VonMisesFisher, x::Vector)
-    return length(vmf.μ) == length(x) && dot(x,x) ≈ 1.0
+    return length(vmf.μ) == length(x) && dot(x, x) ≈ 1.0
 end
 
 function insupport(ef::KnownExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
-    return length(getnaturalparameters(ef)) == length(x) &&  dot(x,x) ≈ 1.0
+    return length(getnaturalparameters(ef)) == length(x) && dot(x, x) ≈ 1.0
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector) 
-    @assert insupport(union,x) "$(x) is not in the support of VMF"
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)
+    @assert insupport(union, x) "$(x) is not in the support of VMF"
     return (1 / 2pi)^(length(x) / 2)
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)  
-    @assert insupport(union,x) "$(x) is not in the support of VMF"
+function sufficientstatistics(
+    union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher},
+    x::Vector
+)
+    @assert insupport(union, x) "$(x) is not in the support of VMF"
     return x
 end

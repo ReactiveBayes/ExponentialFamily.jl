@@ -47,19 +47,19 @@ import ExponentialFamily:
         end
     end
 
-    transformation(η) = 2*(η + 1 )
+    transformation(η) = 2 * (η + 1)
 
     @testset "fisherinformation (Chisq)" begin
         rng = StableRNG(42)
         n_samples = 1000
         for ν in 1:10
             dist = Chisq(ν)
-            ef   = convert(KnownExponentialFamilyDistribution,Chisq(ν))
+            ef = convert(KnownExponentialFamilyDistribution, Chisq(ν))
             chisq_fisher = fisherinformation(dist)
-            ef_fisher    = fisherinformation(ef)
+            ef_fisher = fisherinformation(ef)
             η = getnaturalparameters(ef)
-            J = ForwardDiff.derivative(transformation,η)
-            @test chisq_fisher*J^2 ≈ ef_fisher atol = 0.01
+            J = ForwardDiff.derivative(transformation, η)
+            @test chisq_fisher * J^2 ≈ ef_fisher atol = 0.01
         end
     end
 

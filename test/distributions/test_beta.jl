@@ -6,7 +6,8 @@ using Distributions
 using Random
 using ForwardDiff
 
-import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure, sufficientstatistics,fisherinformation
+import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, logpartition,
+    basemeasure, sufficientstatistics, fisherinformation
 import SpecialFunctions: loggamma
 
 @testset "Beta" begin
@@ -99,9 +100,9 @@ import SpecialFunctions: loggamma
             end
         end
         @testset "fisherinformation" begin
-            for a=0.01:1:10
-                for b=0.01:1:10
-                    dist = Beta(a,b)
+            for a in 0.01:1:10
+                for b in 0.01:1:10
+                    dist = Beta(a, b)
                     ef = convert(KnownExponentialFamilyDistribution, dist)
                     η = getnaturalparameters(ef)
 
@@ -109,7 +110,7 @@ import SpecialFunctions: loggamma
                     autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
                     @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-10
                     # Here Jacobian is identity matrix. To speed up the tests its computation is omitted
-                    @test fisherinformation(dist)  ≈ fisherinformation(ef) atol = 1e-10
+                    @test fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-10
                 end
             end
         end

@@ -86,7 +86,6 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
     end
 end
 
-
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Laplace)
     μ, θ = params(dist)
     return KnownExponentialFamilyDistribution(Laplace, -inv(θ), μ)
@@ -119,12 +118,12 @@ function fisherinformation(dist::Laplace)
     return [1/b^2 0; 0 1/b^2]
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Laplace},x)
-    μ =  getconditioner(ef)
-    return abs(x-μ)
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Laplace}, x)
+    μ = getconditioner(ef)
+    return abs(x - μ)
 end
 
-function sufficientstatistics(dist::Laplace,x)
+function sufficientstatistics(dist::Laplace, x)
     μ, _ = params(dist)
-    return abs(x-μ)
+    return abs(x - μ)
 end

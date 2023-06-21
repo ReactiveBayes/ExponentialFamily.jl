@@ -151,11 +151,11 @@ end
                 @test_throws AssertionError basemeasure(
                     KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
                     rand(3, 3)
-                ) 
-                L = rand(2,2)
+                )
+                L = rand(2, 2)
                 @test basemeasure(
                     KnownExponentialFamilyDistribution(WishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
-                    L*L'
+                    L * L'
                 ) == 1.0
             end
         end

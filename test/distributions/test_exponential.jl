@@ -101,7 +101,7 @@ import ExponentialFamily:
             autograd_inforamation = (η) -> ForwardDiff.derivative(df, η)
             @test fisherinformation(ef) ≈ autograd_inforamation(η)
             J = ForwardDiff.derivative(transformation, η)
-            @test fisherinformation(dist)*J^2 ≈ fisherinformation(ef)
+            @test fisherinformation(dist) * J^2 ≈ fisherinformation(ef)
         end
     end
 end
