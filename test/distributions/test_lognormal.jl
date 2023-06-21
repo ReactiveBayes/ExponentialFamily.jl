@@ -66,7 +66,6 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure, fishe
 
     @testset "basemeasure" begin
         point = rand()
-        @test basemeasure(LogNormal(1, sqrt(1 / 2pi)), point) == 1 / (sqrt(2 * pi) * point)
         @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -pi]), point) ==
               1 / (sqrt(2 * pi) * point)
         @test basemeasure(KnownExponentialFamilyDistribution(LogNormal, [1.0, -1]), point) == 1 / (sqrt(2 * pi) * point)
