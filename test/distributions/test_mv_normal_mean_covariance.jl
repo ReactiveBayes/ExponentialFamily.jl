@@ -7,7 +7,7 @@ using Distributions
 using ForwardDiff
 using StableRNGs
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation, as_vec
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin
@@ -168,7 +168,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             samples = rand(rng, dist, n_samples)
             samples = [samples[:, i] for i in 1:n_samples]
 
-            v_ = [μ..., vec(Σ)...]
+            v_ = [μ..., as_vec(Σ)...]
             totalHessian = zeros(length(v_), length(v_))
             for sample in samples
                 totalHessian -= ForwardDiff.hessian(x -> friendlygaussianlpdf(x, sample), v_)

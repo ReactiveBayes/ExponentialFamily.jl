@@ -16,7 +16,7 @@ function Base.prod(
     η_left = first(getnaturalparameters(left))
     η_right = first(getnaturalparameters(right))
 
-    naturalparameters = [η_left + η_right]
+    naturalparameters = η_left + η_right
     basemeasure = (x) -> 1 / factorial(x)^2
     sufficientstatistics = (x) -> x
     logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
@@ -33,23 +33,10 @@ function Base.prod(
 end
 
 function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
-    η_left = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, left)))
-    η_right = first(getnaturalparameters(convert(KnownExponentialFamilyDistribution, right)))
+    ef_left = convert(KnownExponentialFamilyDistribution, left)
+    ef_right = convert(KnownExponentialFamilyDistribution, right)
 
-    naturalparameters = [η_left + η_right]
-    basemeasure = (x) -> 1 / factorial(x)^2
-    sufficientstatistics = (x) -> x
-    logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
-    supp = DomainSets.NaturalNumbers()
-
-    return ExponentialFamilyDistribution(
-        Float64,
-        basemeasure,
-        sufficientstatistics,
-        naturalparameters,
-        logpartition,
-        supp
-    )
+    return prod(ef_left, ef_right)
 end
 
 function logpdf_sample_friendly(dist::Poisson)
@@ -61,24 +48,36 @@ end
 check_valid_natural(::Type{<:Poisson}, params) = isequal(length(params), 1)
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Poisson) =
-    KnownExponentialFamilyDistribution(Poisson, [log(rate(dist))])
+    KnownExponentialFamilyDistribution(Poisson, log(rate(dist)))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Poisson})
-    η = first(getnaturalparameters(exponentialfamily))
+    η = getnaturalparameters(exponentialfamily)
     return Poisson(exp(η))
 end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
-    exp(first(getnaturalparameters(exponentialfamily)))
+    exp(getnaturalparameters(exponentialfamily))
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson})
-    η = first(getnaturalparameters(exponentialfamily))
+    η = getnaturalparameters(exponentialfamily)
     η isa Number && !isnan(η) && !isinf(η)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x) = 1.0 / factorial(x)
-
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
-    exp(first(getnaturalparameters(exponentialfamily)))
+    exp(getnaturalparameters(exponentialfamily))
 
 fisherinformation(dist::Poisson) = 1 / rate(dist)
+
+function support(::KnownExponentialFamilyDistribution{Poisson})
+    return DomainSets.NaturalNumbers()
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Poisson"
+    return one(typeof(x)) / factorial(x)
+end
+
+function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
+    @assert insupport(union, x) "$(x) is not in the support of Poisson"
+    return x
+end

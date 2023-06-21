@@ -9,7 +9,7 @@ using ExponentialFamily
 import ExponentialFamily:
     MvNormalWishart, KnownExponentialFamilyDistribution, params, dof, invscatter, reconstructargument!
 import ExponentialFamily:
-    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics
+    scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics, as_vec
 using Distributions
 using Random
 
@@ -76,7 +76,7 @@ end
             st = sufficientstatistics(dist)
             samples = rand(MersenneTwister(j), dist, nsamples)
             η = getnaturalparameters(ef)
-            ηvec = vcat(η[1], vec(η[2]), η[3], η[4])
+            ηvec = vcat(η[1], as_vec(η[2]), η[3], η[4])
             expsuffstats = sum(st(sample[1], sample[2]) for sample in samples) / nsamples
             expsuffstatsvec = ForwardDiff.gradient(x -> logpartition(ef, x), ηvec)
             @test expsuffstats ≈ reconstructargument!(expsuffstats, expsuffstats, expsuffstatsvec) rtol = 0.1

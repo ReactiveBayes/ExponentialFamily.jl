@@ -197,16 +197,13 @@ function isproper(params::KnownExponentialFamilyDistribution{<:WishartImproper})
     isposdef(-η2) && (0 < η1)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{<:WishartImproper}, <:Union{WishartImproper, Wishart}}, x) =
-    1.0
-
 mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
 
 function fisherinformation(dist::Wishart)
     df, S = dist.df, dist.S
     p = first(size(S))
     invS = inv(S)
-    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
+    return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
 end
 
 function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartImproper})
@@ -215,5 +212,28 @@ function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartI
     η2 = getindex(η, 2)
     p = first(size(η2))
     invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -as_vec(invη2)'; -as_vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+end
+
+function insupport(ef::KnownExponentialFamilyDistribution{WishartImproper, P, C, Safe}, x::Matrix) where {P, C}
+    return size(getindex(getnaturalparameters(ef), 2)) == size(x) && isposdef(x)
+end
+
+function insupport(dist::WishartImproper, x::Matrix)
+    return (size(dist.invS) == size(x)) && isposdef(x)
+end
+
+function basemeasure(
+    union::Union{<:KnownExponentialFamilyDistribution{<:WishartImproper}, <:Union{WishartImproper, Wishart}},
+    x::Matrix
+)
+    @assert insupport(union, x) "$(x) is not in the support of Wishart"
+    return 1.0
+end
+function sufficientstatistics(
+    union::Union{<:KnownExponentialFamilyDistribution{<:WishartImproper}, <:Union{WishartImproper, Wishart}},
+    x::Matrix
+)
+    @assert insupport(union, x) "$(x) is not in the support of Wishart"
+    return [chollogdet(x), x]
 end

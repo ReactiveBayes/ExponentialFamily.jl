@@ -24,22 +24,32 @@ end
 check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Exponential)
-    return KnownExponentialFamilyDistribution(Exponential, [-inv(dist.θ)])
+    return KnownExponentialFamilyDistribution(Exponential, -inv(dist.θ))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Exponential})
-    return Exponential(-inv(first(getnaturalparameters(exponentialfamily))))
+    return Exponential(-inv(getnaturalparameters(exponentialfamily)))
 end
 
 function logpartition(η::KnownExponentialFamilyDistribution{Exponential})
-    return -log(-first(getnaturalparameters(η)))
+    return -log(-getnaturalparameters(η))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
-    (first(getnaturalparameters(exponentialfamily)) <= zero(Float64))
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}, x) = 1.0
+    (getnaturalparameters(exponentialfamily) <= zero(Float64))
 
+support(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
+
+function basemeasure(ef::KnownExponentialFamilyDistribution{Exponential}, x)
+    @assert insupport(ef, x) "base measure should be evaluated at a point greater than 0"
+    return one(typeof(x))
+end
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
-    inv(first(getnaturalparameters(exponentialfamily))^2)
+    inv(getnaturalparameters(exponentialfamily)^2)
 
 fisherinformation(dist::Exponential) = inv(dist.θ^2)
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Exponential}, x)
+    @assert insupport(ef, x) "sufficient statistics should be evaluated at a point greater than 0"
+    return x
+end

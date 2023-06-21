@@ -63,7 +63,7 @@ compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bern
     compute_logscale(new_dist, right_dist, left_dist)
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
-    return -log(logistic(-first(getnaturalparameters(exponentialfamily))))
+    return -log(logistic(-getnaturalparameters(exponentialfamily)))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
@@ -73,11 +73,33 @@ end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Bernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    KnownExponentialFamilyDistribution(Bernoulli, [log(succprob(dist) / (one(Float64) - succprob(dist)))])
+    KnownExponentialFamilyDistribution(Bernoulli, log(succprob(dist) / (one(Float64) - succprob(dist))))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli}) = true
 
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Bernoulli}, <:Bernoulli}, x) = 1.0
+function support(::KnownExponentialFamilyDistribution{Bernoulli})
+    return [0, 1]
+end
+    
+function basemeasure(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
+    @assert insupport(ef, x)
+    return one(typeof(x))
+end
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
+    @assert insupport(ef, x)
+    return x
+end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Bernoulli})
+    η = getnaturalparameters(ef)
+    f = logistic(-η)
+    return f * (one(typeof(f)) - f)
+end
+
+function fisherinformation(dist::Bernoulli)
+    p = dist.p
+    return inv(p * (one(typeof(p)) - p))
+end

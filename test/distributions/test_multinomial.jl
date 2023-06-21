@@ -94,12 +94,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test logpartition(η1) == 3.4657359027997265
         @test logpartition(η2) == 4.5814536593707755
 
-        @test basemeasure(d1, [1, 2, 2]) == 30.0
-        @test basemeasure(d2, [1, 2, 2]) == 30.0
         @test basemeasure(η1, [1, 2, 2]) == 30.0
         @test basemeasure(η2, [1, 2, 2]) == 30.0
-        @test basemeasure(d1, [1, 2, 2]) == basemeasure(η1, [1, 2, 2])
-        @test basemeasure(d2, [1, 2, 2]) == basemeasure(η2, [1, 2, 2])
 
         @test logpdf(η1, [1, 2, 2]) == logpdf(d1, [1, 2, 2])
         @test logpdf(η2, [1, 2, 2]) == logpdf(d2, [1, 2, 2])

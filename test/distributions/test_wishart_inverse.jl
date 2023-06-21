@@ -9,7 +9,7 @@ using StableRNGs
 using ForwardDiff
 
 import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure,
-    fisherinformation, logpartition, reconstructargument!
+    fisherinformation, logpartition, reconstructargument!, as_vec
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
@@ -23,7 +23,7 @@ function transformation(params)
     η1, η2 = params[1], params[2:end]
     p = Int(sqrt(length(η2)))
     η2 = reshape(η2, (p, p))
-    return [-(2 * η1 + p + 1); vec(-2 * η2)]
+    return [-(2 * η1 + p + 1); as_vec(-2 * η2)]
 end
 
 @testset "InverseWishartImproper" begin
@@ -219,10 +219,15 @@ end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test basemeasure(
+                @test_throws AssertionError basemeasure(
                     KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
                     rand(3, 3)
                 ) == 1
+                L = rand(2, 2)
+                @test basemeasure(
+                    KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
+                    L * L'
+                ) == 1.0
             end
         end
 
@@ -246,7 +251,7 @@ end
                     dist = InverseWishart(df, A)
                     ef = convert(KnownExponentialFamilyDistribution, dist)
                     η = getnaturalparameters(ef)
-                    η_vec = vcat(η[1], vec(η[2]))
+                    η_vec = vcat(η[1], as_vec(η[2]))
                     fef = fisherinformation(ef)
                     fdist = fisherinformation(dist)
 

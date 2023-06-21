@@ -18,7 +18,7 @@ The parameter `P` encodes a contingency matrix that specifies the probability of
 
     f(v1, v2, P) = Contingency(out1, out2 | P) = Π_jk P_jk^{v1_j * v2_k}
 
-A `Contingency` distribution over more than two variables requires higher-order tensors as parameters; these are not implemented in ReactiveMP.
+A `Contingency` distribution over more than two variables requires higher-order tensors as parameters; these are not implemented in ExponentialFamily.jl yet.
 
 # Arguments:
 - `P`, required, contingency matrix
@@ -162,7 +162,6 @@ function icdf(dist::Contingency, probability::Float64)
 end
 
 isproper(::KnownExponentialFamilyDistribution{Contingency}) = true
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     container = Vector{T}(undef, 2)
@@ -179,7 +178,7 @@ function Random.rand(rng::AbstractRNG, dist::Contingency{T}, nsamples::Int64) wh
 end
 
 function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVector{T}) where {T <: Real}
-    probvector   = vec(contingency_matrix(dist))
+    probvector   = as_vec(contingency_matrix(dist))
     sampleindex  = rand(rng, Categorical(probvector))
     cartesianind = indexin(probvector[sampleindex], contingency_matrix(dist))
     container[1] = cartesianind[1][1]
@@ -195,3 +194,35 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVe
 end
 
 prod_closed_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
+
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency}, x)
+    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
+    K = first(size(getnaturalparameters(ef)))
+    ss = zeros(K, K)
+    for m in 1:K
+        for n in 1:K
+            if x[1] == m && x[2] == n
+                ss[m, n] = 1
+            end
+        end
+    end
+
+    return ss
+end
+
+function sufficientstatistics(dist::Contingency, x::Vector{Int64})
+    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
+    K = first(size(contingency_matrix(dist)))
+    ss = zeros(K, K)
+    for m in 1:K
+        for n in 1:K
+            if x[1] == m && x[2] == n
+                ss[m, n] = 1
+            end
+        end
+    end
+
+    return ss
+end

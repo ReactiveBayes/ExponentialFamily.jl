@@ -49,24 +49,31 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{LogNorma
     return (η2 < 0)
 end
 
-function basemeasure(d::KnownExponentialFamilyDistribution{LogNormal}, x)
-    η = getnaturalparameters(d)
-    η2 = getindex(η, 2)
-    return sqrt(-η2 / pi) / x
+support(::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = ClosedInterval{Real}(0, Inf)
+
+function basemeasure(ef::KnownExponentialFamilyDistribution{LogNormal}, x::Real)
+    @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
+    return 1 / (sqrt(2 * pi) * x)
 end
 
-function basemeasure(d::LogNormal, x)
-    var = varlogx(d)
-    return 1 / (sqrt(2pi * var) * x)
+function basemeasure(dist::LogNormal, x::Real)
+    @assert insupport(dist, x) "Lognormal should be evaluated at positive values"
+    return 1 / (sqrt(2 * pi) * x)
 end
 
 function fisherinformation(d::LogNormal)
     σ = d.σ
     return [1/(σ^2) 0.0; 0.0 2/(σ^2)]
 end
+
 function fisherinformation(ef::KnownExponentialFamilyDistribution{LogNormal})
     η = getnaturalparameters(ef)
     η1 = getindex(η, 1)
     η2 = getindex(η, 2)
     return [-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
+end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{LogNormal}, x::Real)
+    @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
+    return [log(x), log(x)^2]
 end

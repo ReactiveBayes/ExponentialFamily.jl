@@ -42,8 +42,6 @@ end
 
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x) = 1.0
-
 function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Categorical})
     η = getnaturalparameters(expfamily)
     I = Matrix{Float64}(undef, length(η), length(η))
@@ -68,4 +66,37 @@ function fisherinformation(dist::Categorical)
         end
     end
     return I
+end
+
+function support(ef::KnownExponentialFamilyDistribution{Categorical})
+    return ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
+end
+
+function insupport(ef::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
+    return x ∈ support(ef)
+end
+
+function insupport(union::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
+    return typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
+    @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
+    return one(typeof(x))
+end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real)
+    @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
+    K = length(getnaturalparameters(ef))
+    ss = zeros(K)
+    [ss[k] = 1 for k in 1:K if x == k]
+    return ss
+end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector)
+    @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
+    K = length(getnaturalparameters(ef))
+    ss = zeros(K)
+    [ss[k] = 1 for k in 1:K if x[k] == 1]
+    return ss
 end

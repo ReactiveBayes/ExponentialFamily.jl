@@ -63,15 +63,37 @@ Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(log
     distributions are in exponential family give a parameter is fixed.
 
 """
-struct KnownExponentialFamilyDistribution{T, P, C}
+struct KnownExponentialFamilyDistribution{T, P, C, S}
     naturalparameters::P
     conditioner::C
-    KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing) where {T, P, C} =
+    support::S
+    KnownExponentialFamilyDistribution(
+        ::Type{T},
+        naturalparameters::P,
+        conditioner::C = nothing,
+        support::S = Safe()
+    ) where {T, P, C, S} =
         begin
             @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
             @assert check_valid_conditioner(T, conditioner) "$(conditioner) is not a valid conditioner for distribution $(T) or 'check_valid_conditioner' function is not implemented!"
-            new{T, P, C}(naturalparameters, conditioner)
+            new{T, P, C, S}(naturalparameters, conditioner, support)
         end
+end
+
+function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing) where {T, P, C}
+    return KnownExponentialFamilyDistribution(T, naturalparameters, conditioner, Safe())
+end
+
+struct Safe end
+
+struct Unsafe end
+
+function insupport(::KnownExponentialFamilyDistribution{T, P, C, Unsafe}, x) where {T, P, C}
+    return true
+end
+
+function insupport(ef::KnownExponentialFamilyDistribution{T, P, C, Safe}, x) where {T, P, C}
+    return x ∈ support(ef)
 end
 
 variate_form(::P) where {P <: KnownExponentialFamilyDistribution}     = variate_form(P)
@@ -82,7 +104,13 @@ check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === noth
 
 function check_valid_natural end
 
-getnaturalparameters(exponentialfamily::KnownExponentialFamilyDistribution) = exponentialfamily.naturalparameters
+function getnaturalparameters(exponentialfamily::KnownExponentialFamilyDistribution; vector = false)
+    if vector == false
+        return exponentialfamily.naturalparameters
+    else
+        return vcat(as_vec.(exponentialfamily.naturalparameters)...)
+    end
+end
 getconditioner(exponentialfamily::KnownExponentialFamilyDistribution) = exponentialfamily.conditioner
 
 Base.convert(::Type{T}, exponentialfamily::KnownExponentialFamilyDistribution) where {T <: Distribution} =
@@ -96,10 +124,15 @@ Base.:(≈)(left::KnownExponentialFamilyDistribution, right::KnownExponentialFam
     getnaturalparameters(left) ≈ getnaturalparameters(right) && getconditioner(left) == getconditioner(right) &&
     distributiontype(left) == distributiontype(right)
 
-Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
-    Distributions.logpdf(Base.convert(Distribution, exponentialfamily), x)
-Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
-    Distributions.pdf(Base.convert(Distribution, exponentialfamily), x)
+function Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribution, x)
+    base_measure = log(basemeasure(exponentialfamily, x))
+    natural_parameters = getnaturalparameters(exponentialfamily, vector = true)
+    statistics = sufficientstatistics(exponentialfamily, x, vector = true)
+    dot_product = dot(natural_parameters, statistics)
+
+    return base_measure + dot_product - logpartition(exponentialfamily)
+end
+Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
 Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
     Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
@@ -114,6 +147,14 @@ function logpartition end
 
 function basemeasure end
 function sufficientstatistics end
+
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{T}, x; vector = false) where {T}
+    if vector == false
+        return sufficientstatistics(ef, x)
+    else
+        return vcat(as_vec.(sufficientstatistics(ef, x))...)
+    end
+end
 
 """
 Fisher information

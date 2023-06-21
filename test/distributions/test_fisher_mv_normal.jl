@@ -25,8 +25,8 @@ end
         for (m, sigma) in zip(1:10, 1:10)
             dist = MvNormalMeanCovariance([m, m], [sigma 0; 0 sigma])
             ef = convert(KnownExponentialFamilyDistribution, dist)
-            vec = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
-            autograd_hessian = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), vec)
+            as_vec = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
+            autograd_hessian = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), as_vec)
             @info "test started"
             # display(autograd_hessian)
             # display(cov(dist))

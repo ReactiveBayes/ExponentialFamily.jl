@@ -3,6 +3,7 @@ export Gamma, GammaShapeScale, GammaDistributionsFamily
 import SpecialFunctions: loggamma, digamma
 import Distributions: shape, scale, cov
 import StatsFuns: log2π
+using IntervalSets
 
 const GammaShapeScale             = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
@@ -113,8 +114,24 @@ function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaD
     return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{GammaDistributionsFamily}, <:GammaDistributionsFamily}, x) =
-    1.0
+support(::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) =
+    OpenInterval{Real}(0, Inf)
+
+function sufficientstatistics(
+    ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily},
+    x::Real
+)
+    @assert insupport(ef, x) "Gamma sufficients statistics should be evaluated at values greater than 0"
+    return [log(x), x]
+end
+
+function basemeasure(
+    ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily},
+    x::Real
+)
+    @assert insupport(ef, x) "Gamma base measure should be evaluated at values greater than 0"
+    return one(typeof(x))
+end
 
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η = getnaturalparameters(exponentialfamily)

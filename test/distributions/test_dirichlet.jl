@@ -58,7 +58,8 @@ end
     @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
     @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
     @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
-    @test basemeasure(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand()) == 1.0
+    @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand()) ==
+                                1.0
     for i in 1:9
         b = Dirichlet([i / 10.0, i / 5, i])
         bnp = convert(KnownExponentialFamilyDistribution, b)

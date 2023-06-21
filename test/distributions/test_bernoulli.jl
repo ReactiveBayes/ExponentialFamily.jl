@@ -3,10 +3,12 @@ module BernoulliTest
 using Test
 using ExponentialFamily
 using Distributions
+using ForwardDiff
 using Random
 using StatsFuns
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure
+    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
+    sufficientstatistics, fisherinformation
 
 @testset "Bernoulli" begin
 
@@ -44,15 +46,19 @@ import ExponentialFamily:
             b = Bernoulli(i / 10.0)
             bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
-            @test logpdf(bnp, 1) ≈ logpdf(b, 1)
+            @test logpdf(bnp, 1) ≈ logpdf(b, 1) 
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
-                  KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
+                  KnownExponentialFamilyDistribution(Bernoulli, logit(i / 10.0))
         end
-        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, [10])) === true
-        @test basemeasure(b_99, 0.1) == 1.0
-        @test basemeasure(KnownExponentialFamilyDistribution(Bernoulli, [10]), 0.2) == 1.0
+        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, 10)) === true
+        @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Bernoulli, 10), 0.2)
+
+        bernoullief = KnownExponentialFamilyDistribution(Bernoulli, log(0.1))
+        @test sufficientstatistics(bernoullief, 1) == 1
+        @test sufficientstatistics(bernoullief, 0) == 0
+        @test_throws AssertionError sufficientstatistics(bernoullief, 0.1)
     end
 
     @testset "prod with KnownExponentialFamilyDistribution" begin
@@ -73,6 +79,22 @@ import ExponentialFamily:
         @test prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
         @test prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
         @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
+    end
+
+    transformation(logprobability) = exp(logprobability) / (one(Float64) + exp(logprobability))
+    @testset "fisherinformation" begin
+        for p in 0.1:0.1:0.9
+            dist = Bernoulli(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Bernoulli, η))
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            J = ForwardDiff.derivative(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+        end
     end
 end
 

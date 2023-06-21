@@ -31,7 +31,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         for nleft in 1:15, pleft in 0.01:0.3:0.99
             left = NegativeBinomial(nleft, pleft)
             efleft = convert(KnownExponentialFamilyDistribution, left)
-            η_left = first(getnaturalparameters(efleft))
+            η_left = getnaturalparameters(efleft)
             for nright in 1:15, pright in 0.01:0.3:0.99
                 right = NegativeBinomial(nright, pright)
                 efright = convert(KnownExponentialFamilyDistribution, right)
@@ -40,13 +40,13 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
                 prod_ef = prod(efleft, efright)
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters[1] -
-                        prod_dist.logpartition(prod_dist.naturalparameters[1])
+                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
+                        prod_dist.logpartition(prod_dist.naturalparameters)
                     )
                 hist_sumef(x) =
                     prod_ef.basemeasure(x) * exp(
-                        prod_ef.sufficientstatistics(x) * prod_ef.naturalparameters[1] -
-                        prod_ef.logpartition(prod_ef.naturalparameters[1])
+                        prod_ef.sufficientstatistics(x) * prod_ef.naturalparameters -
+                        prod_ef.logpartition(prod_ef.naturalparameters)
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-5
                 @test sum(hist_sumef(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-5
@@ -64,39 +64,28 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "natural parameters related" begin
-        d1 = NegativeBinomial(5, 1 / 3)
-        d2 = NegativeBinomial(5, 1 / 2)
-        η1 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 3)], 5)
-        η2 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(1 / 2)], 5)
+        for r in 1:5
+            for p in 0.1:0.1:0.9
+                dist = NegativeBinomial(r, p)
+                ef_manual = KnownExponentialFamilyDistribution(NegativeBinomial, log(one(Float64) - p), r)
+                ef_converted = convert(KnownExponentialFamilyDistribution, dist)
 
-        @test convert(KnownExponentialFamilyDistribution, d1) == η1
-        @test convert(KnownExponentialFamilyDistribution, d2) == η2
-
-        @test convert(Distribution, η1) ≈ d1
-        @test convert(Distribution, η2) ≈ d2
-
-        η3 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(0.1)], 5)
-        η4 = KnownExponentialFamilyDistribution(NegativeBinomial, [log(0.2)], 10)
-
-        @test logpartition(η3) ≈ -5.0 * log(1 - 0.1)
-        @test logpartition(η4) ≈ -10.0 * log(1 - 0.2)
-
-        @test basemeasure(d1, 5) == binomial(9, 5)
-        @test basemeasure(d2, 2) == binomial(6, 2)
-        @test basemeasure(η1, 5) == basemeasure(d1, 5)
-        @test basemeasure(η2, 2) == basemeasure(d2, 2)
-
-        @test logpdf(η1, 2) == logpdf(d1, 2)
-        @test logpdf(η2, 3) == logpdf(d2, 3)
-
-        @test pdf(η1, 2) == pdf(d1, 2)
-        @test pdf(η2, 4) == pdf(d2, 4)
-
-        @test isproper(KnownExponentialFamilyDistribution(NegativeBinomial, [0], 5)) == true
-        @test isproper(KnownExponentialFamilyDistribution(NegativeBinomial, [NaN], 5)) == false
+                @test ef_manual == ef_converted
+                @test convert(Distribution, ef_manual) ≈ dist
+                @test logpartition(ef_converted) ≈ -r * log(p)
+                for k in 3:5
+                    @test logpdf(dist, k) ≈ logpdf(ef_manual, k)
+                    @test pdf(dist, k) ≈ pdf(ef_manual, k)
+                    @test basemeasure(ef_converted, k) == binomial(Int(k + r - 1), k)
+                end
+                @test sum(pdf(ef_converted, x) for x in 0:200) ≈ 1.0 atol = 1e-5
+            end
+        end
+    end
+    @testset "Proper" begin
         for x in 1:10
-            ef_proper = KnownExponentialFamilyDistribution(NegativeBinomial, [-x], 5)
-            ef_improper = KnownExponentialFamilyDistribution(NegativeBinomial, [x], 5)
+            ef_proper = KnownExponentialFamilyDistribution(NegativeBinomial, -x, 5)
+            ef_improper = KnownExponentialFamilyDistribution(NegativeBinomial, x, 5)
             @test isproper(ef_proper) == true
             @test isproper(ef_improper) == false
         end
@@ -104,10 +93,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
 
     @testset "fisher information" begin
         for η in 1:10, r in 1:10
-            ef = KnownExponentialFamilyDistribution(NegativeBinomial, [-η], r)
+            ef = KnownExponentialFamilyDistribution(NegativeBinomial, -η, r)
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(NegativeBinomial, η, r))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information([-η])[1, 1]
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ autograd_information(-η)
         end
 
         rng = StableRNG(42)
