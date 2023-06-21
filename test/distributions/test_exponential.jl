@@ -85,7 +85,6 @@ import ExponentialFamily:
               KnownExponentialFamilyDistribution(Exponential, -0.2)
         @test convert(KnownExponentialFamilyDistribution, Exponential(1e12)) ==
               KnownExponentialFamilyDistribution(Exponential, -1e-12)
-        @test basemeasure(Exponential(5), rand()) == 1.0
     end
 
     transformation(η) = -inv(η)

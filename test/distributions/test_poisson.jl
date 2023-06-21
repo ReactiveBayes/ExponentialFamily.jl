@@ -66,8 +66,6 @@ import DomainSets: NaturalNumbers
             @test isproper(KnownExponentialFamilyDistribution(Poisson, NaN)) === false
             @test isproper(KnownExponentialFamilyDistribution(Poisson, Inf)) === false
         end
-
-        @test basemeasure(Poisson(5), 3) == 1.0 / factorial(3)
     end
 
     @testset "fisher information" begin

@@ -46,8 +46,6 @@ function support(ef::KnownExponentialFamilyDistribution{Pareto})
     return ClosedInterval{Real}(getconditioner(ef), Inf)
 end
 
-insupport(ef::KnownExponentialFamilyDistribution{Pareto}, x::Real) = x ∈ support(ef)
-
 function sufficientstatistics(union::KnownExponentialFamilyDistribution{Pareto}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Pareto"
     return log(x)
