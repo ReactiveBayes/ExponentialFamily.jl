@@ -25,6 +25,12 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         @test closed_prod_rule(efnormal1, efnormal2) == ClosedProd()
         efnormalprod = prod(ProdGeneric(), efnormal1, efnormal2)
         @test distributiontype(efnormalprod) === NormalWeightedMeanPrecision
+
+        efgamma1 = KnownExponentialFamilyDistribution(Gamma, [2, -2])
+        efgamma2 = KnownExponentialFamilyDistribution(Gamma, [3, -3])
+        @test closed_prod_rule(efgamma1, efgamma2) == ClosedProd()
+        efgammaprod = prod(ProdGeneric(), efgamma1, efgamma2)
+        @test distributiontype(efgammaprod) === Gamma
     end
 
     # @testset "ProdGeneric should simplify a product tree if closed form product available for leafes" begin
