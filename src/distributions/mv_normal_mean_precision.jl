@@ -63,7 +63,7 @@ end
 vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
     MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-prod_closed_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
+closed_prod_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     Λ = precision(left) + precision(right)

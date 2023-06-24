@@ -1,4 +1,4 @@
-export ExponentialFamilyProduct, ClosedProd, ClosedProd, ProdGeneric, GenericLogPdfVectorisedProduct
+export ExponentialFamilyProduct, ClosedProd, ClosedProd, ProdGeneric, ExponentialFamilyProductLogPdf
 
 import Distributions
 import Base: prod, show, showerror
@@ -33,7 +33,7 @@ mean(product), var(product)
 (0.0, 0.5)
 ```
 
-See also: [`prod_closed_rule`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
+See also: [`closed_prod_rule`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
 """
 prod(::ClosedProd, left, right) = throw(NoClosedProdException(left, right))
 
@@ -99,14 +99,14 @@ struct ProdPreserveTypeRight end
 
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
-struct ProdClosedRuleUnknown end
+struct ClosedProdUnknown end
 """
-    prod_closed_rule(::Type, ::Type)
-Returns either `ProdClosed` or `ProdClosedRuleUnknown` for two given distribution types.
-Returns `ProdClosedRuleUnknown` by default.
+    closed_prod_rule(::Type, ::Type)
+Returns either `ProdClosed` or `ClosedProdUnknown` for two given distribution types.
+Returns `ClosedProdUnknown` by default.
 See also: [`prod`](@ref), [`ProdClosed`](@ref), [`ProdGeneric`](@ref)
 """
-prod_closed_rule(::Type, ::Type) = ProdClosedRuleUnknown()
+closed_prod_rule(::Type, ::Type) = ClosedProdUnknown()
 
 struct ExponentialFamilyProduct{L, R}
     left  :: L
@@ -132,16 +132,16 @@ Distributions.pdf(product::ExponentialFamilyProduct, x)    = Distributions.pdf(g
 Distributions.logpdf(product::ExponentialFamilyProduct, x) = Distributions.logpdf(getleft(product), x) + Distributions.logpdf(getright(product), x)
 
 variate_form(::P) where {P <: ExponentialFamilyProduct}           = variate_form(P)
-variate_form(::Type{ExponentialFamilyProduct{L, R}}) where {L, R} = _check_dist_product_variate_form(variate_form(L), variate_form(R))
+variate_form(::Type{ExponentialFamilyProduct{L, R}}) where {L, R} = _check_product_variate_form(variate_form(L), variate_form(R))
 
-_check_dist_product_variate_form(::Type{F}, ::Type{F}) where {F <: VariateForm}                       = F
-_check_dist_product_variate_form(::Type{F1}, ::Type{F2}) where {F1 <: VariateForm, F2 <: VariateForm} = error("ExponentialFamilyProduct has different variate forms for left ($F1) and right ($F2) entries.")
+_check_product_variate_form(::Type{F}, ::Type{F}) where {F <: VariateForm}                       = F
+_check_product_variate_form(::Type{F1}, ::Type{F2}) where {F1 <: VariateForm, F2 <: VariateForm} = error("ExponentialFamilyProduct has different variate forms for left ($F1) and right ($F2) entries.")
 
 value_support(::P) where {P <: ExponentialFamilyProduct}           = value_support(P)
-value_support(::Type{ExponentialFamilyProduct{L, R}}) where {L, R} = _check_dist_product_value_support(value_support(L), value_support(R))
+value_support(::Type{ExponentialFamilyProduct{L, R}}) where {L, R} = _check_product_value_support(value_support(L), value_support(R))
 
-_check_dist_product_value_support(::Type{S}, ::Type{S}) where {S <: ValueSupport}                        = S
-_check_dist_product_value_support(::Type{S1}, ::Type{S2}) where {S1 <: ValueSupport, S2 <: ValueSupport} = error("ExponentialFamilyProduct has different value supports for left ($S1) and right ($S2) entries.")
+_check_product_value_support(::Type{S}, ::Type{S}) where {S <: ValueSupport}                        = S
+_check_product_value_support(::Type{S1}, ::Type{S2}) where {S1 <: ValueSupport, S2 <: ValueSupport} = error("ExponentialFamilyProduct has different value supports for left ($S1) and right ($S2) entries.")
 
 """
     ProdGeneric{C}
@@ -152,7 +152,7 @@ In a few words this object keeps all the information of a product of messages an
 
 `ProdGeneric` has a "fallback" method, which it may or may not use under some circumstances. For example if the `fallback` method is `ClosedProd` (which is the default one) - `ProdGeneric` will try to optimize `prod` tree with analytical solutions where possible.
 
-See also: [`prod`](@ref), [`ExponentialFamilyProduct`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`prod_closed_rule`](@ref), [`GenericLogPdfVectorisedProduct`](@ref)
+See also: [`prod`](@ref), [`ExponentialFamilyProduct`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`closed_prod_rule`](@ref), [`ExponentialFamilyProductLogPdf`](@ref)
 """
 struct ProdGeneric{C}
     prod_constraint::C
@@ -168,17 +168,27 @@ prod(::ProdGeneric, ::Missing, right)     = right
 prod(::ProdGeneric, left, ::Missing)      = left
 prod(::ProdGeneric, ::Missing, ::Missing) = missing
 
-prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, prod_closed_rule(L, R), left, right)
+prod(generic::ProdGeneric, left::L, right::R) where {L, R}  = prod(generic, closed_prod_rule(left, right), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
+prod(generic::ProdGeneric, ::ClosedProdUnknown, left, right)   = ExponentialFamilyProduct(left, right)
 
 # In this methods the general rule is the folowing: If we see that one of the arguments of `ExponentialFamilyProduct` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
 prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T} =
-    prod(generic, prod_closed_rule(L, T), prod_closed_rule(R, T), left, right)
+    prod(generic, closed_prod_rule(L, T), closed_prod_rule(R, T), left, right)
 
 prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} =
-    prod(generic, prod_closed_rule(T, L), prod_closed_rule(T, R), left, right)
+    prod(generic, closed_prod_rule(T, L), closed_prod_rule(T, R), left, right)
+
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct, right)   = ExponentialFamilyProduct(left, right)
+prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left::ExponentialFamilyProduct, right) = ExponentialFamilyProduct(prod(get_constraint(generic), getleft(left), right), getright(left))
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left::ExponentialFamilyProduct, right) = ExponentialFamilyProduct(getleft(left), prod(get_constraint(generic), getright(left), right))
+
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left, right::ExponentialFamilyProduct)   = ExponentialFamilyProduct(left, right)
+prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left, right::ExponentialFamilyProduct) = ExponentialFamilyProduct(prod(get_constraint(generic), left, getleft(right)), getright(right))
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left, right::ExponentialFamilyProduct) = ExponentialFamilyProduct(getleft(right), prod(get_constraint(generic), left, getright(right)))
+
 
 function prod(
     generic::ProdGeneric,
@@ -187,10 +197,10 @@ function prod(
 ) where {L1, R1, L2, R2}
     return prod(
         generic,
-        prod_closed_rule(L1, L2),
-        prod_closed_rule(L1, R2),
-        prod_closed_rule(R1, L2),
-        prod_closed_rule(R1, R2),
+        closed_prod_rule(L1, L2),
+        closed_prod_rule(L1, R2),
+        closed_prod_rule(R1, L2),
+        closed_prod_rule(R1, R2),
         left,
         right
     )
@@ -215,11 +225,81 @@ function prod(
     )
 end
 
+
+"""
+    ExponentialFamilyProductLogPdf
+
+An efficient __linearized__ implementation of product of multiple generic log-pdf objects.
+This structure prevents `ExponentialFamilyProduct` tree from growing too much in case of identical log-pdf objects. 
+This trick significantly reduces Julia compilation times when analytical product rules are not available but messages are of the same type.
+Essentially this structure linearizes leafes of the `ExponentialFamilyProduct` tree in case if it sees objects of the same type (via dispatch).
+
+See also: [`ExponentialFamilyProduct`](@ref)
+"""
+struct ExponentialFamilyProductLogPdf{F}
+    vector::Vector{F}
+    length::Int # `length` here is needed for extra safety as we implicitly mutate `vector` in `prod`
+end
+
+function Base.push!(product::ExponentialFamilyProductLogPdf{F}, item::F) where {F}
+    vector  = product.vector
+    vlength = length(vector)
+    return ExponentialFamilyProductLogPdf(push!(vector, item), vlength + 1)
+end
+
+getdomain(product::ExponentialFamilyProductLogPdf) = getdomain(first(product.vector))
+getlogpdf(product::ExponentialFamilyProductLogPdf) = getlogpdf(first(product.vector))
+
+Base.eltype(product::ExponentialFamilyProductLogPdf) = eltype(first(product.vector))
+
+paramfloattype(product::ExponentialFamilyProductLogPdf) = paramfloattype(first(product.vector))
+samplefloattype(product::ExponentialFamilyProductLogPdf) = samplefloattype(first(product.vector))
+
+variate_form(::Type{<:ExponentialFamilyProductLogPdf{F}}) where {F} = variate_form(F)
+variate_form(::ExponentialFamilyProductLogPdf{F}) where {F}         = variate_form(F)
+
+value_support(::Type{<:ExponentialFamilyProductLogPdf{F}}) where {F} = value_support(F)
+value_support(::ExponentialFamilyProductLogPdf{F}) where {F}         = value_support(F)
+
+Base.show(io::IO, dist::ExponentialFamilyProductLogPdf) = print(io, "ExponentialFamilyProductLogPdf(", Distributions.support(dist), ")")
+
+Distributions.support(dist::ExponentialFamilyProductLogPdf) = Distributions.support(first(dist.vector))
+
+Distributions.logpdf(dist::ExponentialFamilyProductLogPdf, x) = mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
+
+Distributions.pdf(dist::ExponentialFamilyProductLogPdf, x) = exp(logpdf(dist, x))
+
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, R}, right::R) where {L, R}
+    return ExponentialFamilyProduct(getleft(left), ExponentialFamilyProductLogPdf(R[getright(left), right], 2))
+end
+
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, R}, right::L) where {L, R}
+    return ExponentialFamilyProduct(ExponentialFamilyProductLogPdf(L[getleft(left), right], 2), getright(left))
+end
+
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::L, right::ExponentialFamilyProduct{L, R}) where {L, R}
+    return ExponentialFamilyProduct(ExponentialFamilyProductLogPdf(L[left, getleft(right)], 2), getright(right))
+end
+
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::R, right::ExponentialFamilyProduct{L, R}) where {L, R}
+    return ExponentialFamilyProduct(getleft(right), ExponentialFamilyProductLogPdf(R[left, getright(right)], 2))
+end
+
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, ExponentialFamilyProductLogPdf{R}}, right::R) where {L, R}
+    return ExponentialFamilyProduct(getleft(left), push!(getright(left), right))
+end
+
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{ExponentialFamilyProductLogPdf{L}, R}, right::L) where {L, R}
+    return ExponentialFamilyProduct(push!(getleft(left), right), getright(left))
+end
+
+closed_prod_rule(::KnownExponentialFamilyDistribution{T1}, ::KnownExponentialFamilyDistribution{T2}) where {T1, T2} = closed_prod_rule(T1,T2)
+
 function prod(
     left::KnownExponentialFamilyDistribution{T1},
     right::KnownExponentialFamilyDistribution{T2}
 ) where {T1, T2}
-    return prod(prod_closed_rule(T1, T2), left, right)
+    return prod(closed_prod_rule(T1, T2), left, right)
 end
 
 function prod(

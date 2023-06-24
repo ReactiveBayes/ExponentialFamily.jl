@@ -40,7 +40,7 @@ Base.convert(::Type{NormalMeanPrecision{T}}, μ::Real, w::Real) where {T <: Real
 
 vague(::Type{<:NormalMeanPrecision}) = NormalMeanPrecision(0.0, tiny)
 
-prod_closed_rule(::Type{<:NormalMeanPrecision}, ::Type{<:NormalMeanPrecision}) = ClosedProd()
+closed_prod_rule(::Type{<:NormalMeanPrecision}, ::Type{<:NormalMeanPrecision}) = ClosedProd()
 
 function Base.prod(::ProdPreserveType, left::NormalMeanPrecision, right::NormalMeanPrecision)
     w = precision(left) + precision(right)

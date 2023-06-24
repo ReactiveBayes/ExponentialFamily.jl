@@ -91,7 +91,7 @@ function logpdf(::VagueContinuousBernoulli, dist::ContinuousBernoulli, x::Real)
     return x * log(λ) + (1 - x) * log(1 - λ) + log(c)
 end
 
-prod_closed_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ClosedProd()
+closed_prod_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ClosedProd()
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     logprobability = getindex(getnaturalparameters(exponentialfamily), 1)

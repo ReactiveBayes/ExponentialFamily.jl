@@ -12,7 +12,7 @@ end
 
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
-prod_closed_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ClosedProd()
+closed_prod_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))

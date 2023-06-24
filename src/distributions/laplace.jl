@@ -4,7 +4,7 @@ using DomainSets
 
 vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
-prod_closed_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
+closed_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,

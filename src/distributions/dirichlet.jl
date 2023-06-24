@@ -5,7 +5,7 @@ import SpecialFunctions: digamma, loggamma
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
-prod_closed_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
+closed_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)

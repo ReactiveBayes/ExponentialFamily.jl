@@ -27,7 +27,7 @@ end
 
 vague(::Type{<:GammaShapeScale}) = GammaShapeScale(one(Float64), huge)
 
-prod_closed_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
+closed_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)
@@ -53,8 +53,8 @@ function Base.convert(::Type{GammaShapeRate}, dist::GammaDistributionsFamily{T})
     return convert(GammaShapeRate{T}, dist)
 end
 
-prod_closed_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ClosedProd()
-prod_closed_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ClosedProd()
+closed_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ClosedProd()
+closed_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)

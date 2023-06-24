@@ -22,7 +22,7 @@ scale(d::NormalGamma)    = getindex(params(d), 2)
 shape(d::NormalGamma)    = getindex(params(d), 3)
 rate(d::NormalGamma)     = getindex(params(d), 4)
 
-prod_closed_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = ClosedProd()
+closed_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = ClosedProd()
 
 check_valid_natural(::Type{<:NormalGamma}, params) = length(params) === 4
 

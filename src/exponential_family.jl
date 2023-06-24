@@ -133,8 +133,7 @@ function Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribut
     return base_measure + dot_product - logpartition(exponentialfamily)
 end
 Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
-Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
-    Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
+Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
 """
 Everywhere in the package, we stick to a convention that we represent exponential family distributions in the following form:

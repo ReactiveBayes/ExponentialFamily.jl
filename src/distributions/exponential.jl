@@ -5,7 +5,7 @@ import SpecialFunctions: digamma, logbeta
 
 vague(::Type{<:Exponential}) = Exponential(Float64(huge))
 
-prod_closed_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ClosedProd()
+closed_prod_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Exponential, right::Exponential)
     invθ_left  = inv(left.θ)

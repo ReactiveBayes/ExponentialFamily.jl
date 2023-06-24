@@ -5,7 +5,7 @@ import Distributions: Categorical, probs
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
-prod_closed_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ClosedProd()
+closed_prod_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = ClosedProd()
 
 convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
     Categorical(convert(AbstractVector{T}, probs(distribution)))
