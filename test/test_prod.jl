@@ -6,7 +6,8 @@ using Random
 using LinearAlgebra
 using Distributions
 
-import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, prod, closed_prod_rule, get_constraint
+import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, prod, closed_prod_rule, get_constraint,
+                            getleft, getright
 
 @testset "ProdGeneric" begin
     × = (x, y) -> prod(ProdGeneric(), x, y)
@@ -33,31 +34,32 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         @test distributiontype(efgammaprod) === Gamma
     end
 
-    # @testset "ProdGeneric should simplify a product tree if closed form product available for leafes" begin
-    #     struct DummyDistribution11 end
-    #     struct DummyDistribution12 end
-    #     struct DummyDistribution13 end
-    #     struct DummyDistribution14 end
+    @testset "ProdGeneric should simplify a product tree if closed form product available for leafes" begin
+        dof = 5
+        ef1 = KnownExponentialFamilyDistribution(Chisq, dof/2 - 1)
+        ef2 = KnownExponentialFamilyDistribution(Gamma, [3.2, -2.3])
+        ef3 = KnownExponentialFamilyDistribution(Gamma, [1.2, -3.1])
+        ef4 = prod(ProdGeneric(),ef2,ef3)
+        
+        @test (ef1 × ef2) × ef3 == ef1 × ef4
+        @test getleft((ef1 × ef2) × ef3) == getleft(ef1 × ef4)
+        @test getright((ef1 × ef2) × ef3) == getright(ef1 × ef4)
 
-    #     ExponentialFamily.closed_prod_rule(::Type{DummyDistribution12}, ::Type{DummyDistribution13}) = ClosedProd()
-    #     ExponentialFamily.closed_prod_rule(::Type{DummyDistribution13}, ::Type{DummyDistribution12}) = ClosedProd()
-    #     ExponentialFamily.prod(::ClosedProd, ::DummyDistribution12, ::DummyDistribution13)           = DummyDistribution14()
-    #     ExponentialFamily.prod(::ClosedProd, ::DummyDistribution13, ::DummyDistribution12)           = DummyDistribution14()
+        @test (ef2 × ef1) × ef3 == ef4 × ef1
+        @test getleft((ef2 × ef1) × ef3) == getleft(ef4 × ef1)
+        @test getright((ef2 × ef1) × ef3) == getright(ef4 × ef1)
+        
+        @test ef3 × (ef2 × ef1) == ef4 × ef1
+        @test getleft(ef3 × (ef2 × ef1)) == getleft(ef4 × ef1)
+        @test getright(ef3 × (ef2 × ef1)) == getright(ef4 × ef1)
+        
+        @test ef3 × (ef1 × ef2) == ef1 × ef4
+        @test getleft(ef3 × (ef1 × ef2)) == getleft(ef1 × ef4)
+        @test getright(ef3 × (ef1 × ef2)) == getright(ef1 × ef4)
 
-    #     d1 = DummyDistribution11()
-    #     d2 = DummyDistribution12()
-    #     d3 = DummyDistribution13()
-    #     d4 = DummyDistribution14()
 
-    #     @test (d1 × d2) × d3 === d1 × d4
-    #     @test (d2 × d1) × d3 === d4 × d1
-
-    #     @test d3 × (d2 × d1) === d4 × d1
-    #     @test d3 × (d1 × d2) === d1 × d4
-
-    #     @test (d2 × d2) × (d3 × d3) === (d4 × d4)
-    #     @test (d3 × d3) × (d2 × d2) === (d4 × d4)
-    # end
+        @test (ef2 × ef2) × (ef3 × ef3) == (ef3 × ef3) × (ef2 × ef2)
+    end
 
     # @testset "ProdGeneric should create a product tree if closed form product is not available" begin
     #     struct DummyDistribution21 end

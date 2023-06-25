@@ -99,7 +99,7 @@ end
 variate_form(::P) where {P <: KnownExponentialFamilyDistribution}     = variate_form(P)
 variate_form(::Type{KnownExponentialFamilyDistribution{T}}) where {T} = variate_form(T)
 distributiontype(::KnownExponentialFamilyDistribution{T}) where {T}   = T
-
+distributiontype(::Type{<:KnownExponentialFamilyDistribution{T}}) where {T} = T
 check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === nothing
 
 function check_valid_natural end

@@ -113,15 +113,17 @@ struct ExponentialFamilyProduct{L, R}
     right :: R
 end
 
+Base.:(==)(left::ExponentialFamilyProduct, right::ExponentialFamilyProduct) = (getleft(left) == getleft(right)) && (getright(left) == getright(right))
+
 Base.show(io::IO, product::ExponentialFamilyProduct) =
     print(io, "ExponentialFamilyProduct(", getleft(product), ",", getright(product), ")")
 
 getleft(product::ExponentialFamilyProduct)  = product.left
 getright(product::ExponentialFamilyProduct) = product.right
 
-function Distributions.support(product::ExponentialFamilyProduct)
-    lsupport = Distributions.support(getleft(product))
-    rsupport = Distributions.support(getright(product))
+function support(product::ExponentialFamilyProduct)
+    lsupport = support(getleft(product))
+    rsupport = support(getright(product))
     if lsupport != rsupport
         error("Product $product has different support for left and right entries.")
     end
@@ -168,18 +170,16 @@ prod(::ProdGeneric, ::Missing, right)     = right
 prod(::ProdGeneric, left, ::Missing)      = left
 prod(::ProdGeneric, ::Missing, ::Missing) = missing
 
-prod(generic::ProdGeneric, left::L, right::R) where {L, R}  = prod(generic, closed_prod_rule(left, right), left, right)
+prod(generic::ProdGeneric, left::L, right::R) where {L, R}  = prod(generic, closed_prod_rule(L, R), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
 prod(generic::ProdGeneric, ::ClosedProdUnknown, left, right)   = ExponentialFamilyProduct(left, right)
 
 # In this methods the general rule is the folowing: If we see that one of the arguments of `ExponentialFamilyProduct` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
-prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T} =
-    prod(generic, closed_prod_rule(L, T), closed_prod_rule(R, T), left, right)
+prod(generic::ProdGeneric, left::ExponentialFamilyProduct{L, R}, right::T) where {L, R, T}  = prod(generic, closed_prod_rule(L, T), closed_prod_rule(R, T), left, right)
 
-prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} =
-    prod(generic, closed_prod_rule(T, L), closed_prod_rule(T, R), left, right)
+prod(generic::ProdGeneric, left::T, right::ExponentialFamilyProduct{L, R}) where {L, R, T} = prod(generic, closed_prod_rule(T, L), closed_prod_rule(T, R), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct, right)   = ExponentialFamilyProduct(left, right)
 prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left::ExponentialFamilyProduct, right) = ExponentialFamilyProduct(prod(get_constraint(generic), getleft(left), right), getright(left))
@@ -261,9 +261,9 @@ variate_form(::ExponentialFamilyProductLogPdf{F}) where {F}         = variate_fo
 value_support(::Type{<:ExponentialFamilyProductLogPdf{F}}) where {F} = value_support(F)
 value_support(::ExponentialFamilyProductLogPdf{F}) where {F}         = value_support(F)
 
-Base.show(io::IO, dist::ExponentialFamilyProductLogPdf) = print(io, "ExponentialFamilyProductLogPdf(", Distributions.support(dist), ")")
+Base.show(io::IO, dist::ExponentialFamilyProductLogPdf) = print(io, "ExponentialFamilyProductLogPdf(", support(dist), ")")
 
-Distributions.support(dist::ExponentialFamilyProductLogPdf) = Distributions.support(first(dist.vector))
+support(dist::ExponentialFamilyProductLogPdf) = support(first(dist.vector))
 
 Distributions.logpdf(dist::ExponentialFamilyProductLogPdf, x) = mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
 
@@ -294,6 +294,7 @@ function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::Exp
 end
 
 closed_prod_rule(::KnownExponentialFamilyDistribution{T1}, ::KnownExponentialFamilyDistribution{T2}) where {T1, T2} = closed_prod_rule(T1,T2)
+closed_prod_rule(::Type{<:KnownExponentialFamilyDistribution{T1}}, ::Type{<:KnownExponentialFamilyDistribution{T2}}) where {T1, T2} = closed_prod_rule(T1,T2)
 
 function prod(
     left::KnownExponentialFamilyDistribution{T1},
