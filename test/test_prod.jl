@@ -34,7 +34,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         @test distributiontype(efgammaprod) === Gamma
     end
 
-    @testset "ProdGeneric should simplify a product tree if closed form product available for leafes" begin
+    @testset "ProdGeneric should simplify a product tree if closed form product available for leaves" begin
         dof = 5
         ef1 = KnownExponentialFamilyDistribution(Chisq, dof/2 - 1)
         ef2 = KnownExponentialFamilyDistribution(Gamma, [3.2, -2.3])
@@ -61,18 +61,16 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         @test (ef2 × ef2) × (ef3 × ef3) == (ef3 × ef3) × (ef2 × ef2)
     end
 
-    # @testset "ProdGeneric should create a product tree if closed form product is not available" begin
-    #     struct DummyDistribution21 end
-    #     struct DummyDistribution22 end
-    #     struct DummyDistribution23 end
+    @testset "ProdGeneric should create a product tree if closed form product is not available" begin
+      
+        ef1 = KnownExponentialFamilyDistribution(Gamma,[3.1, -2.0])
+        ef2 = KnownExponentialFamilyDistribution(Laplace, 0.1, -2)
+        ef3 = KnownExponentialFamilyDistribution(Categorical, [0.1, 0.9])
 
-    #     d1 = DummyDistribution21()
-    #     d2 = DummyDistribution22()
-    #     d3 = DummyDistribution23()
+        @test ef1 × ef2 == ExponentialFamilyProduct(ef1, ef2)
+        @test (ef1 × ef2) × ef3 == ExponentialFamilyProduct(ExponentialFamilyProduct(ef1, ef2), ef3)    
 
-    #     @test d1 × d2 === ExponentialFamilyProduct(DummyDistribution21(), DummyDistribution22())
-    #     @test (d1 × d2) × d3 === ExponentialFamilyProduct(ExponentialFamilyProduct(DummyDistribution21(), DummyDistribution22()), DummyDistribution23())
-    # end
+    end
 
     # @testset "ProdGeneric should create a linearised product tree if closed form product is not available, but objects are of the same type" begin
     #     struct DummyDistribution31 end
