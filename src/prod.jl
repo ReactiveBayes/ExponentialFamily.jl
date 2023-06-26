@@ -1,4 +1,4 @@
-export ExponentialFamilyProduct, ClosedProd, ClosedProd, ProdGeneric, ExponentialFamilyProductLogPdf
+export ExponentialFamilyProduct, ClosedProd, ClosedProd, ProdGeneric, LinearizedExponentialFamilyProduct
 
 import Distributions
 import Base: prod, show, showerror
@@ -154,7 +154,7 @@ In a few words this object keeps all the information of a product of messages an
 
 `ProdGeneric` has a "fallback" method, which it may or may not use under some circumstances. For example if the `fallback` method is `ClosedProd` (which is the default one) - `ProdGeneric` will try to optimize `prod` tree with analytical solutions where possible.
 
-See also: [`prod`](@ref), [`ExponentialFamilyProduct`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`closed_prod_rule`](@ref), [`ExponentialFamilyProductLogPdf`](@ref)
+See also: [`prod`](@ref), [`ExponentialFamilyProduct`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`closed_prod_rule`](@ref), [`LinearizedExponentialFamilyProduct`](@ref)
 """
 struct ProdGeneric{C}
     prod_constraint::C
@@ -227,69 +227,69 @@ end
 
 
 """
-    ExponentialFamilyProductLogPdf
+    LinearizedExponentialFamilyProduct
 
-An efficient __linearized__ implementation of product of multiple generic log-pdf objects.
-This structure prevents `ExponentialFamilyProduct` tree from growing too much in case of identical log-pdf objects. 
-This trick significantly reduces Julia compilation times when analytical product rules are not available but messages are of the same type.
+An efficient __linearized__ implementation of product of multiple generic ExponentialFamilyDistribution objects.
+This structure prevents `ExponentialFamilyProduct` tree from growing too much in case of identical objects. 
+This trick significantly reduces Julia compilation times when closed product rules are not available but distributions are of the same type.
 Essentially this structure linearizes leafes of the `ExponentialFamilyProduct` tree in case if it sees objects of the same type (via dispatch).
 
 See also: [`ExponentialFamilyProduct`](@ref)
 """
-struct ExponentialFamilyProductLogPdf{F}
+struct LinearizedExponentialFamilyProduct{F}
     vector::Vector{F}
     length::Int # `length` here is needed for extra safety as we implicitly mutate `vector` in `prod`
 end
 
-function Base.push!(product::ExponentialFamilyProductLogPdf{F}, item::F) where {F}
+function Base.push!(product::LinearizedExponentialFamilyProduct{F}, item::F) where {F}
     vector  = product.vector
     vlength = length(vector)
-    return ExponentialFamilyProductLogPdf(push!(vector, item), vlength + 1)
+    return LinearizedExponentialFamilyProduct(push!(vector, item), vlength + 1)
 end
 
-getdomain(product::ExponentialFamilyProductLogPdf) = getdomain(first(product.vector))
-getlogpdf(product::ExponentialFamilyProductLogPdf) = getlogpdf(first(product.vector))
+getdomain(product::LinearizedExponentialFamilyProduct) = getdomain(first(product.vector))
+getlogpdf(product::LinearizedExponentialFamilyProduct) = getlogpdf(first(product.vector))
 
-Base.eltype(product::ExponentialFamilyProductLogPdf) = eltype(first(product.vector))
+Base.eltype(product::LinearizedExponentialFamilyProduct) = eltype(first(product.vector))
 
-paramfloattype(product::ExponentialFamilyProductLogPdf) = paramfloattype(first(product.vector))
-samplefloattype(product::ExponentialFamilyProductLogPdf) = samplefloattype(first(product.vector))
+paramfloattype(product::LinearizedExponentialFamilyProduct) = paramfloattype(first(product.vector))
+samplefloattype(product::LinearizedExponentialFamilyProduct) = samplefloattype(first(product.vector))
 
-variate_form(::Type{<:ExponentialFamilyProductLogPdf{F}}) where {F} = variate_form(F)
-variate_form(::ExponentialFamilyProductLogPdf{F}) where {F}         = variate_form(F)
+variate_form(::Type{<:LinearizedExponentialFamilyProduct{F}}) where {F} = variate_form(F)
+variate_form(::LinearizedExponentialFamilyProduct{F}) where {F}         = variate_form(F)
 
-value_support(::Type{<:ExponentialFamilyProductLogPdf{F}}) where {F} = value_support(F)
-value_support(::ExponentialFamilyProductLogPdf{F}) where {F}         = value_support(F)
+value_support(::Type{<:LinearizedExponentialFamilyProduct{F}}) where {F} = value_support(F)
+value_support(::LinearizedExponentialFamilyProduct{F}) where {F}         = value_support(F)
 
-Base.show(io::IO, dist::ExponentialFamilyProductLogPdf) = print(io, "ExponentialFamilyProductLogPdf(", support(dist), ")")
+Base.show(io::IO, dist::LinearizedExponentialFamilyProduct) = print(io, "LinearizedExponentialFamilyProduct(", support(dist), ")")
 
-support(dist::ExponentialFamilyProductLogPdf) = support(first(dist.vector))
+support(dist::LinearizedExponentialFamilyProduct) = support(first(dist.vector))
 
-Distributions.logpdf(dist::ExponentialFamilyProductLogPdf, x) = mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
+Distributions.logpdf(dist::LinearizedExponentialFamilyProduct, x) = mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
 
-Distributions.pdf(dist::ExponentialFamilyProductLogPdf, x) = exp(logpdf(dist, x))
+Distributions.pdf(dist::LinearizedExponentialFamilyProduct, x) = exp(logpdf(dist, x))
 
 function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, R}, right::R) where {L, R}
-    return ExponentialFamilyProduct(getleft(left), ExponentialFamilyProductLogPdf(R[getright(left), right], 2))
+    return ExponentialFamilyProduct(getleft(left), LinearizedExponentialFamilyProduct(R[getright(left), right], 2))
 end
 
 function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, R}, right::L) where {L, R}
-    return ExponentialFamilyProduct(ExponentialFamilyProductLogPdf(L[getleft(left), right], 2), getright(left))
+    return ExponentialFamilyProduct(LinearizedExponentialFamilyProduct(L[getleft(left), right], 2), getright(left))
 end
 
 function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::L, right::ExponentialFamilyProduct{L, R}) where {L, R}
-    return ExponentialFamilyProduct(ExponentialFamilyProductLogPdf(L[left, getleft(right)], 2), getright(right))
+    return ExponentialFamilyProduct(LinearizedExponentialFamilyProduct(L[left, getleft(right)], 2), getright(right))
 end
 
 function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::R, right::ExponentialFamilyProduct{L, R}) where {L, R}
-    return ExponentialFamilyProduct(getleft(right), ExponentialFamilyProductLogPdf(R[left, getright(right)], 2))
+    return ExponentialFamilyProduct(getleft(right), LinearizedExponentialFamilyProduct(R[left, getright(right)], 2))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, ExponentialFamilyProductLogPdf{R}}, right::R) where {L, R}
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{L, LinearizedExponentialFamilyProduct{R}}, right::R) where {L, R}
     return ExponentialFamilyProduct(getleft(left), push!(getright(left), right))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{ExponentialFamilyProductLogPdf{L}, R}, right::L) where {L, R}
+function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{L}, R}, right::L) where {L, R}
     return ExponentialFamilyProduct(push!(getleft(left), right), getright(left))
 end
 

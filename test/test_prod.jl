@@ -72,17 +72,25 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
 
     end
 
-    # @testset "ProdGeneric should create a linearised product tree if closed form product is not available, but objects are of the same type" begin
-    #     struct DummyDistribution31 end
-    #     struct DummyDistribution32 end
+    @testset "ProdGeneric should create a linearised product tree if closed form product is not available, but objects are of the same type" begin
+        struct DummyDistribution31 end
+        struct DummyDistribution32 end
 
-    #     d1 = DummyDistribution31()
-    #     d2 = DummyDistribution32()
+        d1 = DummyDistribution31()
+        d2 = DummyDistribution32()
 
-    #     @test d1 × d2 === ExponentialFamilyProduct(DummyDistribution31(), DummyDistribution32())
-    #     @test d1 × d2 × d2 × d2 isa ExponentialFamilyProduct{DummyDistribution31, ExponentialFamilyProductLogPdf{DummyDistribution32}}
-    #     @test (d1 × d2 × d2 × d2) × d1 × d1 isa ExponentialFamilyProduct{ExponentialFamilyProductLogPdf{DummyDistribution31}, ExponentialFamilyProductLogPdf{DummyDistribution32}}
-    # end
+        @test d1 × d2 === ExponentialFamilyProduct(DummyDistribution31(), DummyDistribution32())
+        @test d1 × d2 × d2 × d2 isa ExponentialFamilyProduct{DummyDistribution31, LinearizedExponentialFamilyProduct{DummyDistribution32}}
+        @test (d1 × d2 × d2 × d2) × d1 × d1 isa ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{DummyDistribution31}, LinearizedExponentialFamilyProduct{DummyDistribution32}}
+
+        ef1 = KnownExponentialFamilyDistribution(Poisson, 10)
+        ef2 = KnownExponentialFamilyDistribution(Weibull, -3, 3)
+
+        @test ef1 × ef2 == ExponentialFamilyProduct(ef1, ef2)
+        # @test ef1 × ef2 × ef2 × ef2 == ExponentialFamilyProduct{ef1, LinearizedExponentialFamilyProduct{ef2}}
+        # @test (ef1 × ef2 × ef2 × ef2) × ef1 × ef1 == ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{ef1}, LinearizedExponentialFamilyProduct{ef2}}
+
+    end
 end
 
 end
