@@ -146,10 +146,10 @@ import ExponentialFamily:
     @testset "information matrix (GammaShapeScale)" begin
         for (i, j) in Iterators.product(1:3, 1:3)
             dist = GammaShapeScale(i, j)
-            ef   = convert(KnownExponentialFamilyDistribution, dist)
-            η    = getnaturalparameters(ef)
-            J    = ForwardDiff.jacobian(transformation1, η)
-            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-9
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+            J = ForwardDiff.jacobian(transformation1, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end
         @test fisherinformation(GammaShapeScale(1, 10)) ≈ [1.6449340668482262 1/10; 1/10 1/100]
     end
@@ -157,10 +157,10 @@ import ExponentialFamily:
     @testset "information matrix (GammaShapeRate)" begin
         for (i, j) in Iterators.product(1:3, 1:3)
             dist = GammaShapeRate(i, j)
-            ef   = convert(KnownExponentialFamilyDistribution, dist)
-            η    = getnaturalparameters(ef)
-            J    = ForwardDiff.jacobian(transformation2, η)
-            @test J'*fisherinformation(dist)*J ≈ fisherinformation(ef) atol = 1e-9
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+            J = ForwardDiff.jacobian(transformation2, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end
         @test fisherinformation(GammaShapeRate(1, 10)) ≈ [1.6449340668482262 -1/10; -1/10 1/100]
     end

@@ -46,7 +46,7 @@ import ExponentialFamily:
             b = Bernoulli(i / 10.0)
             bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
-            @test logpdf(bnp, 1) ≈ logpdf(b, 1) 
+            @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==

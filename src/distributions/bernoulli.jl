@@ -83,7 +83,7 @@ check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 function support(::KnownExponentialFamilyDistribution{Bernoulli})
     return [0, 1]
 end
-    
+
 function basemeasure(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
     @assert insupport(ef, x)
     return one(typeof(x))
