@@ -103,3 +103,8 @@ function fisherinformation(dist::Bernoulli)
     p = dist.p
     return inv(p * (one(typeof(p)) - p))
 end
+
+function mean(ef::KnownExponentialFamilyDistribution{Bernoulli})
+    logprobability = getindex(getnaturalparameters(ef), 1)
+    return exp(logprobability) / (one(Float64) + exp(logprobability))
+end

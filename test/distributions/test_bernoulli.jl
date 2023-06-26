@@ -96,6 +96,14 @@ import ExponentialFamily:
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean" begin
+        for p in 0.1:0.1:0.9
+            dist = Bernoulli(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+        end
+    end
 end
 
 end
