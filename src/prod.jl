@@ -232,7 +232,7 @@ end
 An efficient __linearized__ implementation of product of multiple generic ExponentialFamilyDistribution objects.
 This structure prevents `ExponentialFamilyProduct` tree from growing too much in case of identical objects. 
 This trick significantly reduces Julia compilation times when closed product rules are not available but distributions are of the same type.
-Essentially this structure linearizes leafes of the `ExponentialFamilyProduct` tree in case if it sees objects of the same type (via dispatch).
+Essentially this structure linearizes leaves of the `ExponentialFamilyProduct` tree in case if it sees objects of the same type (via dispatch).
 
 See also: [`ExponentialFamilyProduct`](@ref)
 """

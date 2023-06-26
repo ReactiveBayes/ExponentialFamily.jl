@@ -91,7 +91,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
 
         @test ef1 × ef2 == ExponentialFamilyProduct(ef1, ef2)
         @test ef5 == ExponentialFamilyProduct(ef3,ef3)
+        ##TODO: The below tests are failing which indicates a problem in the logic of implementation
         # @test ef1 × ef2 × ef2 × ef3 == ef1  × ef3 × ef3
+        # @test ef1 × ef2 × ef2 × ef3  == ef1 × ef5 
         # @test (ef1 × ef2 × ef2 × ef2) × ef1 × ef1 == ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{ef1}, LinearizedExponentialFamilyProduct{ef2}}
 
     end
