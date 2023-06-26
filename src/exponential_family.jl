@@ -26,29 +26,29 @@ getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution) = exponen
 getlogpartition(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.logpartition
 getbasemeasure(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.basemeasure
 getsufficientstatistics(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.sufficientstatistics
-Distributions.support(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.support
+support(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.support
 
 variate_form(::P) where {P <: ExponentialFamilyDistribution}     = variate_form(P)
-variate_form(::Type{ExponentialFamilyDistribution{T}}) where {T} = T
+variate_form(::Type{<:ExponentialFamilyDistribution{T}}) where {T} = T
 
 Base.:(==)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) =
     getnaturalparameters(left) == getnaturalparameters(right) && getlogpartition(left) == getlogpartition(right) &&
     getbasemeasure(left) == getbasemeasure(right) && variate_form(left) == variate_form(right) &&
     getsufficientstatistics(left) == getsufficientstatistics(right) &&
-    Distributions.support(left) == Distributions.support(right)
+    support(left) == support(right)
 
 Base.:(≈)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) =
     getnaturalparameters(left) ≈ getnaturalparameters(right) && getlogpartition(left) == getlogpartition(right) &&
     getbasemeasure(left) == getbasemeasure(right) && variate_form(left) == variate_form(right) &&
     getsufficientstatistics(left) == getsufficientstatistics(right) &&
-    Distributions.support(left) == Distributions.support(right)
+    support(left) == support(right)
 
 function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution, x)
-    η = getnaturalparameters(exponentialfamily)
-    statistics = getsufficientstatistics(exponentialfamily)
-    basemeasure = getbasemeasure(exponentialfamily)
+    η = vcat(as_vec.(getnaturalparameters(exponentialfamily))...)
+    statistics = vcat(as_vec.(getsufficientstatistics(exponentialfamily)(x))...)
+    basemeasure = getbasemeasure(exponentialfamily)(x)
     logpartition = getlogpartition(exponentialfamily)
-    return log(basemeasure(x)) + dot(η, statistics(x)) - logpartition(η)
+    return log(basemeasure) + dot(η, statistics) - logpartition(η)
 end
 
 Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
@@ -97,7 +97,7 @@ function insupport(ef::KnownExponentialFamilyDistribution{T, P, C, Safe}, x) whe
 end
 
 variate_form(::P) where {P <: KnownExponentialFamilyDistribution}     = variate_form(P)
-variate_form(::Type{KnownExponentialFamilyDistribution{T}}) where {T} = variate_form(T)
+variate_form(::Type{<:KnownExponentialFamilyDistribution{T}}) where {T} = variate_form(T)
 distributiontype(::KnownExponentialFamilyDistribution{T}) where {T}   = T
 distributiontype(::Type{<:KnownExponentialFamilyDistribution{T}}) where {T} = T
 check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === nothing

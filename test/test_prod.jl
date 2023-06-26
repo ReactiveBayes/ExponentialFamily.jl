@@ -73,21 +73,25 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
     end
 
     @testset "ProdGeneric should create a linearised product tree if closed form product is not available, but objects are of the same type" begin
-        struct DummyDistribution31 end
-        struct DummyDistribution32 end
+        struct DummyDistribution1 end
+        struct DummyDistribution2 end
 
-        d1 = DummyDistribution31()
-        d2 = DummyDistribution32()
+        d1 = DummyDistribution1()
+        d2 = DummyDistribution2()
 
-        @test d1 × d2 === ExponentialFamilyProduct(DummyDistribution31(), DummyDistribution32())
-        @test d1 × d2 × d2 × d2 isa ExponentialFamilyProduct{DummyDistribution31, LinearizedExponentialFamilyProduct{DummyDistribution32}}
-        @test (d1 × d2 × d2 × d2) × d1 × d1 isa ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{DummyDistribution31}, LinearizedExponentialFamilyProduct{DummyDistribution32}}
+        @test d1 × d2 === ExponentialFamilyProduct(DummyDistribution1(), DummyDistribution2())
+        @test d1 × d2 × d2 × d2 isa ExponentialFamilyProduct{DummyDistribution1, LinearizedExponentialFamilyProduct{DummyDistribution2}}
+        @test (d1 × d2 × d2 × d2) × d1 × d1 isa ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{DummyDistribution1}, LinearizedExponentialFamilyProduct{DummyDistribution2}}
 
         ef1 = KnownExponentialFamilyDistribution(Poisson, 10)
         ef2 = KnownExponentialFamilyDistribution(Weibull, -3, 3)
+        ef3 = ef2 × ef2
+        ef4 = ef1 × ef1
+        ef5 = ef2 × ef2 × ef3 
 
         @test ef1 × ef2 == ExponentialFamilyProduct(ef1, ef2)
-        # @test ef1 × ef2 × ef2 × ef2 == ExponentialFamilyProduct{ef1, LinearizedExponentialFamilyProduct{ef2}}
+        @test ef5 == ExponentialFamilyProduct(ef3,ef3)
+        # @test ef1 × ef2 × ef2 × ef3 == ef1  × ef3 × ef3
         # @test (ef1 × ef2 × ef2 × ef2) × ef1 × ef1 == ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{ef1}, LinearizedExponentialFamilyProduct{ef2}}
 
     end
