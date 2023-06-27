@@ -67,8 +67,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         ef2 = KnownExponentialFamilyDistribution(Laplace, 0.1, -2)
         ef3 = KnownExponentialFamilyDistribution(Categorical, [0.1, 0.9])
 
-        @test ef1 × ef2 == ExponentialFamilyProduct(ef1, ef2)
-        @test (ef1 × ef2) × ef3 == ExponentialFamilyProduct(ExponentialFamilyProduct(ef1, ef2), ef3)    
+        @test ef1 × ef2 == ProductDistribution(ef1, ef2)
+        @test (ef1 × ef2) × ef3 == ProductDistribution(ProductDistribution(ef1, ef2), ef3)    
 
     end
 
@@ -79,9 +79,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         d1 = DummyDistribution1()
         d2 = DummyDistribution2()
 
-        @test d1 × d2 === ExponentialFamilyProduct(DummyDistribution1(), DummyDistribution2())
-        @test d1 × d2 × d2 × d2 isa ExponentialFamilyProduct{DummyDistribution1, LinearizedExponentialFamilyProduct{DummyDistribution2}}
-        @test (d1 × d2 × d2 × d2) × d1 × d1 isa ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{DummyDistribution1}, LinearizedExponentialFamilyProduct{DummyDistribution2}}
+        @test d1 × d2 === ProductDistribution(DummyDistribution1(), DummyDistribution2())
+        @test d1 × d2 × d2 × d2 isa ProductDistribution{DummyDistribution1, LinearizedProductDistribution{DummyDistribution2}}
+        @test (d1 × d2 × d2 × d2) × d1 × d1 isa ProductDistribution{LinearizedProductDistribution{DummyDistribution1}, LinearizedProductDistribution{DummyDistribution2}}
 
         ef1 = KnownExponentialFamilyDistribution(Poisson, 10)
         ef2 = KnownExponentialFamilyDistribution(Weibull, -3, 3)
@@ -89,13 +89,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution,distributiontype, p
         ef4 = ef1 × ef1
         ef5 = ef2 × ef2 × ef3 
 
-        @test ef1 × ef2 == ExponentialFamilyProduct(ef1, ef2)
-        @test ef5 == ExponentialFamilyProduct(ef3,ef3)
-        ##TODO: The below tests are failing which indicates a problem in the logic of implementation
-        # @test ef1 × ef2 × ef2 × ef3 == ef1  × ef3 × ef3
-        # @test ef1 × ef2 × ef2 × ef3  == ef1 × ef5 
-        # @test (ef1 × ef2 × ef2 × ef2) × ef1 × ef1 == ExponentialFamilyProduct{LinearizedExponentialFamilyProduct{ef1}, LinearizedExponentialFamilyProduct{ef2}}
-
+        @test ef1 × ef2 == ProductDistribution(ef1, ef2)
+        @test ef5 == ProductDistribution(ef3,ef3)
+        
+        @test ef1 × ef2 × ef2 × ef3 == ef1  × ef3 × ef3
     end
 end
 
