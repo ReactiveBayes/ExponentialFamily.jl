@@ -46,7 +46,7 @@ import ExponentialFamily:
             b = Bernoulli(i / 10.0)
             bnp = convert(KnownExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
-            @test logpdf(bnp, 1) ≈ logpdf(b, 1) 
+            @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
@@ -94,6 +94,14 @@ import ExponentialFamily:
             @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
             J = ForwardDiff.derivative(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+        end
+    end
+
+    @testset "KnownExponentialFamilyDistribution mean" begin
+        for p in 0.1:0.1:0.9
+            dist = Bernoulli(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
         end
     end
 end

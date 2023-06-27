@@ -83,7 +83,7 @@ check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 function support(::KnownExponentialFamilyDistribution{Bernoulli})
     return [0, 1]
 end
-    
+
 function basemeasure(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
     @assert insupport(ef, x)
     return one(typeof(x))
@@ -102,4 +102,9 @@ end
 function fisherinformation(dist::Bernoulli)
     p = dist.p
     return inv(p * (one(typeof(p)) - p))
+end
+
+function mean(ef::KnownExponentialFamilyDistribution{Bernoulli})
+    logprobability = getindex(getnaturalparameters(ef), 1)
+    return exp(logprobability) / (one(Float64) + exp(logprobability))
 end
