@@ -244,6 +244,15 @@ import ExponentialFamily:
         @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeScale(1, 2)) == GammaShapeRate(2, 5 / 2)
         @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for (i, j) in Iterators.product(1:3, 1:3)
+            dist = GammaShapeScale(i, j)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

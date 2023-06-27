@@ -113,6 +113,16 @@ import StatsFuns: softmax
             end
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean" begin
+        for l in 2:10, κ in 0.001:2.0:30.0
+            μ = rand(l)
+            μ = μ / norm(μ)
+            dist = VonMisesFisher(μ, κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+        end
+    end
 end
 
 end

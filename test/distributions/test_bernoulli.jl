@@ -97,11 +97,12 @@ import ExponentialFamily:
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean" begin
+    @testset "KnownExponentialFamilyDistribution mean var" begin
         for p in 0.1:0.1:0.9
             dist = Bernoulli(p)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
         end
     end
 end

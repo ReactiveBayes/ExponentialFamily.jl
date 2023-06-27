@@ -86,4 +86,14 @@ end
     end
 end
 
+@testset "KnownExponentialFamilyDistribution mean,var and cov" begin
+    for i in 1:9
+        dist = Dirichlet([i / 10.0, i / 5, i])
+        ef = convert(KnownExponentialFamilyDistribution, dist)
+        @test mean(dist) ≈ mean(ef) atol = 1e-8
+        @test var(dist) ≈ var(ef) atol = 1e-8
+        @test cov(dist) ≈ cov(dist) atol = 1e-8
+    end
+end
+
 end

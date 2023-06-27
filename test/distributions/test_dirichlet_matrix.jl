@@ -111,6 +111,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
         @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, [10 2; 3 2])) === true
     end
+
+    @testset "KnownExponentialFamilyDistribution mean" begin
+        for i in 1:9
+            dist = MatrixDirichlet([i/10.0 i/20; i/5 i])
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+        end
+    end
 end
 
 end

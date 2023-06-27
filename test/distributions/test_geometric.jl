@@ -77,5 +77,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for p in 0.1:0.05:0.9
+            dist = Geometric(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end

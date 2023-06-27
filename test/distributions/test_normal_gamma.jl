@@ -39,6 +39,8 @@ end
             b = i
             dist = NormalGamma(m, s, a, b)
             ef = convert(KnownExponentialFamilyDistribution, dist)
+            dist_converted = convert(Distribution, ef)
+            @test dist_converted ≈ dist
             @test getnaturalparameters(ef) ≈ [s * m, -s / 2, a - 1 / 2, -b - s * m^2 / 2]
         end
     end
@@ -49,7 +51,7 @@ end
             m = rand(rng)
             s = rand(rng)
             a = i
-            b = i
+            b = i^2
             dist = NormalGamma(m, s, a, b)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             @test pdf(dist, [m, s]) ≈ normal_gamma_pdf(m, s, m, s, a, b)
@@ -142,6 +144,23 @@ end
             @test prod(ClosedProd(), dist1, dist2) == convert(Distribution, prod(ClosedProd(), ef1, ef2))
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for i in 1:10, j in 1:10
+            # Parameters for the Normal-Gamma distribution
+            μ = 2.0
+            λ = 1.0
+            α = 3.0 + i
+            β = 2.0 + j
+
+            # Create a Normal-Gamma distribution
+            dist = NormalGamma(μ, λ, α, β)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test cov(dist) ≈ cov(ef) atol = 1e-8
+        end
+    end
+    
 end
 
 end

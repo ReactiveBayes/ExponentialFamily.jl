@@ -125,5 +125,16 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,cov" begin
+        rng = StableRNG(42)
+        for n in 2:12
+            p = rand(rng, Dirichlet(ones(n)))
+            dist = Multinomial(n, p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test cov(dist) ≈ cov(ef) atol = 1e-8
+        end
+    end
 end
 end

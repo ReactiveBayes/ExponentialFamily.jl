@@ -88,6 +88,15 @@ import ExponentialFamily:
             @test prod_ef.support === support(left)
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean var" begin
+        for ν in 1:10
+            dist = Chisq(ν)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

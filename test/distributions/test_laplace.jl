@@ -126,6 +126,15 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
             end
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for λ in 1:10, u in 1.0:0.5:5.0
+            dist = Laplace(u, λ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

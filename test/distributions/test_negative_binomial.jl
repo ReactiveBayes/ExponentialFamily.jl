@@ -112,5 +112,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test fisherinformation(NegativeBinomial(r, exp(-η))) / expected_hessian[1, 1] ≈ 1 atol = 0.01
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for η in 1:4, r in 1:4
+            dist = NegativeBinomial(r, exp(-η))
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end

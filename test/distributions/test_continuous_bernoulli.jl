@@ -74,45 +74,55 @@ import ExponentialFamily:
         end
     end
 
-    # @testset "fisher information" begin
-    #     function transformation(params)
-    #         return logistic(params[1])
-    #     end
+    @testset "fisher information" begin
+        function transformation(params)
+            return logistic(params)
+        end
 
-    #     for κ in 0.000001:0.01:0.49
-    #         dist = ContinuousBernoulli(κ)
-    #         ef = convert(KnownExponentialFamilyDistribution, dist)
-    #         η = getnaturalparameters(ef)
+        for κ in 0.000001:0.01:0.49
+            dist = ContinuousBernoulli(κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
 
-    #         f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-    #         autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-    #         @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-9
-    #         J = first(ForwardDiff.gradient(transformation, η))
-    #         @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
-    #     end
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
+            df = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
+            J = ForwardDiff.derivative(transformation, η)
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+        end
 
-    #     for κ in 0.51:0.01:0.99
-    #         dist = ContinuousBernoulli(κ)
-    #         ef = convert(KnownExponentialFamilyDistribution, dist)
-    #         η = getnaturalparameters(ef)
+        for κ in 0.51:0.01:0.99
+            dist = ContinuousBernoulli(κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
 
-    #         f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-    #         autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-    #         @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-9
-    #         J = first(ForwardDiff.gradient(transformation, η))
-    #         @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
-    #     end
+            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
+            df = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
+            J = ForwardDiff.derivative(transformation, η)
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+        end
 
-    #     for κ in 0.499:0.0001:0.50001
-    #         dist = ContinuousBernoulli(κ)
-    #         ef = convert(KnownExponentialFamilyDistribution, dist)
-    #         η = getnaturalparameters(ef)
+        for κ in 0.499:0.0001:0.50001
+            dist = ContinuousBernoulli(κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
 
-    #         f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-    #         J = first(ForwardDiff.gradient(transformation, η))
-    #         @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
-    #     end
-    # end
+            J = ForwardDiff.derivative(transformation, η)
+            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+        end
+    end
+
+    @testset "KnownExponentialFamilyDistribution mean var" begin
+        for ν in 0.1:0.1:0.99
+            dist = ContinuousBernoulli(ν)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

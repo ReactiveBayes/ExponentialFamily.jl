@@ -8,6 +8,8 @@ struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDis
     a::A
 end
 
+size(dist::MatrixDirichlet) = size(dist.a)
+
 Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a; dims = 1)
 
 Base.eltype(::MatrixDirichlet{T}) where {T} = T

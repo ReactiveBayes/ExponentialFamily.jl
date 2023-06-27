@@ -197,3 +197,8 @@ function reconstructargument!(η, ηef, ηvec; start = 1)
     end
     return η
 end
+
+mean(ef::KnownExponentialFamilyDistribution{T}) where { T <: Distribution } = mean(convert(T, ef))
+var(ef::KnownExponentialFamilyDistribution{T}) where { T <: Distribution } = var(convert(T, ef))
+cov(ef::KnownExponentialFamilyDistribution{T}) where { T <: Distribution } = cov(convert(T, ef))
+rand(ef::KnownExponentialFamilyDistribution{T}, args...) where { T <: Distribution } = rand(convert(T, ef), args...)

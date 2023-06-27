@@ -110,6 +110,15 @@ import SpecialFunctions: besseli
             end
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for μ in rand(200), κ in 1.0:0.4:5.0
+            dist = VonMises(μ, κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

@@ -94,5 +94,14 @@ import StatsFuns: xlogy
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for (λ, k) in Iterators.product(1:5, 1:5)
+            dist = Weibull(λ, k)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end
