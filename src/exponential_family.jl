@@ -70,8 +70,8 @@ struct KnownExponentialFamilyDistribution{T, P, C, S}
     KnownExponentialFamilyDistribution(
         ::Type{T},
         naturalparameters::P,
-        conditioner::C = nothing,
-        support::S = Safe()
+        conditioner::C,
+        support::S,
     ) where {T, P, C, S} =
         begin
             @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
@@ -80,7 +80,11 @@ struct KnownExponentialFamilyDistribution{T, P, C, S}
         end
 end
 
-function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C = nothing) where {T, P, C}
+function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P) where {T, P}
+    return KnownExponentialFamilyDistribution(T, naturalparameters, nothing, Safe())
+end
+
+function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C) where {T, P, C}
     return KnownExponentialFamilyDistribution(T, naturalparameters, conditioner, Safe())
 end
 
