@@ -6,7 +6,7 @@ vague(::Type{<:Pareto}) = Pareto(1e12)
 
 Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
-prod_closed_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ClosedProd()
+closed_prod_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = ClosedProd()
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Pareto) =
     KnownExponentialFamilyDistribution(Pareto, -shape(dist) - 1, scale(dist))

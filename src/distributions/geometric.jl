@@ -6,7 +6,7 @@ vague(::Type{<:Geometric}) = Geometric(Float64(tiny))
 
 probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
-prod_closed_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
+closed_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
 
 Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))

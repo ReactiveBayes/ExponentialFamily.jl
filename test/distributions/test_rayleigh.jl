@@ -9,7 +9,7 @@ using DomainSets
 using StableRNGs
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
-    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation
+    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation, support
 
 @testset "Rayleigh" begin
     @testset "vague" begin

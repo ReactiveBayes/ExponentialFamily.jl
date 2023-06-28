@@ -5,7 +5,7 @@ using DomainSets
 using SpecialFunctions: digamma
 using HCubature
 
-prod_closed_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
+closed_prod_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,

@@ -12,7 +12,7 @@ function convert_eltype(::Type{Multinomial}, ::Type{T}, distribution::Multinomia
     return Multinomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_closed_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
+closed_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,

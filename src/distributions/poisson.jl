@@ -6,7 +6,7 @@ using DomainSets
 
 Distributions.cov(dist::Poisson) = var(dist)
 
-prod_closed_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
+closed_prod_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
