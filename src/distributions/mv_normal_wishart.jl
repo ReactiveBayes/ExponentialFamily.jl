@@ -30,7 +30,7 @@ dof(d::MvNormalWishart) = getindex(params(d), 4)
 dim(d::MvNormalWishart) = length(d.μ)
 dim(ef::KnownExponentialFamilyDistribution{MvNormalWishart}) = length(getindex(getnaturalparameters(ef), 1))
 
-prod_closed_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = ClosedProd()
+closed_prod_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = ClosedProd()
 
 check_valid_natural(::Type{<:MvNormalWishart}, params) = length(params) === 4
 

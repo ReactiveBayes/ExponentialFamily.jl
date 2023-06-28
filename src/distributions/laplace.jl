@@ -1,10 +1,11 @@
 export Laplace
+using Distributions
 import Distributions: Laplace, params, logpdf
 using DomainSets
 
 vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
-prod_closed_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
+closed_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
@@ -32,7 +33,7 @@ function Base.prod(
             return log(A1 * B1 + A2 * B2 + A3 * B3)
         end
         naturalparameters = [η_left, η_right]
-        supp = Distributions.support(T)
+        supp = RealInterval{Float64}(-Inf, Inf)
 
         return ExponentialFamilyDistribution(
             Float64,
@@ -73,7 +74,7 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
             return log(A1 * B1 + A2 * B2 + A3 * B3)
         end
         naturalparameters = [η_left, η_right]
-        supp = Distributions.support(left)
+        supp = RealInterval{Float64}(-Inf,Inf)
 
         return ExponentialFamilyDistribution(
             Float64,
@@ -85,6 +86,8 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
         )
     end
 end
+
+support(::Union{<:KnownExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf,Inf)
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Laplace)
     μ, θ = params(dist)

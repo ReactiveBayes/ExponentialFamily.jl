@@ -5,7 +5,7 @@ import Distributions: Chisq, params, dof, var
 
 Distributions.cov(dist::Chisq) = var(dist)
 
-prod_closed_rule(::Type{<:Chisq}, ::Type{<:Chisq}) = ClosedProd()
+closed_prod_rule(::Type{<:Chisq}, ::Type{<:Chisq}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
     ef_left = convert(KnownExponentialFamilyDistribution, left)

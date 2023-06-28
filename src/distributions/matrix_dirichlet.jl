@@ -33,7 +33,7 @@ Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
 
 mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
 
-prod_closed_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ClosedProd()
+closed_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::MatrixDirichlet, right::MatrixDirichlet)
     T = promote_samplefloattype(left, right)

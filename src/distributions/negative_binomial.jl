@@ -16,7 +16,7 @@ function convert_eltype(
     return NegativeBinomial(n, convert(AbstractVector{T}, p))
 end
 
-prod_closed_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
+closed_prod_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
 function Base.prod(
     ::ClosedProd,
     left::KnownExponentialFamilyDistribution{T},

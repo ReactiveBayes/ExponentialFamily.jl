@@ -17,7 +17,7 @@ function insupport(ef::KnownExponentialFamilyDistribution{Binomial, P, C, Safe},
     return x ∈ ClosedInterval{Int}(0, getconditioner(ef)) && typeof(x) <: Int
 end
 
-prod_closed_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
+closed_prod_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     efleft = convert(KnownExponentialFamilyDistribution, left)

@@ -7,7 +7,7 @@ Distributions.cov(dist::LogNormal) = var(dist)
 
 vague(::Type{<:LogNormal}) = LogNormal(1, 1e12)
 
-prod_closed_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = ClosedProd()
+closed_prod_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::LogNormal, right::LogNormal)
     mean1, scale1 = params(left)

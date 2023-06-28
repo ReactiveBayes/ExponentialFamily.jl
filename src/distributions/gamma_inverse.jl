@@ -6,7 +6,7 @@ const GammaInverse = InverseGamma
 
 vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
 
-prod_closed_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = ClosedProd()
+closed_prod_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::GammaInverse, right::InverseGamma)
     return GammaInverse(shape(left) + shape(right) + one(Float64), scale(left) + scale(right))

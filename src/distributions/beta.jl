@@ -6,7 +6,7 @@ import StatsFuns: betalogpdf
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 
-prod_closed_rule(::Type{<:Beta}, ::Type{<:Beta}) = ClosedProd()
+closed_prod_rule(::Type{<:Beta}, ::Type{<:Beta}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Beta, right::Beta)
     left_a, left_b   = params(left)

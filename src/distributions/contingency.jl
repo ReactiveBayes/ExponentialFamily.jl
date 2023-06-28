@@ -193,7 +193,7 @@ function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVe
     return container
 end
 
-prod_closed_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
+closed_prod_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
 
 basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
 

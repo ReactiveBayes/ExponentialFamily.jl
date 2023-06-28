@@ -133,7 +133,7 @@ end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartImproper` messages as they are significantly faster in creation
-prod_closed_rule(::Type{<:WishartImproper}, ::Type{<:WishartImproper}) = ClosedProd()
+closed_prod_rule(::Type{<:WishartImproper}, ::Type{<:WishartImproper}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::WishartImproper, right::WishartImproper)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
