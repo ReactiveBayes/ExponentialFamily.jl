@@ -103,5 +103,14 @@ import ExponentialFamily:
             @test fisherinformation(dist) * J^2 ≈ fisherinformation(ef)
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for θ in 1:20
+            dist = Exponential(θ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end

@@ -1,7 +1,7 @@
 export Dirichlet
 
 import Distributions: Dirichlet
-import SpecialFunctions: digamma, loggamma
+import SpecialFunctions: digamma, loggamma, trigamma
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
@@ -62,4 +62,15 @@ end
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
     @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
     return log.(x)
+end
+
+function fisherinformation(dist::Dirichlet)  
+    α  = probvec(dist)
+    n = length(α)
+    α0 = sum(α)
+    
+    pre_diag = trigamma.(α)
+    fi_pre = ones(n,n)*trigamma(α0)
+    
+    return diagm(pre_diag) - fi_pre
 end

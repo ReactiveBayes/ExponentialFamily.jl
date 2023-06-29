@@ -22,6 +22,11 @@ scale(d::NormalGamma)    = getindex(params(d), 2)
 shape(d::NormalGamma)    = getindex(params(d), 3)
 rate(d::NormalGamma)     = getindex(params(d), 4)
 
+
+mean(d::NormalGamma) = [d.μ, d.α/d.β]
+var(d::NormalGamma) = [d.β/(d.λ*(d.α-1)), d.α/(d.β^2)]
+cov(d::NormalGamma) = [d.β/(d.λ*(d.α-1)) 0.0; 0.0 d.α/(d.β^2)] 
+
 closed_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = ClosedProd()
 
 check_valid_natural(::Type{<:NormalGamma}, params) = length(params) === 4
@@ -45,7 +50,7 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NormalGa
     μ, λ, α, β = params(dist)
     η1 = λ * μ
     η2 = -λ / 2
-    η3 = α - 1 / 2
+    η3 = α - (1 / 2)
     η4 = -β - λ * μ^2 / 2
     η = [η1, η2, η3, η4]
 
@@ -53,7 +58,7 @@ function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NormalGa
 end
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = getnaturalparameters(exponentialfamily)
-    return NormalGamma(-η1 / 2η2, -2η2, η3 + 1 / 2, -η4 + η3^2 / 4η4)
+    return NormalGamma(-η1 / (2η2), -2η2, η3 + (1 / 2), -η4 + (η1^2 / 4η2))
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NormalGamma})

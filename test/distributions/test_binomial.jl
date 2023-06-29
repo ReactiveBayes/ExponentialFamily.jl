@@ -120,5 +120,14 @@ import ExponentialFamily:
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean var" begin
+        for n in 2:10, κ in 0.01:0.1:1.0
+            dist = Binomial(n, κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end

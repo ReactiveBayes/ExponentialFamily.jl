@@ -96,5 +96,14 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, basemeasure, fishe
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for λ in 0.1:0.1:1.0, σ in 0.1:0.1:0.5
+            dist = LogNormal(λ, σ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end

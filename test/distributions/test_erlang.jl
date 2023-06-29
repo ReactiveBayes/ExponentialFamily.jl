@@ -73,6 +73,15 @@ import ExponentialFamily:
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) rtol = 1e-6
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean,var" begin
+        for μ in 3:20, κ in 2.0:0.1:10.0
+            dist = Erlang(μ, κ)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

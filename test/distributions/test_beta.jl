@@ -113,6 +113,15 @@ import SpecialFunctions: loggamma
                 end
             end
         end
+
+        @testset "KnownExponentialFamilyDistribution mean var" begin
+            for a in 0.1:0.1:5, b in 0.1:0.1:4
+                dist = Beta(a,b)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                @test mean(dist) ≈ mean(ef) atol = 1e-8
+                @test var(dist) ≈ var(ef) atol = 1e-8
+            end
+        end
     end
 end
 

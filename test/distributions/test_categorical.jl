@@ -111,6 +111,17 @@ import ExponentialFamily:
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-10
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean var" begin
+        rng = StableRNG(42)
+        for n in 2:10
+            p = rand(rng, Dirichlet(ones(n)))
+            dist = Categorical(p)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 
 end

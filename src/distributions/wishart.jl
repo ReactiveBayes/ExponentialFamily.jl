@@ -81,7 +81,7 @@ Base.ndims(dist::Wishart) = size(dist, 1)
 
 function Base.convert(::Type{Wishart}, dist::WishartImproper)
     (ν, S) = params(dist)
-    return Wishart(ν, Matrix(Hermitian(S)))
+    return Wishart(ν, cholinv(Matrix(Hermitian(S))))
 end
 
 function Base.convert(::Type{WishartImproper}, dist::Wishart)

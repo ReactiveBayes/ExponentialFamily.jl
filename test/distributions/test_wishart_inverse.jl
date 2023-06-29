@@ -260,6 +260,19 @@ end
                 end
             end
         end
+
+        @testset "KnownExponentialFamilyDistribution mean,cov" begin
+            rng = StableRNG(42)
+            for df in 2:20
+                L = randn(rng, df, df)
+                A = L * L' + 1e-8 * diageye(df)
+                dist = InverseWishart(df+4, A)
+                ef = convert(KnownExponentialFamilyDistribution, dist)
+                @test mean(dist) ≈ mean(ef) rtol = 1e-8
+                @test cov(dist)  ≈ cov(ef) rtol = 1e-8
+            end
+        end
+    
     end
 end
 

@@ -64,5 +64,15 @@ import ExponentialFamily:
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
         end
     end
+
+    @testset "KnownExponentialFamilyDistribution mean, var" begin
+        for λ in 1:10, u in 1:10
+            dist = Pareto(λ, u)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(KnownExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test var(dist) ≈ var(ef) atol = 1e-8
+        end
+    end
 end
 end
