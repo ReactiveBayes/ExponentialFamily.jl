@@ -4,8 +4,9 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 import SpecialFunctions: loggamma
+using ForwardDiff
 @testset "Dirichlet" begin
 
     # Dirichlet comes from Distributions.jl and most of the things should be covered there
@@ -93,6 +94,20 @@ end
         @test mean(dist) ≈ mean(ef) atol = 1e-8
         @test var(dist) ≈ var(ef) atol = 1e-8
         @test cov(dist) ≈ cov(dist) atol = 1e-8
+    end
+end
+transformation(η) = η .+ 1
+@testset "fisher information" begin
+    for i in 1:9
+        dist = Dirichlet([i / 10.0, i / 5, i])
+        ef = convert(KnownExponentialFamilyDistribution, dist)
+        η = getnaturalparameters(ef)
+
+        J = ForwardDiff.jacobian(transformation, η)
+        f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, η))
+        autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+        @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+        @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
     end
 end
 

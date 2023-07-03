@@ -74,3 +74,14 @@ function fisherinformation(dist::Dirichlet)
     
     return diagm(pre_diag) - fi_pre
 end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{Dirichlet})
+    η = getnaturalparameters(ef)
+    n = length(η)
+    η0 = sum(η .+ 1)
+
+    pre_diag = trigamma.(η .+ 1)
+    fi_pre = ones(n,n)*trigamma(η0)
+
+    return diagm(pre_diag) - fi_pre
+end
