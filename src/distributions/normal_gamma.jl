@@ -22,10 +22,9 @@ scale(d::NormalGamma)    = getindex(params(d), 2)
 shape(d::NormalGamma)    = getindex(params(d), 3)
 rate(d::NormalGamma)     = getindex(params(d), 4)
 
-
-mean(d::NormalGamma) = [d.μ, d.α/d.β]
-var(d::NormalGamma) = [d.β/(d.λ*(d.α-1)), d.α/(d.β^2)]
-cov(d::NormalGamma) = [d.β/(d.λ*(d.α-1)) 0.0; 0.0 d.α/(d.β^2)] 
+mean(d::NormalGamma) = [d.μ, d.α / d.β]
+var(d::NormalGamma) = [d.β / (d.λ * (d.α - 1)), d.α / (d.β^2)]
+cov(d::NormalGamma) = [d.β/(d.λ*(d.α-1)) 0.0; 0.0 d.α/(d.β^2)]
 
 closed_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = ClosedProd()
 

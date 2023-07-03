@@ -64,14 +64,14 @@ function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Dirichlet},
     return log.(x)
 end
 
-function fisherinformation(dist::Dirichlet)  
+function fisherinformation(dist::Dirichlet)
     α  = probvec(dist)
-    n = length(α)
+    n  = length(α)
     α0 = sum(α)
-    
+
     pre_diag = trigamma.(α)
-    fi_pre = ones(n,n)*trigamma(α0)
-    
+    fi_pre = ones(n, n) * trigamma(α0)
+
     return diagm(pre_diag) - fi_pre
 end
 
@@ -81,7 +81,7 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{Dirichlet})
     η0 = sum(η .+ 1)
 
     pre_diag = trigamma.(η .+ 1)
-    fi_pre = ones(n,n)*trigamma(η0)
+    fi_pre = ones(n, n) * trigamma(η0)
 
     return diagm(pre_diag) - fi_pre
 end

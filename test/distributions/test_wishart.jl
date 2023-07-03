@@ -208,11 +208,9 @@ end
             dist = Wishart(df, A)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) rtol = 1e-8
-            @test cov(dist)  ≈ cov(ef) rtol = 1e-8
+            @test cov(dist) ≈ cov(ef) rtol = 1e-8
         end
     end
-
 end
 
 end
-

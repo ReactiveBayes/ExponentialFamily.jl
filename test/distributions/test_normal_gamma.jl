@@ -160,7 +160,6 @@ end
             @test cov(dist) ≈ cov(ef) atol = 1e-8
         end
     end
-    
 end
 
 end

@@ -28,7 +28,7 @@ getbasemeasure(exponentialfamily::ExponentialFamilyDistribution) = exponentialfa
 getsufficientstatistics(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.sufficientstatistics
 support(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.support
 
-variate_form(::P) where {P <: ExponentialFamilyDistribution}     = variate_form(P)
+variate_form(::P) where {P <: ExponentialFamilyDistribution} = variate_form(P)
 variate_form(::Type{<:ExponentialFamilyDistribution{T}}) where {T} = T
 
 Base.:(==)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) =
@@ -71,7 +71,7 @@ struct KnownExponentialFamilyDistribution{T, P, C, S}
         ::Type{T},
         naturalparameters::P,
         conditioner::C,
-        support::S,
+        support::S
     ) where {T, P, C, S} =
         begin
             @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
@@ -100,9 +100,9 @@ function insupport(ef::KnownExponentialFamilyDistribution{T, P, C, Safe}, x) whe
     return x ∈ support(ef)
 end
 
-variate_form(::P) where {P <: KnownExponentialFamilyDistribution}     = variate_form(P)
+variate_form(::P) where {P <: KnownExponentialFamilyDistribution} = variate_form(P)
 variate_form(::Type{<:KnownExponentialFamilyDistribution{T}}) where {T} = variate_form(T)
-distributiontype(::KnownExponentialFamilyDistribution{T}) where {T}   = T
+distributiontype(::KnownExponentialFamilyDistribution{T}) where {T} = T
 distributiontype(::Type{<:KnownExponentialFamilyDistribution{T}}) where {T} = T
 check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === nothing
 
@@ -137,7 +137,8 @@ function Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribut
     return base_measure + dot_product - logpartition(exponentialfamily)
 end
 Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
-Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
+Distributions.cdf(exponentialfamily::KnownExponentialFamilyDistribution, x) =
+    Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
 """
 Everywhere in the package, we stick to a convention that we represent exponential family distributions in the following form:
@@ -201,6 +202,6 @@ function reconstructargument!(η, ηef, ηvec; start = 1)
     return η
 end
 
-mean(ef::KnownExponentialFamilyDistribution{T}) where { T <: Distribution } = mean(convert(T, ef))
-var(ef::KnownExponentialFamilyDistribution{T}) where { T <: Distribution } = var(convert(T, ef))
-cov(ef::KnownExponentialFamilyDistribution{T}) where { T <: Distribution } = cov(convert(T, ef))
+mean(ef::KnownExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
+var(ef::KnownExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
+cov(ef::KnownExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
