@@ -85,7 +85,7 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
             autograd_information = (η) -> ForwardDiff.derivative(df, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
             J = ForwardDiff.derivative(transformation, η)
@@ -98,7 +98,7 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition,η)
+            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
             autograd_information = (η) -> ForwardDiff.derivative(df, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
             J = ForwardDiff.derivative(transformation, η)

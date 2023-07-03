@@ -113,7 +113,8 @@ struct ProductDistribution{L, R}
     right :: R
 end
 
-Base.:(==)(left::ProductDistribution, right::ProductDistribution) = (getleft(left) == getleft(right)) && (getright(left) == getright(right))
+Base.:(==)(left::ProductDistribution, right::ProductDistribution) =
+    (getleft(left) == getleft(right)) && (getright(left) == getright(right))
 
 Base.show(io::IO, product::ProductDistribution) =
     print(io, "ProductDistribution(", getleft(product), ",", getright(product), ")")
@@ -170,25 +171,32 @@ prod(::ProdGeneric, ::Missing, right)     = right
 prod(::ProdGeneric, left, ::Missing)      = left
 prod(::ProdGeneric, ::Missing, ::Missing) = missing
 
-prod(generic::ProdGeneric, left::L, right::R) where {L, R}  = prod(generic, closed_prod_rule(L, R), left, right)
+prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, closed_prod_rule(L, R), left, right)
 
 prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
-prod(generic::ProdGeneric, ::ClosedProdUnknown, left, right)   = ProductDistribution(left, right)
+prod(generic::ProdGeneric, ::ClosedProdUnknown, left, right) = ProductDistribution(left, right)
 
 # In this methods the general rule is the folowing: If we see that one of the arguments of `ProductDistribution` has the same function form 
 # as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
-prod(generic::ProdGeneric, left::ProductDistribution{L, R}, right::T) where {L, R, T}  = prod(generic, closed_prod_rule(L, T), closed_prod_rule(R, T), left, right)
+prod(generic::ProdGeneric, left::ProductDistribution{L, R}, right::T) where {L, R, T} =
+    prod(generic, closed_prod_rule(L, T), closed_prod_rule(R, T), left, right)
 
-prod(generic::ProdGeneric, left::T, right::ProductDistribution{L, R}) where {L, R, T} = prod(generic, closed_prod_rule(T, L), closed_prod_rule(T, R), left, right)
+prod(generic::ProdGeneric, left::T, right::ProductDistribution{L, R}) where {L, R, T} =
+    prod(generic, closed_prod_rule(T, L), closed_prod_rule(T, R), left, right)
 
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution, right)   = ProductDistribution(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left::ProductDistribution, right) = ProductDistribution(prod(get_constraint(generic), getleft(left), right), getright(left))
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left::ProductDistribution, right) = ProductDistribution(getleft(left), prod(get_constraint(generic), getright(left), right))
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution, right) =
+    ProductDistribution(left, right)
+prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left::ProductDistribution, right) =
+    ProductDistribution(prod(get_constraint(generic), getleft(left), right), getright(left))
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left::ProductDistribution, right) =
+    ProductDistribution(getleft(left), prod(get_constraint(generic), getright(left), right))
 
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left, right::ProductDistribution)   = ProductDistribution(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left, right::ProductDistribution) = ProductDistribution(prod(get_constraint(generic), left, getleft(right)), getright(right))
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left, right::ProductDistribution) = ProductDistribution(getleft(right), prod(get_constraint(generic), left, getright(right)))
-
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left, right::ProductDistribution) =
+    ProductDistribution(left, right)
+prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left, right::ProductDistribution) =
+    ProductDistribution(prod(get_constraint(generic), left, getleft(right)), getright(right))
+prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left, right::ProductDistribution) =
+    ProductDistribution(getleft(right), prod(get_constraint(generic), left, getright(right)))
 
 function prod(
     generic::ProdGeneric,
@@ -225,7 +233,6 @@ function prod(
     )
 end
 
-
 """
     LinearizedProductDistribution
 
@@ -251,7 +258,8 @@ getdomain(product::LinearizedProductDistribution) = getdomain(first(product.vect
 getlogpdf(product::LinearizedProductDistribution) = getlogpdf(first(product.vector))
 
 Base.eltype(product::LinearizedProductDistribution) = eltype(first(product.vector))
-Base.:(==)(left::LinearizedProductDistribution, right::LinearizedProductDistribution) = (left.vector == right.vector) && (left.length == right.length)
+Base.:(==)(left::LinearizedProductDistribution, right::LinearizedProductDistribution) =
+    (left.vector == right.vector) && (left.length == right.length)
 
 paramfloattype(product::LinearizedProductDistribution) = paramfloattype(first(product.vector))
 samplefloattype(product::LinearizedProductDistribution) = samplefloattype(first(product.vector))
@@ -266,36 +274,77 @@ Base.show(io::IO, dist::LinearizedProductDistribution) = print(io, "LinearizedPr
 
 support(dist::LinearizedProductDistribution) = support(first(dist.vector))
 
-Distributions.logpdf(dist::LinearizedProductDistribution, x) = mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
+Distributions.logpdf(dist::LinearizedProductDistribution, x) =
+    mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
 
 Distributions.pdf(dist::LinearizedProductDistribution, x) = exp(logpdf(dist, x))
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution{L, R}, right::R) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ClosedProdUnknown,
+    ::ClosedProdUnknown,
+    left::ProductDistribution{L, R},
+    right::R
+) where {L, R}
     return ProductDistribution(getleft(left), LinearizedProductDistribution(R[getright(left), right], 2))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution{L, R}, right::L) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ClosedProdUnknown,
+    ::ClosedProdUnknown,
+    left::ProductDistribution{L, R},
+    right::L
+) where {L, R}
     return ProductDistribution(LinearizedProductDistribution(L[getleft(left), right], 2), getright(left))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::L, right::ProductDistribution{L, R}) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ClosedProdUnknown,
+    ::ClosedProdUnknown,
+    left::L,
+    right::ProductDistribution{L, R}
+) where {L, R}
     return ProductDistribution(LinearizedProductDistribution(L[left, getleft(right)], 2), getright(right))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::R, right::ProductDistribution{L, R}) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ClosedProdUnknown,
+    ::ClosedProdUnknown,
+    left::R,
+    right::ProductDistribution{L, R}
+) where {L, R}
     return ProductDistribution(getleft(right), LinearizedProductDistribution(R[left, getright(right)], 2))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution{L, LinearizedProductDistribution{R}}, right::R) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ClosedProdUnknown,
+    ::ClosedProdUnknown,
+    left::ProductDistribution{L, LinearizedProductDistribution{R}},
+    right::R
+) where {L, R}
     return ProductDistribution(getleft(left), push!(getright(left), right))
 end
 
-function prod(::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution{LinearizedProductDistribution{L}, R}, right::L) where {L, R}
+function prod(
+    ::ProdGeneric,
+    ::ClosedProdUnknown,
+    ::ClosedProdUnknown,
+    left::ProductDistribution{LinearizedProductDistribution{L}, R},
+    right::L
+) where {L, R}
     return ProductDistribution(push!(getleft(left), right), getright(left))
 end
 
-closed_prod_rule(::KnownExponentialFamilyDistribution{T1}, ::KnownExponentialFamilyDistribution{T2}) where {T1, T2} = closed_prod_rule(T1,T2)
-closed_prod_rule(::Type{<:KnownExponentialFamilyDistribution{T1}}, ::Type{<:KnownExponentialFamilyDistribution{T2}}) where {T1, T2} = closed_prod_rule(T1,T2)
+closed_prod_rule(::KnownExponentialFamilyDistribution{T1}, ::KnownExponentialFamilyDistribution{T2}) where {T1, T2} =
+    closed_prod_rule(T1, T2)
+closed_prod_rule(
+    ::Type{<:KnownExponentialFamilyDistribution{T1}},
+    ::Type{<:KnownExponentialFamilyDistribution{T2}}
+) where {T1, T2} = closed_prod_rule(T1, T2)
 
 function prod(
     left::KnownExponentialFamilyDistribution{T1},

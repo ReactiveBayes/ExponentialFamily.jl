@@ -6,7 +6,8 @@ using Distributions
 using Random
 using ForwardDiff
 import SpecialFunctions: loggamma
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure,fisherinformation, as_vec, logpartition, reconstructargument!
+import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation,
+    as_vec, logpartition, reconstructargument!
 
 function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
     natural_params = getnaturalparameters(ef)
@@ -17,8 +18,8 @@ function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, �
 end
 
 function test_partition(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
-    η =  getnaturalparameters(ef)
-    return sum(loggamma.(η.+1.0)) - sum(loggamma.(sum(η.+1.0, dims=1)))
+    η = getnaturalparameters(ef)
+    return sum(loggamma.(η .+ 1.0)) - sum(loggamma.(sum(η .+ 1.0, dims = 1)))
 end
 @testset "MatrixDirichlet" begin
     @testset "common" begin
@@ -141,7 +142,7 @@ end
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = vcat(as_vec(getnaturalparameters(ef)))
             f_logpartition = (η_vec) -> reconstructed_logpartition(ef, η_vec)
-         
+
             @test fisherinformation(ef) ≈ ForwardDiff.hessian(f_logpartition, η) rtol = 1e-8
             @test fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8 ##Jacobian is omitted because it is identity
         end

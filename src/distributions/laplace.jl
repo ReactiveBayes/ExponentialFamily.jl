@@ -74,7 +74,7 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
             return log(A1 * B1 + A2 * B2 + A3 * B3)
         end
         naturalparameters = [η_left, η_right]
-        supp = RealInterval{Float64}(-Inf,Inf)
+        supp = RealInterval{Float64}(-Inf, Inf)
 
         return ExponentialFamilyDistribution(
             Float64,
@@ -87,7 +87,7 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
     end
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf,Inf)
+support(::Union{<:KnownExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf, Inf)
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Laplace)
     μ, θ = params(dist)

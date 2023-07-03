@@ -83,12 +83,11 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichle
 
     ηvect0 = sum.(ηvect)
 
-    pre_diag = [diagm(trigamma.(ηvect[i] )) for i=1:n]
-    fi_pre = [ones(n,n)*trigamma(ηvect0[i]) for i=1:n]
+    pre_diag = [diagm(trigamma.(ηvect[i])) for i in 1:n]
+    fi_pre = [ones(n, n) * trigamma(ηvect0[i]) for i in 1:n]
 
     return BlockDiagonal(pre_diag - fi_pre)
 end
-
 
 function fisherinformation(dist::MatrixDirichlet)
     ηp1 = dist.a
@@ -98,9 +97,8 @@ function fisherinformation(dist::MatrixDirichlet)
 
     ηvect0 = sum.(ηvect)
 
-    pre_diag = [diagm(trigamma.(ηvect[i] )) for i=1:n]
-    fi_pre = [ones(n,n)*trigamma(ηvect0[i]) for i=1:n]
+    pre_diag = [diagm(trigamma.(ηvect[i])) for i in 1:n]
+    fi_pre = [ones(n, n) * trigamma(ηvect0[i]) for i in 1:n]
 
     return BlockDiagonal(pre_diag - fi_pre)
 end
-
