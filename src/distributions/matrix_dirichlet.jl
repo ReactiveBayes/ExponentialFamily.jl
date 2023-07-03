@@ -4,6 +4,8 @@ import SpecialFunctions: digamma, loggamma
 import Base: eltype
 import Distributions: pdf, logpdf
 
+using BlockDiagonals
+
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     a::A
 end
@@ -44,7 +46,7 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichl
     mapreduce(
         d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)),
         +,
-        eachrow(getnaturalparameters(exponentialfamily))
+        eachcol(getnaturalparameters(exponentialfamily))
     )
 
 Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
@@ -72,3 +74,33 @@ function sufficientstatistics(
 ) where {T}
     return log.(x)
 end
+
+function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
+    ηp1 = getnaturalparameters(ef) .+ 1
+
+    ηvect = collect(Vector, eachcol(ηp1))
+    n = length(ηvect)
+
+    ηvect0 = sum.(ηvect)
+
+    pre_diag = [diagm(trigamma.(ηvect[i] )) for i=1:n]
+    fi_pre = [ones(n,n)*trigamma(ηvect0[i]) for i=1:n]
+
+    return BlockDiagonal(pre_diag - fi_pre)
+end
+
+
+function fisherinformation(dist::MatrixDirichlet)
+    ηp1 = dist.a
+
+    ηvect = collect(Vector, eachcol(ηp1))
+    n = length(ηvect)
+
+    ηvect0 = sum.(ηvect)
+
+    pre_diag = [diagm(trigamma.(ηvect[i] )) for i=1:n]
+    fi_pre = [ones(n,n)*trigamma(ηvect0[i]) for i=1:n]
+
+    return BlockDiagonal(pre_diag - fi_pre)
+end
+
