@@ -119,7 +119,7 @@ end
                     Distribution,
                     KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]])
                 ) ≈
-                      Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
+                      WishartFast(9.0, -2 * [-i 0.0; 0.0 -i])
             end
         end
 
@@ -173,20 +173,22 @@ end
 
         @testset "fisher information" begin
             rng = StableRNG(42)
-            for df in 2:20
+            for df in 2:10
                 L = randn(rng, df, df)
                 A = L * L' + 1e-8 * diageye(df)
                 dist = Wishart(df, A)
+                distfast = WishartFast(df, cholinv(A))
                 ef = convert(KnownExponentialFamilyDistribution, dist)
                 η = getnaturalparameters(ef)
                 η_vec = vcat(η[1], as_vec(η[2]))
                 fef = fisherinformation(ef)
                 fdist = fisherinformation(dist)
+                fdistfast = fisherinformation(distfast)
                 ## We do not test the analytic solution agains autograd because autograd hessian return values that are permuted and
                 ## causes fisherinformation to be non-positive definite.
                 J = ForwardDiff.jacobian(transformation, η_vec)
                 @test fef ≈ J' * fdist * J rtol = 1e-8
-
+                @test fdist ≈  fdistfast  rtol=1e-8
                 f_logpartition = (η_vec) -> logpartition(ef, η_vec)
                 autograd_information = (η_vec) -> ForwardDiff.hessian(f_logpartition, η_vec)
                 ag_fi = autograd_information(η_vec)

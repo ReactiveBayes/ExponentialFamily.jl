@@ -81,7 +81,7 @@ Base.ndims(dist::Wishart) = size(dist, 1)
 
 function Base.convert(::Type{Wishart}, dist::WishartFast)
     (ν, S) = params(dist)
-    return Wishart(ν, cholinv(Matrix(Hermitian(S))))
+    return Wishart(ν, Matrix(Hermitian(S)))
 end
 
 function Base.convert(::Type{WishartFast}, dist::Wishart)
@@ -174,10 +174,7 @@ function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistri
     η2 = getindex(η, 2)
     p = first(size(η2))
 
-    if isproper(params)
-        return Wishart(2 * η1 + p + 1, 0.5cholinv(-η2))
-    end
-    return WishartFast(2 * η1 + p + 1, 0.5cholinv(-η2))
+    return WishartFast(2 * η1 + p + 1, -2η2)
 end
 
 function logpartition(params::KnownExponentialFamilyDistribution{<:WishartFast})
@@ -203,6 +200,12 @@ function fisherinformation(dist::Wishart)
     df, S = dist.df, dist.S
     p = first(size(S))
     invS = inv(S)
+    return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
+end
+
+function fisherinformation(dist::WishartFast)
+    df, invS = dist.ν, dist.invS
+    p = first(size(invS))
     return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
 end
 
