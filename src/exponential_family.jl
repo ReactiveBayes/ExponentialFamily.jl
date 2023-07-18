@@ -45,8 +45,8 @@ Base.:(≈)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistrib
     support(left) == support(right)
 
 function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution, x)
-    η = vcat(as_vec.(getnaturalparameters(exponentialfamily))...)
-    statistics = vcat(as_vec.(getsufficientstatistics(exponentialfamily)(x))...)
+    η = getnaturalparameters(exponentialfamily)
+    statistics =getsufficientstatistics(exponentialfamily)(x)
     basemeasure = getbasemeasure(exponentialfamily)(x)
     logpartition = getlogpartition(exponentialfamily)
     return log(basemeasure) + dot(η, statistics) - logpartition(η)
@@ -65,12 +65,12 @@ Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(log
 
 """
 struct KnownExponentialFamilyDistribution{T, P, C, S}
-    naturalparameters::P
+    naturalparameters::Vector{P}
     conditioner::C
     support::S
     KnownExponentialFamilyDistribution(
         ::Type{T},
-        naturalparameters::P,
+        naturalparameters::Vector{P},
         conditioner::C,
         support::S
     ) where {T, P, C, S} =
@@ -81,11 +81,11 @@ struct KnownExponentialFamilyDistribution{T, P, C, S}
         end
 end
 
-function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P) where {T, P}
+function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::Vector{P}) where {T, P}
     return KnownExponentialFamilyDistribution(T, naturalparameters, nothing, Safe())
 end
 
-function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::P, conditioner::C) where {T, P, C}
+function KnownExponentialFamilyDistribution(::Type{T}, naturalparameters::Vector{P}, conditioner::C) where {T, P, C}
     return KnownExponentialFamilyDistribution(T, naturalparameters, conditioner, Safe())
 end
 
@@ -109,13 +109,8 @@ check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === noth
 
 function check_valid_natural end
 
-function getnaturalparameters(exponentialfamily::KnownExponentialFamilyDistribution; vector = false)
-    if vector == false
-        return exponentialfamily.naturalparameters
-    else
-        return vcat(as_vec.(exponentialfamily.naturalparameters)...)
-    end
-end
+getnaturalparameters(exponentialfamily::KnownExponentialFamilyDistribution) = exponentialfamily.naturalparameters
+
 getconditioner(exponentialfamily::KnownExponentialFamilyDistribution) = exponentialfamily.conditioner
 
 Base.convert(::Type{T}, exponentialfamily::KnownExponentialFamilyDistribution) where {T <: Distribution} =
@@ -131,8 +126,8 @@ Base.:(≈)(left::KnownExponentialFamilyDistribution, right::KnownExponentialFam
 
 function Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribution, x)
     base_measure = log(basemeasure(exponentialfamily, x))
-    natural_parameters = getnaturalparameters(exponentialfamily, vector = true)
-    statistics = sufficientstatistics(exponentialfamily, x, vector = true)
+    natural_parameters = getnaturalparameters(exponentialfamily)
+    statistics = sufficientstatistics(exponentialfamily, x)
     dot_product = dot(natural_parameters, statistics)
 
     return base_measure + dot_product - logpartition(exponentialfamily)
@@ -152,14 +147,6 @@ function logpartition end
 
 function basemeasure end
 function sufficientstatistics end
-
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{T}, x; vector = false) where {T}
-    if vector == false
-        return sufficientstatistics(ef, x)
-    else
-        return vcat(as_vec.(sufficientstatistics(ef, x))...)
-    end
-end
 
 """
 Fisher information

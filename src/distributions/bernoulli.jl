@@ -1,7 +1,7 @@
 export Bernoulli
 
 import Distributions: Bernoulli, succprob, failprob, logpdf
-import StatsFuns: logistic
+import StatsFuns: logistic,logit
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
@@ -61,18 +61,29 @@ end
 compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
     compute_logscale(new_dist, right_dist, left_dist)
 
+function pack_naturalparameters(distribution::Bernoulli)
+    p = succprob(distribution)
+    return [logit(p)]
+end
+
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Bernoulli})
+    vectorized = getnaturalparameters(ef)
+    @inbounds η = vectorized[1]
+    return η
+end
+
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
-    return -log(logistic(-getnaturalparameters(exponentialfamily)))
+    return -log(logistic(-unpack_naturalparameters(exponentialfamily)))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
-    logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
+    logprobability = unpack_naturalparameters(exponentialfamily)
     return Bernoulli(exp(logprobability) / (one(Float64) + exp(logprobability)))
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Bernoulli)
     @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    KnownExponentialFamilyDistribution(Bernoulli, log(succprob(dist) / (one(Float64) - succprob(dist))))
+    KnownExponentialFamilyDistribution(Bernoulli, pack_naturalparameters(dist))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli}) = true
@@ -89,21 +100,21 @@ function basemeasure(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
 end
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
     @assert insupport(ef, x)
-    return x
+    return [x]
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Bernoulli})
-    η = getnaturalparameters(ef)
+    η = unpack_naturalparameters(ef)
     f = logistic(-η)
-    return f * (one(typeof(f)) - f)
+    return [f * (one(typeof(f)) - f)]
 end
 
 function fisherinformation(dist::Bernoulli)
     p = dist.p
-    return inv(p * (one(typeof(p)) - p))
+    return [inv(p * (one(typeof(p)) - p))]
 end
 
 function mean(ef::KnownExponentialFamilyDistribution{Bernoulli})
-    logprobability = getindex(getnaturalparameters(ef), 1)
+    logprobability = unpack_naturalparameters(ef)
     return exp(logprobability) / (one(Float64) + exp(logprobability))
 end

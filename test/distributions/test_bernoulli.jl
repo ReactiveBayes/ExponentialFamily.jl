@@ -8,7 +8,7 @@ using Random
 using StatsFuns
 import ExponentialFamily:
     KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
-    sufficientstatistics, fisherinformation
+    sufficientstatistics, fisherinformation, pack_naturalparameters,unpack_naturalparameters
 
 @testset "Bernoulli" begin
 
@@ -50,23 +50,23 @@ import ExponentialFamily:
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
-                  KnownExponentialFamilyDistribution(Bernoulli, logit(i / 10.0))
+                  KnownExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
         end
-        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, 10)) === true
-        @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Bernoulli, 10), 0.2)
+        @test isproper(KnownExponentialFamilyDistribution(Bernoulli, [10])) === true
+        @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Bernoulli, [10]), 0.2)
 
-        bernoullief = KnownExponentialFamilyDistribution(Bernoulli, log(0.1))
-        @test sufficientstatistics(bernoullief, 1) == 1
-        @test sufficientstatistics(bernoullief, 0) == 0
+        bernoullief = KnownExponentialFamilyDistribution(Bernoulli, [log(0.1)])
+        @test sufficientstatistics(bernoullief, 1) == [1]
+        @test sufficientstatistics(bernoullief, 0) == [0]
         @test_throws AssertionError sufficientstatistics(bernoullief, 0.1)
     end
 
     @testset "prod with KnownExponentialFamilyDistribution" begin
         for pleft in 0.01:0.01:0.99
-            ηleft  = log(pleft / (1 - pleft))
+            ηleft  = [log(pleft / (1 - pleft))]
             efleft = KnownExponentialFamilyDistribution(Bernoulli, ηleft)
             for pright in 0.01:0.01:0.99
-                ηright = log(pright / (1 - pright))
+                ηright = [log(pright / (1 - pright))]
                 efright = KnownExponentialFamilyDistribution(Bernoulli, ηright)
                 @test prod(ClosedProd(), efleft, efright) ==
                       KnownExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
@@ -81,7 +81,7 @@ import ExponentialFamily:
         @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
     end
 
-    transformation(logprobability) = exp(logprobability) / (one(Float64) + exp(logprobability))
+    transformation(logprobability) = exp(logprobability[1]) / (one(Float64) + exp(logprobability[1]))
     @testset "fisherinformation" begin
         for p in 0.1:0.1:0.9
             dist = Bernoulli(p)
@@ -89,10 +89,9 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Bernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
-            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
-            J = ForwardDiff.derivative(transformation, η)
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+            J = ForwardDiff.gradient(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end

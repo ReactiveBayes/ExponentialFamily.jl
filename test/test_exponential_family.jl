@@ -2,40 +2,44 @@ module KnownExponentialFamilyDistributionTest
 
 using ExponentialFamily, Test, StatsFuns
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec
+    KnownExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec, pack_naturalparameters, unpack_naturalparameters,insupport
 import Distributions: pdf, logpdf, cdf
 @testset "KnownExponentialFamilyDistribution" begin
-    params1 = KnownExponentialFamilyDistribution(Bernoulli, 0.9)
-    params2 = KnownExponentialFamilyDistribution(Bernoulli, 0.2)
-    @test getnaturalparameters(params1) == 0.9
+    ef1 = KnownExponentialFamilyDistribution(Bernoulli, [0.9])
+    ef2 = KnownExponentialFamilyDistribution(Bernoulli, [0.2])
+    @test getnaturalparameters(ef1) == [0.9]
     @test_throws AssertionError KnownExponentialFamilyDistribution(Bernoulli, [0.9, 0.1])
 
-    @test getnaturalparameters(params1) + getnaturalparameters(params2) == 1.1
-    @test getnaturalparameters(params1) - getnaturalparameters(params2) == 0.7
-    logprobability1 = getindex(getnaturalparameters(params1), 1)
-    @test Base.convert(Bernoulli, params1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
+    @test getnaturalparameters(ef1) + getnaturalparameters(ef2) == [1.1]
+    @test getnaturalparameters(ef1) - getnaturalparameters(ef2) == [0.7]
+    logprobability1 = unpack_naturalparameters(ef1)
+    @test Base.convert(Bernoulli, ef1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
     @test Base.convert(KnownExponentialFamilyDistribution, Bernoulli(0.9)) ==
-          KnownExponentialFamilyDistribution(Bernoulli, logit(0.9))
+          KnownExponentialFamilyDistribution(Bernoulli, [logit(0.9)])
 
     @test_throws AssertionError KnownExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), 2.0)
     f = x -> x^3
     @test_throws AssertionError KnownExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), f)
+
+    @test insupport(ef1, 1) == true
+    @test insupport(ef2, 9) == false
+    @test insupport(ef1 , 0) == true
 end
 
 @testset "pdf,cdf" begin
-    params1 = KnownExponentialFamilyDistribution(Bernoulli, 0.9)
+    ef1 = KnownExponentialFamilyDistribution(Bernoulli, [0.9])
 
-    @test logpdf(params1, 1) ≈ logpdf(Base.convert(Bernoulli, params1), 1)
-    @test pdf(params1, 1) ≈ pdf(Base.convert(Bernoulli, params1), 1)
-    @test cdf(params1, 1) == cdf(Base.convert(Bernoulli, params1), 1)
+    @test logpdf(ef1, 1) ≈ logpdf(Base.convert(Bernoulli, ef1), 1)
+    @test pdf(ef1, 1) ≈ pdf(Base.convert(Bernoulli, ef1), 1)
+    @test cdf(ef1, 1) == cdf(Base.convert(Bernoulli, ef1), 1)
 
-    @test logpdf(params1, 0) ≈ logpdf(Base.convert(Bernoulli, params1), 0)
-    @test pdf(params1, 0) ≈ pdf(Base.convert(Bernoulli, params1), 0)
-    @test cdf(params1, 0) == cdf(Base.convert(Bernoulli, params1), 0)
+    @test logpdf(ef1, 0) ≈ logpdf(Base.convert(Bernoulli, ef1), 0)
+    @test pdf(ef1, 0) ≈ pdf(Base.convert(Bernoulli, ef1), 0)
+    @test cdf(ef1, 0) == cdf(Base.convert(Bernoulli, ef1), 0)
 
-    @test_throws AssertionError logpdf(params1, 0.1) == logpdf(Base.convert(Bernoulli, params1), 0.1)
-    @test_throws AssertionError pdf(params1, 0.1) == pdf(Base.convert(Bernoulli, params1), 0.1)
-    @test cdf(params1, 0.1) == cdf(Base.convert(Bernoulli, params1), 0.1)
+    @test_throws AssertionError logpdf(ef1, 0.1) == logpdf(Base.convert(Bernoulli, ef1), 0.1)
+    @test_throws AssertionError pdf(ef1, 0.1) == pdf(Base.convert(Bernoulli, ef1), 0.1)
+    @test cdf(ef1, 0.1) == cdf(Base.convert(Bernoulli, ef1), 0.1)
 end
 
 @testset "reconstruct arguments" begin
