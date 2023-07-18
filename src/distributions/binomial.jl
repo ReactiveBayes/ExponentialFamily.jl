@@ -1,8 +1,10 @@
 export Binomial
 using DomainSets
 import Distributions: Binomial, probs
-import StatsFuns: logit, logistic
+import StatsFuns: logit, logistic , log1pexp
+
 import HypergeometricFunctions: _₂F₁
+import StaticArrays: SA
 
 vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
 
@@ -43,7 +45,7 @@ function Base.prod(
         binomial_prod(p_left, p_right, p_x)
     end
 
-    sufficientstatistics = (x) -> x
+    sufficientstatistics = (x) -> SA[x]
     logpartition = (η) -> log(_₂F₁(-left_trials, -right_trials, 1, exp(η)))
     supp = 0:max(left_trials, right_trials)
 
@@ -57,13 +59,22 @@ function Base.prod(
     )
 end
 
+function pack_naturalparameters(dist::Binomial)
+    return [logit(dist.p)]
+end
+
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Binomial})
+    vectorized = getnaturalparameters(ef)
+    @inbounds η1 = vectorized[1] 
+    return η1
+end
+
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Binomial)
-    n, p = params(dist)
-    return KnownExponentialFamilyDistribution(Binomial, logit(p), n)
+    return KnownExponentialFamilyDistribution(Binomial, pack_naturalparameters(dist), dist.n)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Binomial})
-    return Binomial(getconditioner(exponentialfamily), logistic(first(getnaturalparameters(exponentialfamily))))
+    return Binomial(getconditioner(exponentialfamily), logistic(unpack_naturalparameters(exponentialfamily)))
 end
 
 check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
@@ -76,20 +87,19 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
     getconditioner(exponentialfamily) > zero(Int64) ? true : false
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
-    getconditioner(exponentialfamily)log(one(Float64) + exp(getnaturalparameters(exponentialfamily)))
+    getconditioner(exponentialfamily)log1pexp(unpack_naturalparameters(exponentialfamily))
 
 function fisherinformation(dist::Binomial)
     n, p = params(dist)
-    return n / (p * (1 - p))
+    return [n / (p * (1 - p))]
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
-    η = first(getnaturalparameters(ef))
-    eη = exp(η)
-    aux = eη / (1 + eη)
+    η = unpack_naturalparameters(ef)
+    aux = logistic(η)
     n = getconditioner(ef)
 
-    return n * aux * (1 - aux)
+    return [n * aux * (1 - aux)]
 end
 
 function basemeasure(dist::Binomial, x)
@@ -104,5 +114,5 @@ end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Binomial}, x)
     @assert insupport(ef, x)
-    return x
+    return SA[x]
 end

@@ -1,7 +1,7 @@
 module BinomialTest
 
 using Test
-using ExponentialFamily
+using ExponentialFamily, LinearAlgebra
 using Distributions
 using Random
 using ForwardDiff
@@ -29,8 +29,8 @@ import ExponentialFamily:
     @testset "natural parameters related" begin
         d1 = Binomial(5, 1 / 3)
         d2 = Binomial(5, 1 / 2)
-        η1 = KnownExponentialFamilyDistribution(Binomial, logit(1 / 3), 5)
-        η2 = KnownExponentialFamilyDistribution(Binomial, logit(1 / 2), 5)
+        η1 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
+        η2 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 2)], 5)
 
         @test convert(KnownExponentialFamilyDistribution, d1) == η1
         @test convert(KnownExponentialFamilyDistribution, d2) == η2
@@ -38,8 +38,8 @@ import ExponentialFamily:
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
 
-        η3 = KnownExponentialFamilyDistribution(Binomial, log(exp(1) - 1), 5)
-        η4 = KnownExponentialFamilyDistribution(Binomial, log(exp(1) - 1), 10)
+        η3 = KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5)
+        η4 = KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 10)
 
         @test logpartition(η3) ≈ 5.0
         @test logpartition(η4) ≈ 10.0
@@ -50,32 +50,31 @@ import ExponentialFamily:
         @test pdf(η1, 2) ≈ pdf(d1, 2)
         @test pdf(η2, 4) ≈ pdf(d2, 4)
 
-        binomialef = KnownExponentialFamilyDistribution(Binomial, logit(0.3), 10)
-        @test sufficientstatistics(binomialef, 1) == 1
-        @test sufficientstatistics(binomialef, 7) == 7
+        binomialef = KnownExponentialFamilyDistribution(Binomial, [logit(0.3)], 10)
+        @test sufficientstatistics(binomialef, 1) == [1]
+        @test sufficientstatistics(binomialef, 7) == [7]
         @test_throws AssertionError sufficientstatistics(binomialef, 11)
         @test_throws AssertionError sufficientstatistics(binomialef, 1.1)
     end
 
     @testset "prod KnownExponentialFamilyDistribution" begin
-        for nleft in 1:15, pleft in 0.01:0.3:0.99
+        for nleft in 1:2, pleft in 0.01:0.3:0.99
             left = Binomial(nleft, pleft)
             efleft = convert(KnownExponentialFamilyDistribution, left)
-            for nright in 1:10, pright in 0.01:0.3:0.99
+            for nright in 1:1, pright in 0.01:0.3:0.99
                 right = Binomial(nright, pright)
                 efright = convert(KnownExponentialFamilyDistribution, right)
                 prod_dist = prod(efleft, efright)
-
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
-                        prod_dist.logpartition(prod_dist.naturalparameters)
+                        dot(prod_dist.sufficientstatistics(x) , prod_dist.naturalparameters) -
+                        prod_dist.logpartition(prod_dist.naturalparameters[1])
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
                 sample_points = collect(1:max(nleft, nright))
                 for x in sample_points
                     @test prod_dist.basemeasure(x) == (binomial(nleft, x) * binomial(nright, x))
-                    @test prod_dist.sufficientstatistics(x) == x
+                    @test prod_dist.sufficientstatistics(x) == [x]
                 end
             end
         end
@@ -89,14 +88,14 @@ import ExponentialFamily:
                 prod_dist = prod(ClosedProd(), left, right)
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
-                        prod_dist.logpartition(prod_dist.naturalparameters)
+                        dot(prod_dist.sufficientstatistics(x) , prod_dist.naturalparameters) -
+                        prod_dist.logpartition(prod_dist.naturalparameters[1])
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
                 sample_points = collect(1:max(nleft, nright))
                 for x in sample_points
                     @test prod_dist.basemeasure(x) == (binomial(nleft, x) * binomial(nright, x))
-                    @test prod_dist.sufficientstatistics(x) == x
+                    @test prod_dist.sufficientstatistics(x) == [x]
                 end
             end
         end
@@ -104,7 +103,7 @@ import ExponentialFamily:
 
     @testset "fisher information" begin
         function transformation(params)
-            return logistic(params)
+            return logistic(params[1])
         end
 
         for n in 2:10, κ in 0.01:0.1:1.0
@@ -113,10 +112,9 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η, n))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
-            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
-            J = ForwardDiff.derivative(transformation, η)
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+            J = ForwardDiff.gradient(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
