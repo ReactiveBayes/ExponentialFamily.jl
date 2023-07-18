@@ -1,4 +1,4 @@
-using Distributions, LinearAlgebra
+using Distributions, LinearAlgebra, StaticArrays
 import Random: rand
 
 """

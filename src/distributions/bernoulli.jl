@@ -73,7 +73,8 @@ function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Berno
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
-    return -log(logistic(-unpack_naturalparameters(exponentialfamily)))
+    η = unpack_naturalparameters(exponentialfamily)
+    return -log(logistic(-η))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Bernoulli})
@@ -100,18 +101,18 @@ function basemeasure(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
 end
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Bernoulli}, x)
     @assert insupport(ef, x)
-    return [x]
+    return SA[x]
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Bernoulli})
     η = unpack_naturalparameters(ef)
     f = logistic(-η)
-    return [f * (one(typeof(f)) - f)]
+    return [f * (one(f) - f)]
 end
 
 function fisherinformation(dist::Bernoulli)
     p = dist.p
-    return [inv(p * (one(typeof(p)) - p))]
+    return [inv(p * (one(p) - p))]
 end
 
 function mean(ef::KnownExponentialFamilyDistribution{Bernoulli})

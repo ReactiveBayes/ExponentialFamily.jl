@@ -3,6 +3,7 @@ export Beta
 import Distributions: Beta, params
 import SpecialFunctions: digamma, logbeta, loggamma, trigamma
 import StatsFuns: betalogpdf
+using StaticArrays
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 
@@ -29,47 +30,52 @@ function mean(::typeof(mirrorlog), dist::Beta)
     return digamma(b) - digamma(a + b)
 end
 
-function isproper(params::KnownExponentialFamilyDistribution{Beta})
-    αm1 = first(getnaturalparameters(params))
-    βm1 = getindex(getnaturalparameters(params), 2)
+function pack_naturalparameters(dist::Beta)
+    a, b = params(dist)
+    return [a - oneunit(a), b - oneunit(b)]
+end
+
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Beta})
+    vectorized = getnaturalparameters(ef)
+    @inbounds η1 = vectorized[1] 
+    @inbounds η2 = vectorized[2]
+    return η1, η2
+end
+
+function isproper(ef::KnownExponentialFamilyDistribution{Beta})
+    αm1,βm1 = unpack_naturalparameters(ef)
     return ((αm1 + oneunit(αm1)) > zero(αm1)) && ((βm1 + oneunit(βm1)) > zero(βm1))
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Beta)
-    a, b = params(dist)
-    KnownExponentialFamilyDistribution(Beta, [a - oneunit(a), b - oneunit(b)])
+    KnownExponentialFamilyDistribution(Beta, pack_naturalparameters(dist))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Beta})
-    params = getnaturalparameters(exponentialfamily)
-    αm1    = first(params)
-    βm1    = getindex(params, 2)
+    αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
     return Beta(αm1 + oneunit(αm1), βm1 + oneunit(βm1), check_args = false)
 end
 
 check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) =
-    logbeta(
-        first(getnaturalparameters(exponentialfamily)) + one(Float64),
-        getindex(getnaturalparameters(exponentialfamily), 2) + one(Float64)
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) 
+    αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
+    return logbeta(
+        αm1 + one(Float64),
+        βm1 + one(Float64)
     )
-
-function support(ef::KnownExponentialFamilyDistribution{Beta})
-    return ClosedInterval{Real}(zero(Float64), one(Float64))
 end
-
-function insupport(ef::KnownExponentialFamilyDistribution{Beta}, x)
-    return x ∈ support(ef)
+function support(::KnownExponentialFamilyDistribution{Beta})
+    return ClosedInterval{Real}(zero(Float64), one(Float64))
 end
 
 function basemeasure(::KnownExponentialFamilyDistribution{Beta}, x)
     @assert Distributions.insupport(Beta, x) "basemeasure for Beta should be evaluated at positive values"
     return one(typeof(x))
 end
-function sufficientstatistics(::KnownExponentialFamilyDistribution{Beta}, x)
-    @assert Distributions.insupport(Beta, x) "sufficientstatistics for Beta should be evaluated at positive values"
-    return [log(x), log(1.0 - x)]
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Beta}, x)
+    @assert insupport(ef, x) "sufficientstatistics for Beta should be evaluated at positive values"
+    return  SA[log(x), log(one(x) - x)]
 end
 
 function fisherinformation(dist::Beta)
@@ -82,9 +88,7 @@ function fisherinformation(dist::Beta)
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Beta})
-    η = getnaturalparameters(ef)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+    η1, η2 = unpack_naturalparameters(ef)
 
     psia = trigamma(η1 + one(typeof(η1)))
     psib = trigamma(η2 + one(typeof(η2)))
