@@ -117,7 +117,7 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichle
     matrices = map(d -> sparse(diagm(d[2]) - d[1]*ones) , 
         Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
     
-    blockdiag(Tuple(matrices)...)
+    return blockdiag(Tuple(matrices)...)
 end
 
 function fisherinformation(dist::MatrixDirichlet)
@@ -126,5 +126,5 @@ function fisherinformation(dist::MatrixDirichlet)
     matrices = map(d -> sparse(diagm(d[2]) - d[1]*Ones{Float64}(size(ηp1))) , 
         Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
     
-    blockdiag(Tuple(matrices)...)
+    return blockdiag(Tuple(matrices)...)
 end

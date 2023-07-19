@@ -1,8 +1,9 @@
 using Distributions, BenchmarkTools, FillArrays
-import ExponentialFamily:MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation
-import StatsFuns: logistic,softmax
-dist = MatrixDirichlet([1 1; 1 1])
+using ExponentialFamily
+import ExponentialFamily:MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
+dist = Chisq(2)
 ef = convert(KnownExponentialFamilyDistribution, dist)
+ef2 = KnownExponentialFamilyDistribution(Chisq, getnaturalparameters(ef), nothing, Unsafe())
 @btime pack_naturalparameters($dist)
 @btime unpack_naturalparameters($ef)
 # @btime unpack_naturalparameters($ef)
@@ -10,9 +11,11 @@ ef = convert(KnownExponentialFamilyDistribution, dist)
 @code_lowered logpartition(ef)
 @btime logpartition($ef)
 
-@btime basemeasure($ef, $2)
+ExponentialFamily.support(ef)
+
+@btime basemeasure($ef2, $2)
 @btime sufficientstatistics($ef,$2)
-@btime pdf($ef,$3)
+@btime pdf($ef2,$3)
 @btime pdf($dist, $3)
 using StaticArrays
 dot([1], SA[1])

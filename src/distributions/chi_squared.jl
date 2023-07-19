@@ -2,6 +2,8 @@ export Chisq
 
 import SpecialFunctions: loggamma
 import Distributions: Chisq, params, dof, var
+const log2 = log(2)
+const minushalf = - 1/2
 
 Distributions.cov(dist::Chisq) = var(dist)
 
@@ -25,7 +27,7 @@ function Base.prod(
     naturalparameters = η_left + η_right
     basemeasure = (x) -> exp(-x)
     sufficientstatistics = (x) -> log(x)
-    logpartition = (η) -> loggamma(η + 1)
+    logpartition = (η) -> loggamma(η[1] + 1)
     supp = Distributions.support(T)
 
     return ExponentialFamilyDistribution(
@@ -39,59 +41,62 @@ function Base.prod(
 end
 
 check_valid_natural(::Type{<:Chisq}, params) = length(params) === 1
+pack_naturalparameters(dist::Chisq) = [(dof(dist)/2) - 1]
+
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Chisq})
+    ηvec = getnaturalparameters(ef)
+    @inbounds η1 = ηvec[1]
+    
+    return η1
+end
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Chisq) =
-    KnownExponentialFamilyDistribution(Chisq, dof(dist) / 2 - 1)
+    KnownExponentialFamilyDistribution(Chisq, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
-    η = getnaturalparameters(exponentialfamily)
-    o = one(typeof(η))
-    return Chisq(Int64(2 * (η + o)))
+    η = unpack_naturalparameters(exponentialfamily)
+    return Chisq(Int64(2 * (η + one(η))))
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
-    η = getnaturalparameters(exponentialfamily)
-    o = one(typeof(η))
-    return loggamma(η + o) + (η + o) * log(2)
+    η = unpack_naturalparameters(exponentialfamily)
+    o = one(η)
+    
+    return loggamma(η + o) + (η + o) * log2
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
-    η = getnaturalparameters(exponentialfamily)
-    return (η > -1 / 2)
+    η = unpack_naturalparameters(exponentialfamily)
+    return (η > minushalf)
 end
 
-function support(ef::KnownExponentialFamilyDistribution{Chisq})
-    η = getnaturalparameters(ef)
-    if η == -1 / 2
-        return OpenInterval{Real}(0, Inf)
-    else
-        return ClosedInterval{Real}(0, Inf)
-    end
-end
+struct OpenChi end
+struct ClosedChi end
 
-function support(dist::Chisq)
-    d = dof(dist)
-    if d == 1
-        return OpenInterval{Real}(0, Inf)
-    else
-        return ClosedInterval{Real}(0, Inf)
-    end
-end
+support(ef::KnownExponentialFamilyDistribution{Chisq}) = support(ef,check_boundaries(ef))
+support(::KnownExponentialFamilyDistribution{Chisq},::OpenChi) = OpenInterval{Real}(0, Inf)
+support(::KnownExponentialFamilyDistribution{Chisq},::ClosedChi) = ClosedInterval{Real}(0, Inf)
+check_boundaries(ef::KnownExponentialFamilyDistribution{Chisq}) = unpack_naturalparameters(ef) == minushalf ? OpenChi() : ClosedChi()
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Chisq}, x)
+support(dist::Chisq) = support(dist,check_boundaries(dist))
+support(::Chisq,::OpenChi) = OpenInterval{Real}(0, Inf)
+support(::Chisq,::ClosedChi) = ClosedInterval{Real}(0, Inf)
+check_boundaries(dist::Chisq) = dof(dist) == 1 ? OpenChi() : ClosedChi()
+
+function basemeasure(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
     @assert insupport(ef, x) "$(x) is not in the support"
     return exp(-x / 2)
 end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
-    η = getnaturalparameters(exponentialfamily)
-    return trigamma(η + one(typeof(η)))
+    η = unpack_naturalparameters(exponentialfamily)
+    return [trigamma(η + one(η))]
 end
 
 function fisherinformation(dist::Chisq)
-    return trigamma(dof(dist) / 2) / 4
+    return [trigamma(dof(dist) / 2) / 4]
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Chisq}, x)
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
     @assert insupport(ef, x) "$(x) is not in the support"
     return log(x)
 end
