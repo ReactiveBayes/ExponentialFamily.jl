@@ -1,10 +1,10 @@
 using Distributions, BenchmarkTools, FillArrays
-import ExponentialFamily: KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics
+import ExponentialFamily:MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation
 import StatsFuns: logistic,softmax
-dist = Categorical([1/2, 1/3, 1/6])
+dist = MatrixDirichlet([1 1; 1 1])
 ef = convert(KnownExponentialFamilyDistribution, dist)
 @btime pack_naturalparameters($dist)
-@btime getnaturalparameters($ef)
+@btime unpack_naturalparameters($ef)
 # @btime unpack_naturalparameters($ef)
 @code_warntype logpartition(ef)
 @code_lowered logpartition(ef)
@@ -20,7 +20,6 @@ dot([1], SA[1])
 using SparseArrays
 @btime Vector{Int64}(undef,10)
 @btime convert(Distribution,ef)
-@btime logpdf2($ef,$2)
 
 ef1 = KnownExponentialFamilyDistribution(Categorical, log.([1.0,  1.0]))
 
@@ -35,4 +34,8 @@ using FillArrays
 OneElement(1,10)
 using BlockArrays
 
-BlockArray{Int64}(undef_blocks, [2,2], [2,2])
+BlockArray{Int64}(zeros(4,4), [2,2],[2,2])
+
+@btime fisherinformation($ef)
+@btime fisherinformation($dist)
+@btime unpack_naturalparameters($ef) + Ones{Float64}(2,2) 

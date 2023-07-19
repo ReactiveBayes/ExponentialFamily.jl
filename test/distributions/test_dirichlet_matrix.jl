@@ -7,18 +7,15 @@ using Random
 using ForwardDiff
 import SpecialFunctions: loggamma
 import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation,
-    as_vec, logpartition, reconstructargument!
+    as_vec, logpartition, reconstructargument!, unpack_naturalparameters
 
-function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
-    natural_params = getnaturalparameters(ef)
-    mean_size = first(size(natural_params))
-    matrix = reshape(ηvec, mean_size, mean_size)
-    ef = KnownExponentialFamilyDistribution(T, Matrix(matrix))
+function reconstructed_logpartition(::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+    ef = KnownExponentialFamilyDistribution(T, ηvec)
     return logpartition(ef)
 end
 
 function test_partition(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
-    η = getnaturalparameters(ef)
+    η = unpack_naturalparameters(ef)
     return sum(loggamma.(η .+ 1.0)) - sum(loggamma.(sum(η .+ 1.0, dims = 1)))
 end
 @testset "MatrixDirichlet" begin
@@ -104,14 +101,14 @@ end
 
     @testset "natural parameters related" begin
         @test convert(KnownExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
-              KnownExponentialFamilyDistribution(MatrixDirichlet, [0.6 0.7; 1.0 2.0] .- 1)
+              KnownExponentialFamilyDistribution(MatrixDirichlet, view([0.6 0.7; 1.0 2.0],:) .- 1)
         b_01 = MatrixDirichlet([1.0 10.0; 2.0 10.0])
         nb_01 = convert(KnownExponentialFamilyDistribution, b_01)
         @test logpartition(nb_01) ==
               mapreduce(
-            d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)),
+            d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
             +,
-            eachcol(getnaturalparameters(nb_01))
+            eachcol(unpack_naturalparameters(nb_01))
         )
         for i in 1:9
             b = MatrixDirichlet([i/10.0 i/20; i/5 i])
@@ -125,7 +122,7 @@ end
             @test prod(nb_01, bnp) ≈ convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
             @test logpartition(bnp) ≈ test_partition(bnp)
         end
-        @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, [10 2; 3 2])) === true
+        @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, vec([10 2; 3 2]))) === true
     end
 
     @testset "KnownExponentialFamilyDistribution mean" begin
