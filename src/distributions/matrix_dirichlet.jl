@@ -4,7 +4,7 @@ import SpecialFunctions: digamma, loggamma
 import Base: eltype
 import Distributions: pdf, logpdf
 
-using BlockDiagonals
+using BlockArrays
 
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     a::A
@@ -86,7 +86,8 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichle
     pre_diag = [diagm(trigamma.(ηvect[i])) for i in 1:n]
     fi_pre = [ones(n, n) * trigamma(ηvect0[i]) for i in 1:n]
 
-    return BlockDiagonal(pre_diag - fi_pre)
+    # return BlockDiagonal(pre_diag - fi_pre)
+    return BlockArray{Float64}(pre_diag - fi_pre, [n,n])
 end
 
 function fisherinformation(dist::MatrixDirichlet)
@@ -100,5 +101,6 @@ function fisherinformation(dist::MatrixDirichlet)
     pre_diag = [diagm(trigamma.(ηvect[i])) for i in 1:n]
     fi_pre = [ones(n, n) * trigamma(ηvect0[i]) for i in 1:n]
 
-    return BlockDiagonal(pre_diag - fi_pre)
+    # return BlockDiagonal(pre_diag - fi_pre)
+    return BlockArray{Float64}(pre_diag - fi_pre, [n,n])
 end

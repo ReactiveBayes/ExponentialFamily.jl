@@ -129,7 +129,6 @@ function Distributions.logpdf(exponentialfamily::KnownExponentialFamilyDistribut
     natural_parameters = getnaturalparameters(exponentialfamily)
     statistics = sufficientstatistics(exponentialfamily, x)
     dot_product = dot(natural_parameters, statistics)
-
     return base_measure + dot_product - logpartition(exponentialfamily)
 end
 Distributions.pdf(exponentialfamily::KnownExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))

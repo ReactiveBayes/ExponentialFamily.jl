@@ -2,6 +2,8 @@ export Categorical
 export logpartition
 
 import Distributions: Categorical, probs
+import LogExpFunctions: logsumexp
+import FillArrays: OneElement
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
@@ -22,24 +24,20 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Categorical)
+function pack_naturalparameters(dist::Categorical)
     p = probvec(dist)
-    η = log.(p / p[end])
-    return KnownExponentialFamilyDistribution(Categorical, η)
+    return log.(p/p[end])
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Categorical})
-    η = getnaturalparameters(exponentialfamily)
-    return Categorical(softmax(η))
-end
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Categorical) = KnownExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
+
+Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Categorical}) = Categorical(softmax(getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Categorical})
-    η = getnaturalparameters(exponentialfamily)
-    return log(sum(exp.(η)))
+function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Categorical}) 
+    logsumexp(getnaturalparameters(exponentialfamily))
 end
-
 isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
 
 function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Categorical})
@@ -82,21 +80,20 @@ end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
     @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
-    return one(typeof(x))
+    return one(x)
+end
+
+function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
+    @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
+    return one(eltype(x))
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real)
     @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
-    K = length(getnaturalparameters(ef))
-    ss = zeros(K)
-    [ss[k] = 1 for k in 1:K if x == k]
-    return ss
+    return OneElement(x,length(getnaturalparameters(ef)))
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector)
     @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
-    K = length(getnaturalparameters(ef))
-    ss = zeros(K)
-    [ss[k] = 1 for k in 1:K if x[k] == 1]
-    return ss
+    return x
 end

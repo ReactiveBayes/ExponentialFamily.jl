@@ -8,6 +8,7 @@ using Random
 using ForwardDiff
 import ExponentialFamily:
     KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
+import LogExpFunctions: logsumexp
 
 @testset "Categorical" begin
 
@@ -35,16 +36,17 @@ import ExponentialFamily:
     end
 
     @testset "natural parameters related" begin
-        ηcat = KnownExponentialFamilyDistribution(Categorical, log.([0.5 / 0.5, 0.5 / 0.5]))
-        dist = Categorical([0.5, 0.5])
-        η1   = KnownExponentialFamilyDistribution(Categorical, log.([0.5 / 0.5, 0.5 / 0.5]))
-        η2   = KnownExponentialFamilyDistribution(Categorical, log.([0.5 / 0.5, 0.5 / 0.5]))
+        ηcat = KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
+        dist = Categorical([1/2, 1/2])
+        η1   = KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
+        η2   = KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
 
         @test convert(Distribution, ηcat) == dist
         @test convert(KnownExponentialFamilyDistribution, dist) ==
-              KnownExponentialFamilyDistribution(Categorical, log.([0.5 / 0.5, 0.5 / 0.5]))
+              KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
         @test prod(η1, η2) == KnownExponentialFamilyDistribution(Categorical, [0.0, 0.0])
 
+        @test logpdf(ηcat, 2) == logpdf(dist, 2)
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
         @test_throws AssertionError logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
 
@@ -53,7 +55,7 @@ import ExponentialFamily:
         @test_throws AssertionError basemeasure(η1, rand()) == 1.0
         @test_throws AssertionError basemeasure(η2, rand()) == 1.0
 
-        @test logpartition(ηcat) == log(2)
+        @test logpartition(ηcat) == logsumexp(getnaturalparameters(ηcat))
 
         categoricalef = KnownExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])
         @test sufficientstatistics(categoricalef, 3) == [0, 0, 1, 0]
