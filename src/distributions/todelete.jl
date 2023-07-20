@@ -1,7 +1,7 @@
 using Distributions, BenchmarkTools, FillArrays
 using ExponentialFamily
-import ExponentialFamily:Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
-dist = Contingency(ones(3,3)/9)
+import ExponentialFamily:ContinuousBernoulli,Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
+dist = ContinuousBernoulli(1/3)
 ef = convert(KnownExponentialFamilyDistribution, dist)
 @btime pack_naturalparameters($dist)
 @btime unpack_naturalparameters($ef)
@@ -13,8 +13,9 @@ ef = convert(KnownExponentialFamilyDistribution, dist)
 ExponentialFamily.support(ef)
 
 @btime basemeasure($ef2, $2)
-@btime sufficientstatistics($dist,$[1,3])
-@btime pdf($ef,$[1,3])
+@btime sufficientstatistics($ef,$0.1)
+@btime pdf($ef,$0.1)
+@btime fisherinformation($ef)
 @btime pdf($dist, $[1,3])
 using StaticArrays
 dot([1], SA[1])

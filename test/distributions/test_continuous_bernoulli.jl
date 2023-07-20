@@ -39,10 +39,10 @@ import ExponentialFamily:
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
             @test convert(KnownExponentialFamilyDistribution, b) ==
-                  KnownExponentialFamilyDistribution(ContinuousBernoulli, logit(i / 10.0))
+                  KnownExponentialFamilyDistribution(ContinuousBernoulli, [logit(i / 10.0)])
         end
-        @test isproper(KnownExponentialFamilyDistribution(ContinuousBernoulli, 10)) === true
-        @test basemeasure(KnownExponentialFamilyDistribution(ContinuousBernoulli, 10), 0.2) == 1.0
+        @test isproper(KnownExponentialFamilyDistribution(ContinuousBernoulli, [10])) === true
+        @test basemeasure(KnownExponentialFamilyDistribution(ContinuousBernoulli, [10]), 0.2) == 1.0
     end
 
     @testset "prod" begin
@@ -76,7 +76,7 @@ import ExponentialFamily:
 
     @testset "fisher information" begin
         function transformation(params)
-            return logistic(params)
+            return logistic(params[1])
         end
 
         for κ in 0.000001:0.01:0.49
@@ -85,11 +85,10 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end
 
         for κ in 0.51:0.01:0.99
@@ -98,11 +97,10 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end
 
         for κ in 0.499:0.0001:0.50001
@@ -110,8 +108,8 @@ import ExponentialFamily:
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end
     end
 

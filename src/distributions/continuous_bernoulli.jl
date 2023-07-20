@@ -1,8 +1,10 @@
 export ContinuousBernoulli
 import StatsFuns: logexpm1, logistic
 using Distributions
+using StaticArrays
 
 using Random
+import LogExpFunctions: logexpm1
 
 struct ContinuousBernoulli{T} <: ContinuousUnivariateDistribution
     λ::T
@@ -51,7 +53,7 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    η = getnaturalparameters(convert(KnownExponentialFamilyDistribution, dist))
+    η = unpack_naturalparameters(convert(KnownExponentialFamilyDistribution, dist))
     eη = exp(η)
     return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
@@ -93,14 +95,20 @@ end
 
 closed_prod_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ClosedProd()
 
+pack_naturalparameters(dist::ContinuousBernoulli) =  [log(succprob(dist) / (one(Float64) - succprob(dist)))]
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:ContinuousBernoulli})
+    η = getnaturalparameters(ef)
+    @inbounds logprobability = η[1]
+
+    return logprobability
+end
+
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
-    logprobability = getindex(getnaturalparameters(exponentialfamily), 1)
-    return ContinuousBernoulli(logistic(logprobability))
+    return ContinuousBernoulli(logistic(unpack_naturalparameters(exponentialfamily)))
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::ContinuousBernoulli)
-    @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    KnownExponentialFamilyDistribution(ContinuousBernoulli, log(succprob(dist) / (one(Float64) - succprob(dist))))
+    KnownExponentialFamilyDistribution(ContinuousBernoulli, pack_naturalparameters(dist))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = true
@@ -108,7 +116,7 @@ isproper(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoul
 check_valid_natural(::Type{<:ContinuousBernoulli}, params) = (length(params) === 1)
 
 function isvague(exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli})
-    if getnaturalparameters(exponentialfamily) ≈ 0.0
+    if unpack_naturalparameters(exponentialfamily) ≈ 0.0
         return VagueContinuousBernoulli()
     else
         return NonVagueContinuousBernoulli()
@@ -119,7 +127,7 @@ function logpartition(
     ::NonVagueContinuousBernoulli,
     exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}
 )
-    η = getnaturalparameters(exponentialfamily)
+    η = unpack_naturalparameters(exponentialfamily)
     return log((exp(η) - 1) / η + tiny)
 end
 logpartition(::VagueContinuousBernoulli, exponentialfamily::KnownExponentialFamilyDistribution{ContinuousBernoulli}) =
@@ -143,20 +151,20 @@ function Random.rand!(rng::AbstractRNG, dist::ContinuousBernoulli, container::Ab
 end
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = fisherinformation(isvague(ef), ef)
-fisherinformation(::VagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = 1 / 12
+fisherinformation(::VagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = [1 / 12]
 function fisherinformation(::NonVagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli})
-    η = getnaturalparameters(ef)
-    return inv(η^2) - exp(η) / (exp(η) - 1)^2
+    η = unpack_naturalparameters(ef)
+    return [inv(η^2) - exp(η) / (exp(η) - 1)^2]
 end
 
 fisherinformation(dist::ContinuousBernoulli) = fisherinformation(isvague(dist), dist)
-fisherinformation(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 16 / 12
+fisherinformation(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = [16 / 12]
 function fisherinformation(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
     m = mean(dist)
     tmp1 = (2 - 4λ) * atanh(1 - 2λ) - 1
     tmp2 = 4 * (λ - 1)^2 * λ^2 * (atanh(1 - 2λ)^2)
-    return m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2
+    return [m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2]
 end
 
 function support(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli})
@@ -175,7 +183,7 @@ function sufficientstatistics(
     x::Real
 )
     @assert insupport(union, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
-    return x
+    return SA[x]
 end
 
 basemeasure(
@@ -199,5 +207,5 @@ function basemeasure(
     x::Real
 )
     @assert insupport(ef, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
-    return one(typeof(x))
+    return one(x)
 end
