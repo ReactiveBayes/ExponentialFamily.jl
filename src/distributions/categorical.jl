@@ -4,6 +4,7 @@ export logpartition
 import Distributions: Categorical, probs
 import LogExpFunctions: logsumexp
 import FillArrays: OneElement
+using LoopVectorization
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
@@ -26,7 +27,7 @@ end
 
 function pack_naturalparameters(dist::Categorical)
     p = probvec(dist)
-    return log.(p/p[end])
+    return LoopVectorization.vmap(d -> log(d/p[end]), p)
 end
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Categorical) = KnownExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))

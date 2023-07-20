@@ -6,6 +6,7 @@ import Distributions: pdf, logpdf
 
 import SparseArrays: blockdiag,sparse
 import FillArrays: Ones, Eye
+import LoopVectorization: vmap, vmapreduce
 
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     a::A
@@ -56,7 +57,7 @@ end
 
 ##TODO: this code needs to be optimized
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
-    mapreduce(
+    vmapreduce(
         d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
         +,
         eachcol(unpack_naturalparameters(exponentialfamily))
@@ -85,7 +86,7 @@ function sufficientstatistics(
     ::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
-    return log.(x)
+    return vec(vmap(d -> log(d), x))
 end
 
 # #this works  50 allocations
