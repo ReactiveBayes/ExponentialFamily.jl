@@ -1,7 +1,7 @@
 using Distributions, BenchmarkTools, FillArrays
 using ExponentialFamily
 import ExponentialFamily:ContinuousBernoulli,Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
-dist = ContinuousBernoulli(1/3)
+dist = Dirichlet(ones(3))
 ef = convert(KnownExponentialFamilyDistribution, dist)
 @btime pack_naturalparameters($dist)
 @btime unpack_naturalparameters($ef)
@@ -12,11 +12,11 @@ ef = convert(KnownExponentialFamilyDistribution, dist)
 
 ExponentialFamily.support(ef)
 
-@btime basemeasure($ef2, $2)
-@btime sufficientstatistics($ef,$0.1)
-@btime pdf($ef,$0.1)
+@btime basemeasure($ef, $[0.1, 0.3, 0.6])
+@btime sufficientstatistics($ef,$[0.1, 0.3, 0.6])
+@btime pdf($ef, $[0.1, 0.3, 0.6])
 @btime fisherinformation($ef)
-@btime pdf($dist, $[1,3])
+@btime pdf($dist, $[0.1, 0.3, 0.6])
 using StaticArrays
 dot([1], SA[1])
 @btime log(logistic(η))
@@ -24,7 +24,7 @@ using SparseArrays
 @btime Vector{Int64}(undef,10)
 @btime convert(Distribution,ef)
 
-ef1 = KnownExponentialFamilyDistribution(Categorical, log.([1.0,  1.0]))
+ef1 = KnownExponentialFamilyDistribution(MatrixDirichlet, log.([1.0,  1.0, 1.0, 1.0]))
 
 dist1 = convert(Distribution,ef1)
 getnaturalparameters(ef1)
@@ -48,3 +48,7 @@ using LogExpFunctions
 
 A = [1 0; 0 1]
 logsumexp.(A)
+
+using SparseArrays, LinearAlgebra, FillArrays
+@btime Diagonal([1, 2])
+x = Fill([1,2],1)

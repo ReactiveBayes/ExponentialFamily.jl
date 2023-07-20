@@ -7,6 +7,7 @@ import Distributions: pdf, logpdf
 import SparseArrays: blockdiag,sparse
 import FillArrays: Ones, Eye
 import LoopVectorization: vmap, vmapreduce
+using LinearAlgebra
 
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     a::A
@@ -79,7 +80,7 @@ function basemeasure(
     ::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
-    return 1.0
+    return one(eltype(x))
 end
 
 function sufficientstatistics(
@@ -109,13 +110,13 @@ end
 #     blockdiag(Tuple(map(d -> sparse(d[2] - d[1]) , Iterators.zip(Tuple(trigammas),Tuple(ηvect0_trigammas))))...)
 # end
 
-## this works 38 allocations
+## this works 36 allocations
 function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
     η    = unpack_naturalparameters(ef)
     ones = Ones{Float64}(size(η))
     ηp1  = η+ones
 
-    matrices = map(d -> sparse(diagm(d[2]) - d[1]*ones) , 
+    matrices = map(d -> sparse(Diagonal(d[2]) - d[1]*ones) , 
         Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
     
     return blockdiag(Tuple(matrices)...)
@@ -124,7 +125,7 @@ end
 function fisherinformation(dist::MatrixDirichlet)
     ηp1 = dist.a
 
-    matrices = map(d -> sparse(diagm(d[2]) - d[1]*Ones{Float64}(size(ηp1))) , 
+    matrices = map(d -> sparse(Diagonal(d[2]) - d[1]*Ones{Float64}(size(ηp1))) , 
         Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
     
     return blockdiag(Tuple(matrices)...)

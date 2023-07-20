@@ -2,6 +2,12 @@ export Dirichlet
 
 import Distributions: Dirichlet
 import SpecialFunctions: digamma, loggamma, trigamma
+using FillArrays
+using LoopVectorization
+using StaticArrays
+using LinearAlgebra
+
+
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
@@ -31,17 +37,17 @@ end
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(exponentialfamily)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η)
-    secondterm = loggamma(sum(η .+ 1))
+    secondterm = loggamma(sum(η)+ length(η))
     return firstterm - secondterm
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
-    getnaturalparameters(exponentialfamily)
-    return Dirichlet(getnaturalparameters(exponentialfamily) .+ one(Float64))
+    η = getnaturalparameters(exponentialfamily)
+    return Dirichlet(η + Ones{Float64}(length(η)))
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Dirichlet)
-    KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) .- one(Float64))
+    KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) - Ones{Float64}(length(probvec(dist))))
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
@@ -56,32 +62,23 @@ end
 
 function basemeasure(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
     @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
-    return 1.0
+    return one(eltype(x))
 end
 
+## has one allocation
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
     @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
-    return log.(x)
+    return vmap(d -> log(d), x)
 end
 
 function fisherinformation(dist::Dirichlet)
     α  = probvec(dist)
     n  = length(α)
-    α0 = sum(α)
-
-    pre_diag = trigamma.(α)
-    fi_pre = ones(n, n) * trigamma(α0)
-
-    return diagm(pre_diag) - fi_pre
+    return Diagonal(map(d->trigamma(d),α)) - Ones{Float64}(n, n) * trigamma(sum(α))
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(ef)
     n = length(η)
-    η0 = sum(η .+ 1)
-
-    pre_diag = trigamma.(η .+ 1)
-    fi_pre = ones(n, n) * trigamma(η0)
-
-    return diagm(pre_diag) - fi_pre
+    return Diagonal(map(d -> trigamma(d + 1), η)) - Ones{Float64}(n, n) * trigamma(sum(η) + n)
 end
