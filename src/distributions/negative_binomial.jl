@@ -2,6 +2,7 @@ export NegativeBinomial
 import Distributions: NegativeBinomial, probs
 import StatsFuns: logit, logistic
 import DomainSets: NaturalNumbers
+using StaticArrays
 
 vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
 
@@ -29,7 +30,7 @@ function Base.prod(
 
     naturalparameters = η_left + η_right
 
-    sufficientstatistics = (x) -> x
+    sufficientstatistics = (x) -> SA[x]
 
     function basemeasure(x)
         p_left, p_right, p_x = promote(rleft, rright, x)
@@ -37,7 +38,7 @@ function Base.prod(
     end
 
     function logpartition(η)
-        return log(sum(binomial_prod(x + rleft - 1, x + rright - 1, x) * exp(η * x) for x in 0:max(rright, rleft)))
+        return log(sum(binomial_prod(x + rleft - 1, x + rright - 1, x) * exp(η[1]* x) for x in 0:max(rright, rleft)))
     end
 
     supp = NaturalNumbers()
@@ -59,15 +60,23 @@ function Base.prod(::ClosedProd, left::T, right::T) where {T <: NegativeBinomial
     return prod(ef_left, ef_right)
 end
 
+pack_naturalparameters(dist::NegativeBinomial) = [log(one(Float64) - params(dist)[2])]
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:NegativeBinomial}) 
+    η = getnaturalparameters(ef)
+    @inbounds η1 = η[1]
+    
+    return η1
+end
+
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NegativeBinomial)
-    n, p = params(dist)
-    return KnownExponentialFamilyDistribution(NegativeBinomial, log(one(Float64) - p), n)
+    n, _ = params(dist)
+    return KnownExponentialFamilyDistribution(NegativeBinomial, pack_naturalparameters(dist), n)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial})
     return NegativeBinomial(
         getconditioner(exponentialfamily),
-        one(Float64) - exp(getnaturalparameters(exponentialfamily))
+        one(Float64) - exp(unpack_naturalparameters(exponentialfamily))
     )
 end
 
@@ -78,16 +87,14 @@ function check_valid_conditioner(::Type{<:NegativeBinomial}, conditioner)
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial})
-    η = getnaturalparameters(exponentialfamily)
+    η = unpack_naturalparameters(exponentialfamily)
     return η ≤ 0
 end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}) =
-    -getconditioner(exponentialfamily) * log(one(Float64) - exp(getnaturalparameters(exponentialfamily)))
+    -getconditioner(exponentialfamily) * log(one(Float64) - exp(unpack_naturalparameters(exponentialfamily)))
 
-function support(::KnownExponentialFamilyDistribution{NegativeBinomial})
-    return NaturalNumbers()
-end
+support(::KnownExponentialFamilyDistribution{NegativeBinomial}) = NaturalNumbers()
 
 function basemeasure(exponentialfamily::KnownExponentialFamilyDistribution{NegativeBinomial}, x::Real)
     @assert insupport(exponentialfamily, x) "$(x) is not in the support of negative binomial"
@@ -101,13 +108,13 @@ end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{NegativeBinomial})
     r = getconditioner(ef)
-    η = getnaturalparameters(ef)
-    return r * exp(η) / (one(Float64) - exp(η))^2
+    η = unpack_naturalparameters(ef)
+    return SA[r * exp(η) / (one(Float64) - exp(η))^2]
 end
 
 function fisherinformation(dist::NegativeBinomial)
     r, p = params(dist)
-    r / (p^2 * (one(p) - p))
+    SA[r / (p^2 * (one(p) - p))]
 end
 
 function sufficientstatistics(
@@ -115,5 +122,5 @@ function sufficientstatistics(
     x::Real
 )
     @assert insupport(ef, x) "$(x) is not in the support of negative binomial"
-    return x
+    return SA[x]
 end
