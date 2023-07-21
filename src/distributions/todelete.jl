@@ -1,8 +1,9 @@
 using Distributions, BenchmarkTools, FillArrays
 using ExponentialFamily
 import ExponentialFamily:ContinuousBernoulli,Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
-dist = Beta(2,0.3)
+dist = Multinomial(4,[0.1, 0.2, 0.7])
 ef = convert(KnownExponentialFamilyDistribution, dist)
+# ef = KnownExponentialFamilyDistribution(LogNormal,[22,-3],nothing,Unsafe())
 @btime pack_naturalparameters($dist)
 @btime unpack_naturalparameters($ef)
 # @btime unpack_naturalparameters($ef)
@@ -11,13 +12,12 @@ ef = convert(KnownExponentialFamilyDistribution, dist)
 @btime logpartition($ef)
 
 ExponentialFamily.support(ef)
-@btime Distributions.DirichletStats($log.([0.1, 0.3, 0.6]), $3 )
 @btime ExponentialFamily.insupport($ef, $0.2)
-@btime basemeasure($ef, $0.2)
-@btime sufficientstatistics($ef,$0.2)
-@btime pdf($ef, $0.2)
-@btime fisherinformation($ef)
-@btime pdf($dist, $0.2)
+@btime basemeasure($ef, $[1,2,1])
+@btime sufficientstatistics($ef,$[1,2,1])
+@btime pdf($ef, $[1,2,1])
+@btime fisherinformation($dist)
+@btime pdf($dist, $[1,2,1])
 using StaticArrays
 dot([1], SA[1])
 @btime log(logistic(η))
@@ -55,3 +55,19 @@ using SparseArrays, LinearAlgebra, FillArrays
 x = [1.0, 2.0]
 @btime deepcopy(x)
 @btime map!(log,x,x)
+
+using StaticArrays, LoopVectorization
+
+x = SA[4,2, 3, 3]
+sort(x)
+vcat([1],[2])
+
+@btime prod(factorial.($[1, 2, 3]))
+@btime prod(map(factorial, $[1,2,3]))
+
+@btime @.factorial($[1,2,3])
+
+@btime exp.($[1,2,3])
+@btime @.exp($[1,2,3])
+@btime vmap(exp,$[1,2,3])
+OneElement(1, (1,1),(5,5))
