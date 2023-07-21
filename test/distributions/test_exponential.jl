@@ -30,8 +30,8 @@ import ExponentialFamily:
     end
 
     @testset "isproper" begin
-        @test isproper(KnownExponentialFamilyDistribution(Exponential, -5.0)) === true
-        @test isproper(KnownExponentialFamilyDistribution(Exponential, 1.0)) === false
+        @test isproper(KnownExponentialFamilyDistribution(Exponential, [-5.0])) === true
+        @test isproper(KnownExponentialFamilyDistribution(Exponential, [1.0])) === false
     end
 
     @testset "mean(::typeof(log))" begin
@@ -69,25 +69,25 @@ import ExponentialFamily:
     @testset "getters" begin
         left = convert(KnownExponentialFamilyDistribution, Exponential(4))
         right = convert(KnownExponentialFamilyDistribution, Exponential(3))
-        @test getnaturalparameters(prod(left, right)) ≈ -0.5833333333333333
+        @test getnaturalparameters(prod(left, right)) ≈ [-0.5833333333333333]
 
         left = convert(KnownExponentialFamilyDistribution, Exponential(4))
         right = convert(KnownExponentialFamilyDistribution, Exponential(5))
-        @test getnaturalparameters(prod(left, right)) ≈ -0.45
+        @test getnaturalparameters(prod(left, right)) ≈ [-0.45]
 
         left = convert(KnownExponentialFamilyDistribution, Exponential(1))
         right = convert(KnownExponentialFamilyDistribution, Exponential(1))
-        @test getnaturalparameters(prod(left, right)) ≈ -2
+        @test getnaturalparameters(prod(left, right)) ≈ [-2]
     end
 
     @testset "convert" begin
         @test convert(KnownExponentialFamilyDistribution, Exponential(5)) ==
-              KnownExponentialFamilyDistribution(Exponential, -0.2)
+              KnownExponentialFamilyDistribution(Exponential, [-0.2])
         @test convert(KnownExponentialFamilyDistribution, Exponential(1e12)) ==
-              KnownExponentialFamilyDistribution(Exponential, -1e-12)
+              KnownExponentialFamilyDistribution(Exponential, [-1e-12])
     end
 
-    transformation(η) = -inv(η)
+    transformation(η) = -inv(η[1])
 
     @testset "fisher information" begin
         for θ in 1:20
@@ -96,11 +96,10 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Exponential, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_inforamation = (η) -> ForwardDiff.derivative(df, η)
-            @test fisherinformation(ef) ≈ autograd_inforamation(η)
-            J = ForwardDiff.derivative(transformation, η)
-            @test fisherinformation(dist) * J^2 ≈ fisherinformation(ef)
+            autograd_inforamation = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test first(fisherinformation(ef)) ≈ first(autograd_inforamation(η))
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef)
         end
     end
 

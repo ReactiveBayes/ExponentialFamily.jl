@@ -21,27 +21,31 @@ end
 
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
+pack_naturalparameters(dist::Erlang) = [(shape(dist) - 1), -rate(dist)]
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Erlang}) 
+    η = getnaturalparameters(ef)
+    @inbounds η1 = η[1]
+    @inbounds η2 = η[2]
+
+    return η1,η2
+end
+
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) =
-    KnownExponentialFamilyDistribution(Erlang, [(shape(dist) - 1), -rate(dist)])
+    KnownExponentialFamilyDistribution(Erlang, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
-    η = getnaturalparameters(exponentialfamily)
-    a = first(η)
-    b = getindex(η, 2)
+    a,b = unpack_naturalparameters(exponentialfamily)
     return Erlang(Int64(a + one(a)), -inv(b))
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
-    η = getnaturalparameters(exponentialfamily)
-    a = Int64(first(η))
-    b = getindex(η, 2)
-    return logfactorial(a) - (a + one(a)) * log(-b)
+    a,b = unpack_naturalparameters(exponentialfamily)
+    inta = Int64(a)
+    return logfactorial(inta) - (inta + one(inta)) * log(-b)
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
-    η = getnaturalparameters(exponentialfamily)
-    a = first(η)
-    b = getindex(η, 2)
+    a,b = unpack_naturalparameters(exponentialfamily)
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
@@ -52,9 +56,7 @@ function basemeasure(ef::KnownExponentialFamilyDistribution{Erlang}, x::Real)
     return one(x)
 end
 function fisherinformation(ef::KnownExponentialFamilyDistribution)
-    η = getnaturalparameters(ef)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+    η1,η2 = unpack_naturalparameters(ef)
     miη2 =-inv(η2)
 
     return SA[trigamma(η1) miη2; miη2 (η1+1)/(η2^2)]
