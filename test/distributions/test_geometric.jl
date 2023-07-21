@@ -33,8 +33,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "natural parameters related" begin
         d1 = Geometric(0.6)
         d2 = Geometric(0.3)
-        η1 = KnownExponentialFamilyDistribution(Geometric, log(1 - 0.6))
-        η2 = KnownExponentialFamilyDistribution(Geometric, log(1 - 0.3))
+        η1 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
+        η2 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
 
         @test convert(Geometric, η1) ≈ d1
         @test convert(Geometric, η2) ≈ d2
@@ -54,27 +54,26 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test pdf(η1, 3) == pdf(d1, 3)
         @test pdf(η2, 3) == pdf(d2, 3)
 
-        @test isproper(KnownExponentialFamilyDistribution(Geometric, log(0.6))) == true
-        @test isproper(KnownExponentialFamilyDistribution(Geometric, 1.3)) == false
+        @test isproper(KnownExponentialFamilyDistribution(Geometric, [log(0.6)])) == true
+        @test isproper(KnownExponentialFamilyDistribution(Geometric, [1.3])) == false
     end
 
     @testset "fisher information" begin
         rng = StableRNG(42)
         n_samples = 10000
 
-        transformation(η) = one(Float64) - exp(η)
+        transformation(η) = one(Float64) - exp(η[1])
         for p in 0.1:0.05:0.9
             dist = Geometric(p)
             ef = convert(KnownExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Geometric, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-8
 
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 
