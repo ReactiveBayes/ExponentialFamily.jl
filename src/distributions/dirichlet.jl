@@ -6,7 +6,7 @@ using FillArrays
 using LoopVectorization
 using StaticArrays
 using LinearAlgebra
-
+using LogExpFunctions
 
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))

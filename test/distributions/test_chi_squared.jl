@@ -32,7 +32,7 @@ import ExponentialFamily:
         end
 
         chisqef = KnownExponentialFamilyDistribution(Chisq, [3])
-        @test sufficientstatistics(chisqef, 1) == log(1)
+        @test sufficientstatistics(chisqef, 1) == [log(1)]
         @test_throws AssertionError sufficientstatistics(chisqef, -1)
     end
 
@@ -40,8 +40,8 @@ import ExponentialFamily:
         f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartition, η)
         for i in 3:10
-            @test fisherinformation(KnownExponentialFamilyDistribution(Chisq, [i])) ≈
-                  autograd_inforamation_matrix([i])
+            @test first(fisherinformation(KnownExponentialFamilyDistribution(Chisq, [i]))) ≈
+                  first(autograd_inforamation_matrix([i]))
         end
     end
 
@@ -75,13 +75,13 @@ import ExponentialFamily:
 
             @test prod_dist.naturalparameters == naturalparameters
             @test prod_dist.basemeasure(i) ≈ exp(-i)
-            @test prod_dist.sufficientstatistics(i) ≈ log(i)
+            @test prod_dist.sufficientstatistics(i) ≈ [log(i)]
             @test prod_dist.logpartition(η_left + η_right) ≈ loggamma(η_left[1] + η_right[1] + 1)
             @test prod_dist.support === support(left)
 
             @test prod_ef.naturalparameters == naturalparameters
             @test prod_ef.basemeasure(i) ≈ exp(-i)
-            @test prod_ef.sufficientstatistics(i) ≈ log(i)
+            @test prod_ef.sufficientstatistics(i) ≈ [log(i)]
             @test prod_ef.logpartition(η_left + η_right) ≈ loggamma(η_left[1] + η_right[1] + 1)
             @test prod_ef.support === support(left)
         end

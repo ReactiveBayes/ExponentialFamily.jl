@@ -91,7 +91,7 @@ logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
 
 function fisherinformation(dist::Binomial)
     n, p = params(dist)
-    return [n / (p * (1 - p))]
+    return SA[n / (p * (1 - p))]
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
@@ -99,7 +99,7 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
     aux = logistic(η)
     n = getconditioner(ef)
 
-    return [n * aux * (1 - aux)]
+    return SA[n * aux * (1 - aux)]
 end
 
 function basemeasure(dist::Binomial, x)

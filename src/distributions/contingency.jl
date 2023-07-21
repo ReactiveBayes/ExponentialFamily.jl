@@ -206,7 +206,7 @@ end
 
 closed_prod_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
+basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = one(eltype(x))
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency}, x)
     @assert typeof(x) <: Vector{<:Integer} && length(x) === 2 "x should be a length 2 vector of integer"

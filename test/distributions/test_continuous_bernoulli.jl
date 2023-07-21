@@ -86,7 +86,7 @@ import ExponentialFamily:
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
+            @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-9
             J = ForwardDiff.gradient(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end
@@ -98,7 +98,7 @@ import ExponentialFamily:
 
             f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
+            @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-9
             J = ForwardDiff.gradient(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
         end

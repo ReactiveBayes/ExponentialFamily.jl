@@ -151,20 +151,20 @@ function Random.rand!(rng::AbstractRNG, dist::ContinuousBernoulli, container::Ab
 end
 
 fisherinformation(ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = fisherinformation(isvague(ef), ef)
-fisherinformation(::VagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = [1 / 12]
+fisherinformation(::VagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli}) = SA[1 / 12]
 function fisherinformation(::NonVagueContinuousBernoulli, ef::KnownExponentialFamilyDistribution{ContinuousBernoulli})
     η = unpack_naturalparameters(ef)
-    return [inv(η^2) - exp(η) / (exp(η) - 1)^2]
+    return SA[inv(η^2) - exp(η) / (exp(η) - 1)^2]
 end
 
 fisherinformation(dist::ContinuousBernoulli) = fisherinformation(isvague(dist), dist)
-fisherinformation(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = [16 / 12]
+fisherinformation(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = SA[16 / 12]
 function fisherinformation(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
     λ = succprob(dist)
     m = mean(dist)
     tmp1 = (2 - 4λ) * atanh(1 - 2λ) - 1
     tmp2 = 4 * (λ - 1)^2 * λ^2 * (atanh(1 - 2λ)^2)
-    return [m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2]
+    return SA[m / λ^2 + (1 - m) / (1 - λ)^2 - 4 / (1 - 2λ)^2 - tmp1 / tmp2]
 end
 
 function support(::Union{<:KnownExponentialFamilyDistribution{ContinuousBernoulli}, <:ContinuousBernoulli})

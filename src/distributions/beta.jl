@@ -4,6 +4,7 @@ import Distributions: Beta, params
 import SpecialFunctions: digamma, logbeta, loggamma, trigamma
 import StatsFuns: betalogpdf
 using StaticArrays
+using LogExpFunctions
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 
@@ -44,7 +45,7 @@ end
 
 function isproper(ef::KnownExponentialFamilyDistribution{Beta})
     αm1,βm1 = unpack_naturalparameters(ef)
-    return ((αm1 + oneunit(αm1)) > zero(αm1)) && ((βm1 + oneunit(βm1)) > zero(βm1))
+    return ((αm1 + one(αm1)) > zero(αm1)) && ((βm1 + one(βm1)) > zero(βm1))
 end
 
 function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Beta)
@@ -53,7 +54,7 @@ end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Beta})
     αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
-    return Beta(αm1 + oneunit(αm1), βm1 + oneunit(βm1), check_args = false)
+    return Beta(αm1 + one(αm1), βm1 + one(βm1), check_args = false)
 end
 
 check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
@@ -61,19 +62,19 @@ check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) 
     αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
     return logbeta(
-        αm1 + one(Float64),
-        βm1 + one(Float64)
+        αm1 + one(αm1),
+        βm1 + one(βm1)
     )
 end
 function support(::KnownExponentialFamilyDistribution{Beta})
     return ClosedInterval{Real}(zero(Float64), one(Float64))
 end
 
-function basemeasure(::KnownExponentialFamilyDistribution{Beta}, x)
+function basemeasure(::KnownExponentialFamilyDistribution{Beta}, x::Real)
     @assert Distributions.insupport(Beta, x) "basemeasure for Beta should be evaluated at positive values"
-    return one(typeof(x))
+    return one(x)
 end
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Beta}, x)
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Beta}, x::Real)
     @assert insupport(ef, x) "sufficientstatistics for Beta should be evaluated at positive values"
     return  SA[log(x), log(one(x) - x)]
 end
@@ -84,7 +85,7 @@ function fisherinformation(dist::Beta)
     psib = trigamma(b)
     psiab = trigamma(a + b)
 
-    return [psia-psiab -psiab; -psiab psib-psiab]
+    return SA[psia-psiab -psiab; -psiab psib-psiab]
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{Beta})
@@ -93,5 +94,5 @@ function fisherinformation(ef::KnownExponentialFamilyDistribution{Beta})
     psia = trigamma(η1 + one(typeof(η1)))
     psib = trigamma(η2 + one(typeof(η2)))
     psiab = trigamma(η1 + η2 + 2)
-    return [psia-psiab -psiab; -psiab psib-psiab]
+    return SA[psia-psiab -psiab; -psiab psib-psiab]
 end

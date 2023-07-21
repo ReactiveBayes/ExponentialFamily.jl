@@ -2,6 +2,7 @@ export Erlang
 
 import SpecialFunctions: logfactorial, digamma
 import Distributions: Erlang, shape, scale, cov
+using StaticArrays
 
 Distributions.cov(dist::Erlang) = var(dist)
 
@@ -46,26 +47,27 @@ end
 
 support(::KnownExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Erlang}, x)
+function basemeasure(ef::KnownExponentialFamilyDistribution{Erlang}, x::Real)
     @assert insupport(ef, x) "Erlang base measure should be evaluated at positive values"
-    return one(typeof(x))
+    return one(x)
 end
 function fisherinformation(ef::KnownExponentialFamilyDistribution)
     η = getnaturalparameters(ef)
     η1 = first(η)
     η2 = getindex(η, 2)
+    miη2 =-inv(η2)
 
-    return [trigamma(η1) -inv(η2); -inv(η2) (η1+1)/(η2^2)]
+    return SA[trigamma(η1) miη2; miη2 (η1+1)/(η2^2)]
 end
 
 function fisherinformation(dist::Erlang)
     k = shape(dist)
     λ = rate(dist)
 
-    return [trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
+    return SA[trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Erlang}, x)
+function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Erlang}, x::Real)
     @assert insupport(ef, x) "Erlang sufficientstatistics should be evaluated at positive values"
-    return [log(x), x]
+    return SA[log(x), x]
 end

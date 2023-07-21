@@ -2,6 +2,7 @@ export Chisq
 
 import SpecialFunctions: loggamma
 import Distributions: Chisq, params, dof, var
+using StaticArrays
 const log2 = log(2)
 const minushalf = - 1/2
 
@@ -26,7 +27,7 @@ function Base.prod(
 
     naturalparameters = η_left + η_right
     basemeasure = (x) -> exp(-x)
-    sufficientstatistics = (x) -> log(x)
+    sufficientstatistics = (x) -> SA[log(x)]
     logpartition = (η) -> loggamma(η[1] + 1)
     supp = Distributions.support(T)
 
@@ -89,14 +90,14 @@ function basemeasure(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
 end
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
     η = unpack_naturalparameters(exponentialfamily)
-    return [trigamma(η + one(η))]
+    return SA[trigamma(η + one(η))]
 end
 
 function fisherinformation(dist::Chisq)
-    return [trigamma(dof(dist) / 2) / 4]
+    return SA[trigamma(dof(dist) / 2) / 4]
 end
 
 function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Chisq}, x::Real)
     @assert insupport(ef, x) "$(x) is not in the support"
-    return log(x)
+    return SA[log(x)]
 end
