@@ -4,6 +4,7 @@ import SpecialFunctions: loggamma, digamma
 import Distributions: shape, scale, cov
 import StatsFuns: log2π
 using IntervalSets
+using StaticArrays
 
 const GammaShapeScale             = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
@@ -87,30 +88,34 @@ end
 
 check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params) === 2)
 
+pack_naturalparameters(dist::GammaDistributionsFamily) = [shape(dist) - one(Float64), -rate(dist)]
+
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+    η = getnaturalparameters(ef)
+    @inbounds η1 = η[1]
+    @inbounds η2 = η[2]
+
+    return η1, η2
+end
+
 function Base.convert(
     ::Type{Distribution},
     exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}
 )
-    η = getnaturalparameters(exponentialfamily)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+    η1,η2 = unpack_naturalparameters(exponentialfamily)
     return GammaShapeRate(η1 + one(η1), -η2)
 end
 
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::GammaDistributionsFamily) =
-    KnownExponentialFamilyDistribution(GammaShapeRate, [shape(dist) - one(Float64), -rate(dist)])
+    KnownExponentialFamilyDistribution(GammaShapeRate, pack_naturalparameters(dist))
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
-    η = getnaturalparameters(exponentialfamily)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+    η1, η2 = unpack_naturalparameters(exponentialfamily)
     return loggamma(η1 + one(η1)) - (η1 + one(η1)) * log(-η2)
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
-    η = getnaturalparameters(exponentialfamily)
-    a = first(η)
-    b = getindex(η, 2)
+    a, b = unpack_naturalparameters(exponentialfamily)
     return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
@@ -122,7 +127,7 @@ function sufficientstatistics(
     x::Real
 )
     @assert insupport(ef, x) "Gamma sufficients statistics should be evaluated at values greater than 0"
-    return [log(x), x]
+    return SA[log(x), x]
 end
 
 function basemeasure(
@@ -130,25 +135,23 @@ function basemeasure(
     x::Real
 )
     @assert insupport(ef, x) "Gamma base measure should be evaluated at values greater than 0"
-    return one(typeof(x))
+    return one(x)
 end
 
 function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
-    η = getnaturalparameters(exponentialfamily)
-    η1 = first(η)
-    η2 = getindex(η, 2)
-    return [trigamma(η1 + one(η1)) -one(η2)/η2; -one(η2)/η2 (η1+one(η1))/(η2^2)]
+    η1, η2 = unpack_naturalparameters(exponentialfamily)
+    return SA[trigamma(η1 + one(η1)) -one(η2)/η2; -one(η2)/η2 (η1+one(η1))/(η2^2)]
 end
 
 function fisherinformation(dist::GammaShapeScale)
-    return [
+    return SA[
         trigamma(shape(dist)) one(scale(dist))/scale(dist)
         one(scale(dist))/scale(dist) shape(dist)/(scale(dist)^2)
     ]
 end
 
 function fisherinformation(dist::GammaShapeRate)
-    return [
+    return SA[
         trigamma(shape(dist)) -one(rate(dist))/rate(dist)
         -one(rate(dist))/rate(dist) shape(dist)/(rate(dist)^2)
     ]
