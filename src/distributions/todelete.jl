@@ -18,7 +18,7 @@ ExponentialFamily.support(ef)
 @btime sufficientstatistics($ef,$[1,2])
 @btime pdf($ef, $[1,2])
 @btime fisherinformation($dist)
-@btime pdf($dist, $[1,2,1])
+@btime pdf($dist, $[1,2])
 using StaticArrays
 dot([1], SA[1])
 @btime log(logistic(η))
@@ -78,3 +78,7 @@ OneElement(1, (1,1),(5,5))
 @btime vreduce(+, $[1,2,3])
 
 Fill(d -> exp, [1,2,3], (3,3))
+
+Distributions.sqmahal([1 0; 0 1],zeros(2))
+
+SVector{4}(vcat([1,0],[2 ,1]))

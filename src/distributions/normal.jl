@@ -462,8 +462,8 @@ function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Multi
     len = length(η)
     n = Int64((-1 + isqrt(1 + 4*len)) / 2)
 
-    @inbounds η1 = η[1:n]
-    η2 = reshape(view(η, n+1:len), n, n)
+    @inbounds η1 = view(η,1:n)
+    @inbounds η2 = reshape(view(η, n+1:len), n, n)
 
     return η1, η2
 end
@@ -500,7 +500,8 @@ end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
     weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
+    # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
+    return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*LOG2)* HALF
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
