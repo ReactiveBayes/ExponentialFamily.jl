@@ -1,7 +1,8 @@
 using Distributions, BenchmarkTools, FillArrays
 using ExponentialFamily
-import ExponentialFamily:ContinuousBernoulli,Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
-dist = Multinomial(4,[0.1, 0.2, 0.7])
+import ExponentialFamily:ContinuousBernoulli, MvNormalMeanCovariance,NormalGamma,Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
+import ExponentialFamily: isproper
+dist = MvNormalMeanCovariance([1,2], [0.1 -0.2;-0.2 0.9])
 ef = convert(KnownExponentialFamilyDistribution, dist)
 # ef = KnownExponentialFamilyDistribution(LogNormal,[22,-3],nothing,Unsafe())
 @btime pack_naturalparameters($dist)
@@ -10,12 +11,12 @@ ef = convert(KnownExponentialFamilyDistribution, dist)
 @code_warntype logpartition(ef)
 @code_lowered logpartition(ef)
 @btime logpartition($ef)
-
+isproper(ef)
 ExponentialFamily.support(ef)
 @btime ExponentialFamily.insupport($ef, $0.2)
 @btime basemeasure($ef, $[1,2,1])
-@btime sufficientstatistics($ef,$[1,2,1])
-@btime pdf($ef, $[1,2,1])
+@btime sufficientstatistics($ef,$[1,2])
+@btime pdf($ef, $[1,2])
 @btime fisherinformation($dist)
 @btime pdf($dist, $[1,2,1])
 using StaticArrays
@@ -70,4 +71,10 @@ vcat([1],[2])
 @btime exp.($[1,2,3])
 @btime @.exp($[1,2,3])
 @btime vmap(exp,$[1,2,3])
+@btime vmap(exp, $[1,2,3])
 OneElement(1, (1,1),(5,5))
+
+@btime sum($[1,2,3])
+@btime vreduce(+, $[1,2,3])
+
+Fill(d -> exp, [1,2,3], (3,3))

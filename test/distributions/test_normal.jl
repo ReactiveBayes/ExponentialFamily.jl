@@ -7,10 +7,12 @@ using Distributions
 using ForwardDiff
 using Random
 using StableRNGs
+using Zygote
+using SparseArrays
 
 import ExponentialFamily:
     ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
-    basemeasure, fisherinformation
+    basemeasure, fisherinformation,getnaturalparameters
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -319,7 +321,7 @@ import ExponentialFamily:
             for i in 1:10
                 @test convert(
                     Distribution,
-                    KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
+                    KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
                 ) ==
                       MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
@@ -329,14 +331,14 @@ import ExponentialFamily:
                 ) ≈
                       KnownExponentialFamilyDistribution(
                     MvGaussianWeightedMeanPrecision,
-                    [float([i, 0]), float([-i 0; 0 -i])]
+                    vcat(float([i, 0]), float(vec([-i 0; 0 -i])))
                 )
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                mv_np = KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, [[i, 0], [-i 0; 0 -i]])
+                mv_np = KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
                 distribution = MvGaussianWeightedMeanPrecision([i, 0.0], [2*i -0.0; -0.0 2*i])
                 @test logpdf(distribution, [0.0, 0.0]) ≈ logpdf(mv_np, [0.0, 0.0])
                 @test logpdf(distribution, [1.0, 0.0]) ≈ logpdf(mv_np, [1.0, 0.0])
@@ -351,22 +353,21 @@ import ExponentialFamily:
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]])) ===
-                      true
-                @test isproper(KnownExponentialFamilyDistribution(MvNormalMeanCovariance, [[i, 0], [i 0; 0 i]])) ===
-                      false
+                efproper = KnownExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i])))
+                efimproper = KnownExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([i 0; 0 i])))
+                @test isproper(efproper) === true
+                @test isproper(efimproper) === false
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
                 @test basemeasure(
-                    KnownExponentialFamilyDistribution(MvNormalMeanCovariance, [[i, 0], [-i 0; 0 -i]]),
-                    rand(2)
-                ) ==
-                      1 / (2pi)
+                    KnownExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i]))),
+                    rand(2)) == (2pi)^(-1)              
             end
         end
+   
     end
 end
 
