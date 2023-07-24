@@ -3,8 +3,7 @@ export Chisq
 import SpecialFunctions: loggamma
 import Distributions: Chisq, params, dof, var
 using StaticArrays
-const log2 = log(2)
-const minushalf = - 1/2
+
 
 Distributions.cov(dist::Chisq) = var(dist)
 
@@ -63,7 +62,7 @@ function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Chis
     η = unpack_naturalparameters(exponentialfamily)
     o = one(η)
     
-    return loggamma(η + o) + (η + o) * log2
+    return loggamma(η + o) + (η + o) * LOG2
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Chisq})
@@ -77,7 +76,7 @@ struct ClosedChi end
 support(ef::KnownExponentialFamilyDistribution{Chisq}) = support(ef,check_boundaries(ef))
 support(::KnownExponentialFamilyDistribution{Chisq},::OpenChi) = OpenInterval{Real}(0, Inf)
 support(::KnownExponentialFamilyDistribution{Chisq},::ClosedChi) = ClosedInterval{Real}(0, Inf)
-check_boundaries(ef::KnownExponentialFamilyDistribution{Chisq}) = unpack_naturalparameters(ef) == minushalf ? OpenChi() : ClosedChi()
+check_boundaries(ef::KnownExponentialFamilyDistribution{Chisq}) = unpack_naturalparameters(ef) == MINUSHALF ? OpenChi() : ClosedChi()
 
 support(dist::Chisq) = support(dist,check_boundaries(dist))
 support(::Chisq,::OpenChi) = OpenInterval{Real}(0, Inf)
