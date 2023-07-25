@@ -3,6 +3,7 @@ export Poisson
 import SpecialFunctions: besseli
 import Distributions: Poisson, shape, scale, cov
 using DomainSets
+using StaticArrays
 
 Distributions.cov(dist::Poisson) = var(dist)
 
@@ -18,7 +19,7 @@ function Base.prod(
 
     naturalparameters = η_left + η_right
     basemeasure = (x) -> 1 / factorial(x)^2
-    sufficientstatistics = (x) -> x
+    sufficientstatistics = (x) -> SA[x]
     logpartition = (η) -> log(abs(besseli(0, 2 * exp(η / 2))))
     supp = DomainSets.NaturalNumbers()
 
@@ -47,26 +48,33 @@ end
 
 check_valid_natural(::Type{<:Poisson}, params) = isequal(length(params), 1)
 
+pack_naturalparameters(dist::Poisson) = [log(rate(dist))]
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Poisson})
+    η = getnaturalparameters(ef)
+    @inbounds η1 = η[1]
+    return η1
+end
+
 Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Poisson) =
-    KnownExponentialFamilyDistribution(Poisson, log(rate(dist)))
+    KnownExponentialFamilyDistribution(Poisson, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Poisson})
-    η = getnaturalparameters(exponentialfamily)
+    η = unpack_naturalparameters(exponentialfamily)
     return Poisson(exp(η))
 end
 
 logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
-    exp(getnaturalparameters(exponentialfamily))
+    exp(unpack_naturalparameters(exponentialfamily))
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson})
-    η = getnaturalparameters(exponentialfamily)
+    η = unpack_naturalparameters(exponentialfamily)
     η isa Number && !isnan(η) && !isinf(η)
 end
 
 fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
-    exp(getnaturalparameters(exponentialfamily))
+    [exp(unpack_naturalparameters(exponentialfamily))]
 
-fisherinformation(dist::Poisson) = 1 / rate(dist)
+fisherinformation(dist::Poisson) = [1 / rate(dist)]
 
 function support(::KnownExponentialFamilyDistribution{Poisson})
     return DomainSets.NaturalNumbers()
@@ -74,10 +82,10 @@ end
 
 function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Poisson"
-    return one(typeof(x)) / factorial(x)
+    return one(x) / factorial(x)
 end
 
 function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Poisson"
-    return x
+    return SA[x]
 end
