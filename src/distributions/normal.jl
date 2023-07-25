@@ -567,7 +567,7 @@ end
 sufficientstatistics(
     ::KnownExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
     x::Vector{T}
-) where {T} = vcat(x, vec(kron(x,x)))
+) where {T} = vcat(x, kron(x,x))
 
 sufficientstatistics(
     ::KnownExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},

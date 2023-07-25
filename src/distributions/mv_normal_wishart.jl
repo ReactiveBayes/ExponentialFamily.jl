@@ -28,67 +28,79 @@ invscatter(d::MvNormalWishart) = cholinv(getindex(params(d), 2))
 scale(d::MvNormalWishart) = getindex(params(d), 3)
 dof(d::MvNormalWishart) = getindex(params(d), 4)
 dim(d::MvNormalWishart) = length(d.μ)
-dim(ef::KnownExponentialFamilyDistribution{MvNormalWishart}) = length(getindex(getnaturalparameters(ef), 1))
+function dim(ef::KnownExponentialFamilyDistribution{MvNormalWishart}) 
+    len = length(getnaturalparameters(ef))
+
+    return Int64((-1 + isqrt(1 - 4*(2-len)))/2)
+end
 
 closed_prod_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = ClosedProd()
 
-check_valid_natural(::Type{<:MvNormalWishart}, params) = length(params) === 4
+function check_valid_natural(::Type{<:MvNormalWishart}, params) 
+    return length(params) >= 4 && length(params) % 2 == 0
+end
 
 function Distributions.pdf(dist::MvNormalWishart, x)
     ef = convert(KnownExponentialFamilyDistribution, dist)
     η = getnaturalparameters(ef)
     suffs = sufficientstatistics(ef)(first(x), getindex(x, 2))
-    return basemeasure(dist, x) * exp(mapreduce(d -> tr(η[d]' * suffs[d]), +, 1:4) - logpartition(ef))
+    return basemeasure(dist, x) * exp(dot(η,suffs) - logpartition(ef))
 end
 
 Distributions.logpdf(dist::MvNormalWishart, x) = log(pdf(dist, x))
 
 sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}) =
-    (x, Λ) -> [Λ * x, Λ, x' * Λ * x, chollogdet(Λ)]
+    (x, Λ) -> vcat(Λ * x,vec(Λ), dot(x, Λ , x), logdet(Λ))
 
 sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}, x) =
-    sufficientstatistics(union)(x...)
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MvNormalWishart)
+    sufficientstatistics(union)(x[1],x[2])
+
+function pack_naturalparameters(dist::MvNormalWishart)
     μ, Ψ, κ, ν = params(dist)
     η1 = κ * μ
-    η2 = (-1 / 2) * (inv(Ψ) + κ * μ * μ')
+    η2 = (-1 / 2) * (vec(cholinv(Ψ)) + κ*kron( μ, μ))
     η3 = -κ / 2
     η4 = (ν - dim(dist)) / 2
-    η = [η1, η2, η3, η4]
+    return  vcat(η1, η2, η3, η4)
 
-    return KnownExponentialFamilyDistribution(MvNormalWishart, η)
 end
+
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:MvNormalWishart})
+    η = getnaturalparameters(ef)
+    d = dim(ef)
+
+    @inbounds η1 = view(η, 1:d )
+    @inbounds η2 = reshape(view(η, d+1:d^2+d),d,d)
+    @inbounds η3 = η[d^2+d+1]
+    @inbounds η4 = η[d^2+d+2]
+
+
+    return η1, η2, η3, η4
+end
+
+
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MvNormalWishart) = KnownExponentialFamilyDistribution(MvNormalWishart, pack_naturalparameters(dist))
+ 
 function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MvNormalWishart})
     d = dim(exponentialfamily)
-    η = getnaturalparameters(exponentialfamily)
-    η1 = first(η)
-    η2 = getindex(η, 2)
-    η3 = getindex(η, 3)
-    η4 = getindex(η, 4)
-    return MvNormalWishart(-η1 / (2 * η3), inv(-2 * η2 + η1 * η1' / (2 * η3)), -2 * η3, d + 2 * η4)
+    η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
+    return MvNormalWishart(-HALF* η1 / η3, cholinv(-2 * η2 + HALF*η1*η1' / (η3)), -2 * η3, d + 2 * η4)
 end
 
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MvNormalWishart})
     d = dim(exponentialfamily)
-    η = getnaturalparameters(exponentialfamily)
-    η1 = first(η)
-    η2 = getindex(η, 2)
-    η3 = getindex(η, 3)
-    η4 = getindex(η, 4)
+    η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
 
-    term1 = -(d / 2) * log(-2 * (η3))
-    term2 = -((d + 2 * η4) / 2) * logdet(-2 * η2 + η1 * η1' / (2 * η3))
-    term3 = log(2) * d * (d + 2 * η4) / 2
-    term4 = logmvgamma(d, (d + 2 * η4) / 2)
+    term1 = -(d * HALF) * log(-2 * (η3))
+    term2 = -((d + 2 * η4) *HALF) * logdet(-2 * η2 + HALF*η1*η1'  / (η3))
+    term3 = LOG2 * d * (d + 2 * η4) * HALF
+    term4 = logmvgamma(d, (d + 2 * η4) * HALF)
 
     return (term1 + term2 + term3 + term4)
 end
 
 function isproper(exponentialfamily::KnownExponentialFamilyDistribution{MvNormalWishart})
-    η = getnaturalparameters(exponentialfamily)
-    η2 = getindex(η, 2)
-    η3 = getindex(η, 3)
-    η4 = getindex(η, 4)
+    _, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
     return isposdef(-η2) && η3 > 0 && η4 < 0
 end
 

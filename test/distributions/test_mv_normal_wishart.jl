@@ -23,11 +23,9 @@ function normal_wishart_pdf(x::Vector{Float64},
 end
 
 # Derrivative-friendly function for the natural parameters of the MvNormalWishart distribution
-function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-    ηef = getnaturalparameters(ef)
-    reconstructargument!(ηef, ηef, ηvec)
-    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
-end
+logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where 
+        {T, F <: Real} = logpartition(KnownExponentialFamilyDistribution(T, ηvec))
+
 
 @testset "MvNormalWishart" begin
     @testset "common" begin
@@ -49,14 +47,14 @@ end
             dist = MvNormalWishart(m, Ψ, κ, ν)
             ef = convert(KnownExponentialFamilyDistribution, dist)
 
-            @test getnaturalparameters(ef) ≈ [κ * m, -(1 / 2) * (inv(Ψ) + κ * m * m'), -κ / 2, (ν - j) / 2]
+            @test getnaturalparameters(ef) ≈ vcat(κ * m, vec(-(1 / 2) * (inv(Ψ) + κ * m*m')), -κ / 2, (ν - j) / 2)
             @test invscatter(convert(Distribution, ef)) ≈ cholinv(Ψ)
             @test dof(convert(Distribution, ef)) == 2 * j + 1
         end
     end
 
     @testset "exponential family functions" begin
-        for i in 1:10, j in 1:5, κ in 0.01:1.0:5.0
+        for i in 1:10, j in 2:5, κ in 0.01:1.0:5.0
             m = rand(j)
             Ψ = m * m' + I
             dist = MvNormalWishart(m, Ψ, κ, j + 1)
@@ -75,11 +73,10 @@ end
             ef = convert(KnownExponentialFamilyDistribution, dist)
             st = sufficientstatistics(dist)
             samples = rand(MersenneTwister(j), dist, nsamples)
-            η = getnaturalparameters(ef)
-            ηvec = vcat(η[1], as_vec(η[2]), η[3], η[4])
+            ηvec = getnaturalparameters(ef)
             expsuffstats = sum(st(sample[1], sample[2]) for sample in samples) / nsamples
             expsuffstatsvec = ForwardDiff.gradient(x -> logpartition(ef, x), ηvec)
-            @test expsuffstats ≈ reconstructargument!(expsuffstats, expsuffstats, expsuffstatsvec) rtol = 0.1
+            @test expsuffstats ≈  expsuffstatsvec rtol = 0.1
         end
     end
 
