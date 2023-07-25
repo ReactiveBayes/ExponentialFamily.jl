@@ -501,7 +501,8 @@ end
 function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
     weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
     # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
-    return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*LOG2)* HALF
+    # return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*LOG2)* HALF
+    return (dot(weightedmean,cholinv(-minushalfprecision),weightedmean)*HALF - (logdet(minushalfprecision) + length(weightedmean)*LOG2))* HALF
 end
 
 isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
@@ -566,7 +567,7 @@ end
 sufficientstatistics(
     ::KnownExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
     x::Vector{T}
-) where {T} = vcat(x, vec(x * x'))
+) where {T} = vcat(x, vec(kron(x,x)))
 
 sufficientstatistics(
     ::KnownExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
