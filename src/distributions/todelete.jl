@@ -2,7 +2,7 @@ using Distributions, BenchmarkTools, FillArrays
 using ExponentialFamily
 import ExponentialFamily:ContinuousBernoulli, MvNormalMeanCovariance,NormalGamma,Contingency, MatrixDirichlet, KnownExponentialFamilyDistribution,getnaturalparameters,pack_naturalparameters,unpack_naturalparameters,logpartition,basemeasure,sufficientstatistics,fisherinformation, Unsafe,support
 import ExponentialFamily: isproper
-dist = MvNormalMeanCovariance([1,2], [0.1 -0.2;-0.2 0.9])
+dist = Pareto(2,1)
 ef = convert(KnownExponentialFamilyDistribution, dist)
 # ef = KnownExponentialFamilyDistribution(LogNormal,[22,-3],nothing,Unsafe())
 @btime pack_naturalparameters($dist)
@@ -14,11 +14,11 @@ ef = convert(KnownExponentialFamilyDistribution, dist)
 isproper(ef)
 ExponentialFamily.support(ef)
 @btime ExponentialFamily.insupport($ef, $0.2)
-@btime basemeasure($ef, $[1,2])
-@btime sufficientstatistics($ef,$[1,2])
-@btime pdf($ef, $[1,2])
+@btime basemeasure($ef, $1)
+@btime sufficientstatistics($ef,$1)
+@btime pdf($ef, $1)
 @btime fisherinformation($dist)
-@btime pdf($dist, $[1,2])
+@btime pdf($dist, $1)
 @btime pdf($MvNormal([$1,2], $[0.1 -0.2;-0.2 0.9]),$[1,2])
 using StaticArrays
 dot([1], SA[1])
