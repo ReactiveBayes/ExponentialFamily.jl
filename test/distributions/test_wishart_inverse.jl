@@ -13,17 +13,16 @@ import ExponentialFamily: InverseWishartImproper, KnownExponentialFamilyDistribu
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
-function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-    ηef = getnaturalparameters(ef)
-    reconstructargument!(ηef, ηef, ηvec)
-    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+function logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+
+    return logpartition(KnownExponentialFamilyDistribution(T, ηvec))
 end
 
 function transformation(params)
     η1, η2 = params[1], params[2:end]
     p = Int(sqrt(length(η2)))
     η2 = reshape(η2, (p, p))
-    return [-(2 * η1 + p + 1); as_vec(-2 * η2)]
+    return [-(2 * η1 + p + 1); vec(-2 * η2)]
 end
 
 @testset "InverseWishartImproper" begin
@@ -184,14 +183,14 @@ end
             for i in 1:10
                 @test convert(
                     Distribution,
-                    KnownExponentialFamilyDistribution(InverseWishartImproper, [-3.0, [-i 0.0; 0.0 -i]])
+                    KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(-3.0, vec([-i 0.0; 0.0 -i])))
                 ) ≈ InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = KnownExponentialFamilyDistribution(InverseWishartImproper, [-3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(-3.0, vec([-i 0.0; 0.0 -i])))
                 distribution = InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -201,18 +200,18 @@ end
 
         @testset "logpartition" begin
             @test logpartition(
-                KnownExponentialFamilyDistribution(InverseWishartImproper, [-3.0, [-1.0 0.0; 0.0 -1.0]])
+                KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(-3.0, vec([-1.0 0.0; 0.0 -1.0])))
             ) ≈
                   logmvgamma(2, 1.5)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]])) ===
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([-i 0.0; 0.0 -i])))) ===
                       false
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [i 0.0; 0.0 -i]])) ===
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([i 0.0; 0.0 -i])))) ===
                       false
-                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, [-1.0, [-i 0.0; 0.0 -i]])) ===
+                @test isproper(KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(-1.0, vec([-i 0.0; 0.0 -i])))) ===
                       true
             end
         end
@@ -220,12 +219,12 @@ end
         @testset "basemeasure" begin
             for i in 1:10
                 @test_throws AssertionError basemeasure(
-                    KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
+                    KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([-i 0.0; 0.0 -i]))),
                     rand(3, 3)
                 ) == 1
                 L = rand(2, 2)
                 @test basemeasure(
-                    KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [-i 0.0; 0.0 -i]]),
+                    KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([-i 0.0; 0.0 -i]))),
                     L * L'
                 ) == 1.0
             end
@@ -233,11 +232,11 @@ end
 
         @testset "base operations" begin
             for i in 1:10
-                np1 = KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [i 0.0; 0.0 i]])
-                np2 = KnownExponentialFamilyDistribution(InverseWishartImproper, [3.0, [2i 0.0; 0.0 2i]])
+                np1 = KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([i 0.0; 0.0 i])))
+                np2 = KnownExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([2i 0.0; 0.0 2i])))
                 @test prod(np1, np2) == KnownExponentialFamilyDistribution(
                     InverseWishartImproper,
-                    [3.0, [i 0.0; 0.0 i]] + [3.0, [2i 0.0; 0.0 2i]]
+                    vcat(3.0, vec([i 0.0; 0.0 i])) + vcat(3.0, vec([2i 0.0; 0.0 2i]))
                 )
             end
         end
@@ -250,8 +249,7 @@ end
                     A = L * L' + 1e-8 * diageye(d)
                     dist = InverseWishart(df, A)
                     ef = convert(KnownExponentialFamilyDistribution, dist)
-                    η = getnaturalparameters(ef)
-                    η_vec = vcat(η[1], as_vec(η[2]))
+                    η_vec = getnaturalparameters(ef)
                     fef = fisherinformation(ef)
                     fdist = fisherinformation(dist)
 
