@@ -9,17 +9,25 @@ closed_prod_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ClosedProd()
 
 isproper(params::KnownExponentialFamilyDistribution{VonMises}) = true
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::VonMises)
+function pack_naturalparameters(dist::VonMises)
     μ, κ = params(dist)
-    KnownExponentialFamilyDistribution(VonMises, [κ * cos(μ), κ * sin(μ)])
+    return [κ * cos(μ), κ * sin(μ)]
 end
 
-function Base.convert(::Type{Distribution}, ef::KnownExponentialFamilyDistribution{VonMises})
-    params = getnaturalparameters(ef)
-    κcosμ  = first(params)
+function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:VonMises})
+    η = getnaturalparameters(ef)
+    @inbounds η1 = η[1]
+    @inbounds η2 = η[2]
 
-    κ = sqrt(params' * params)
-    μ = acos(κcosμ / κ)
+    return η1, η2
+end
+
+Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::VonMises) = KnownExponentialFamilyDistribution(VonMises, pack_naturalparameters(dist))
+    
+function Base.convert(::Type{Distribution}, ef::KnownExponentialFamilyDistribution{VonMises})
+    η1, η2 = unpack_naturalparameters(ef)
+    κ = sqrt(η1^2 + η2^2)
+    μ = acos(η1 / κ)
     return VonMises(μ, κ)
 end
 
@@ -40,10 +48,8 @@ function fisherinformation(dist::VonMises)
 end
 
 function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMises})
-    η = getnaturalparameters(ef)
-    η1 = getindex(η, 1)
-    η2 = getindex(η, 2)
-    u = sqrt(η' * η)
+    η1,η2 = unpack_naturalparameters(ef)
+    u = sqrt(η1^2 + η2^2)
     bessel0 = besseli(0, u)
     bessel1 = besseli(1, u)
     bessel2 = (1 / 2) * (besseli(0, u) + besseli(2, u))
