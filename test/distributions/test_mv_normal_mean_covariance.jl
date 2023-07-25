@@ -112,13 +112,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "fisherinformation" begin
-        function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
-            natural_params = getnaturalparameters(ef)
-            mean_size = length(natural_params[1])
-            @views wmean = ηvec[1:mean_size]
-            @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
-            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
-            return logpartition(ef)
+        function reconstructed_logpartition(::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+
+            return logpartition(KnownExponentialFamilyDistribution(T, ηvec))
         end
 
         function transformation(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
@@ -148,7 +144,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             Σ = L * L'
             dist = MvNormalMeanCovariance(μ, Σ)
             ef = convert(KnownExponentialFamilyDistribution, dist)
-            v = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
+            v = getnaturalparameters(ef)
             fi_ag = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), v)
             # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
             # The matrices are identical up to permutations, resulting in eigenvalues that are the same up to a sign.
