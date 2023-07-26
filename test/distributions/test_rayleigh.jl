@@ -8,7 +8,7 @@ using ForwardDiff
 using DomainSets
 using StableRNGs
 
-import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
+import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialFamilyDistribution, logpartition,
     basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation, support
 
 @testset "Rayleigh" begin
@@ -36,47 +36,47 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
     @testset "natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, KnownExponentialFamilyDistribution(Rayleigh, [-i])) ==
+                @test convert(Distribution, ExponentialFamilyDistribution(Rayleigh, [-i])) ==
                       Rayleigh(sqrt(1 / 2i))
 
-                @test convert(KnownExponentialFamilyDistribution, Rayleigh(i)) ==
-                      KnownExponentialFamilyDistribution(Rayleigh, [-1 / (2i^2)])
+                @test convert(ExponentialFamilyDistribution, Rayleigh(i)) ==
+                      ExponentialFamilyDistribution(Rayleigh, [-1 / (2i^2)])
             end
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(Rayleigh, [-1.0])) ≈ -log(2)
-            @test logpartition(KnownExponentialFamilyDistribution(Rayleigh, [-2.0])) ≈ -log(4)
+            @test logpartition(ExponentialFamilyDistribution(Rayleigh, [-1.0])) ≈ -log(2)
+            @test logpartition(ExponentialFamilyDistribution(Rayleigh, [-2.0])) ≈ -log(4)
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                @test logpdf(KnownExponentialFamilyDistribution(Rayleigh, [-i]), 0.01) ≈
+                @test logpdf(ExponentialFamilyDistribution(Rayleigh, [-i]), 0.01) ≈
                       logpdf(Rayleigh(sqrt(1 / 2i)), 0.01)
-                @test logpdf(KnownExponentialFamilyDistribution(Rayleigh, [-i]), 0.5) ≈
+                @test logpdf(ExponentialFamilyDistribution(Rayleigh, [-i]), 0.5) ≈
                       logpdf(Rayleigh(sqrt(1 / 2i)), 0.5)
             end
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(Rayleigh, [-i])) === true
-                @test isproper(KnownExponentialFamilyDistribution(Rayleigh, [i])) === false
+                @test isproper(ExponentialFamilyDistribution(Rayleigh, [-i])) === true
+                @test isproper(ExponentialFamilyDistribution(Rayleigh, [i])) === false
             end
         end
 
         @testset "basemeasure" begin
             for (i) in (1:10)
-                @test basemeasure(KnownExponentialFamilyDistribution(Rayleigh, [-i]), i^2) == i^2
+                @test basemeasure(ExponentialFamilyDistribution(Rayleigh, [-i]), i^2) == i^2
             end
         end
         transformation(η) = sqrt(-1 / (2η[1]))
         @testset "fisher information" begin
             for λ in 1:10
                 dist = Rayleigh(λ)
-                ef = convert(KnownExponentialFamilyDistribution, dist)
+                ef = convert(ExponentialFamilyDistribution, dist)
                 η = getnaturalparameters(ef)
-                f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Rayleigh, η))
+                f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Rayleigh, η))
                 autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
                 @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
                 J = ForwardDiff.gradient(transformation, η)
@@ -85,11 +85,11 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, KnownExponen
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean, var" begin
+    @testset "ExponentialFamilyDistribution mean, var" begin
         for λ in 1:10
             dist = Rayleigh(λ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

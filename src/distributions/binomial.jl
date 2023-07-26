@@ -15,23 +15,23 @@ function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) 
     return Binomial(n, convert(AbstractVector{T}, p))
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Binomial, P, C, Safe}, x) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{Binomial, P, C, Safe}, x) where {P, C}
     return x ∈ ClosedInterval{Int}(0, getconditioner(ef)) && typeof(x) <: Int
 end
 
 closed_prod_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
-    efleft = convert(KnownExponentialFamilyDistribution, left)
-    efright = convert(KnownExponentialFamilyDistribution, right)
+    efleft = convert(ExponentialFamilyDistribution, left)
+    efright = convert(ExponentialFamilyDistribution, right)
 
     return prod(efleft, efright)
 end
 
 function Base.prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T <: Binomial}
     left_trials, right_trials = getconditioner(left), getconditioner(right)
 
@@ -63,17 +63,17 @@ function pack_naturalparameters(dist::Binomial)
     return [logit(dist.p)]
 end
 
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Binomial})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Binomial})
     vectorized = getnaturalparameters(ef)
     @inbounds η1 = vectorized[1] 
     return η1
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Binomial)
-    return KnownExponentialFamilyDistribution(Binomial, pack_naturalparameters(dist), dist.n)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Binomial)
+    return ExponentialFamilyDistribution(Binomial, pack_naturalparameters(dist), dist.n)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Binomial})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Binomial})
     return Binomial(getconditioner(exponentialfamily), logistic(unpack_naturalparameters(exponentialfamily)))
 end
 
@@ -83,10 +83,10 @@ function check_valid_conditioner(::Type{<:Binomial}, conditioner)
     isinteger(conditioner) && conditioner > zero(conditioner)
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
+isproper(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
     getconditioner(exponentialfamily) > zero(Int64) ? true : false
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Binomial}) =
+logpartition(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
     getconditioner(exponentialfamily)log1pexp(unpack_naturalparameters(exponentialfamily))
 
 function fisherinformation(dist::Binomial)
@@ -94,7 +94,7 @@ function fisherinformation(dist::Binomial)
     return SA[n / (p * (1 - p))]
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{Binomial})
+function fisherinformation(ef::ExponentialFamilyDistribution{Binomial})
     η = unpack_naturalparameters(ef)
     aux = logistic(η)
     n = getconditioner(ef)
@@ -107,12 +107,12 @@ function basemeasure(dist::Binomial, x)
     return binomial(dist.n, x)
 end
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Binomial}, x)
+function basemeasure(ef::ExponentialFamilyDistribution{Binomial}, x)
     @assert insupport(ef, x)
     return binomial(getconditioner(ef), x)
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Binomial}, x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Binomial}, x)
     @assert insupport(ef, x)
     return SA[x]
 end

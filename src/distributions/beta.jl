@@ -36,45 +36,45 @@ function pack_naturalparameters(dist::Beta)
     return [a - oneunit(a), b - oneunit(b)]
 end
 
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Beta})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Beta})
     vectorized = getnaturalparameters(ef)
     @inbounds η1 = vectorized[1] 
     @inbounds η2 = vectorized[2]
     return η1, η2
 end
 
-function isproper(ef::KnownExponentialFamilyDistribution{Beta})
+function isproper(ef::ExponentialFamilyDistribution{Beta})
     αm1,βm1 = unpack_naturalparameters(ef)
     return ((αm1 + one(αm1)) > zero(αm1)) && ((βm1 + one(βm1)) > zero(βm1))
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Beta)
-    KnownExponentialFamilyDistribution(Beta, pack_naturalparameters(dist))
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Beta)
+    ExponentialFamilyDistribution(Beta, pack_naturalparameters(dist))
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Beta})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Beta})
     αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
     return Beta(αm1 + one(αm1), βm1 + one(βm1), check_args = false)
 end
 
 check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Beta}) 
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Beta}) 
     αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
     return logbeta(
         αm1 + one(αm1),
         βm1 + one(βm1)
     )
 end
-function support(::KnownExponentialFamilyDistribution{Beta})
+function support(::ExponentialFamilyDistribution{Beta})
     return ClosedInterval{Real}(zero(Float64), one(Float64))
 end
 
-function basemeasure(::KnownExponentialFamilyDistribution{Beta}, x::Real)
+function basemeasure(::ExponentialFamilyDistribution{Beta}, x::Real)
     @assert Distributions.insupport(Beta, x) "basemeasure for Beta should be evaluated at positive values"
     return one(x)
 end
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Beta}, x::Real)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Beta}, x::Real)
     @assert insupport(ef, x) "sufficientstatistics for Beta should be evaluated at positive values"
     return  SA[log(x), log(one(x) - x)]
 end
@@ -88,7 +88,7 @@ function fisherinformation(dist::Beta)
     return SA[psia-psiab -psiab; -psiab psib-psiab]
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{Beta})
+function fisherinformation(ef::ExponentialFamilyDistribution{Beta})
     η1, η2 = unpack_naturalparameters(ef)
 
     psia = trigamma(η1 + one(typeof(η1)))

@@ -6,7 +6,7 @@ using Distributions
 using ExponentialFamily
 using StableRNGs
 using ForwardDiff
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "Geometric" begin
     @testset "vague" begin
@@ -25,22 +25,22 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test prod(ClosedProd(), Geometric(0.3), Geometric(0.8)) == Geometric(0.8600000000000001)
         @test prod(ClosedProd(), Geometric(0.5), Geometric(0.5)) == Geometric(0.75)
 
-        η1 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
-        η2 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
+        η1 = ExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
+        η2 = ExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
+        @test prod(η1, η2) == ExponentialFamilyDistribution(Geometric, [log(0.4) + log(0.7)])
     end
 
     @testset "natural parameters related" begin
         d1 = Geometric(0.6)
         d2 = Geometric(0.3)
-        η1 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
-        η2 = KnownExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
+        η1 = ExponentialFamilyDistribution(Geometric, [log(1 - 0.6)])
+        η2 = ExponentialFamilyDistribution(Geometric, [log(1 - 0.3)])
 
         @test convert(Geometric, η1) ≈ d1
         @test convert(Geometric, η2) ≈ d2
 
-        @test convert(KnownExponentialFamilyDistribution, d1) == η1
-        @test convert(KnownExponentialFamilyDistribution, d2) == η2
+        @test convert(ExponentialFamilyDistribution, d1) == η1
+        @test convert(ExponentialFamilyDistribution, d2) == η2
 
         @test logpartition(η1) ≈ -log(0.6)
         @test logpartition(η2) ≈ -log(0.3)
@@ -54,8 +54,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         @test pdf(η1, 3) == pdf(d1, 3)
         @test pdf(η2, 3) == pdf(d2, 3)
 
-        @test isproper(KnownExponentialFamilyDistribution(Geometric, [log(0.6)])) == true
-        @test isproper(KnownExponentialFamilyDistribution(Geometric, [1.3])) == false
+        @test isproper(ExponentialFamilyDistribution(Geometric, [log(0.6)])) == true
+        @test isproper(ExponentialFamilyDistribution(Geometric, [1.3])) == false
     end
 
     @testset "fisher information" begin
@@ -65,10 +65,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         transformation(η) = one(Float64) - exp(η[1])
         for p in 0.1:0.05:0.9
             dist = Geometric(p)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Geometric, η))
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Geometric, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-8
 
@@ -77,10 +77,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean,var" begin
+    @testset "ExponentialFamilyDistribution mean,var" begin
         for p in 0.1:0.05:0.9
             dist = Geometric(p)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

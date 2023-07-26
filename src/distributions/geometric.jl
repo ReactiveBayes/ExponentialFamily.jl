@@ -13,37 +13,37 @@ Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
 pack_naturalparameters(dist::Geometric) = [log(one(Float64) - succprob(dist))]
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Geometric}) 
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Geometric}) 
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     return η1
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Geometric) =
-    KnownExponentialFamilyDistribution(Geometric, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Geometric) =
+    ExponentialFamilyDistribution(Geometric, pack_naturalparameters(dist))
 
-Base.convert(::Type{Distribution}, η::KnownExponentialFamilyDistribution{Geometric}) =
+Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{Geometric}) =
     Geometric(one(Float64) - exp(unpack_naturalparameters(η)))
 
-logpartition(η::KnownExponentialFamilyDistribution{Geometric}) =
+logpartition(η::ExponentialFamilyDistribution{Geometric}) =
     -log(one(Float64) - exp(unpack_naturalparameters(η)))
 
 check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Geometric})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Geometric})
     η = unpack_naturalparameters(exponentialfamily)
     return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
 end
 
-function insupport(::KnownExponentialFamilyDistribution{Geometric, P, C, Safe}, x::Real) where {P, C}
+function insupport(::ExponentialFamilyDistribution{Geometric, P, C, Safe}, x::Real) where {P, C}
     return zero(Float64) < x && x < Inf && typeof(x) <: Int
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
+function basemeasure(union::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"
     return one(x)
 end
-function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Geometric})
+function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Geometric})
     η = unpack_naturalparameters(exponentialfamily)
     SA[exp(η) / (one(Float64) - exp(η))^2]
 end
@@ -53,7 +53,7 @@ function fisherinformation(dist::Geometric)
     SA[one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2]
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
+function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"
     return SA[x]
 end

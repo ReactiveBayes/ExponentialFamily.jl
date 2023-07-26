@@ -15,15 +15,15 @@ function Distributions.mean(dist::VonMisesFisher)
     return factor * μ
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{VonMisesFisher}) =
+isproper(exponentialfamily::ExponentialFamilyDistribution{VonMisesFisher}) =
     all(0 .<= (getnaturalparameters(exponentialfamily)))
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::VonMisesFisher)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::VonMisesFisher)
     μ, κ = params(dist)
-    KnownExponentialFamilyDistribution(VonMisesFisher, μ * κ)
+    ExponentialFamilyDistribution(VonMisesFisher, μ * κ)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{VonMisesFisher})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{VonMisesFisher})
     κμ = getnaturalparameters(exponentialfamily)
     κ = sqrt(κμ' * κμ)
     μ = κμ / κ
@@ -32,7 +32,7 @@ end
 
 check_valid_natural(::Type{<:VonMisesFisher}, v) = length(v) >= 2
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{VonMisesFisher})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{VonMisesFisher})
     η = getnaturalparameters(exponentialfamily)
     ## because ||μ|| = 1 this trick obtains κ 
     κ = sqrt(η' * η)
@@ -58,7 +58,7 @@ function fisherinformation(dist::VonMisesFisher)
     return [k^2*tmp2 -Ap*μ; -Ap*μ' tmp]
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{VonMisesFisher})
+function fisherinformation(ef::ExponentialFamilyDistribution{VonMisesFisher})
     η = getnaturalparameters(ef)
     u = norm(η)
     p = length(η)
@@ -87,17 +87,17 @@ function insupport(vmf::VonMisesFisher, x::Vector)
     return length(vmf.μ) == length(x) && dot(x, x) ≈ 1.0
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{VonMisesFisher, P, C, Safe}, x::Vector) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{VonMisesFisher, P, C, Safe}, x::Vector) where {P, C}
     return length(getnaturalparameters(ef)) == length(x) && dot(x, x) ≈ 1.0
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)
+function basemeasure(union::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)
     @assert insupport(union, x) "$(x) is not in the support of VMF"
     return (1 / 2pi)^(length(x) / 2)
 end
 
 function sufficientstatistics(
-    union::Union{<:KnownExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher},
+    union::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher},
     x::Vector
 )
     @assert insupport(union, x) "$(x) is not in the support of VMF"

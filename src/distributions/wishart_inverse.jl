@@ -185,7 +185,7 @@ function pack_naturalparameters(dist::Union{InverseWishartImproper, InverseWisha
     return vcat(-(dof + p + 1) / 2, vec(-scale / 2))
 end
 
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
     η = getnaturalparameters(ef)
     len = length(η)
     n = Int64(isqrt(len-1))
@@ -197,16 +197,16 @@ end
 
 check_valid_natural(::Type{<:Union{InverseWishartImproper, InverseWishart}}, params) = length(params) >= 5
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart}) = 
-    KnownExponentialFamilyDistribution(InverseWishartImproper, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart}) = 
+    ExponentialFamilyDistribution(InverseWishartImproper, pack_naturalparameters(dist))
 
-function Base.convert(::Type{Distribution}, ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
+function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     return InverseWishart(-(2 * η1 + p + 1), -2 * η2)
 end
 
-function logpartition(ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
+function logpartition(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     term1 = (η1 + (p + 1) / 2) * logdet(-η2)
@@ -214,12 +214,12 @@ function logpartition(ef::KnownExponentialFamilyDistribution{<:InverseWishartImp
     return term1 + term2
 end
 
-function isproper(ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
+function isproper(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
     η1, η2 = unpack_naturalparameters(ef)
     isposdef(-η2) && (η1 < 0)
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper})
+function fisherinformation(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     invη2 = inv(η2)
@@ -241,12 +241,12 @@ function fisherinformation(dist::InverseWishart)
     return hessian
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{InverseWishartImproper, P, C, Safe}, x::Matrix) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{InverseWishartImproper, P, C, Safe}, x::Matrix) where {P, C}
     return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
 function basemeasure(
-    ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper},
+    ef::ExponentialFamilyDistribution{<:InverseWishartImproper},
     x
 )
     @assert insupport(ef, x) "$(x) is not in the support of inverse Wishart"
@@ -254,7 +254,7 @@ function basemeasure(
 end
 
 function sufficientstatistics(
-    ef::KnownExponentialFamilyDistribution{<:InverseWishartImproper},
+    ef::ExponentialFamilyDistribution{<:InverseWishartImproper},
     x
 )
     @assert insupport(ef, x) "$(x) is not in the support of inverse Wishart"

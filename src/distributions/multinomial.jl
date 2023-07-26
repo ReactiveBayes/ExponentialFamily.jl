@@ -19,8 +19,8 @@ closed_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T <: Multinomial}
     conditioner_left = getconditioner(left)
     conditioner_right = getconditioner(right)
@@ -49,8 +49,8 @@ end
 
 function Base.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
-    ef_left = convert(KnownExponentialFamilyDistribution, left)
-    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    ef_left = convert(ExponentialFamilyDistribution, left)
+    ef_right = convert(ExponentialFamilyDistribution, right)
     return prod(ClosedProd(), ef_left, ef_right)
 end
 
@@ -61,12 +61,12 @@ end
 
 unpack_naturalparameters
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Multinomial)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Multinomial)
     n, _ = params(dist)
-    return KnownExponentialFamilyDistribution(Multinomial, pack_naturalparameters(dist), n)
+    return ExponentialFamilyDistribution(Multinomial, pack_naturalparameters(dist), n)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Multinomial})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Multinomial})
     expη = vmap(exp, getnaturalparameters(exponentialfamily))
     p = expη / sum(expη)
     return Multinomial(getconditioner(exponentialfamily), p)
@@ -78,13 +78,13 @@ function check_valid_conditioner(::Type{<:Multinomial}, conditioner)
     isinteger(conditioner) && conditioner > 0
 end
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Multinomial})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Multinomial})
     logp = getnaturalparameters(exponentialfamily)
     n = getconditioner(exponentialfamily)
     return (n >= 1) && (length(logp) >= 1)
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Multinomial})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Multinomial})
     η = getnaturalparameters(exponentialfamily)
     n = getconditioner(exponentialfamily)
     return n * logsumexp(η)
@@ -104,7 +104,7 @@ function computeLogpartition(K, n)
     end
 end
 
-function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Multinomial})
+function fisherinformation(expfamily::ExponentialFamilyDistribution{Multinomial})
     η = getnaturalparameters(expfamily)
     n = getconditioner(expfamily)
     I = Matrix{Float64}(undef, length(η), length(η))
@@ -132,12 +132,12 @@ function fisherinformation(dist::Multinomial)
     return n * I
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Multinomial, P, C, Safe}, x) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{Multinomial, P, C, Safe}, x) where {P, C}
     n = Int(sum(x))
     return n == getconditioner(ef)
 end
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Multinomial}, x::Vector)
+function basemeasure(ef::ExponentialFamilyDistribution{Multinomial}, x::Vector)
     @assert insupport(ef, x) " sum of the elements of $(x) should be equal to the conditioner"
     n = Int(sum(x))
     return factorial(n) / prod(@.factorial(x))
@@ -149,7 +149,7 @@ function basemeasure(dist::Multinomial, x::Vector)
     return factorial(n) / prod(@.factorial(x))
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector)
+function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector)
     @assert insupport(union, x)
     return x
 end

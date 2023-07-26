@@ -6,15 +6,15 @@ using Distributions
 using Random
 using ForwardDiff
 import SpecialFunctions: loggamma
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation,
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation,
     as_vec, logpartition, reconstructargument!, unpack_naturalparameters
 
-function reconstructed_logpartition(::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
-    ef = KnownExponentialFamilyDistribution(T, ηvec)
+function reconstructed_logpartition(::ExponentialFamilyDistribution{T}, ηvec) where {T}
+    ef = ExponentialFamilyDistribution(T, ηvec)
     return logpartition(ef)
 end
 
-function test_partition(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
+function test_partition(ef::ExponentialFamilyDistribution{MatrixDirichlet})
     η = unpack_naturalparameters(ef)
     return sum(loggamma.(η .+ 1.0)) - sum(loggamma.(sum(η .+ 1.0, dims = 1)))
 end
@@ -100,35 +100,35 @@ end
     end
 
     @testset "natural parameters related" begin
-        @test convert(KnownExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
-              KnownExponentialFamilyDistribution(MatrixDirichlet, view([0.6 0.7; 1.0 2.0],:) .- 1)
+        @test convert(ExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
+              ExponentialFamilyDistribution(MatrixDirichlet, view([0.6 0.7; 1.0 2.0],:) .- 1)
         b_01 = MatrixDirichlet([1.0 10.0; 2.0 10.0])
-        nb_01 = convert(KnownExponentialFamilyDistribution, b_01)
+        nb_01 = convert(ExponentialFamilyDistribution, b_01)
         @test logpartition(nb_01) ==
               mapreduce(
-            d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
+            d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
             +,
             eachcol(unpack_naturalparameters(nb_01))
         )
         for i in 1:9
             b = MatrixDirichlet([i/10.0 i/20; i/5 i])
-            bnp = convert(KnownExponentialFamilyDistribution, b)
+            bnp = convert(ExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
             @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
 
-            @test convert(KnownExponentialFamilyDistribution, b) == bnp
+            @test convert(ExponentialFamilyDistribution, b) == bnp
 
-            @test prod(nb_01, bnp) ≈ convert(KnownExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
+            @test prod(nb_01, bnp) ≈ convert(ExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
             @test logpartition(bnp) ≈ test_partition(bnp)
         end
-        @test isproper(KnownExponentialFamilyDistribution(MatrixDirichlet, vec([10 2; 3 2]))) === true
+        @test isproper(ExponentialFamilyDistribution(MatrixDirichlet, vec([10 2; 3 2]))) === true
     end
 
-    @testset "KnownExponentialFamilyDistribution mean" begin
+    @testset "ExponentialFamilyDistribution mean" begin
         for i in 1:9
             dist = MatrixDirichlet([i/10.0 i/20; i/5 i])
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
         end
     end
@@ -136,7 +136,7 @@ end
     @testset "fisher information" begin
         for i in 1:9
             dist = MatrixDirichlet([i/10.0 i/20; i/5 i])
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = vcat(as_vec(getnaturalparameters(ef)))
             f_logpartition = (η_vec) -> reconstructed_logpartition(ef, η_vec)
 

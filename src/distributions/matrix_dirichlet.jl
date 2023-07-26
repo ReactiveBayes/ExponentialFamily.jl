@@ -31,7 +31,7 @@ function Distributions.entropy(dist::MatrixDirichlet)
 end
 
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
-    ef = Base.convert(KnownExponentialFamilyDistribution, dist)
+    ef = Base.convert(ExponentialFamilyDistribution, dist)
     return -logpartition(ef) + tr(unpack_naturalparameters(ef)' * log.(x))
 end
 
@@ -49,7 +49,7 @@ end
 function pack_naturalparameters(distribution::MatrixDirichlet) 
     return vec(distribution.a) - Ones{Float64}(vectorized_length(distribution))
 end
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:MatrixDirichlet})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MatrixDirichlet})
     vectorized = getnaturalparameters(ef) 
     len = length(vectorized)
     Ssize = isqrt(len)
@@ -57,41 +57,41 @@ function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Matri
 end
 
 ##TODO: this code needs to be optimized
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
+logpartition(exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
     vmapreduce(
-        d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
+        d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
         +,
         eachcol(unpack_naturalparameters(exponentialfamily))
     )
 
-Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
+Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
     MatrixDirichlet(unpack_naturalparameters(exponentialfamily) .+ one(Float64))
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MatrixDirichlet)
-    KnownExponentialFamilyDistribution(MatrixDirichlet, pack_naturalparameters(dist))
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixDirichlet)
+    ExponentialFamilyDistribution(MatrixDirichlet, pack_naturalparameters(dist))
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:MatrixDirichlet}) =
+isproper(exponentialfamily::ExponentialFamilyDistribution{<:MatrixDirichlet}) =
     all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Vector)
 
 function basemeasure(
-    ::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
+    ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
     return one(eltype(x))
 end
 
 function sufficientstatistics(
-    ::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
+    ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
     return vec(vmap(d -> log(d), x))
 end
 
 # #this works  50 allocations
-# function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
+# function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
 #     ηp1 = unpack_naturalparameters(ef) .+ 1
 #     ηvect = collect(Vector, eachcol(ηp1))
 #     n = length(ηvect)
@@ -101,7 +101,7 @@ end
 # end
 
 ## this works 48 allocations
-# function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
+# function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
 #     η = unpack_naturalparameters(ef)
 #     ones = Ones{Float64}(size(η))
 #     ηvect0_trigammas = map(d -> ones*d, map(d ->trigamma(d), sum(η+ones,dims=1)))
@@ -111,7 +111,7 @@ end
 # end
 
 ## this works 36 allocations
-function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
+function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
     η    = unpack_naturalparameters(ef)
     ones = Ones{Float64}(size(η))
     ηp1  = η+ones

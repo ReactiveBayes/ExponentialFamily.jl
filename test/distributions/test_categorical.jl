@@ -7,7 +7,7 @@ using StableRNGs
 using Random
 using ForwardDiff
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
+    ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
 import LogExpFunctions: logsumexp
 
 @testset "Categorical" begin
@@ -36,15 +36,15 @@ import LogExpFunctions: logsumexp
     end
 
     @testset "natural parameters related" begin
-        ηcat = KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
+        ηcat = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
         dist = Categorical([1/2, 1/2])
-        η1   = KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
-        η2   = KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
+        η1   = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
+        η2   = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
 
         @test convert(Distribution, ηcat) == dist
-        @test convert(KnownExponentialFamilyDistribution, dist) ==
-              KnownExponentialFamilyDistribution(Categorical, log.([1, 1]))
-        @test prod(η1, η2) == KnownExponentialFamilyDistribution(Categorical, [0.0, 0.0])
+        @test convert(ExponentialFamilyDistribution, dist) ==
+              ExponentialFamilyDistribution(Categorical, log.([1, 1]))
+        @test prod(η1, η2) == ExponentialFamilyDistribution(Categorical, [0.0, 0.0])
 
         @test logpdf(ηcat, 2) == logpdf(dist, 2)
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
@@ -57,7 +57,7 @@ import LogExpFunctions: logsumexp
 
         @test logpartition(ηcat) == logsumexp(getnaturalparameters(ηcat))
 
-        categoricalef = KnownExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])
+        categoricalef = ExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])
         @test sufficientstatistics(categoricalef, 3) == [0, 0, 1, 0]
         @test_throws AssertionError sufficientstatistics(categoricalef, 5) == [0, 0, 0, 0]
         @test_throws AssertionError sufficientstatistics(categoricalef, [0, 1]) == [0, 1, 0, 0]
@@ -73,21 +73,21 @@ import LogExpFunctions: logsumexp
               Categorical([2 / 3, 1 / 4, 1 / 12])
     end
 
-    @testset "prod KnownExponentialFamilyDistribution" begin
+    @testset "prod ExponentialFamilyDistribution" begin
         for d in 2:20
             pleft     = rand(d)
             pleft     = pleft ./ sum(pleft)
             distleft  = Categorical(pleft)
-            efleft    = convert(KnownExponentialFamilyDistribution, distleft)
+            efleft    = convert(ExponentialFamilyDistribution, distleft)
             ηleft     = getnaturalparameters(efleft)
             pright    = rand(d)
             pright    = pright ./ sum(pright)
             distright = Categorical(pright)
-            efright   = convert(KnownExponentialFamilyDistribution, distright)
+            efright   = convert(ExponentialFamilyDistribution, distright)
             ηright    = getnaturalparameters(efright)
             efprod    = prod(efleft, efright)
             distprod  = prod(ClosedProd(), distleft, distright)
-            @test efprod == KnownExponentialFamilyDistribution(Categorical, ηleft + ηright)
+            @test efprod == ExponentialFamilyDistribution(Categorical, ηleft + ηright)
             @test convert(Distribution, efprod) ≈ distprod
         end
     end
@@ -102,10 +102,10 @@ import LogExpFunctions: logsumexp
         for n in 2:5
             p = rand(rng, Dirichlet(ones(n)))
             dist = Categorical(p)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Categorical, η))
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Categorical, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-10
 
@@ -114,12 +114,12 @@ import LogExpFunctions: logsumexp
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean var" begin
+    @testset "ExponentialFamilyDistribution mean var" begin
         rng = StableRNG(42)
         for n in 2:10
             p = rand(rng, Dirichlet(ones(n)))
             dist = Categorical(p)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

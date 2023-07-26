@@ -11,8 +11,8 @@ closed_prod_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T <: Poisson}
     η_left = first(getnaturalparameters(left))
     η_right = first(getnaturalparameters(right))
@@ -34,8 +34,8 @@ function Base.prod(
 end
 
 function Base.prod(::ClosedProd, left::Poisson, right::Poisson)
-    ef_left = convert(KnownExponentialFamilyDistribution, left)
-    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    ef_left = convert(ExponentialFamilyDistribution, left)
+    ef_right = convert(ExponentialFamilyDistribution, right)
 
     return prod(ef_left, ef_right)
 end
@@ -49,43 +49,43 @@ end
 check_valid_natural(::Type{<:Poisson}, params) = isequal(length(params), 1)
 
 pack_naturalparameters(dist::Poisson) = [log(rate(dist))]
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Poisson})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Poisson})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     return η1
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Poisson) =
-    KnownExponentialFamilyDistribution(Poisson, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Poisson) =
+    ExponentialFamilyDistribution(Poisson, pack_naturalparameters(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Poisson})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Poisson})
     η = unpack_naturalparameters(exponentialfamily)
     return Poisson(exp(η))
 end
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
+logpartition(exponentialfamily::ExponentialFamilyDistribution{Poisson}) =
     exp(unpack_naturalparameters(exponentialfamily))
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Poisson})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Poisson})
     η = unpack_naturalparameters(exponentialfamily)
     η isa Number && !isnan(η) && !isinf(η)
 end
 
-fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Poisson}) =
+fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Poisson}) =
     [exp(unpack_naturalparameters(exponentialfamily))]
 
 fisherinformation(dist::Poisson) = [1 / rate(dist)]
 
-function support(::KnownExponentialFamilyDistribution{Poisson})
+function support(::ExponentialFamilyDistribution{Poisson})
     return DomainSets.NaturalNumbers()
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
+function basemeasure(union::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Poisson"
     return one(x) / factorial(x)
 end
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
+function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     @assert insupport(union, x) "$(x) is not in the support of Poisson"
     return SA[x]
 end

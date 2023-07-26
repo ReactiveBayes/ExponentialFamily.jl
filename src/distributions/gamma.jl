@@ -90,7 +90,7 @@ check_valid_natural(::Type{<:GammaDistributionsFamily}, params) = (length(params
 
 pack_naturalparameters(dist::GammaDistributionsFamily) = [shape(dist) - one(Float64), -rate(dist)]
 
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     @inbounds η2 = η[2]
@@ -100,30 +100,30 @@ end
 
 function Base.convert(
     ::Type{Distribution},
-    exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}
+    exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily}
 )
     η1,η2 = unpack_naturalparameters(exponentialfamily)
     return GammaShapeRate(η1 + one(η1), -η2)
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::GammaDistributionsFamily) =
-    KnownExponentialFamilyDistribution(GammaShapeRate, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::GammaDistributionsFamily) =
+    ExponentialFamilyDistribution(GammaShapeRate, pack_naturalparameters(dist))
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η1, η2 = unpack_naturalparameters(exponentialfamily)
     return loggamma(η1 + one(η1)) - (η1 + one(η1)) * log(-η2)
 end
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
     a, b = unpack_naturalparameters(exponentialfamily)
     return (a >= tiny - one(a)) && (-b >= tiny)
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) =
+support(::Union{<:ExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) =
     OpenInterval{Real}(0, Inf)
 
 function sufficientstatistics(
-    ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily},
+    ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily},
     x::Real
 )
     @assert insupport(ef, x) "Gamma sufficients statistics should be evaluated at values greater than 0"
@@ -131,14 +131,14 @@ function sufficientstatistics(
 end
 
 function basemeasure(
-    ef::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily},
+    ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily},
     x::Real
 )
     @assert insupport(ef, x) "Gamma base measure should be evaluated at values greater than 0"
     return one(x)
 end
 
-function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{<:GammaDistributionsFamily})
+function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily})
     η1, η2 = unpack_naturalparameters(exponentialfamily)
     return SA[trigamma(η1 + one(η1)) -one(η2)/η2; -one(η2)/η2 (η1+one(η1))/(η2^2)]
 end

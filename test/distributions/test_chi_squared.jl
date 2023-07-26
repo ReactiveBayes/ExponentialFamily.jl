@@ -10,37 +10,37 @@ using ForwardDiff
 
 import SpecialFunctions: logfactorial, loggamma
 import ExponentialFamily:
-    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution,
+    xtlog, ExponentialFamilyDistribution, getnaturalparameters, basemeasure, ExponentialFamilyDistribution,
     fisherinformation, sufficientstatistics
 
 @testset "Chisq" begin
     @testset "naturalparameters" begin
         for i in 3:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(Chisq, [i])) ≈ Chisq(2 * (i + 1))
-            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Chisq, [i]), 10) ≈
+            @test convert(Distribution, ExponentialFamilyDistribution(Chisq, [i])) ≈ Chisq(2 * (i + 1))
+            @test Distributions.logpdf(ExponentialFamilyDistribution(Chisq, [i]), 10) ≈
                   Distributions.logpdf(Chisq(2 * (i + 1)), 10)
-            @test isproper(KnownExponentialFamilyDistribution(Chisq, [i])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Chisq, [-2 * i])) === false
+            @test isproper(ExponentialFamilyDistribution(Chisq, [i])) === true
+            @test isproper(ExponentialFamilyDistribution(Chisq, [-2 * i])) === false
 
-            @test convert(KnownExponentialFamilyDistribution, Chisq(i)) ==
-                  KnownExponentialFamilyDistribution(Chisq, [i / 2 - 1])
+            @test convert(ExponentialFamilyDistribution, Chisq(i)) ==
+                  ExponentialFamilyDistribution(Chisq, [i / 2 - 1])
 
             @test Distributions.logpdf(Chisq(10), 1.0) ≈
-                  Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(10)), 1.0)
+                  Distributions.logpdf(convert(ExponentialFamilyDistribution, Chisq(10)), 1.0)
             @test Distributions.logpdf(Chisq(5), 1.0) ≈
-                  Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Chisq(5)), 1.0)
+                  Distributions.logpdf(convert(ExponentialFamilyDistribution, Chisq(5)), 1.0)
         end
 
-        chisqef = KnownExponentialFamilyDistribution(Chisq, [3])
+        chisqef = ExponentialFamilyDistribution(Chisq, [3])
         @test sufficientstatistics(chisqef, 1) == [log(1)]
         @test_throws AssertionError sufficientstatistics(chisqef, -1)
     end
 
-    @testset "fisherinformation KnownExponentialFamilyDistribution{Chisq}" begin
-        f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Chisq, η))
+    @testset "fisherinformation ExponentialFamilyDistribution{Chisq}" begin
+        f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Chisq, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartition, η)
         for i in 3:10
-            @test first(fisherinformation(KnownExponentialFamilyDistribution(Chisq, [i]))) ≈
+            @test first(fisherinformation(ExponentialFamilyDistribution(Chisq, [i]))) ≈
                   first(autograd_inforamation_matrix([i]))
         end
     end
@@ -52,7 +52,7 @@ import ExponentialFamily:
         n_samples = 1000
         for ν in 1:10
             dist = Chisq(ν)
-            ef = convert(KnownExponentialFamilyDistribution, Chisq(ν))
+            ef = convert(ExponentialFamilyDistribution, Chisq(ν))
             chisq_fisher = fisherinformation(dist)
             ef_fisher = fisherinformation(ef)
             η = getnaturalparameters(ef)
@@ -65,8 +65,8 @@ import ExponentialFamily:
         for i in 3:20
             left = Chisq(i + 1)
             right = Chisq(i)
-            efleft = convert(KnownExponentialFamilyDistribution, left)
-            efright = convert(KnownExponentialFamilyDistribution, right)
+            efleft = convert(ExponentialFamilyDistribution, left)
+            efright = convert(ExponentialFamilyDistribution, right)
             prod_dist = prod(ClosedProd(), left, right)
             prod_ef = prod(efleft, efright)
             η_left = getnaturalparameters(efleft)
@@ -87,10 +87,10 @@ import ExponentialFamily:
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean var" begin
+    @testset "ExponentialFamilyDistribution mean var" begin
         for ν in 1:10
             dist = Chisq(ν)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

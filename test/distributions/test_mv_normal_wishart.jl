@@ -7,7 +7,7 @@ using LinearAlgebra
 using ForwardDiff
 using ExponentialFamily
 import ExponentialFamily:
-    MvNormalWishart, KnownExponentialFamilyDistribution, params, dof, invscatter, reconstructargument!
+    MvNormalWishart, ExponentialFamilyDistribution, params, dof, invscatter, reconstructargument!
 import ExponentialFamily:
     scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics, as_vec
 using Distributions
@@ -23,8 +23,8 @@ function normal_wishart_pdf(x::Vector{Float64},
 end
 
 # Derrivative-friendly function for the natural parameters of the MvNormalWishart distribution
-logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where 
-        {T, F <: Real} = logpartition(KnownExponentialFamilyDistribution(T, ηvec))
+logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where 
+        {T, F <: Real} = logpartition(ExponentialFamilyDistribution(T, ηvec))
 
 
 @testset "MvNormalWishart" begin
@@ -45,7 +45,7 @@ logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
             Ψ = diagm(rand(j))
             ν = 2 * j + 1
             dist = MvNormalWishart(m, Ψ, κ, ν)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
 
             @test getnaturalparameters(ef) ≈ vcat(κ * m, vec(-(1 / 2) * (inv(Ψ) + κ * m*m')), -κ / 2, (ν - j) / 2)
             @test invscatter(convert(Distribution, ef)) ≈ cholinv(Ψ)
@@ -58,7 +58,7 @@ logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
             m = rand(j)
             Ψ = m * m' + I
             dist = MvNormalWishart(m, Ψ, κ, j + 1)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test pdf(dist, [m, Ψ]) ≈ normal_wishart_pdf(m, Ψ, m, κ, float(j + 1), Ψ)
             @test logpdf(dist, [m, Ψ]) ≈ log(normal_wishart_pdf(m, Ψ, m, κ, float(j + 1), Ψ))
         end
@@ -70,7 +70,7 @@ logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
             m = rand(j)
             Ψ = m * m' + I
             dist = MvNormalWishart(m, Ψ, κ, j + 3)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             st = sufficientstatistics(dist)
             samples = rand(MersenneTwister(j), dist, nsamples)
             ηvec = getnaturalparameters(ef)
@@ -88,8 +88,8 @@ logpartition(::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
             Ψ2 = m2 * m2' + I
             dist1 = MvNormalWishart(m1, Ψ1, κ, j + 3)
             dist2 = MvNormalWishart(m2, Ψ2, κ, j + 3)
-            ef1 = convert(KnownExponentialFamilyDistribution, dist1)
-            ef2 = convert(KnownExponentialFamilyDistribution, dist2)
+            ef1 = convert(ExponentialFamilyDistribution, dist1)
+            ef2 = convert(ExponentialFamilyDistribution, dist2)
             @test prod(ClosedProd(), dist1, dist2) == convert(Distribution, prod(ClosedProd(), ef1, ef2))
         end
     end

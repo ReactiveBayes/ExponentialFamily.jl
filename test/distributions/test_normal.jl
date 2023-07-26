@@ -11,7 +11,7 @@ using Zygote
 using SparseArrays
 
 import ExponentialFamily:
-    ExponentialFamilyDistribution, KnownExponentialFamilyDistribution, logpartition,
+    ExponentialFamilyDistribution, ExponentialFamilyDistribution, logpartition,
     basemeasure, fisherinformation,getnaturalparameters
 
 @testset "Normal" begin
@@ -283,33 +283,33 @@ import ExponentialFamily:
     @testset "univariate natural parameters related" begin
         @testset "Constructor" begin
             for i in 1:10
-                @test convert(Distribution, KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) ==
+                @test convert(Distribution, ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) ==
                       NormalWeightedMeanPrecision(i, 2 * i)
-                @test convert(KnownExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-                      KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
-                @test convert(KnownExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-                      KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
+                @test convert(ExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
+                      ExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
+                @test convert(ExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
+                      ExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
             end
         end
 
         @testset "logpdf" begin
             for i in 1:10
-                @test logpdf(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i]), 0) ≈
+                @test logpdf(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i]), 0) ≈
                       logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
             end
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) === true
-                @test isproper(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, i])) === false
+                @test isproper(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) === true
+                @test isproper(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, i])) === false
             end
         end
 
         @testset "fisherinformation" begin
             for (η1, η2) in Iterators.product(1:10, -10:1:-1)
-                ef = KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [η1, η2])
-                f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, η))
+                ef = ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [η1, η2])
+                f_logpartion = (η) -> logpartition(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, η))
                 autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
                 @test fisherinformation(ef) ≈ autograd_inforamation_matrix([η1, η2])
             end
@@ -321,15 +321,15 @@ import ExponentialFamily:
             for i in 1:10
                 @test convert(
                     Distribution,
-                    KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
+                    ExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
                 ) ==
                       MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
 
                 @test convert(
-                    KnownExponentialFamilyDistribution,
+                    ExponentialFamilyDistribution,
                     MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
                 ) ≈
-                      KnownExponentialFamilyDistribution(
+                      ExponentialFamilyDistribution(
                     MvGaussianWeightedMeanPrecision,
                     vcat(float([i, 0]), float(vec([-i 0; 0 -i])))
                 )
@@ -338,7 +338,7 @@ import ExponentialFamily:
 
         @testset "logpdf" begin
             for i in 1:10
-                mv_np = KnownExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
+                mv_np = ExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
                 distribution = MvGaussianWeightedMeanPrecision([i, 0.0], [2*i -0.0; -0.0 2*i])
                 @test logpdf(distribution, [0.0, 0.0]) ≈ logpdf(mv_np, [0.0, 0.0])
                 @test logpdf(distribution, [1.0, 0.0]) ≈ logpdf(mv_np, [1.0, 0.0])
@@ -347,14 +347,14 @@ import ExponentialFamily:
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈
+            @test logpartition(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈
                   -(log(2) - 1 / 8)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                efproper = KnownExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i])))
-                efimproper = KnownExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([i 0; 0 i])))
+                efproper = ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i])))
+                efimproper = ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([i 0; 0 i])))
                 @test isproper(efproper) === true
                 @test isproper(efimproper) === false
             end
@@ -363,7 +363,7 @@ import ExponentialFamily:
         @testset "basemeasure" begin
             for i in 1:10
                 @test basemeasure(
-                    KnownExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i]))),
+                    ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i]))),
                     rand(2)) == (2pi)^(-1)              
             end
         end

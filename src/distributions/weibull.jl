@@ -10,8 +10,8 @@ closed_prod_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T <: Weibull}
     conditioner_left = getconditioner(left)
     conditioner_right = getconditioner(right)
@@ -64,8 +64,8 @@ function Base.prod(
 end
 
 function Base.prod(::ClosedProd, left::Weibull, right::Weibull)
-    ef_left = convert(KnownExponentialFamilyDistribution, left)
-    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    ef_left = convert(ExponentialFamilyDistribution, left)
+    ef_right = convert(ExponentialFamilyDistribution, right)
 
     return prod(ClosedProd(), ef_left, ef_right)
 end
@@ -74,13 +74,13 @@ check_valid_natural(::Type{<:Weibull}, params) = length(params) === 1
 check_valid_conditioner(::Type{<:Weibull}, conditioner) = isreal(conditioner) && conditioner > 0
 
 pack_naturalparameters(dist::Weibull) = [-(1 / scale(dist))^(shape(dist))]
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Weibull}) 
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Weibull}) 
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     return η1
 end
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Weibull})
     η = unpack_naturalparameters(exponentialfamily)
     return η < 0
 end
@@ -89,24 +89,24 @@ function basemeasure(dist::Weibull, x)
     @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     return x^(shape(dist) - 1)
 end
-function basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x)
+function basemeasure(weibull::ExponentialFamilyDistribution{Weibull}, x)
     @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     return x^(getconditioner(weibull) - 1)
 end
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Weibull) =
-    KnownExponentialFamilyDistribution(Weibull, pack_naturalparameters(dist), shape(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Weibull) =
+    ExponentialFamilyDistribution(Weibull, pack_naturalparameters(dist), shape(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Weibull})
     k = getconditioner(exponentialfamily)
     η = unpack_naturalparameters(exponentialfamily)
     return Weibull(k, (-1 / η)^(1 / k))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Weibull})
     return -log(-unpack_naturalparameters(exponentialfamily)) - log(getconditioner(exponentialfamily))
 end
 
-fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) =
+fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Weibull}) =
     inv(unpack_naturalparameters(exponentialfamily))^2
 
 function fisherinformation(dist::Weibull)
@@ -124,10 +124,10 @@ function fisherinformation(dist::Weibull)
     return [a11 a12; a21 a22]
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
+support(::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
+insupport(union::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Weibull}, x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}, x)
     @assert insupport(ef, x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     k = getconditioner(ef)
     return SA[x^k]

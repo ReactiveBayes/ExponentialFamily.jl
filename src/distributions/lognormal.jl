@@ -32,7 +32,7 @@ function pack_naturalparameters(dist::LogNormal)
     return [μ / var, -1 / (2 * var)]
 end
 
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:LogNormal})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:LogNormal})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     @inbounds η2 = η[2]
@@ -40,26 +40,26 @@ function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:LogNo
     return η1, η2
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::LogNormal) = KnownExponentialFamilyDistribution(LogNormal, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::LogNormal) = ExponentialFamilyDistribution(LogNormal, pack_naturalparameters(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{LogNormal})
     η1,η2 = unpack_naturalparameters(exponentialfamily)
     return LogNormal(-η1 / (2 * η2), sqrt(-1 / (2 * η2)))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{LogNormal})
     η1,η2 = unpack_naturalparameters(exponentialfamily)
     return -(η1)^2 / (4 * η2) - log(-2η2) / 2
 end
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{LogNormal})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{LogNormal})
     _, η2 = unpack_naturalparameters(exponentialfamily)
     return (η2 < 0)
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = ClosedInterval{Real}(0, Inf)
+support(::Union{<:ExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{LogNormal}, x::Real)
+function basemeasure(ef::ExponentialFamilyDistribution{LogNormal}, x::Real)
     @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
     return inv(sqrt(TPI) * x)
 end
@@ -74,12 +74,12 @@ function fisherinformation(d::LogNormal)
     return SA[1/(σ^2) 0.0; 0.0 2/(σ^2)]
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{LogNormal})
+function fisherinformation(ef::ExponentialFamilyDistribution{LogNormal})
     η1,η2 = unpack_naturalparameters(ef)
     return SA[-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{LogNormal}, x::Real)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{LogNormal}, x::Real)
     @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
     return SA[log(x), log(x)^2]
 end

@@ -9,7 +9,7 @@ using StableRNGs
 
 import SpecialFunctions: loggamma
 import ExponentialFamily:
-    xtlog, KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation, basemeasure
+    xtlog, ExponentialFamilyDistribution, getnaturalparameters, fisherinformation, basemeasure
 
 @testset "Gamma" begin
     @testset "Constructor" begin
@@ -121,24 +121,24 @@ import ExponentialFamily:
 
     @testset "natural parameters related" begin
         for i in 2:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈
+            @test convert(Distribution, ExponentialFamilyDistribution(GammaShapeRate, [i, -i])) ≈
                   GammaShapeRate(i + 1, i)
-            @test Distributions.logpdf(KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i]), 10) ≈
+            @test Distributions.logpdf(ExponentialFamilyDistribution(GammaShapeRate, [i, -i]), 10) ≈
                   Distributions.logpdf(GammaShapeRate(i + 1, i), 10)
-            @test isproper(KnownExponentialFamilyDistribution(Gamma, [i, -i])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Gamma, [-i, i])) === false
-            @test convert(KnownExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈
-                  KnownExponentialFamilyDistribution(GammaShapeRate, [i, -i])
-            @test convert(KnownExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈
-                  KnownExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
+            @test isproper(ExponentialFamilyDistribution(Gamma, [i, -i])) === true
+            @test isproper(ExponentialFamilyDistribution(Gamma, [-i, i])) === false
+            @test convert(ExponentialFamilyDistribution, GammaShapeRate(i + 1, i)) ≈
+                  ExponentialFamilyDistribution(GammaShapeRate, [i, -i])
+            @test convert(ExponentialFamilyDistribution, GammaShapeScale(i + 1, i)) ≈
+                  ExponentialFamilyDistribution(GammaShapeRate, [i, -1 / i])
         end
     end
 
     @testset "information matrix (natural paramteres)" begin
-        f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(GammaShapeRate, η))
+        f_logpartion = (η) -> logpartition(ExponentialFamilyDistribution(GammaShapeRate, η))
         autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
         for i in 2:10
-            @test fisherinformation(KnownExponentialFamilyDistribution(Gamma, [i, -i])) ≈
+            @test fisherinformation(ExponentialFamilyDistribution(Gamma, [i, -i])) ≈
                   autograd_inforamation_matrix([i, -i])
         end
     end
@@ -146,7 +146,7 @@ import ExponentialFamily:
     @testset "information matrix (GammaShapeScale)" begin
         for (i, j) in Iterators.product(1:3, 1:3)
             dist = GammaShapeScale(i, j)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
             J = ForwardDiff.jacobian(transformation1, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
@@ -157,7 +157,7 @@ import ExponentialFamily:
     @testset "information matrix (GammaShapeRate)" begin
         for (i, j) in Iterators.product(1:3, 1:3)
             dist = GammaShapeRate(i, j)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
             J = ForwardDiff.jacobian(transformation2, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
@@ -245,10 +245,10 @@ import ExponentialFamily:
         @test prod(ClosedProd(), GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
     end
 
-    @testset "KnownExponentialFamilyDistribution mean,var" begin
+    @testset "ExponentialFamilyDistribution mean,var" begin
         for (i, j) in Iterators.product(1:3, 1:3)
             dist = GammaShapeScale(i, j)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

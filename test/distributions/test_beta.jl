@@ -6,7 +6,7 @@ using Distributions
 using Random
 using ForwardDiff
 
-import ExponentialFamily: mirrorlog, KnownExponentialFamilyDistribution, getnaturalparameters, logpartition,
+import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, getnaturalparameters, logpartition,
     basemeasure, sufficientstatistics, fisherinformation
 import SpecialFunctions: loggamma
 
@@ -42,7 +42,7 @@ import SpecialFunctions: loggamma
     end
 
     @testset "natural parameters related" begin
-        betaef = KnownExponentialFamilyDistribution(Beta, [1, 0.2])
+        betaef = ExponentialFamilyDistribution(Beta, [1, 0.2])
         @test sufficientstatistics(betaef, 0.1) == [log(0.1), log(1.0 - 0.1)]
         @test sufficientstatistics(betaef, 0.9) == [log(0.9), log(1.0 - 0.9)]
         @test sufficientstatistics(betaef, 0.999) == [log(0.999), log(1.0 - 0.999)]
@@ -50,50 +50,50 @@ import SpecialFunctions: loggamma
         @test_throws AssertionError sufficientstatistics(betaef, -0.01)
 
         for i in 0:10, j in 0:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(Beta, [i, j])) == Beta(i + 1, j + 1)
-            @test convert(KnownExponentialFamilyDistribution, Beta(i + 1, j + 1)) ==
-                  KnownExponentialFamilyDistribution(Beta, [i, j])
+            @test convert(Distribution, ExponentialFamilyDistribution(Beta, [i, j])) == Beta(i + 1, j + 1)
+            @test convert(ExponentialFamilyDistribution, Beta(i + 1, j + 1)) ==
+                  ExponentialFamilyDistribution(Beta, [i, j])
         end
 
-        @test logpartition(KnownExponentialFamilyDistribution(Beta, [0, 0])) ≈ 0
-        @test logpartition(KnownExponentialFamilyDistribution(Beta, [1, 1])) ≈ -loggamma(4)
+        @test logpartition(ExponentialFamilyDistribution(Beta, [0, 0])) ≈ 0
+        @test logpartition(ExponentialFamilyDistribution(Beta, [1, 1])) ≈ -loggamma(4)
 
         for i in 0:10, j in 0:10
-            @test logpdf(KnownExponentialFamilyDistribution(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
-            @test logpdf(KnownExponentialFamilyDistribution(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
+            @test logpdf(ExponentialFamilyDistribution(Beta, [i, j]), 0.01) ≈ logpdf(Beta(i + 1, j + 1), 0.01)
+            @test logpdf(ExponentialFamilyDistribution(Beta, [i, j]), 0.5) ≈ logpdf(Beta(i + 1, j + 1), 0.5)
         end
 
         for i in 0:10
-            @test isproper(KnownExponentialFamilyDistribution(Beta, [i, i])) === true
+            @test isproper(ExponentialFamilyDistribution(Beta, [i, i])) === true
         end
         for i in 1:10
-            @test isproper(KnownExponentialFamilyDistribution(Beta, [-i, -i])) === false
+            @test isproper(ExponentialFamilyDistribution(Beta, [-i, -i])) === false
         end
 
         for i in 1:10, j in 1:10
-            @test basemeasure(KnownExponentialFamilyDistribution(Beta, [i, j]), rand()) == 1.0
+            @test basemeasure(ExponentialFamilyDistribution(Beta, [i, j]), rand()) == 1.0
         end
 
-        @testset "prod with KnownExponentialFamilyDistribution" begin
+        @testset "prod with ExponentialFamilyDistribution" begin
             for αleft in 0.01:1:50, βleft in 0.01:1:10
                 left   = Beta(αleft, βleft)
-                efleft = convert(KnownExponentialFamilyDistribution, left)
+                efleft = convert(ExponentialFamilyDistribution, left)
                 ηleft  = getnaturalparameters(efleft)
                 for αright in 0.01:1:50, βright in 0.01:1:10
                     right   = Beta(αright, βright)
-                    efright = convert(KnownExponentialFamilyDistribution, right)
+                    efright = convert(ExponentialFamilyDistribution, right)
                     ηright  = getnaturalparameters(efright)
                     @test prod(ClosedProd(), efleft, efright) ==
-                          KnownExponentialFamilyDistribution(Beta, ηleft + ηright)
-                    @test prod(efleft, efright) == KnownExponentialFamilyDistribution(Beta, ηleft + ηright)
+                          ExponentialFamilyDistribution(Beta, ηleft + ηright)
+                    @test prod(efleft, efright) == ExponentialFamilyDistribution(Beta, ηleft + ηright)
                     if isless(αleft + αright - 1, 0) || isless(βleft + βright - 1, 0)
                         @test_throws DomainError prod(ClosedProd(), left, right) == convert(
                             Distribution,
-                            KnownExponentialFamilyDistribution(Beta, ηleft + ηright)
+                            ExponentialFamilyDistribution(Beta, ηleft + ηright)
                         )
                     else
                         @test prod(ClosedProd(), left, right) ≈
-                              convert(Distribution, KnownExponentialFamilyDistribution(Beta, ηleft + ηright))
+                              convert(Distribution, ExponentialFamilyDistribution(Beta, ηleft + ηright))
                     end
                 end
             end
@@ -102,10 +102,10 @@ import SpecialFunctions: loggamma
             for a in 0.01:1:10
                 for b in 0.01:1:10
                     dist = Beta(a, b)
-                    ef = convert(KnownExponentialFamilyDistribution, dist)
+                    ef = convert(ExponentialFamilyDistribution, dist)
                     η = getnaturalparameters(ef)
 
-                    f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Beta, η))
+                    f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Beta, η))
                     autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
                     @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-10
                     # Here Jacobian is identity matrix. To speed up the tests its computation is omitted
@@ -114,10 +114,10 @@ import SpecialFunctions: loggamma
             end
         end
 
-        @testset "KnownExponentialFamilyDistribution mean var" begin
+        @testset "ExponentialFamilyDistribution mean var" begin
             for a in 0.1:0.1:5, b in 0.1:0.1:4
                 dist = Beta(a, b)
-                ef = convert(KnownExponentialFamilyDistribution, dist)
+                ef = convert(ExponentialFamilyDistribution, dist)
                 @test mean(dist) ≈ mean(ef) atol = 1e-8
                 @test var(dist) ≈ var(ef) atol = 1e-8
             end

@@ -22,7 +22,7 @@ end
 check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
 
 pack_naturalparameters(dist::Erlang) = [(shape(dist) - 1), -rate(dist)]
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Erlang}) 
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Erlang}) 
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     @inbounds η2 = η[2]
@@ -30,32 +30,32 @@ function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<:Erlan
     return η1,η2
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Erlang) =
-    KnownExponentialFamilyDistribution(Erlang, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Erlang) =
+    ExponentialFamilyDistribution(Erlang, pack_naturalparameters(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Erlang})
     a,b = unpack_naturalparameters(exponentialfamily)
     return Erlang(Int64(a + one(a)), -inv(b))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Erlang})
     a,b = unpack_naturalparameters(exponentialfamily)
     inta = Int64(a)
     return logfactorial(inta) - (inta + one(inta)) * log(-b)
 end
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Erlang})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Erlang})
     a,b = unpack_naturalparameters(exponentialfamily)
     return (a >= tiny - 1) && (-b >= tiny)
 end
 
-support(::KnownExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
+support(::ExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Erlang}, x::Real)
+function basemeasure(ef::ExponentialFamilyDistribution{Erlang}, x::Real)
     @assert insupport(ef, x) "Erlang base measure should be evaluated at positive values"
     return one(x)
 end
-function fisherinformation(ef::KnownExponentialFamilyDistribution)
+function fisherinformation(ef::ExponentialFamilyDistribution)
     η1,η2 = unpack_naturalparameters(ef)
     miη2 =-inv(η2)
 
@@ -69,7 +69,7 @@ function fisherinformation(dist::Erlang)
     return SA[trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Erlang}, x::Real)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Erlang}, x::Real)
     @assert insupport(ef, x) "Erlang sufficientstatistics should be evaluated at positive values"
     return SA[log(x), x]
 end

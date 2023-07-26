@@ -8,7 +8,7 @@ using ForwardDiff
 using StableRNGs
 import StatsFuns: logit
 import DomainSets: NaturalNumbers
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "NegativeBinomial" begin
     @testset "probvec" begin
@@ -30,11 +30,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "prod" begin
         for nleft in 1:15, pleft in 0.01:0.3:0.99
             left = NegativeBinomial(nleft, pleft)
-            efleft = convert(KnownExponentialFamilyDistribution, left)
+            efleft = convert(ExponentialFamilyDistribution, left)
             η_left = getnaturalparameters(efleft)
             for nright in 1:15, pright in 0.01:0.3:0.99
                 right = NegativeBinomial(nright, pright)
-                efright = convert(KnownExponentialFamilyDistribution, right)
+                efright = convert(ExponentialFamilyDistribution, right)
                 η_right = first(getnaturalparameters(efright))
                 prod_dist = prod(ClosedProd(), left, right)
                 prod_ef = prod(efleft, efright)
@@ -67,8 +67,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         for r in 1:5
             for p in 0.1:0.1:0.9
                 dist = NegativeBinomial(r, p)
-                ef_manual = KnownExponentialFamilyDistribution(NegativeBinomial, [log(one(Float64) - p)], r)
-                ef_converted = convert(KnownExponentialFamilyDistribution, dist)
+                ef_manual = ExponentialFamilyDistribution(NegativeBinomial, [log(one(Float64) - p)], r)
+                ef_converted = convert(ExponentialFamilyDistribution, dist)
 
                 @test ef_manual == ef_converted
                 @test convert(Distribution, ef_manual) ≈ dist
@@ -84,8 +84,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
     @testset "Proper" begin
         for x in 1:10
-            ef_proper = KnownExponentialFamilyDistribution(NegativeBinomial, [-x], 5)
-            ef_improper = KnownExponentialFamilyDistribution(NegativeBinomial, [x], 5)
+            ef_proper = ExponentialFamilyDistribution(NegativeBinomial, [-x], 5)
+            ef_improper = ExponentialFamilyDistribution(NegativeBinomial, [x], 5)
             @test isproper(ef_proper) == true
             @test isproper(ef_improper) == false
         end
@@ -93,9 +93,9 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     transformation(η) = 1 - exp(η[1])
     @testset "fisher information" begin
         for η in 1:10, r in 1:10
-            ef = KnownExponentialFamilyDistribution(NegativeBinomial, [-η], r)
+            ef = ExponentialFamilyDistribution(NegativeBinomial, [-η], r)
             dist = convert(Distribution,ef)
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(NegativeBinomial, η, r))
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(NegativeBinomial, η, r))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             J = ForwardDiff.gradient(transformation,[-η] )
             fef = fisherinformation(ef)
@@ -105,10 +105,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean,var" begin
+    @testset "ExponentialFamilyDistribution mean,var" begin
         for η in 1:4, r in 1:4
             dist = NegativeBinomial(r, exp(-η))
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

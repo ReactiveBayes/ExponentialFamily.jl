@@ -34,39 +34,39 @@ function compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist:
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(exponentialfamily)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η)
     secondterm = loggamma(sum(η)+ length(η))
     return firstterm - secondterm
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Dirichlet})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(exponentialfamily)
     return Dirichlet(η + Ones{Float64}(length(η)))
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Dirichlet)
-    KnownExponentialFamilyDistribution(Dirichlet, probvec(dist) - Ones{Float64}(length(probvec(dist))))
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Dirichlet)
+    ExponentialFamilyDistribution(Dirichlet, probvec(dist) - Ones{Float64}(length(probvec(dist))))
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:Dirichlet}) =
+isproper(exponentialfamily::ExponentialFamilyDistribution{<:Dirichlet}) =
     all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Dirichlet}, params) = (length(params) > one(Int64))
 
-function insupport(ef::KnownExponentialFamilyDistribution{Dirichlet, P, C, Safe}, x) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{Dirichlet, P, C, Safe}, x) where {P, C}
     l = length(getnaturalparameters(ef))
     return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
 end
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
+function basemeasure(ef::ExponentialFamilyDistribution{Dirichlet}, x)
     @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
     return one(eltype(x))
 end
 
 ## has one allocation
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Dirichlet}, x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Dirichlet}, x)
     @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
     return vmap(d -> log(d), x)
 end
@@ -77,7 +77,7 @@ function fisherinformation(dist::Dirichlet)
     return Diagonal(map(d->trigamma(d),α)) - Ones{Float64}(n, n) * trigamma(sum(α))
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{Dirichlet})
+function fisherinformation(ef::ExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(ef)
     n = length(η)
     return Diagonal(map(d -> trigamma(d + 1), η)) - Ones{Float64}(n, n) * trigamma(sum(η) + n)

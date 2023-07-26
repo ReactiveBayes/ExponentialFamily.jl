@@ -32,7 +32,7 @@ closed_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = ClosedProd()
 check_valid_natural(::Type{<:NormalGamma}, params) = length(params) === 4
 
 function Distributions.pdf(dist::NormalGamma, x::AbstractVector{<:Real})
-    ef = convert(KnownExponentialFamilyDistribution, dist)
+    ef = convert(ExponentialFamilyDistribution, dist)
     η  = getnaturalparameters(ef)
     Tx = sufficientstatistics(ef)(x...)
     return basemeasure(dist, x) * exp(η'Tx - logpartition(ef))
@@ -40,10 +40,10 @@ end
 
 Distributions.logpdf(dist::NormalGamma, x::AbstractVector{<:Real}) = log(pdf(dist, x))
 
-sufficientstatistics(::Union{<:KnownExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}) =
+sufficientstatistics(::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}) =
     (x, τ) -> SA[τ * x, τ * x^2, log(τ), τ]
 
-sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}, x) =
+sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}, x) =
     sufficientstatistics(union)(x[1], x[2])
 
 function pack_naturalparameters(dist::NormalGamma) 
@@ -56,7 +56,7 @@ function pack_naturalparameters(dist::NormalGamma)
     return [η1, η2, η3, η4]
 end
 
-function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<: NormalGamma})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<: NormalGamma})
     η =  getnaturalparameters(ef)
     @inbounds η1 = η[1]
     @inbounds η2 = η[2]
@@ -66,25 +66,25 @@ function unpack_naturalparameters(ef::KnownExponentialFamilyDistribution{<: Norm
     return η1, η2, η3, η4
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::NormalGamma) = KnownExponentialFamilyDistribution(NormalGamma, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::NormalGamma) = ExponentialFamilyDistribution(NormalGamma, pack_naturalparameters(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{NormalGamma})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
     return NormalGamma(η1*MINUSHALF/ (η2), -2η2, η3 + HALF, -η4 + (η1^2 / 4η2))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{NormalGamma})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
     η3half = η3 + HALF
     return loggamma(η3half) - log(-2η2) * HALF - (η3half) * log(-η4 + η1^2 / (4η2))
 end
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{NormalGamma})
+function isproper(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     _, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
     return -η2 > 0 && (η3 >= tiny + minushalf) && (-η4 >= tiny)
 end
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}, x) = 1 / SQRT2PI
+basemeasure(::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}, x) = 1 / SQRT2PI
 
 function Random.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector)
     container[2] = rand(rng, GammaShapeRate(dist.α, dist.β))
@@ -115,7 +115,7 @@ function Random.rand(rng::AbstractRNG, dist::NormalGamma, nsamples::Int)
 end
 
 ##fisher information should be optimized further
-function fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{NormalGamma})
+function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
 
     # Define a 4x4 matrix

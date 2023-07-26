@@ -7,7 +7,7 @@ using Random
 using ForwardDiff
 import StatsFuns: logit, logistic
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
+    ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
 
 @testset "Binomial" begin
     @testset "probvec" begin
@@ -29,17 +29,17 @@ import ExponentialFamily:
     @testset "natural parameters related" begin
         d1 = Binomial(5, 1 / 3)
         d2 = Binomial(5, 1 / 2)
-        η1 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
-        η2 = KnownExponentialFamilyDistribution(Binomial, [logit(1 / 2)], 5)
+        η1 = ExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
+        η2 = ExponentialFamilyDistribution(Binomial, [logit(1 / 2)], 5)
 
-        @test convert(KnownExponentialFamilyDistribution, d1) == η1
-        @test convert(KnownExponentialFamilyDistribution, d2) == η2
+        @test convert(ExponentialFamilyDistribution, d1) == η1
+        @test convert(ExponentialFamilyDistribution, d2) == η2
 
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
 
-        η3 = KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5)
-        η4 = KnownExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 10)
+        η3 = ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5)
+        η4 = ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 10)
 
         @test logpartition(η3) ≈ 5.0
         @test logpartition(η4) ≈ 10.0
@@ -50,20 +50,20 @@ import ExponentialFamily:
         @test pdf(η1, 2) ≈ pdf(d1, 2)
         @test pdf(η2, 4) ≈ pdf(d2, 4)
 
-        binomialef = KnownExponentialFamilyDistribution(Binomial, [logit(0.3)], 10)
+        binomialef = ExponentialFamilyDistribution(Binomial, [logit(0.3)], 10)
         @test sufficientstatistics(binomialef, 1) == [1]
         @test sufficientstatistics(binomialef, 7) == [7]
         @test_throws AssertionError sufficientstatistics(binomialef, 11)
         @test_throws AssertionError sufficientstatistics(binomialef, 1.1)
     end
 
-    @testset "prod KnownExponentialFamilyDistribution" begin
+    @testset "prod ExponentialFamilyDistribution" begin
         for nleft in 1:2, pleft in 0.01:0.3:0.99
             left = Binomial(nleft, pleft)
-            efleft = convert(KnownExponentialFamilyDistribution, left)
+            efleft = convert(ExponentialFamilyDistribution, left)
             for nright in 1:1, pright in 0.01:0.3:0.99
                 right = Binomial(nright, pright)
-                efright = convert(KnownExponentialFamilyDistribution, right)
+                efright = convert(ExponentialFamilyDistribution, right)
                 prod_dist = prod(efleft, efright)
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
@@ -108,10 +108,10 @@ import ExponentialFamily:
 
         for n in 2:10, κ in 0.01:0.1:1.0
             dist = Binomial(n, κ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Binomial, η, n))
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Binomial, η, n))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-8
             J = ForwardDiff.gradient(transformation, η)
@@ -119,10 +119,10 @@ import ExponentialFamily:
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean var" begin
+    @testset "ExponentialFamilyDistribution mean var" begin
         for n in 2:10, κ in 0.01:0.1:1.0
             dist = Binomial(n, κ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

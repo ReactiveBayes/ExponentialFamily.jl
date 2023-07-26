@@ -30,18 +30,18 @@ function pack_naturalparameters(dist::Categorical)
     return LoopVectorization.vmap(d -> log(d/p[end]), p)
 end
 
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Categorical) = KnownExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical) = ExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
 
-Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Categorical}) = Categorical(softmax(getnaturalparameters(exponentialfamily)))
+Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Categorical}) = Categorical(softmax(getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Categorical}) 
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Categorical}) 
     logsumexp(getnaturalparameters(exponentialfamily))
 end
-isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
+isproper(::ExponentialFamilyDistribution{Categorical}) = true
 
-function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Categorical})
+function fisherinformation(expfamily::ExponentialFamilyDistribution{Categorical})
     η = getnaturalparameters(expfamily)
     I = Matrix{Float64}(undef, length(η), length(η))
     @inbounds for i in 1:length(η)
@@ -67,34 +67,34 @@ function fisherinformation(dist::Categorical)
     return I
 end
 
-function support(ef::KnownExponentialFamilyDistribution{Categorical})
+function support(ef::ExponentialFamilyDistribution{Categorical})
     return ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
     return x ∈ support(ef)
 end
 
-function insupport(union::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
+function insupport(union::ExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
     return typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
+function basemeasure(union::Union{<:ExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
     @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
     return one(x)
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
+function basemeasure(union::Union{<:ExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
     @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
     return one(eltype(x))
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Categorical}, x::Real)
     @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
     return OneElement(x,length(getnaturalparameters(ef)))
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Categorical}, x::Vector)
     @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
     return x
 end

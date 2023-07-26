@@ -3,7 +3,7 @@ module NormalWeightedMeanPrecisionTest
 using Test
 using ExponentialFamily
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, fisherinformation
 
 @testset "NormalWeightedMeanPrecision" begin
     @testset "Constructor" begin
@@ -127,7 +127,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, fisherinformation
     @testset "fisherinformation" begin
         for (xi, w) in Iterators.product(1:10, 1:10)
             dist = NormalWeightedMeanPrecision(xi, w)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             J = [1 0; 0 -2]
             @test J * fisherinformation(dist) * J ≈ fisherinformation(ef)
         end

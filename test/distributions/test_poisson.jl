@@ -9,18 +9,18 @@ using StableRNGs
 using LinearAlgebra
 
 import SpecialFunctions: logfactorial, besseli
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 import DomainSets: NaturalNumbers
 
 @testset "Poisson" begin
     @testset "convert" begin
         for i in 1:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(Poisson, [log(i)])) ≈ Poisson(i)
-            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Poisson, [log(i)]), 10) ≈
+            @test convert(Distribution, ExponentialFamilyDistribution(Poisson, [log(i)])) ≈ Poisson(i)
+            @test Distributions.logpdf(ExponentialFamilyDistribution(Poisson, [log(i)]), 10) ≈
                   Distributions.logpdf(Poisson(i), 10)
 
-            @test convert(KnownExponentialFamilyDistribution, Poisson(i)) ==
-                  KnownExponentialFamilyDistribution(Poisson, [log(i)])
+            @test convert(ExponentialFamilyDistribution, Poisson(i)) ==
+                  ExponentialFamilyDistribution(Poisson, [log(i)])
         end
     end
 
@@ -53,36 +53,36 @@ import DomainSets: NaturalNumbers
 
     @testset "natural parameters related" begin
         @test Distributions.logpdf(Poisson(4), 1) ≈
-              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(4)), 1)
+              Distributions.logpdf(convert(ExponentialFamilyDistribution, Poisson(4)), 1)
         @test Distributions.logpdf(Poisson(5), 1) ≈
-              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
+              Distributions.logpdf(convert(ExponentialFamilyDistribution, Poisson(5)), 1)
 
         for i in 2:10
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [log(i)])) === true
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [NaN])) === false
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, [Inf])) === false
+            @test isproper(ExponentialFamilyDistribution(Poisson, [log(i)])) === true
+            @test isproper(ExponentialFamilyDistribution(Poisson, [NaN])) === false
+            @test isproper(ExponentialFamilyDistribution(Poisson, [Inf])) === false
         end
     end
 
     @testset "fisher information" begin
         for λ in 1:10
             dist = Poisson(λ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
             transformation(η) = exp(η[1])
             J = ForwardDiff.gradient(transformation, η)
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Poisson, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean, var" begin
+    @testset "ExponentialFamilyDistribution mean, var" begin
         for λ in 1:10
             dist = Poisson(λ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end
