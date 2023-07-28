@@ -48,19 +48,14 @@ import LogExpFunctions: logsumexp
 
         @test logpdf(ηcat, 2) == logpdf(dist, 2)
         @test logpdf(ηcat, 1) == logpdf(dist, 1)
-        @test_throws AssertionError logpdf(ηcat, 0.5) == logpdf(dist, 0.5)
 
         @test basemeasure(η1, 2) == 1.0
         @test basemeasure(η1, 1) == 1.0
-        @test_throws AssertionError basemeasure(η1, rand()) == 1.0
-        @test_throws AssertionError basemeasure(η2, rand()) == 1.0
-
+       
         @test logpartition(ηcat) == logsumexp(getnaturalparameters(ηcat))
 
         categoricalef = ExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])
         @test sufficientstatistics(categoricalef, 3) == [0, 0, 1, 0]
-        @test_throws AssertionError sufficientstatistics(categoricalef, 5) == [0, 0, 0, 0]
-        @test_throws AssertionError sufficientstatistics(categoricalef, [0, 1]) == [0, 1, 0, 0]
         @test sufficientstatistics(categoricalef, 4) == [0, 0, 0, 1]
     end
 

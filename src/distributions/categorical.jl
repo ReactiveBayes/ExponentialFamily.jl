@@ -79,22 +79,14 @@ function insupport(union::ExponentialFamilyDistribution{Categorical, P, C, Safe}
     return typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
 end
 
-function basemeasure(union::Union{<:ExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
-    @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
-    return one(x)
-end
+basemeasureconstant(::ExponentialFamilyDistribution{Categorical}) = ConstantBaseMeasure()
+basemeasureconstant(::Type{<:Categorical}) = ConstantBaseMeasure()
 
-function basemeasure(union::Union{<:ExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Vector)
-    @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
-    return one(eltype(x))
-end
-
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Categorical}, x::Real)
-    @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
-    return OneElement(x,length(getnaturalparameters(ef)))
-end
-
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Categorical}, x::Vector)
-    @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
-    return x
-end
+basemeasure(::Type{<:Categorical}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Categorical}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Real) = one(x)
+basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Vector) = one(eltype(x))
+    
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}, x::Real) = OneElement(x,length(getnaturalparameters(ef)))
+sufficientstatistics(::ExponentialFamilyDistribution{<:Categorical}, x::Vector) = x
