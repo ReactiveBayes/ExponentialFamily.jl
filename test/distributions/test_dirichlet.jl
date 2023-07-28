@@ -59,8 +59,7 @@ end
     @test isproper(ExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
     @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
     @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
-    @test_throws AssertionError basemeasure(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand()) ==
-                                1.0
+   
     for i in 1:9
         b = Dirichlet([i / 10.0, i / 5, i])
         bnp = convert(ExponentialFamilyDistribution, b)

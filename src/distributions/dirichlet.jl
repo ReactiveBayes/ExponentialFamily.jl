@@ -60,16 +60,13 @@ function insupport(ef::ExponentialFamilyDistribution{Dirichlet, P, C, Safe}, x) 
     return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
 end
 
-function basemeasure(ef::ExponentialFamilyDistribution{Dirichlet}, x)
-    @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
-    return one(eltype(x))
-end
+
+basemeasure(::ExponentialFamilyDistribution{<:Dirichlet}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{<:Dirichlet}, x) = one(eltype(x))
 
 ## has one allocation
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Dirichlet}, x)
-    @assert insupport(ef, x) "$(x) is not in support of Dirichlet"
-    return vmap(d -> log(d), x)
-end
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Dirichlet}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{<:Dirichlet}, x) = vmap(d -> log(d), x)
 
 function fisherinformation(dist::Dirichlet)
     α  = probvec(dist)
