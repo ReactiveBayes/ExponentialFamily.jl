@@ -33,7 +33,6 @@ import ExponentialFamily:
 
         chisqef = ExponentialFamilyDistribution(Chisq, [3])
         @test sufficientstatistics(chisqef, 1) == [log(1)]
-        @test_throws AssertionError sufficientstatistics(chisqef, -1)
     end
 
     @testset "fisherinformation ExponentialFamilyDistribution{Chisq}" begin
@@ -57,7 +56,7 @@ import ExponentialFamily:
             ef_fisher = fisherinformation(ef)
             η = getnaturalparameters(ef)
             J = ForwardDiff.gradient(transformation, η)
-            @test J' * chisq_fisher * J ≈ ef_fisher atol = 0.01
+            @test J' * chisq_fisher * J ≈ first(ef_fisher) atol = 0.01
         end
     end
 

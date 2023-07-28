@@ -31,10 +31,11 @@ function Base.prod(
     supp = Distributions.support(T)
 
     return ExponentialFamilyDistribution(
-        Float64,
+        Univariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         supp
     )
@@ -67,7 +68,7 @@ end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{Chisq})
     η = unpack_naturalparameters(exponentialfamily)
-    return (η > minushalf)
+    return (η > MINUSHALF)
 end
 
 struct OpenChi end
@@ -83,20 +84,22 @@ support(::Chisq,::OpenChi) = OpenInterval{Real}(0, Inf)
 support(::Chisq,::ClosedChi) = ClosedInterval{Real}(0, Inf)
 check_boundaries(dist::Chisq) = dof(dist) == 1 ? OpenChi() : ClosedChi()
 
-function basemeasure(ef::ExponentialFamilyDistribution{Chisq}, x::Real)
-    @assert insupport(ef, x) "$(x) is not in the support"
-    return exp(-x / 2)
-end
+
 function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Chisq})
     η = unpack_naturalparameters(exponentialfamily)
-    return SA[trigamma(η + one(η))]
+    return SA[trigamma(η + one(η));;]
 end
 
 function fisherinformation(dist::Chisq)
-    return SA[trigamma(dof(dist) / 2) / 4]
+    return SA[trigamma(dof(dist) / 2) / 4;;]
 end
 
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Chisq}, x::Real)
-    @assert insupport(ef, x) "$(x) is not in the support"
-    return SA[log(x)]
-end
+
+basemeasureconstant(::ExponentialFamilyDistribution{<:Chisq}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Chisq}) = NonConstantBaseMeasure()
+
+basemeasure(ef::ExponentialFamilyDistribution{<:Chisq}) = x -> basemeasure(ef,x)
+basemeasure(::ExponentialFamilyDistribution{<:Chisq}, x::Real) = exp(-x / 2)
+    
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Chisq}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{<:Chisq}, x::Real) = SA[log(x)]
