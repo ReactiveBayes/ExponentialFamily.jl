@@ -104,6 +104,8 @@ function isproper(exponentialfamily::ExponentialFamilyDistribution{MvNormalWisha
     return isposdef(-η2) && η3 > 0 && η4 < 0
 end
 
+basemeasure(d::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}) =
+    1 / (2 * pi)^(dim(d) / 2)
 basemeasure(d::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}, x) =
     1 / (2 * pi)^(dim(d) / 2)
 

@@ -146,10 +146,6 @@ end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test_throws AssertionError basemeasure(
-                    ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i]))),
-                    rand(3, 3)
-                )
                 L = rand(2, 2)
                 @test basemeasure(
                     ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i]))),

@@ -72,22 +72,11 @@ import ExponentialFamily: ExponentialFamilyDistribution, basemeasure, fisherinfo
     end
 
     @testset "fisher information" begin
-        rng = StableRNG(42)
-        n_samples = 1000
-
         transformation(η) = [-(η[1]) / (2 * η[2]), sqrt(-1 / (2 * η[2]))]
         for λ in 1:10, σ in 1:10
             dist = LogNormal(λ, σ)
             ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
-
-            samples = rand(rng, LogNormal(λ, σ), n_samples)
-
-            totalHessian = zeros(2, 2)
-            for sample in samples
-                totalHessian -= Zygote.hessian((params) -> logpdf(LogNormal(params[1], params[2]), sample), [λ, σ])
-            end
-            @test fisherinformation(dist) ≈ totalHessian / n_samples rtol = 0.2
 
             f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(LogNormal, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)

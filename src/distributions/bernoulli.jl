@@ -102,17 +102,16 @@ function support(::ExponentialFamilyDistribution{<:Bernoulli})
     return SA[0, 1]
 end
 
-basemeasureconstant(::ExponentialFamilyDistribution{Bernoulli}) = ConstantBaseMeasure()
-basemeasureconstant(::Type{<:Bernoulli}) = ConstantBaseMeasure()
+
 
 basemeasure(::Type{<:Bernoulli}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Bernoulli}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Bernoulli}, x) = one(x)
     
 sufficientstatistics(type::Type{<:Bernoulli}) = x -> sufficientstatistics(type,x)
-sufficientstatistics(::Type{<:Bernoulli}, x) = SA[x]
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Bernoulli}) = x -> sufficientstatistics(ef,x)
-sufficientstatistics(::ExponentialFamilyDistribution{<:Bernoulli}, x) = SA[x]
+sufficientstatistics(::Type{<:Bernoulli}, x::Real) = SA[x]
+sufficientstatistics(ef::ExponentialFamilyDistribution{Bernoulli}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{Bernoulli}, x::Real) = SA[x]
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Bernoulli})
     η = unpack_naturalparameters(ef)

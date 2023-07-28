@@ -76,13 +76,14 @@ isproper(exponentialfamily::ExponentialFamilyDistribution{<:MatrixDirichlet}) =
 
 check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Vector)
 
+basemeasure(::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}) = one(Float64)
 function basemeasure(
     ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
     return one(eltype(x))
 end
-
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}) = x -> sufficientstatistics(ef,x)
 function sufficientstatistics(
     ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}

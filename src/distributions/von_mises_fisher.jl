@@ -91,15 +91,15 @@ function insupport(ef::ExponentialFamilyDistribution{VonMisesFisher, P, C, Safe}
     return length(getnaturalparameters(ef)) == length(x) && dot(x, x) ≈ 1.0
 end
 
-function basemeasure(union::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)
-    @assert insupport(union, x) "$(x) is not in the support of VMF"
-    return (1 / 2pi)^(length(x) / 2)
+basemeasure(ef::ExponentialFamilyDistribution{VonMisesFisher}) = (1 / TWOPI)^(length(getnaturalparameters(ef)) * HALF)
+function basemeasure(::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)
+    return (1 / 2pi)^(length(x) * HALF)
 end
 
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}) = (x) -> sufficientstatistics(ef,x)
 function sufficientstatistics(
-    union::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher},
+    ::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher},
     x::Vector
 )
-    @assert insupport(union, x) "$(x) is not in the support of VMF"
     return x
 end

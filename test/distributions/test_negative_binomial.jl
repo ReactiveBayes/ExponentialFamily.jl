@@ -101,7 +101,7 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, b
             fef = fisherinformation(ef)
             fdist = fisherinformation(dist)
             @test first(fef) ≈ first(autograd_information([-η]))
-            @test J' * fdist * J ≈ fef
+            @test J' * fdist * J ≈ first(fef)
         end
     end
 

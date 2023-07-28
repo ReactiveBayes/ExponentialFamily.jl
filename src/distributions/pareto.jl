@@ -39,26 +39,26 @@ end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Pareto})
     η = unpack_naturalparameters(ef)
-    return [1 / (-1 - η)^2]
+    return SA[1 / (-1 - η)^2;;]
 end
 
 function fisherinformation(dist::Pareto)
     α = shape(dist)
     x = scale(dist)
 
-    return [1/α^2 -1/x; -1/x α/x^2]
+    return SA[1/α^2 -1/x; -1/x α/x^2]
 end
 
 function support(ef::ExponentialFamilyDistribution{Pareto})
     return ClosedInterval{Real}(getconditioner(ef), Inf)
 end
 
-function sufficientstatistics(union::ExponentialFamilyDistribution{Pareto}, x::Real)
-    @assert insupport(union, x) "$(x) is not in the support of Pareto"
+sufficientstatistics(ef::ExponentialFamilyDistribution{Pareto}) = (x) -> sufficientstatistics(ef,x)
+function sufficientstatistics(::ExponentialFamilyDistribution{Pareto}, x::Real)
     return SA[log(x)]
 end
 
-function basemeasure(union::ExponentialFamilyDistribution{Pareto}, x::Real)
-    @assert insupport(union, x) "$(x) is not in the support of Pareto"
+basemeasure(::ExponentialFamilyDistribution{Pareto}) = one(Float64)
+function basemeasure(::ExponentialFamilyDistribution{Pareto}, x::Real)
     return one(x)
 end

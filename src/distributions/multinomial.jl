@@ -38,10 +38,11 @@ function Base.prod(
     logpartition = computeLogpartition(K, conditioner_left)
     supp = 0:conditioner_left
     return ExponentialFamilyDistribution(
-        Float64,
+        Multivariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         supp
     )
@@ -137,19 +138,19 @@ function insupport(ef::ExponentialFamilyDistribution{Multinomial, P, C, Safe}, x
     return n == getconditioner(ef)
 end
 
-function basemeasure(ef::ExponentialFamilyDistribution{Multinomial}, x::Vector)
-    @assert insupport(ef, x) " sum of the elements of $(x) should be equal to the conditioner"
+
+basemeasureconstant(::ExponentialFamilyDistribution{Multinomial}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Multinomial}) = NonConstantBaseMeasure()
+basemeasure(ef::ExponentialFamilyDistribution{Multinomial}) = (x) -> basemeasure(ef,x)
+function basemeasure(::ExponentialFamilyDistribution{Multinomial}, x::Vector)
     n = Int(sum(x))
     return factorial(n) / prod(@.factorial(x))
 end
 
-function basemeasure(dist::Multinomial, x::Vector)
-    @assert insupport(dist, x) " sum of the elements of $(x) should be equal to the conditioner"
+function basemeasure(::Multinomial, x::Vector)
     n = Int(sum(x))
     return factorial(n) / prod(@.factorial(x))
 end
 
-function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector)
-    @assert insupport(union, x)
-    return x
-end
+sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector) = x
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}) = x -> sufficientstatistics(ef,x)

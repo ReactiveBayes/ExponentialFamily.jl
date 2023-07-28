@@ -51,10 +51,9 @@ end
 
 support(::ExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::ExponentialFamilyDistribution{Erlang}, x::Real)
-    @assert insupport(ef, x) "Erlang base measure should be evaluated at positive values"
-    return one(x)
-end
+basemeasure(::ExponentialFamilyDistribution{Erlang}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Erlang}, x::Real) = one(x)
+
 function fisherinformation(ef::ExponentialFamilyDistribution)
     η1,η2 = unpack_naturalparameters(ef)
     miη2 =-inv(η2)
@@ -69,7 +68,6 @@ function fisherinformation(dist::Erlang)
     return SA[trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
 end
 
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Erlang}, x::Real)
-    @assert insupport(ef, x) "Erlang sufficientstatistics should be evaluated at positive values"
-    return SA[log(x), x]
-end
+sufficientstatistics(ef::ExponentialFamilyDistribution{Erlang}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{Erlang}, x::Real) = SA[log(x), x]
+

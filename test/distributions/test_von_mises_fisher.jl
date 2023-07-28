@@ -81,16 +81,6 @@ import StatsFuns: softmax
             @test isproper(ExponentialFamilyDistribution(VonMisesFisher, [0, 0])) === true
         end
 
-        @testset "basemeasure" begin
-            for (i, j) in (1:10, 1:10)
-                @test_throws AssertionError basemeasure(
-                    ExponentialFamilyDistribution(VonMisesFisher, [i, j]),
-                    rand(2)
-                ) == 1 / 2pi
-                @test_throws AssertionError basemeasure(VonMisesFisher([sin(i), cos(i)],), rand(2)) == 1 / 2pi
-            end
-        end
-
         @testset "fisher information" begin
             function transformation(params)
                 κ = sqrt(params' * params)

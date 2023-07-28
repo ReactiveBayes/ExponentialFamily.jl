@@ -8,8 +8,8 @@ using ForwardDiff
 using DomainSets
 using StableRNGs
 
-import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialFamilyDistribution, logpartition,
-    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation, support
+import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, logpartition,
+    basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation, support, getsupport
 
 @testset "Rayleigh" begin
     @testset "vague" begin
@@ -27,7 +27,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialF
         logpartition = (η) -> log(η^(-3 / 2))
         supp = DomainSets.HalfLine()
         @test getnaturalparameters(prod(ClosedProd(), Rayleigh(3.0), Rayleigh(2.0))) == [naturalparameters(3.0, 2.0)]
-        @test support(prod(ClosedProd(), Rayleigh(7.0), Rayleigh(1.0))) == supp
+        @test getsupport(prod(ClosedProd(), Rayleigh(7.0), Rayleigh(1.0))) == supp
         @test getbasemeasure(prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)))(1.0) == basemeasure(1.0)
         @test getsufficientstatistics(prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)))(1.0) ==
               sufficientstatistics(1.0)
@@ -80,7 +80,7 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialF
                 autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
                 @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
                 J = ForwardDiff.gradient(transformation, η)
-                @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+                @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
             end
         end
     end

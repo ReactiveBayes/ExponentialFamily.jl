@@ -245,18 +245,18 @@ function insupport(ef::ExponentialFamilyDistribution{InverseWishartImproper, P, 
     return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
+basemeasure(::ExponentialFamilyDistribution{<:InverseWishartImproper}) = one(Float64)
 function basemeasure(
-    ef::ExponentialFamilyDistribution{<:InverseWishartImproper},
+    ::ExponentialFamilyDistribution{<:InverseWishartImproper},
     x
 )
-    @assert insupport(ef, x) "$(x) is not in the support of inverse Wishart"
-    return 1.0
+    return one(eltype(x))
 end
 
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:InverseWishartImproper}) = (x) -> sufficientstatistics(ef,x)
 function sufficientstatistics(
-    ef::ExponentialFamilyDistribution{<:InverseWishartImproper},
+    ::ExponentialFamilyDistribution{<:InverseWishartImproper},
     x
 )
-    @assert insupport(ef, x) "$(x) is not in the support of inverse Wishart"
     return vcat(chollogdet(x), vec(cholinv(x)))
 end

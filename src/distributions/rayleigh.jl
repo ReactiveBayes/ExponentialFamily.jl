@@ -22,10 +22,11 @@ function Base.prod(
     support = DomainSets.HalfLine()
 
     return ExponentialFamilyDistribution(
-        Float64,
+        Univariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         support
     )
@@ -57,18 +58,21 @@ check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
 logpartition(ef::ExponentialFamilyDistribution{Rayleigh}) = -log(-2 * unpack_naturalparameters(ef))
 
-fisherinformation(dist::Rayleigh) = [4 / scale(dist)^2]
+fisherinformation(dist::Rayleigh) = SA[4 / scale(dist)^2;;]
 
-fisherinformation(ef::ExponentialFamilyDistribution{Rayleigh}) = [inv(unpack_naturalparameters(ef)^2)]
+fisherinformation(ef::ExponentialFamilyDistribution{Rayleigh}) = SA[inv(unpack_naturalparameters(ef)^2);;]
 
 support(::ExponentialFamilyDistribution{Rayleigh}) = ClosedInterval{Real}(0, Inf)
 
-function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
-    @assert insupport(union, x) "Rayleigh sufficient statistics should be evaluated at values greater than 0"
+
+basemeasureconstant(::ExponentialFamilyDistribution{Rayleigh}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Rayleigh}) = NonConstantBaseMeasure()
+
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> sufficientstatistics(ef,x)
+function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
     return SA[x^2]
 end
-
-function basemeasure(union::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
-    @assert insupport(union, x) "Rayleigh base measure should be evaluated at values greater than 0"
+basemeasure(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> basemeasure(ef,x)
+function basemeasure(::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
     return x
 end

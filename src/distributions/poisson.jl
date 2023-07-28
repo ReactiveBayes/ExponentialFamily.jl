@@ -24,10 +24,11 @@ function Base.prod(
     supp = DomainSets.NaturalNumbers()
 
     return ExponentialFamilyDistribution(
-        Float64,
+        Univariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         supp
     )
@@ -72,20 +73,23 @@ function isproper(exponentialfamily::ExponentialFamilyDistribution{Poisson})
 end
 
 fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Poisson}) =
-    [exp(unpack_naturalparameters(exponentialfamily))]
+    SA[exp(unpack_naturalparameters(exponentialfamily));;]
 
-fisherinformation(dist::Poisson) = [1 / rate(dist)]
+fisherinformation(dist::Poisson) = SA[1 / rate(dist);;]
 
 function support(::ExponentialFamilyDistribution{Poisson})
     return DomainSets.NaturalNumbers()
 end
 
-function basemeasure(union::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
-    @assert insupport(union, x) "$(x) is not in the support of Poisson"
+basemeasureconstant(::ExponentialFamilyDistribution{Poisson}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Poisson}) = NonConstantBaseMeasure()
+
+basemeasure(ef::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}) = x -> basemeasure(ef,x)
+function basemeasure(::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     return one(x) / factorial(x)
 end
 
-function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
-    @assert insupport(union, x) "$(x) is not in the support of Poisson"
+sufficientstatistics(ef::ExponentialFamilyDistribution) = (x) -> sufficientstatistics(ef,x)
+function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Poisson}, <:Poisson}, x::Real)
     return SA[x]
 end

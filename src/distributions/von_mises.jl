@@ -44,7 +44,7 @@ function fisherinformation(dist::VonMises)
     bessel0 = besseli(0, k)
     bessel1 = besseli(1, k)
     bessel2 = (1 / 2) * (besseli(0, k) + besseli(2, k))
-    return [(k)*bessel1/bessel0 0.0; 0.0 bessel2/bessel0-(bessel1/bessel0)^2]
+    return SA[(k)*bessel1/bessel0 0.0; 0.0 bessel2/bessel0-(bessel1/bessel0)^2]
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{VonMises})
@@ -62,13 +62,14 @@ function fisherinformation(ef::ExponentialFamilyDistribution{VonMises})
         (bessel1 / bessel0) * (1 / u - (η2^2 / u^3))
     h12 = (η1 * η2 / u^2) * (bessel2 / bessel0 - (bessel1 / bessel0)^2 - bessel1 / (u * bessel0))
 
-    return [h11 h12; h12 h22]
+    return SA[h11 h12; h12 h22]
 end
 
+sufficientstatistics(ef::ExponentialFamilyDistribution{VonMises}) = (x) -> sufficientstatistics(ef,x)
 function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real)
-    return [cos(x), sin(x)]
+    return SA[cos(x), sin(x)]
 end
 
-function basemeasure(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real)
-    return 1 / 2pi
-end
+basemeasure(::ExponentialFamilyDistribution{VonMises}) = inv(TWOPI)
+basemeasure(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real) = inv(TWOPI)
+

@@ -43,16 +43,14 @@ isproper(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
 
 support(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::ExponentialFamilyDistribution{Exponential}, x::Real)
-    @assert insupport(ef, x) "base measure should be evaluated at a point greater than 0"
-    return one(x)
-end
+basemeasure(::ExponentialFamilyDistribution{Exponential}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Exponential}, x::Real) = one(x)
+    
 fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
-    SA[inv(unpack_naturalparameters(exponentialfamily)^2)]
+    SA[inv(unpack_naturalparameters(exponentialfamily)^2);;]
 
-fisherinformation(dist::Exponential) = SA[inv(dist.θ^2)]
+fisherinformation(dist::Exponential) = SA[inv(dist.θ^2);;]
 
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Exponential}, x::Real)
-    @assert insupport(ef, x) "sufficient statistics should be evaluated at a point greater than 0"
-    return SA[x]
-end
+sufficientstatistics(ef::ExponentialFamilyDistribution{Exponential}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{Exponential}, x::Real) = SA[x]
+

@@ -215,14 +215,14 @@ end
 function fisherinformation(dist::WishartFast)
     df, invS = dist.ν, dist.invS
     p = first(size(invS))
-    return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
+    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{<:WishartFast})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -as_vec(invη2)'; -as_vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
 
 function insupport(ef::ExponentialFamilyDistribution{WishartFast, P, C, Safe}, x::Matrix) where {P, C}
@@ -233,17 +233,19 @@ function insupport(dist::WishartFast, x::Matrix)
     return (size(dist.invS) == size(x)) && isposdef(x)
 end
 
+basemeasure(::ExponentialFamilyDistribution{<:WishartFast}) = one(Float64)
 function basemeasure(
-    union::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
+    ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
     x::Matrix
 )
-    @assert insupport(union, x) "$(x) is not in the support of Wishart"
-    return 1.0
+    return one(eltype(x))
 end
+
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:WishartFast}) = (x) -> sufficientstatistics(ef,x)
+
 function sufficientstatistics(
-    union::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
+    ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
     x::Matrix
 )
-    @assert insupport(union, x) "$(x) is not in the support of Wishart"
     return vcat(chollogdet(x), vec(x))
 end

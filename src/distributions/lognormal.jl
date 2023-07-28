@@ -3,7 +3,6 @@ export LogNormal
 import SpecialFunctions: digamma
 import Distributions: LogNormal
 using StaticArrays
-const TPI = 2 * pi
 
 Distributions.cov(dist::LogNormal) = var(dist)
 
@@ -59,14 +58,15 @@ end
 
 support(::Union{<:ExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::ExponentialFamilyDistribution{LogNormal}, x::Real)
-    @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
-    return inv(sqrt(TPI) * x)
+basemeasureconstant(::ExponentialFamilyDistribution{LogNormal}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:LogNormal}) = NonConstantBaseMeasure()
+basemeasure(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> basemeasure(ef,x)
+function basemeasure(::ExponentialFamilyDistribution{LogNormal}, x::Real)
+    return inv(sqrt(TWOPI) * x)
 end
 
-function basemeasure(dist::LogNormal, x::Real)
-    @assert insupport(dist, x) "Lognormal should be evaluated at positive values"
-    return  inv(sqrt(TPI) * x)
+function basemeasure(::LogNormal, x::Real)
+    return  inv(sqrt(TWOPI) * x)
 end
 
 function fisherinformation(d::LogNormal)
@@ -79,7 +79,7 @@ function fisherinformation(ef::ExponentialFamilyDistribution{LogNormal})
     return SA[-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
 end
 
-function sufficientstatistics(ef::ExponentialFamilyDistribution{LogNormal}, x::Real)
-    @assert insupport(ef, x) "Lognormal should be evaluated at positive values"
+sufficientstatistics(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> sufficientstatistics(ef,x)
+function sufficientstatistics(::ExponentialFamilyDistribution{LogNormal}, x::Real)
     return SA[log(x), log(x)^2]
 end

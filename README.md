@@ -18,14 +18,14 @@ ExponentialFamily.jl is a Julia package that extends the functionality of Distri
 
 ```julia
 using ExponentialFamily, Distributions
-import ExponentialFamily: ExponentialFamilyDistribution
+import ExponentialFamily: KnownExponentialFamilyDistribution
 
 dist_left = Bernoulli(0.5)
 dist_right = Bernoulli(0.6)
 @show dist_prod = prod(ClosedProd(), dist_left, dist_right)
 
-ef_left = convert(ExponentialFamilyDistribution, dist_left)
-ef_right = convert(ExponentialFamilyDistribution, dist_right)
+ef_left = convert(KnownExponentialFamilyDistribution, dist_left)
+ef_right = convert(KnownExponentialFamilyDistribution, dist_right)
 ef_prod = prod(ef_left, ef_right)
 
 @show convert(Bernoulli, ef_prod)
@@ -34,7 +34,7 @@ ef_prod = prod(ef_left, ef_right)
 ### Example 2: Laplace distribution
 ```julia
 using ExponentialFamily
-import ExponentialFamily: ExponentialFamilyDistribution
+import ExponentialFamily: KnownExponentialFamilyDistribution
 
 dist_left = Laplace(1.0, 3.0)
 dist_right = Laplace(1.0, 4.0)
@@ -48,6 +48,11 @@ dist_right = Laplace(3.0, 4.0)
 prod(ClosedProd(), dist_left, dist_right)
 ```
 
+## Installation
+ExponentialFamily.jl can be installed through the Julia package manager. In the Julia REPL, type `]` to enter the package manager mode and run:
+```julia
+pkg> add ExponentialFamily
+```
 ## Installation
 ExponentialFamily.jl can be installed through the Julia package manager. In the Julia REPL, type `]` to enter the package manager mode and run:
 ```julia

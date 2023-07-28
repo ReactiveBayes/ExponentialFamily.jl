@@ -10,7 +10,7 @@ using ForwardDiff
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialFamilyDistribution, logpartition,
     basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, getconditioner, fisherinformation,
-    logpdf, support
+    logpdf, support,getsupport
 
 @testset "Laplace" begin
     @testset "vague" begin
@@ -60,13 +60,13 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialF
             dist_prod = prod(ClosedProd(), l_left, l_right2)
             ef_prod = prod(ef_left, ef_right2)
             @test getnaturalparameters(dist_prod) == naturalparameters
-            @test support(dist_prod) == supp
+            @test getsupport(dist_prod) == supp
             @test getbasemeasure(dist_prod)(1.0) == basemeasure(1.0)
             @test getsufficientstatistics(dist_prod)(1.0) ==
                   sufficientstatistics(1.0)
 
             @test getnaturalparameters(ef_prod) == naturalparameters
-            @test support(ef_prod) == supp
+            @test getsupport(ef_prod) == supp
             @test getbasemeasure(ef_prod)(1.0) == basemeasure(1.0)
             @test getsufficientstatistics(ef_prod)(1.0) ==
                   sufficientstatistics(1.0)

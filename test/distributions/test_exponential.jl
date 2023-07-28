@@ -99,7 +99,7 @@ import ExponentialFamily:
             autograd_inforamation = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test first(fisherinformation(ef)) ≈ first(autograd_inforamation(η))
             J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef)
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef))
         end
     end
 

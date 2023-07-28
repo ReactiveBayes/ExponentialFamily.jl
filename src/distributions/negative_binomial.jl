@@ -44,10 +44,11 @@ function Base.prod(
     supp = NaturalNumbers()
 
     return ExponentialFamilyDistribution(
-        Float64,
+        Univariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         supp
     )
@@ -96,12 +97,14 @@ logpartition(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial})
 
 support(::ExponentialFamilyDistribution{NegativeBinomial}) = NaturalNumbers()
 
+
+basemeasureconstant(::ExponentialFamilyDistribution{NegativeBinomial}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:NegativeBinomial}) = NonConstantBaseMeasure()
+basemeasure(ef::ExponentialFamilyDistribution{NegativeBinomial}) = (x) -> basemeasure(ef,x)
 function basemeasure(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial}, x::Real)
-    @assert insupport(exponentialfamily, x) "$(x) is not in the support of negative binomial"
     return binomial(Int(x + getconditioner(exponentialfamily) - 1), x)
 end
 function basemeasure(d::NegativeBinomial, x::Real)
-    @assert insupport(d, x) "$(x) is not in the support of negative binomial"
     r, _ = params(d)
     return binomial(Int(x + r - 1), x)
 end
@@ -109,18 +112,18 @@ end
 function fisherinformation(ef::ExponentialFamilyDistribution{NegativeBinomial})
     r = getconditioner(ef)
     η = unpack_naturalparameters(ef)
-    return SA[r * exp(η) / (one(Float64) - exp(η))^2]
+    return SA[r * exp(η) / (one(Float64) - exp(η))^2;;]
 end
 
 function fisherinformation(dist::NegativeBinomial)
     r, p = params(dist)
-    SA[r / (p^2 * (one(p) - p))]
+    SA[r / (p^2 * (one(p) - p));;]
 end
 
+sufficientstatistics(ef::ExponentialFamilyDistribution{NegativeBinomial}) = (x) -> sufficientstatistics(ef,x)
 function sufficientstatistics(
-    ef::ExponentialFamilyDistribution{NegativeBinomial},
+    ::ExponentialFamilyDistribution{NegativeBinomial},
     x::Real
 )
-    @assert insupport(ef, x) "$(x) is not in the support of negative binomial"
     return SA[x]
 end

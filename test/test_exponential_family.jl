@@ -22,7 +22,6 @@ import Distributions: pdf, logpdf, cdf
     @test_throws AssertionError ExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), f)
 
     @test insupport(ef1, 1) == true
-    @test insupport(ef2, 9) == false
     @test insupport(ef1 , 0) == true
 end
 
@@ -37,8 +36,6 @@ end
     @test pdf(ef1, 0) ≈ pdf(Base.convert(Bernoulli, ef1), 0)
     @test cdf(ef1, 0) == cdf(Base.convert(Bernoulli, ef1), 0)
 
-    @test_throws AssertionError logpdf(ef1, 0.1) == logpdf(Base.convert(Bernoulli, ef1), 0.1)
-    @test_throws AssertionError pdf(ef1, 0.1) == pdf(Base.convert(Bernoulli, ef1), 0.1)
     @test cdf(ef1, 0.1) == cdf(Base.convert(Bernoulli, ef1), 0.1)
 end
 

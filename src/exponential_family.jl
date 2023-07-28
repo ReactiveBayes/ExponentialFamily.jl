@@ -79,6 +79,16 @@ function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T
     return log(basemeasure) + dot(η, statistics) - logpartition
 end
 
+function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P,C, Z, A, B}, x) where 
+    {T <: VariateForm,H,S,P,C,Z,A,B}
+    @assert insupport(exponentialfamily, x)
+    η = getnaturalparameters(exponentialfamily)
+    statistics = getsufficientstatistics(exponentialfamily)(x)
+    basemeasure = getbasemeasure(exponentialfamily)(x)
+    logpartition = getlogpartition(exponentialfamily)
+    return log(basemeasure) + dot(η, statistics) - logpartition(η)
+end
+
 Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x)) 
 Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x) =
     Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)

@@ -73,7 +73,7 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, b
             @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-8
 
             J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
         end
     end
 

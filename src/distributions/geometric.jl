@@ -39,21 +39,22 @@ function insupport(::ExponentialFamilyDistribution{Geometric, P, C, Safe}, x::Re
     return zero(Float64) < x && x < Inf && typeof(x) <: Int
 end
 
-function basemeasure(union::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
-    @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"
+
+basemeasure(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}) = one(Float64)
+function basemeasure(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
     return one(x)
 end
 function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Geometric})
     η = unpack_naturalparameters(exponentialfamily)
-    SA[exp(η) / (one(Float64) - exp(η))^2]
+    SA[exp(η) / (one(Float64) - exp(η))^2;;]
 end
 
 function fisherinformation(dist::Geometric)
     p = succprob(dist)
-    SA[one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2]
+    SA[one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2;;]
 end
 
-function sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
-    @assert insupport(union, x) "$(x) is not in the support of Geometric distribution"
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}) = x -> sufficientstatistics(ef,x)
+function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
     return SA[x]
 end

@@ -508,12 +508,15 @@ end
 
 isproper(exponentialfamily::ExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
     isposdef(-getindex(unpack_naturalparameters(exponentialfamily),2))
+basemeasure(
+    ef::ExponentialFamilyDistribution{<:NormalDistributionsFamily}
+) = TWOPI^( -length(unpack_naturalparameters(ef)[1]) * HALF)
 
 basemeasure(
     ::Union{<:ExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
     x
 ) =
-    (2pi)^(-length(x) / 2)
+    (TWOPI)^(-length(x) * HALF)
 
 function fisherinformation(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
     weightedmean, minushalfprecision = unpack_naturalparameters(ef)
@@ -564,6 +567,14 @@ function cov(ef::ExponentialFamilyDistribution{MultivariateGaussianDistributions
     _, minushalfprecision = unpack_naturalparameters(ef)
     return inv(-2 * minushalfprecision)
 end
+
+sufficientstatistics(
+    ef::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
+) = x -> sufficientstatistics(ef,x)
+
+sufficientstatistics(
+    ef::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily}
+)  = x -> sufficientstatistics(ef,x)
 
 sufficientstatistics(
     ::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},

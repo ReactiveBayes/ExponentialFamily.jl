@@ -37,10 +37,11 @@ function Base.prod(
         supp = RealInterval{Float64}(-Inf, Inf)
 
         return ExponentialFamilyDistribution(
-            Float64,
+            Univariate,
+            naturalparameters,
+            nothing,
             basemeasure,
             sufficientstatistics,
-            naturalparameters,
             logpartition,
             supp
         )
@@ -78,10 +79,11 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
         supp = RealInterval{Float64}(-Inf, Inf)
 
         return ExponentialFamilyDistribution(
-            Float64,
+            Univariate,
+            naturalparameters,
+            nothing,
             basemeasure,
             sufficientstatistics,
-            naturalparameters,
             logpartition,
             supp
         )
@@ -111,6 +113,8 @@ isproper(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
 
 logpartition(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
     log(-2 / unpack_naturalparameters(exponentialfamily))
+
+basemeasure(::ExponentialFamilyDistribution{Laplace}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Laplace}, x::Real) =
     one(x)
 
@@ -125,6 +129,7 @@ function fisherinformation(dist::Laplace)
     return SA[1/b^2 0; 0 1/b^2]
 end
 
+sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}) = x -> sufficientstatistics(ef,x)
 function sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}, x)
     μ = getconditioner(ef)
     return SA[abs(x - μ)]

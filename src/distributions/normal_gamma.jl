@@ -84,6 +84,7 @@ function isproper(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     return -η2 > 0 && (η3 >= tiny + minushalf) && (-η4 >= tiny)
 end
 
+basemeasure(::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}) = 1 / SQRT2PI
 basemeasure(::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}, x) = 1 / SQRT2PI
 
 function Random.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector)

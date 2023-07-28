@@ -74,7 +74,7 @@ import DomainSets: NaturalNumbers
             f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Poisson, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
         end
     end
 
