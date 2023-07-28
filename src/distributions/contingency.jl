@@ -206,17 +206,16 @@ end
 
 closed_prod_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
 
-basemeasure(::Union{<:ExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = one(eltype(x))
+basemeasureconstant(::ExponentialFamilyDistribution{<:Contingency}) = ConstantBaseMeasure()
+basemeasureconstant(::Type{<:Contingency}) = ConstantBaseMeasure()
 
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Contingency}, x)
-    @assert typeof(x) <: Vector{<:Integer} && length(x) === 2 "x should be a length 2 vector of integer"
+basemeasure(::Type{<:Contingency}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{<:Contingency}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{<:Contingency}, x) = one(eltype(x))
+    
+sufficientstatistics(type::Type{<:Contingency}) = x -> sufficientstatistics(type,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}) = x -> sufficientstatistics(ef,x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}, x) 
     len = length(getnaturalparameters(ef))
-    OneElement((x[2] - 1)*isqrt(len) + x[1]  , len)
+    return OneElement((x[2] - 1)*isqrt(len) + x[1]  , len)
 end
-
-function sufficientstatistics(dist::Contingency, x::Vector{Int64})
-    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
-    len = length(dist.p)
-    OneElement((x[2]-1)*isqrt(len) + x[1]  , len)
-end
-

@@ -74,9 +74,6 @@ import LoopVectorization: vmap
         @test prod(ηcontingency, ηcontingency) ==
               ExponentialFamilyDistribution(Contingency, vec(vmap(d -> 2log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
 
-        @test basemeasure(d1, rand()) == 1.0
-        @test basemeasure(d2, [1, 2]) == 1.0
-
         @test logpartition(ηcontingency) == log(0.1 / 0.15 + 0.7 / 0.15 + 0.05 / 0.15 + 1.0)
     end
 
