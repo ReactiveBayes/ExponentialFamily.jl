@@ -178,26 +178,29 @@ end
 function insupport(dist::ContinuousBernoulli, x::Real)
     return x ∈ support(dist)
 end
+
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}) = (x) -> sufficientstatistics(ef,x)
 function sufficientstatistics(
-    union::ExponentialFamilyDistribution{ContinuousBernoulli},
+    ::ExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
 )
-    @assert insupport(union, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return SA[x]
 end
 
+basemeasure(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}) = basemeasure(ef,isvague(ef))
+basemeasure(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}, ::VagueContinuousBernoulli) = exp(logpartition(ef))
+basemeasure(::ExponentialFamilyDistribution{<:ContinuousBernoulli}, ::NonVagueContinuousBernoulli) = one(Float64)
 basemeasure(
-    exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli},
+    exponentialfamily::ExponentialFamilyDistribution{<:ContinuousBernoulli},
     x::Real
 ) =
     basemeasure(isvague(exponentialfamily), exponentialfamily, x)
 
 function basemeasure(
     ::VagueContinuousBernoulli,
-    ef::ExponentialFamilyDistribution{ContinuousBernoulli},
+    ef::ExponentialFamilyDistribution{<:ContinuousBernoulli},
     x::Real
 )
-    @assert insupport(ef, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return exp(logpartition(ef))
 end
 
@@ -206,6 +209,5 @@ function basemeasure(
     ef::ExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
 )
-    @assert insupport(ef, x) "sufficientstatistics should be evaluated at a point between 0 and 1."
     return one(x)
 end
