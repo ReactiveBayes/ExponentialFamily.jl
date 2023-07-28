@@ -14,54 +14,56 @@ import Random: rand
 struct Safe end
 struct Unsafe end
 
-struct ExponentialFamilyDistribution{T, H, S, P,C, Z, A, B}
-    basemeasure::H
-    sufficientstatistics::S
+struct ExponentialFamilyDistribution{T, P, C, H, S, Z, A, B}
     naturalparameters::P
     conditioner::C
+    basemeasure::H
+    sufficientstatistics::S
     logpartition::Z
     support::A
     supportcheck::B
-    ExponentialFamilyDistribution(::Type{T}, basemeasure::H, sufficientstatistics::S,
-        naturalparameters::P,conditioner::C, logpartition::Z, support::A = nothing, supportcheck::B = Unsafe()) where {T, H, S, P, C, Z, A, B} = begin
-            new{T, H, S, P,C, Z, A, B}(basemeasure, sufficientstatistics, naturalparameters,conditioner, logpartition, support, supportcheck)
+    ExponentialFamilyDistribution(::Type{T},naturalparameters::P,conditioner::C, basemeasure::H, sufficientstatistics::S,
+        logpartition::Z, support::A = nothing, supportcheck::B = Unsafe()) where {T, P, C, H, S, Z, A, B} = begin
+            new{T, P, C, H, S, Z, A, B}(naturalparameters, conditioner, basemeasure, sufficientstatistics, logpartition, support, supportcheck)
     end
 end
 
+function ExponentialFamilyDistribution(::Type{T}, naturalparameters::AbstractVector, conditioner = nothing) where {T <: Distribution}
+    @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
+    @assert check_valid_conditioner(T, conditioner) "$(conditioner) is not a valid conditioner for distribution $(T) or 'check_valid_conditioner' function is not implemented!"
+    return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing, nothing, nothing, nothing, nothing)
+end
+
+getlogpartition(ef::ExponentialFamilyDistribution) = getlogpartition(ef.logpartition, ef)
+getlogpartition(::Nothing, ef::ExponentialFamilyDistribution)  = logpartition(ef)
+getlogpartition(something, ::ExponentialFamilyDistribution) = something
+
+getbasemeasure(ef::ExponentialFamilyDistribution) = getbasemeasure(ef.basemeasure, ef)
+getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution) = basemeasure(ef)
+getbasemeasure(something, ::ExponentialFamilyDistribution) = something
+
+getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.sufficientstatistics, ef)
+getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution) = sufficientstatistics(ef)
+getsufficientstatistics(something, ::ExponentialFamilyDistribution) = something
+
+getsupport(ef::ExponentialFamilyDistribution) = getsupport(ef.support,ef)
+getsupport(::Nothing, ef::ExponentialFamilyDistribution) = support(ef)
+getsupport(something, ::ExponentialFamilyDistribution) = something
+
+getconditioner(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.conditioner
+getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.naturalparameters
 
 struct ConstantBaseMeasure end 
 struct NonConstantBaseMeasure end
-
-## These constructors create ExponentialFamily with known log partition
-function ExponentialFamilyDistribution(::Type{T}, naturalparameters::Vector{P}) where {T <:Distribution, P}
-    @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
-    lp = logpartition(T, naturalparameters)
-    return ExponentialFamilyDistribution(T, basemeasure(T), sufficientstatistics(T), naturalparameters, nothing,lp, support(T))
-end
-
-function ExponentialFamilyDistribution(::Type{T}, naturalparameters::Vector{P}, conditioner::C) where {T <: Distribution, P, C}
-    @assert check_valid_natural(T, naturalparameters) == true "Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T)"
-    @assert check_valid_conditioner(T, conditioner) "$(conditioner) is not a valid conditioner for distribution $(T) or 'check_valid_conditioner' function is not implemented!"
-    lp = logpartition(T, naturalparameters)
-    return ExponentialFamilyDistribution(T, basemeasure(T), sufficientstatistics(T), naturalparameters, conditioner, lp, support(T))
-end
-
-getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.naturalparameters
-getlogpartition(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.logpartition
-getbasemeasure(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.basemeasure
-getsufficientstatistics(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.sufficientstatistics
-getconditioner(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.conditioner
-getsupport(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.support
-
 basemeasureconstant(::ExponentialFamilyDistribution) = ConstantBaseMeasure()
 
 Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T}, x) where {T <: Distribution}= logpdf(exponentialfamily,x, basemeasureconstant(exponentialfamily))
 
 function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P,C, Z, A, B}, x, ::ConstantBaseMeasure) where 
     {T <: Distribution,H,S,P,C,Z,A,B}
-    @assert insupport(exponentialfamily,x)
+    @assert insupport(exponentialfamily, x)
     η = getnaturalparameters(exponentialfamily)
-    statistics = sufficientstatistics(exponentialfamily,x)
+    statistics = getsufficientstatistics(exponentialfamily)(x)
     basemeasure = getbasemeasure(exponentialfamily)
     logpartition = getlogpartition(exponentialfamily)
     return log(basemeasure) + dot(η, statistics) - logpartition
@@ -69,10 +71,10 @@ end
 
 function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P,C, Z, A, B}, x, ::NonConstantBaseMeasure) where 
     {T <: Distribution,H,S,P,C,Z,A,B}
-    @assert insupport(exponentialfamily,x)
+    @assert insupport(exponentialfamily, x)
     η = getnaturalparameters(exponentialfamily)
-    statistics = sufficientstatistics(exponentialfamily, x)
-    basemeasure = basemeasure(exponentialfamily, x)
+    statistics = getsufficientstatistics(exponentialfamily, x)
+    basemeasure = getbasemeasure(exponentialfamily)(x)
     logpartition = getlogpartition(exponentialfamily)
     return log(basemeasure) + dot(η, statistics) - logpartition
 end
@@ -81,14 +83,11 @@ Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(log
 Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x) =
     Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
-function insupport(ef::ExponentialFamilyDistribution{T, H, S, P,C, Z, A, Safe}, x) where {T <: Distribution,H,S,P,C,Z,A}
-    return x ∈ support(ef)
-end
+insupport(ef::ExponentialFamilyDistribution, x) = insupport(ef.supportcheck, ef, x)
 
-function insupport(::ExponentialFamilyDistribution{T, H, S, P,C, Z, A, Unsafe}, x) where {T <: Distribution,H,S,P,C,Z,A}
-    return true
-end
-
+insupport(::Safe, ef, x) = x ∈ support(ef)
+insupport(::Unsafe, ef, x) = true
+insupport(::Nothing, ef, x) = true
 
 
 variate_form(::P) where {P <: ExponentialFamilyDistribution} = variate_form(P)

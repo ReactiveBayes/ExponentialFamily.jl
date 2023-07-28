@@ -54,8 +54,8 @@ import ExponentialFamily:
         end
         @test isproper(ExponentialFamilyDistribution(Bernoulli, [10])) === true
         bernoullief = ExponentialFamilyDistribution(Bernoulli, [log(0.1)])
-        @test sufficientstatistics(bernoullief, 1) == 1
-        @test sufficientstatistics(bernoullief, 0) == 0
+        @test sufficientstatistics(bernoullief, 1) == [1]
+        @test sufficientstatistics(bernoullief, 0) == [0]
     end
 
     @testset "prod with ExponentialFamilyDistribution" begin
@@ -87,9 +87,9 @@ import ExponentialFamily:
 
             f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Bernoulli, η))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ first(autograd_information(η)) atol = 1e-8
+            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
             J = ForwardDiff.gradient(transformation, η)
-            @test first(J' * fisherinformation(dist) * J) ≈ first(fisherinformation(ef)) atol = 1e-8
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
         end
     end
 

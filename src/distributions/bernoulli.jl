@@ -96,10 +96,10 @@ isproper(exponentialfamily::ExponentialFamilyDistribution{Bernoulli}) = true
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 
 function support(::Type{<:Bernoulli})
-    return [0, 1]
+    return SA[0, 1]
 end
 function support(::ExponentialFamilyDistribution{<:Bernoulli})
-    return [0, 1]
+    return SA[0, 1]
 end
 
 basemeasureconstant(::ExponentialFamilyDistribution{Bernoulli}) = ConstantBaseMeasure()
@@ -110,22 +110,18 @@ basemeasure(::ExponentialFamilyDistribution{Bernoulli}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Bernoulli}, x) = one(x)
     
 sufficientstatistics(type::Type{<:Bernoulli}) = x -> sufficientstatistics(type,x)
-sufficientstatistics(::Type{<:Bernoulli}, x) = x
+sufficientstatistics(::Type{<:Bernoulli}, x) = SA[x]
 sufficientstatistics(ef::ExponentialFamilyDistribution{<:Bernoulli}) = x -> sufficientstatistics(ef,x)
-sufficientstatistics(::ExponentialFamilyDistribution{<:Bernoulli}, x) = x
+sufficientstatistics(::ExponentialFamilyDistribution{<:Bernoulli}, x) = SA[x]
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Bernoulli})
     η = unpack_naturalparameters(ef)
     f = logistic(-η)
-    return f * (one(f) - f)
+    return SA[f * (one(f) - f);;]
 end
 
 function fisherinformation(dist::Bernoulli)
     p = dist.p
-    return inv(p * (one(p) - p))
+    return SA[inv(p * (one(p) - p));;]
 end
 
-function mean(ef::ExponentialFamilyDistribution{Bernoulli})
-    logprobability = unpack_naturalparameters(ef)
-    return exp(logprobability) / (one(Float64) + exp(logprobability))
-end
