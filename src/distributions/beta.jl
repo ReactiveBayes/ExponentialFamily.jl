@@ -66,18 +66,22 @@ function logpartition(exponentialfamily::ExponentialFamilyDistribution{Beta})
         βm1 + one(βm1)
     )
 end
+
 function support(::ExponentialFamilyDistribution{Beta})
     return ClosedInterval{Real}(zero(Float64), one(Float64))
 end
 
-function basemeasure(::ExponentialFamilyDistribution{Beta}, x::Real)
-    @assert Distributions.insupport(Beta, x) "basemeasure for Beta should be evaluated at positive values"
-    return one(x)
-end
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Beta}, x::Real)
-    @assert insupport(ef, x) "sufficientstatistics for Beta should be evaluated at positive values"
-    return  SA[log(x), log(one(x) - x)]
-end
+basemeasureconstant(::ExponentialFamilyDistribution{Beta}) = ConstantBaseMeasure()
+basemeasureconstant(::Type{<:Beta}) = ConstantBaseMeasure()
+
+basemeasure(::Type{<:Beta}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Beta}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Beta}, x) = one(x)
+    
+sufficientstatistics(type::Type{<:Beta}) = x -> sufficientstatistics(type,x)
+sufficientstatistics(::Type{<:Beta}, x) = SA[log(x), log(one(x) - x)]
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Beta}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{<:Beta}, x) = SA[log(x), log(one(x) - x)]
 
 function fisherinformation(dist::Beta)
     a, b = params(dist)
