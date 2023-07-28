@@ -88,7 +88,7 @@ import ExponentialFamily:
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-9
             J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-9
         end
 
         for κ in 0.51:0.01:0.99
@@ -100,7 +100,7 @@ import ExponentialFamily:
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-9
             J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-9
         end
 
         for κ in 0.499:0.0001:0.50001
@@ -109,7 +109,7 @@ import ExponentialFamily:
             η = getnaturalparameters(ef)
 
             J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-9
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-9
         end
     end
 
