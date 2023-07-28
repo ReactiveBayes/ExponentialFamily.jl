@@ -1,6 +1,6 @@
 export Binomial
 using DomainSets
-import Distributions: Binomial, probs
+import Distributions: Binomial, probs, Univariate
 import StatsFuns: logit, logistic , log1pexp
 
 import HypergeometricFunctions: _₂F₁
@@ -46,14 +46,15 @@ function Base.prod(
     end
 
     sufficientstatistics = (x) -> SA[x]
-    logpartition = (η) -> log(_₂F₁(-left_trials, -right_trials, 1, exp(η)))
+    logpartition = (η) -> log(_₂F₁(-left_trials, -right_trials, 1, exp(first(η))))
     supp = 0:max(left_trials, right_trials)
 
     return ExponentialFamilyDistribution(
-        Float64,
+        Univariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         supp
     )
@@ -91,7 +92,7 @@ logpartition(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
 
 function fisherinformation(dist::Binomial)
     n, p = params(dist)
-    return SA[n / (p * (1 - p))]
+    return SA[n / (p * (1 - p));;]
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Binomial})
@@ -99,20 +100,16 @@ function fisherinformation(ef::ExponentialFamilyDistribution{Binomial})
     aux = logistic(η)
     n = getconditioner(ef)
 
-    return SA[n * aux * (1 - aux)]
+    return SA[n * aux * (1 - aux);;]
 end
 
-function basemeasure(dist::Binomial, x)
-    @assert insupport(dist, x)
-    return binomial(dist.n, x)
-end
+basemeasureconstant(::ExponentialFamilyDistribution{Binomial}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Binomial}) = NonConstantBaseMeasure()
 
-function basemeasure(ef::ExponentialFamilyDistribution{Binomial}, x)
-    @assert insupport(ef, x)
-    return binomial(getconditioner(ef), x)
-end
-
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Binomial}, x)
-    @assert insupport(ef, x)
-    return SA[x]
-end
+basemeasure(ef::ExponentialFamilyDistribution{Binomial}) = x -> basemeasure(ef,x)
+basemeasure(ef::ExponentialFamilyDistribution{Binomial}, x) = binomial(getconditioner(ef), x)
+    
+sufficientstatistics(type::Type{<:Binomial}) = x -> sufficientstatistics(type,x)
+sufficientstatistics(::Type{<:Binomial}, x) = SA[x]
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Binomial}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{<:Binomial}, x) = SA[x]

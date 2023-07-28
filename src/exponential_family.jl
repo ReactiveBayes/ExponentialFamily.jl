@@ -73,7 +73,7 @@ function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T
     {T <: Distribution,H,S,P,C,Z,A,B}
     @assert insupport(exponentialfamily, x)
     η = getnaturalparameters(exponentialfamily)
-    statistics = getsufficientstatistics(exponentialfamily, x)
+    statistics = getsufficientstatistics(exponentialfamily)(x)
     basemeasure = getbasemeasure(exponentialfamily)(x)
     logpartition = getlogpartition(exponentialfamily)
     return log(basemeasure) + dot(η, statistics) - logpartition
