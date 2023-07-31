@@ -53,7 +53,7 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    η = unpack_naturalparameters(convert(ExponentialFamilyDistribution, dist))
+    (η, ) = unpack_naturalparameters(convert(ExponentialFamilyDistribution, dist))
     eη = exp(η)
     return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
@@ -100,11 +100,11 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Continuous
     η = getnaturalparameters(ef)
     @inbounds logprobability = η[1]
 
-    return logprobability
+    return (logprobability, )
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
-    return ContinuousBernoulli(logistic(unpack_naturalparameters(exponentialfamily)))
+    return ContinuousBernoulli(logistic(first(unpack_naturalparameters(exponentialfamily))))
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::ContinuousBernoulli)
@@ -116,7 +116,7 @@ isproper(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) 
 check_valid_natural(::Type{<:ContinuousBernoulli}, params) = (length(params) === 1)
 
 function isvague(exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
-    if unpack_naturalparameters(exponentialfamily) ≈ 0.0
+    if first(unpack_naturalparameters(exponentialfamily)) ≈ 0.0
         return VagueContinuousBernoulli()
     else
         return NonVagueContinuousBernoulli()
@@ -127,7 +127,7 @@ function logpartition(
     ::NonVagueContinuousBernoulli,
     exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}
 )
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return log((exp(η) - 1) / η + tiny)
 end
 logpartition(::VagueContinuousBernoulli, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) =
@@ -153,7 +153,7 @@ end
 fisherinformation(ef::ExponentialFamilyDistribution{ContinuousBernoulli}) = fisherinformation(isvague(ef), ef)
 fisherinformation(::VagueContinuousBernoulli, ef::ExponentialFamilyDistribution{ContinuousBernoulli}) = SA[1 / 12;;]
 function fisherinformation(::NonVagueContinuousBernoulli, ef::ExponentialFamilyDistribution{ContinuousBernoulli})
-    η = unpack_naturalparameters(ef)
+    (η, ) = unpack_naturalparameters(ef)
     return SA[inv(η^2) - exp(η) / (exp(η) - 1)^2;;]
 end
 

@@ -12,7 +12,7 @@ import Distributions: pdf, logpdf, cdf
 
     @test getnaturalparameters(ef1) + getnaturalparameters(ef2) == [1.1]
     @test getnaturalparameters(ef1) - getnaturalparameters(ef2) == [0.7]
-    logprobability1 = unpack_naturalparameters(ef1)
+    (logprobability1, ) = unpack_naturalparameters(ef1)
     @test Base.convert(Bernoulli, ef1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
     @test Base.convert(ExponentialFamilyDistribution, Bernoulli(0.9)) ==
           ExponentialFamilyDistribution(Bernoulli, [logit(0.9)])

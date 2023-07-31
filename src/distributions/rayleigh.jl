@@ -42,25 +42,25 @@ pack_naturalparameters(dist::Rayleigh) = [MINUSHALF / first(params(dist))^2]
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Rayleigh})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
-    return η1
+    return (η1, )
 end
 
-isproper(ef::ExponentialFamilyDistribution{Rayleigh}) = unpack_naturalparameters(ef) < 0
+isproper(ef::ExponentialFamilyDistribution{Rayleigh}) = first(unpack_naturalparameters(ef)) < 0
 
 Base.convert(::Type{ExponentialFamilyDistribution}, dist::Rayleigh) = ExponentialFamilyDistribution(Rayleigh, pack_naturalparameters(dist))
     
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Rayleigh})
-    η = unpack_naturalparameters(ef)
+    (η, ) = unpack_naturalparameters(ef)
     return Rayleigh(sqrt(-1 / (2η)))
 end
 
 check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
-logpartition(ef::ExponentialFamilyDistribution{Rayleigh}) = -log(-2 * unpack_naturalparameters(ef))
+logpartition(ef::ExponentialFamilyDistribution{Rayleigh}) = -log(-2 * first(unpack_naturalparameters(ef)))
 
 fisherinformation(dist::Rayleigh) = SA[4 / scale(dist)^2;;]
 
-fisherinformation(ef::ExponentialFamilyDistribution{Rayleigh}) = SA[inv(unpack_naturalparameters(ef)^2);;]
+fisherinformation(ef::ExponentialFamilyDistribution{Rayleigh}) = SA[inv(first(unpack_naturalparameters(ef))^2);;]
 
 support(::ExponentialFamilyDistribution{Rayleigh}) = ClosedInterval{Real}(0, Inf)
 

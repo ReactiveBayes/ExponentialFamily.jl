@@ -53,27 +53,27 @@ pack_naturalparameters(dist::Poisson) = [log(rate(dist))]
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Poisson})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
-    return η1
+    return (η1, )
 end
 
 Base.convert(::Type{ExponentialFamilyDistribution}, dist::Poisson) =
     ExponentialFamilyDistribution(Poisson, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Poisson})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return Poisson(exp(η))
 end
 
 logpartition(exponentialfamily::ExponentialFamilyDistribution{Poisson}) =
-    exp(unpack_naturalparameters(exponentialfamily))
+    exp(first(unpack_naturalparameters(exponentialfamily)))
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{Poisson})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     η isa Number && !isnan(η) && !isinf(η)
 end
 
 fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Poisson}) =
-    SA[exp(unpack_naturalparameters(exponentialfamily));;]
+    SA[exp(first(unpack_naturalparameters(exponentialfamily)));;]
 
 fisherinformation(dist::Poisson) = SA[1 / rate(dist);;]
 

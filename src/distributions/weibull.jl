@@ -79,11 +79,11 @@ pack_naturalparameters(dist::Weibull) = [-(1 / scale(dist))^(shape(dist))]
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Weibull}) 
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
-    return η1
+    return (η1, )
 end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{Weibull})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return η < 0
 end
 
@@ -102,16 +102,16 @@ Base.convert(::Type{ExponentialFamilyDistribution}, dist::Weibull) =
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Weibull})
     k = getconditioner(exponentialfamily)
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return Weibull(k, (-1 / η)^(1 / k))
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{Weibull})
-    return -log(-unpack_naturalparameters(exponentialfamily)) - log(getconditioner(exponentialfamily))
+    return -log(-first(unpack_naturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
 end
 
 fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Weibull}) =
-    SA[inv(unpack_naturalparameters(exponentialfamily))^2;;]
+    SA[inv(first(unpack_naturalparameters(exponentialfamily)))^2;;]
 
 function fisherinformation(dist::Weibull)
     α = shape(dist)

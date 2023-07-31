@@ -48,26 +48,26 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Chisq})
     ηvec = getnaturalparameters(ef)
     @inbounds η1 = ηvec[1]
     
-    return η1
+    return (η1, ) 
 end
 
 Base.convert(::Type{ExponentialFamilyDistribution}, dist::Chisq) =
     ExponentialFamilyDistribution(Chisq, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Chisq})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, )  = unpack_naturalparameters(exponentialfamily)
     return Chisq(Int64(2 * (η + one(η))))
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{Chisq})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     o = one(η)
     
     return loggamma(η + o) + (η + o) * LOG2
 end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{Chisq})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return (η > MINUSHALF)
 end
 
@@ -86,7 +86,7 @@ check_boundaries(dist::Chisq) = dof(dist) == 1 ? OpenChi() : ClosedChi()
 
 
 function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Chisq})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return SA[trigamma(η + one(η));;]
 end
 

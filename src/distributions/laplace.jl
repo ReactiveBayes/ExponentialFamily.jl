@@ -93,7 +93,7 @@ end
 support(::Union{<:ExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf, Inf)
 
 pack_naturalparameters(dist::Laplace) = [-inv((params(dist)[2]))]
-unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Laplace}) = first(getnaturalparameters(ef))
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Laplace}) = (first(getnaturalparameters(ef)), )
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Laplace)
     μ, _ = params(dist)
@@ -101,7 +101,7 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Laplace)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Laplace})
-    return Laplace(getconditioner(exponentialfamily), -inv(unpack_naturalparameters(exponentialfamily)))
+    return Laplace(getconditioner(exponentialfamily), -inv(first(unpack_naturalparameters(exponentialfamily))))
 end
 
 check_valid_natural(::Type{<:Laplace}, params) = length(params) == 1
@@ -109,10 +109,10 @@ check_valid_natural(::Type{<:Laplace}, params) = length(params) == 1
 check_valid_conditioner(::Type{<:Laplace}, conditioner) = true
 
 isproper(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
-    unpack_naturalparameters(exponentialfamily) < 0
+    first(unpack_naturalparameters(exponentialfamily)) < 0
 
 logpartition(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
-    log(-2 / unpack_naturalparameters(exponentialfamily))
+    log(-2 / first(unpack_naturalparameters(exponentialfamily)))
 
 basemeasure(::ExponentialFamilyDistribution{Laplace}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Laplace}, x::Real) =
@@ -120,7 +120,7 @@ basemeasure(::ExponentialFamilyDistribution{Laplace}, x::Real) =
 
 basemeasure(::Laplace, x::Real) = one(x)
 
-fisherinformation(ef::ExponentialFamilyDistribution{Laplace}) = SA[inv(unpack_naturalparameters(ef)^2)]
+fisherinformation(ef::ExponentialFamilyDistribution{Laplace}) = SA[inv(first(unpack_naturalparameters(ef))^2)]
 
 function fisherinformation(dist::Laplace)
     # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.

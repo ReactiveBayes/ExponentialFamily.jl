@@ -107,7 +107,7 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Contingenc
     η = getnaturalparameters(ef)
     len = length(η)
     islen = isqrt(len)
-    return reshape(view(η,1:len),islen,islen)
+    return (reshape(view(η,1:len),islen,islen), )
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Contingency)
@@ -115,7 +115,7 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Contingency)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Contingency})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return Contingency(softmax(η))
 end
 

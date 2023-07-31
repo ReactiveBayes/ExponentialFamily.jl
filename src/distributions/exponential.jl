@@ -25,21 +25,21 @@ end
 check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
 pack_naturalparameters(dist::Exponential) = [-inv(dist.θ)]
-unpack_naturalparameters(ef::ExponentialFamilyDistribution) = first(getnaturalparameters(ef))
+unpack_naturalparameters(ef::ExponentialFamilyDistribution) = (first(getnaturalparameters(ef)), )
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Exponential)
     return ExponentialFamilyDistribution(Exponential, pack_naturalparameters(dist))
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Exponential})
-    return Exponential(-inv(unpack_naturalparameters(exponentialfamily)))
+    return Exponential(-inv(first(unpack_naturalparameters(exponentialfamily))))
 end
 
 function logpartition(ef::ExponentialFamilyDistribution{Exponential})
-    return -log(-unpack_naturalparameters(ef))
+    return -log(-first(unpack_naturalparameters(ef)))
 end
 
 isproper(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
-    (unpack_naturalparameters(exponentialfamily) <= zero(Float64))
+    (first(unpack_naturalparameters(exponentialfamily)) <= zero(Float64))
 
 support(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
 
@@ -47,7 +47,7 @@ basemeasure(::ExponentialFamilyDistribution{Exponential}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Exponential}, x::Real) = one(x)
     
 fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
-    SA[inv(unpack_naturalparameters(exponentialfamily)^2);;]
+    SA[inv(first(unpack_naturalparameters(exponentialfamily))^2);;]
 
 fisherinformation(dist::Exponential) = SA[inv(dist.θ^2);;]
 

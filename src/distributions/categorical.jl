@@ -30,6 +30,8 @@ function pack_naturalparameters(dist::Categorical)
     return LoopVectorization.vmap(d -> log(d/p[end]), p)
 end
 
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{Categorical}) = (getnaturalparameters(ef), )
+    
 Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical) = ExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
 
 Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Categorical}) = Categorical(softmax(getnaturalparameters(exponentialfamily)))

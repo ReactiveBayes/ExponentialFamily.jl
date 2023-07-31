@@ -69,11 +69,11 @@ end
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Bernoulli})
     vectorized = getnaturalparameters(ef)
     @inbounds η = vectorized[1]
-    return η
+    return (η, )
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return -log(logistic(-η))
 end
 
@@ -82,7 +82,7 @@ function logpartition(::Type{<:Bernoulli}, η)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
-    logprobability = unpack_naturalparameters(exponentialfamily)
+    (logprobability,) = unpack_naturalparameters(exponentialfamily)
     return Bernoulli(exp(logprobability) / (one(Float64) + exp(logprobability)))
 end
 
@@ -114,7 +114,7 @@ sufficientstatistics(ef::ExponentialFamilyDistribution{Bernoulli}) = x -> suffic
 sufficientstatistics(::ExponentialFamilyDistribution{Bernoulli}, x::Real) = SA[x]
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Bernoulli})
-    η = unpack_naturalparameters(ef)
+    (η, ) = unpack_naturalparameters(ef)
     f = logistic(-η)
     return SA[f * (one(f) - f);;]
 end

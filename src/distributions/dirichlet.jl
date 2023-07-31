@@ -34,6 +34,14 @@ function compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist:
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
 end
 
+function pack_naturalparameters(dist::Dirichlet)
+    return probvec(dist) - Ones{Float64}(length(probvec(dist)))
+end
+
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{Dirichlet})
+    return (getnaturalparameters(ef),)
+end
+
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(exponentialfamily)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η)

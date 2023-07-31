@@ -32,7 +32,7 @@ end
 
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
     ef = Base.convert(ExponentialFamilyDistribution, dist)
-    return -logpartition(ef) + tr(unpack_naturalparameters(ef)' * log.(x))
+    return -logpartition(ef) + tr(first(unpack_naturalparameters(ef))' * log.(x))
 end
 
 Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
@@ -53,7 +53,7 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MatrixDiri
     vectorized = getnaturalparameters(ef) 
     len = length(vectorized)
     Ssize = isqrt(len)
-    return reshape(view(vectorized, 1:len), Ssize, Ssize)
+    return (reshape(view(vectorized, 1:len), Ssize, Ssize), )
 end
 
 ##TODO: this code needs to be optimized
@@ -61,11 +61,11 @@ logpartition(exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) 
     vmapreduce(
         d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
         +,
-        eachcol(unpack_naturalparameters(exponentialfamily))
+        eachcol(first(unpack_naturalparameters(exponentialfamily)))
     )
 
 Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
-    MatrixDirichlet(unpack_naturalparameters(exponentialfamily) .+ one(Float64))
+    MatrixDirichlet(first(unpack_naturalparameters(exponentialfamily)) .+ one(Float64))
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixDirichlet)
     ExponentialFamilyDistribution(MatrixDirichlet, pack_naturalparameters(dist))
@@ -113,7 +113,7 @@ end
 
 ## this works 36 allocations
 function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
-    η    = unpack_naturalparameters(ef)
+    (η, )    = unpack_naturalparameters(ef)
     ones = Ones{Float64}(size(η))
     ηp1  = η+ones
 

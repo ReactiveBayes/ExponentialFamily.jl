@@ -66,7 +66,7 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:NegativeBi
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     
-    return η1
+    return (η1, )
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::NegativeBinomial)
@@ -77,7 +77,7 @@ end
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial})
     return NegativeBinomial(
         getconditioner(exponentialfamily),
-        one(Float64) - exp(unpack_naturalparameters(exponentialfamily))
+        one(Float64) - exp(first(unpack_naturalparameters(exponentialfamily)))
     )
 end
 
@@ -88,12 +88,12 @@ function check_valid_conditioner(::Type{<:NegativeBinomial}, conditioner)
 end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial})
-    η = unpack_naturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return η ≤ 0
 end
 
 logpartition(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial}) =
-    -getconditioner(exponentialfamily) * log(one(Float64) - exp(unpack_naturalparameters(exponentialfamily)))
+    -getconditioner(exponentialfamily) * log(one(Float64) - exp(first(unpack_naturalparameters(exponentialfamily))))
 
 support(::ExponentialFamilyDistribution{NegativeBinomial}) = NaturalNumbers()
 
@@ -111,7 +111,7 @@ end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{NegativeBinomial})
     r = getconditioner(ef)
-    η = unpack_naturalparameters(ef)
+    (η, ) = unpack_naturalparameters(ef)
     return SA[r * exp(η) / (one(Float64) - exp(η))^2;;]
 end
 

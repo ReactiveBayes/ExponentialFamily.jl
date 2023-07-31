@@ -60,7 +60,7 @@ function pack_naturalparameters(dist::Multinomial)
     return vmap(log, p/p[end])
 end
 
-unpack_naturalparameters
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{Multinomial}) = (getnaturalparameters(ef), )
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Multinomial)
     n, _ = params(dist)

@@ -67,7 +67,7 @@ end
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Binomial})
     vectorized = getnaturalparameters(ef)
     @inbounds η1 = vectorized[1] 
-    return η1
+    return (η1, )
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Binomial)
@@ -75,7 +75,8 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Binomial)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Binomial})
-    return Binomial(getconditioner(exponentialfamily), logistic(unpack_naturalparameters(exponentialfamily)))
+    (η, ) = unpack_naturalparameters(exponentialfamily)
+    return Binomial(getconditioner(exponentialfamily), logistic(η))
 end
 
 check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
@@ -88,7 +89,7 @@ isproper(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
     getconditioner(exponentialfamily) > zero(Int64) ? true : false
 
 logpartition(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
-    getconditioner(exponentialfamily)log1pexp(unpack_naturalparameters(exponentialfamily))
+    getconditioner(exponentialfamily)log1pexp(first(unpack_naturalparameters(exponentialfamily)))
 
 function fisherinformation(dist::Binomial)
     n, p = params(dist)
@@ -96,7 +97,7 @@ function fisherinformation(dist::Binomial)
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Binomial})
-    η = unpack_naturalparameters(ef)
+    (η, ) = unpack_naturalparameters(ef)
     aux = logistic(η)
     n = getconditioner(ef)
 
