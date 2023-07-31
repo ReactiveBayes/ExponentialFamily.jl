@@ -3,7 +3,6 @@ export ProductDistribution, ClosedProd, ClosedProd, ProdGeneric, LinearizedProdu
 import Distributions
 import Base: prod, show, showerror
 
-struct ClosedProd end
 """
     ClosedProd
 
@@ -14,6 +13,7 @@ Note: `ClosedProd` ignores `missing` values and simply returns the non-`missing`
 
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdGeneric`](@ref)
 """
+struct ClosedProd end
 
 """
     prod(strategy, left, right)
@@ -100,6 +100,7 @@ struct ProdPreserveTypeRight end
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
 struct ClosedProdUnknown end
+
 """
     closed_prod_rule(::Type, ::Type)
 Returns either `ProdClosed` or `ClosedProdUnknown` for two given distribution types.

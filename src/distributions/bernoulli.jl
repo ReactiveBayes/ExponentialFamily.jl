@@ -83,7 +83,7 @@ end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
     (logprobability,) = unpack_naturalparameters(exponentialfamily)
-    return Bernoulli(exp(logprobability) / (one(Float64) + exp(logprobability)))
+    return Bernoulli(logistic(logprobability))
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Bernoulli)

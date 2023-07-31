@@ -1,19 +1,26 @@
+export ExponentialFamilyDistribution
+
 using Distributions, LinearAlgebra, StaticArrays
+
 import Random: rand
 
-"""
-    ExponentialFamilyDistribution{T, H, S, P, Z, A}
-
-    `ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
-    Its fields are `basemeasure` ,`sufficientstatistics`,  `naturalparameters`, `logpartition` and `support`. 
-    `basemeasure` is a positive a valued function. `sufficientstatistics` is a vector of functions such as [x, x^2] or [x, logx].
-    `naturalparameters` is an `AbstractArray` holding the values of the natural parameters. `logpartition` is a function that depends 
-    on the naturalparameters and it ensures that the distribution is normalized to 1. `support` is the set that the distribution is 
-    defined over. Could be real numbers, positive integers, 3d cube etc. 
-"""
 struct Safe end
 struct Unsafe end
 
+"""
+    ExponentialFamilyDistribution(::Type{T}, naturalparameters, [ conditioner, basemeasure, sufficientstatistics, logpartition, support, supportcheck ])
+
+`ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
+Methods defined are `basemeasure` ,`sufficientstatistics`,  `naturalparameters`, `logpartition` and `support`.
+
+- `getbasemeasure` returns a positive a valued function. 
+- `getsufficientstatistics` returns an iterable of functions such as [x, x^2] or [x, logx].
+- `getnaturalparameters` returns an iterable holding the values of the natural parameters. 
+- `getlogpartition` return a function that depends on the naturalparameters and it ensures that the distribution is normalized to 1. 
+- `support` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use the `insupport` to check if a values is in support.
+
+See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref)
+"""
 struct ExponentialFamilyDistribution{T, P, C, H, S, Z, A, B}
     naturalparameters::P
     conditioner::C
