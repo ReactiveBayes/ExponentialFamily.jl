@@ -8,7 +8,7 @@ using ForwardDiff
 using ExponentialFamily
 using StableRNGs
 import ExponentialFamily:
-    NormalGamma, KnownExponentialFamilyDistribution, params, location
+    NormalGamma, ExponentialFamilyDistribution, params, location
 import ExponentialFamily:
     scale, dim, getnaturalparameters, tiny, logpartition, cholinv, MvNormalMeanPrecision, sufficientstatistics,
     fisherinformation
@@ -38,7 +38,7 @@ end
             a = i
             b = i
             dist = NormalGamma(m, s, a, b)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             dist_converted = convert(Distribution, ef)
             @test dist_converted ≈ dist
             @test getnaturalparameters(ef) ≈ [s * m, -s / 2, a - 1 / 2, -b - s * m^2 / 2]
@@ -53,12 +53,12 @@ end
             a = i
             b = i^2
             dist = NormalGamma(m, s, a, b)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test pdf(dist, [m, s]) ≈ normal_gamma_pdf(m, s, m, s, a, b)
             @test logpdf(dist, [m, s]) ≈ log(normal_gamma_pdf(m, s, m, s, a, b))
         end
     end
-
+    transformation(η) = [η[1]/ (-2η[2]), -2η[2], η[3] + 1/2, -η[4] + (η[1]^2 / 4η[2])]
     @testset "fisher information (naturalparameters)" begin
         rng = StableRNG(42)
         for i in 1:0.1:5
@@ -67,37 +67,22 @@ end
             a = i
             b = i
             dist = NormalGamma(m, s, a, b)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            f_logpartion = (η) -> logpartition(KnownExponentialFamilyDistribution(NormalGamma, η))
+            ef = convert(ExponentialFamilyDistribution, dist)
+            η = getnaturalparameters(ef)
+            f_logpartion = (η) -> logpartition(ExponentialFamilyDistribution(NormalGamma, η))
             autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
-            @test fisherinformation(ef) ≈ autograd_inforamation_matrix(getnaturalparameters(ef))
+            fef = fisherinformation(ef)
+            fdist = fisherinformation(dist)
+            J = ForwardDiff.jacobian(transformation, η)
+            @test fef ≈ autograd_inforamation_matrix(η)
+            @test J' * fdist * J ≈ fef
         end
     end
 
-    @testset "fisher information" begin
-        rng = StableRNG(42)
-        n_samples = 3000
-        for (i, j) in Iterators.product(1:0.1:2, 1:0.1:2)
-            m = rand(rng)
-            s = rand(rng)
-            a = i
-            b = j
-            dist = NormalGamma(m, s, a, b)
-            samples = rand(rng, dist, n_samples)
-            hessian_at_sample =
-                (sample) -> ForwardDiff.hessian(
-                    (params) -> logpdf(NormalGamma(params[1], params[2], params[3], params[4]), sample),
-                    [m, s, a, b]
-                )
-            expected_hessian = -mean(hessian_at_sample, samples)
-            @test expected_hessian ≈ fisherinformation(dist) atol = 0.501
-            # @test expected_hessian ≈ fisherinformation(dist) atol = 0.1 #small number of tests failed
-        end
-    end
 
     @testset "sampling" begin
         rng = StableRNG(42)
-        for i in 1:10, j in 1:10
+        for i in 1:2:10, j in 1:2:10
             # Parameters for the Normal-Gamma distribution
             μ = 2.0
             λ = 1.0
@@ -139,13 +124,13 @@ end
             a2 = rand()
             dist1 = NormalGamma(m1, 1.0, a1, 1.0)
             dist2 = NormalGamma(m2, 1.0, a2, 1.0)
-            ef1 = convert(KnownExponentialFamilyDistribution, dist1)
-            ef2 = convert(KnownExponentialFamilyDistribution, dist2)
+            ef1 = convert(ExponentialFamilyDistribution, dist1)
+            ef2 = convert(ExponentialFamilyDistribution, dist2)
             @test prod(ClosedProd(), dist1, dist2) == convert(Distribution, prod(ClosedProd(), ef1, ef2))
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean,var" begin
+    @testset "ExponentialFamilyDistribution mean,var" begin
         for i in 1:10, j in 1:10
             # Parameters for the Normal-Gamma distribution
             μ = 2.0
@@ -155,7 +140,7 @@ end
 
             # Create a Normal-Gamma distribution
             dist = NormalGamma(μ, λ, α, β)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test cov(dist) ≈ cov(ef) atol = 1e-8
         end

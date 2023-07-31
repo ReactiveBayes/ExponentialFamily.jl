@@ -2,6 +2,9 @@ export Categorical
 export logpartition
 
 import Distributions: Categorical, probs
+import LogExpFunctions: logsumexp
+import FillArrays: OneElement
+using LoopVectorization
 
 vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 
@@ -22,27 +25,25 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Categorical)
+function pack_naturalparameters(dist::Categorical)
     p = probvec(dist)
-    η = log.(p / p[end])
-    return KnownExponentialFamilyDistribution(Categorical, η)
+    return LoopVectorization.vmap(d -> log(d/p[end]), p)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Categorical})
-    η = getnaturalparameters(exponentialfamily)
-    return Categorical(softmax(η))
-end
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{Categorical}) = (getnaturalparameters(ef), )
+    
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical) = ExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
+
+Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Categorical}) = Categorical(softmax(getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Categorical})
-    η = getnaturalparameters(exponentialfamily)
-    return log(sum(exp.(η)))
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Categorical}) 
+    logsumexp(getnaturalparameters(exponentialfamily))
 end
+isproper(::ExponentialFamilyDistribution{Categorical}) = true
 
-isproper(::KnownExponentialFamilyDistribution{Categorical}) = true
-
-function fisherinformation(expfamily::KnownExponentialFamilyDistribution{Categorical})
+function fisherinformation(expfamily::ExponentialFamilyDistribution{Categorical})
     η = getnaturalparameters(expfamily)
     I = Matrix{Float64}(undef, length(η), length(η))
     @inbounds for i in 1:length(η)
@@ -68,35 +69,26 @@ function fisherinformation(dist::Categorical)
     return I
 end
 
-function support(ef::KnownExponentialFamilyDistribution{Categorical})
+function support(ef::ExponentialFamilyDistribution{Categorical})
     return ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
     return x ∈ support(ef)
 end
 
-function insupport(union::KnownExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
+function insupport(union::ExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
     return typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
 end
 
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Categorical}, <:Categorical}, x::Real)
-    @assert insupport(union, x) "Evaluation point $(x) is not in the support of Categorical"
-    return one(typeof(x))
-end
+basemeasureconstant(::ExponentialFamilyDistribution{Categorical}) = ConstantBaseMeasure()
+basemeasureconstant(::Type{<:Categorical}) = ConstantBaseMeasure()
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Real)
-    @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
-    K = length(getnaturalparameters(ef))
-    ss = zeros(K)
-    [ss[k] = 1 for k in 1:K if x == k]
-    return ss
-end
-
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Categorical}, x::Vector)
-    @assert insupport(ef, x) "Evaluation point $(x) is not in the support of Categorical"
-    K = length(getnaturalparameters(ef))
-    ss = zeros(K)
-    [ss[k] = 1 for k in 1:K if x[k] == 1]
-    return ss
-end
+basemeasure(::Type{<:Categorical}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Categorical}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Real) = one(x)
+basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Vector) = one(eltype(x))
+    
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}, x::Real) = OneElement(x,length(getnaturalparameters(ef)))
+sufficientstatistics(::ExponentialFamilyDistribution{<:Categorical}, x::Vector) = x

@@ -2,6 +2,7 @@ export Exponential
 
 import Distributions: Exponential, params
 import SpecialFunctions: digamma, logbeta
+using StaticArrays
 
 vague(::Type{<:Exponential}) = Exponential(Float64(huge))
 
@@ -23,33 +24,33 @@ end
 
 check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Exponential)
-    return KnownExponentialFamilyDistribution(Exponential, -inv(dist.θ))
+pack_naturalparameters(dist::Exponential) = [-inv(dist.θ)]
+unpack_naturalparameters(ef::ExponentialFamilyDistribution) = (first(getnaturalparameters(ef)), )
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Exponential)
+    return ExponentialFamilyDistribution(Exponential, pack_naturalparameters(dist))
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Exponential})
-    return Exponential(-inv(getnaturalparameters(exponentialfamily)))
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Exponential})
+    return Exponential(-inv(first(unpack_naturalparameters(exponentialfamily))))
 end
 
-function logpartition(η::KnownExponentialFamilyDistribution{Exponential})
-    return -log(-getnaturalparameters(η))
+function logpartition(ef::ExponentialFamilyDistribution{Exponential})
+    return -log(-first(unpack_naturalparameters(ef)))
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
-    (getnaturalparameters(exponentialfamily) <= zero(Float64))
+isproper(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
+    (first(unpack_naturalparameters(exponentialfamily)) <= zero(Float64))
 
-support(::Union{<:KnownExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
+support(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
 
-function basemeasure(ef::KnownExponentialFamilyDistribution{Exponential}, x)
-    @assert insupport(ef, x) "base measure should be evaluated at a point greater than 0"
-    return one(typeof(x))
-end
-fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Exponential}) =
-    inv(getnaturalparameters(exponentialfamily)^2)
+basemeasure(::ExponentialFamilyDistribution{Exponential}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Exponential}, x::Real) = one(x)
+    
+fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
+    SA[inv(first(unpack_naturalparameters(exponentialfamily))^2);;]
 
-fisherinformation(dist::Exponential) = inv(dist.θ^2)
+fisherinformation(dist::Exponential) = SA[inv(dist.θ^2);;]
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Exponential}, x)
-    @assert insupport(ef, x) "sufficient statistics should be evaluated at a point greater than 0"
-    return x
-end
+sufficientstatistics(ef::ExponentialFamilyDistribution{Exponential}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(::ExponentialFamilyDistribution{Exponential}, x::Real) = SA[x]
+

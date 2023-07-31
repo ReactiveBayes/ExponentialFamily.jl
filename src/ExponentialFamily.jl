@@ -3,6 +3,7 @@ using TinyHugeNumbers
 
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
+include("constants.jl")
 include("distributions.jl")
 include("exponential_family.jl")
 include("prod.jl")

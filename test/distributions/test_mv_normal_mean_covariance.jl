@@ -7,7 +7,7 @@ using Distributions
 using ForwardDiff
 using StableRNGs
 
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, fisherinformation, as_vec
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, fisherinformation, as_vec
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin
@@ -112,21 +112,17 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "fisherinformation" begin
-        function reconstructed_logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
-            natural_params = getnaturalparameters(ef)
-            mean_size = length(natural_params[1])
-            @views wmean = ηvec[1:mean_size]
-            @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
-            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
-            return logpartition(ef)
+        function reconstructed_logpartition(::ExponentialFamilyDistribution{T}, ηvec) where {T}
+
+            return logpartition(ExponentialFamilyDistribution(T, ηvec))
         end
 
-        function transformation(ef::KnownExponentialFamilyDistribution{T}, ηvec) where {T}
+        function transformation(ef::ExponentialFamilyDistribution{T}, ηvec) where {T}
             natural_params = getnaturalparameters(ef)
             mean_size = length(natural_params[1])
             @views wmean = ηvec[1:mean_size]
             @views matrix = reshape(ηvec[(mean_size+1):end], mean_size, mean_size)
-            ef = KnownExponentialFamilyDistribution(T, [wmean, matrix])
+            ef = ExponentialFamilyDistribution(T, [wmean, matrix])
             mean_cov = mean(ef), cov(ef)
             return [mean_cov[1]..., mean_cov[2]...]
         end
@@ -147,8 +143,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             L = randn(rng, d, d)
             Σ = L * L'
             dist = MvNormalMeanCovariance(μ, Σ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            v = [getnaturalparameters(ef)[1]..., getnaturalparameters(ef)[2]...]
+            ef = convert(ExponentialFamilyDistribution, dist)
+            v = getnaturalparameters(ef)
             fi_ag = ForwardDiff.hessian(x -> reconstructed_logpartition(ef, x), v)
             # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
             # The matrices are identical up to permutations, resulting in eigenvalues that are the same up to a sign.

@@ -152,45 +152,54 @@ function Base.prod(::ClosedProd, left::WishartFast, right::WishartFast)
     return WishartFast(df, invV)
 end
 
-check_valid_natural(::Type{<:Union{WishartFast, Wishart}}, params) = length(params) === 2
-
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::WishartFast)
+function pack_naturalparameters(dist::WishartFast)
     dof = dist.ν
     invscale = dist.invS
     p = first(size(invscale))
-    return KnownExponentialFamilyDistribution(WishartFast, [(dof - p - 1) / 2, -invscale / 2])
+
+    return vcat((dof - p - 1) / 2, vec(-invscale / 2))
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Wishart)
+function pack_naturalparameters(dist::Wishart)
     dof = dist.df
     invscale = cholinv(dist.S)
     p = first(size(invscale))
-    return KnownExponentialFamilyDistribution(WishartFast, [(dof - p - 1) / 2, -invscale / 2])
+
+    return vcat((dof - p - 1) / 2, vec(-invscale / 2))
 end
 
-function Base.convert(::Type{Distribution}, params::KnownExponentialFamilyDistribution{<:WishartFast})
-    η = getnaturalparameters(params)
-    η1 = first(η)
-    η2 = getindex(η, 2)
-    p = first(size(η2))
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:WishartFast})
+    η = getnaturalparameters(ef)
+    len = length(η)
+    n = Int64(isqrt(len-1))
+    @inbounds η1 = η[1]
+    @inbounds η2 = reshape(view(η,2:len),n,n)
 
+    return η1, η2
+end
+
+check_valid_natural(::Type{<:Union{WishartFast, Wishart}}, params) = length(params) >= 5
+
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartFast) = ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart) = ExponentialFamilyDistribution(WishartFast,pack_naturalparameters(dist) )
+   
+function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:WishartFast})
+    η1, η2 = unpack_naturalparameters(ef)
+    p = first(size(η2))
     return WishartFast(2 * η1 + p + 1, -2η2)
 end
 
-function logpartition(params::KnownExponentialFamilyDistribution{<:WishartFast})
-    η = getnaturalparameters(params)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+function logpartition(ef::ExponentialFamilyDistribution{<:WishartFast})
+    η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     term1 = -(η1 + (p + 1) / 2) * logdet(-η2)
     term2 = logmvgamma(p, η1 + (p + 1) / 2)
     return term1 + term2
 end
 
-function isproper(params::KnownExponentialFamilyDistribution{<:WishartFast})
-    η = getnaturalparameters(params)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+function isproper(ef::ExponentialFamilyDistribution{<:WishartFast})
+    η1, η2 = unpack_naturalparameters(ef)
     isposdef(-η2) && (0 < η1)
 end
 
@@ -206,37 +215,37 @@ end
 function fisherinformation(dist::WishartFast)
     df, invS = dist.ν, dist.invS
     p = first(size(invS))
-    return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
+    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
 end
 
-function fisherinformation(params::KnownExponentialFamilyDistribution{<:WishartFast})
-    η = getnaturalparameters(params)
-    η1 = first(η)
-    η2 = getindex(η, 2)
+function fisherinformation(ef::ExponentialFamilyDistribution{<:WishartFast})
+    η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -as_vec(invη2)'; -as_vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
 
-function insupport(ef::KnownExponentialFamilyDistribution{WishartFast, P, C, Safe}, x::Matrix) where {P, C}
-    return size(getindex(getnaturalparameters(ef), 2)) == size(x) && isposdef(x)
+function insupport(ef::ExponentialFamilyDistribution{WishartFast, P, C, Safe}, x::Matrix) where {P, C}
+    return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
 function insupport(dist::WishartFast, x::Matrix)
     return (size(dist.invS) == size(x)) && isposdef(x)
 end
 
+basemeasure(::ExponentialFamilyDistribution{<:WishartFast}) = one(Float64)
 function basemeasure(
-    union::Union{<:KnownExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
+    ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
     x::Matrix
 )
-    @assert insupport(union, x) "$(x) is not in the support of Wishart"
-    return 1.0
+    return one(eltype(x))
 end
+
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:WishartFast}) = (x) -> sufficientstatistics(ef,x)
+
 function sufficientstatistics(
-    union::Union{<:KnownExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
+    ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
     x::Matrix
 )
-    @assert insupport(union, x) "$(x) is not in the support of Wishart"
-    return [chollogdet(x), x]
+    return vcat(chollogdet(x), vec(x))
 end

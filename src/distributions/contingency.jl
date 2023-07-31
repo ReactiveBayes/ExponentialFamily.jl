@@ -2,6 +2,10 @@ export Contingency, icdf
 
 using LinearAlgebra
 using Random
+using LoopVectorization
+
+import LogExpFunctions: logsumexp
+using FillArrays
 
 """
     Contingency(P, renormalize = Val(true))
@@ -97,23 +101,30 @@ function Distributions.entropy(distribution::Contingency)
     return -mapreduce((p) -> p * clamplog(p), +, P)
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Contingency)
-    P = contingency_matrix(dist)
-    η = log.(P / P[end])
-    return KnownExponentialFamilyDistribution(Contingency, η)
+pack_naturalparameters(dist::Contingency) = LoopVectorization.vmap(d -> log(d / dist.p[end]), vec(dist.p))
+
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Contingency})
+    η = getnaturalparameters(ef)
+    len = length(η)
+    islen = isqrt(len)
+    return (reshape(view(η,1:len),islen,islen), )
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Contingency})
-    η = getnaturalparameters(exponentialfamily)
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Contingency)
+    return ExponentialFamilyDistribution(Contingency, pack_naturalparameters(dist))
+end
+
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Contingency})
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return Contingency(softmax(η))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Contingency})
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Contingency})
     η = getnaturalparameters(exponentialfamily)
-    return log(sum(exp.(η)))
+    return logsumexp(η)
 end
 
-check_valid_natural(::Type{<:Contingency}, v) = (first(size(v)) > one(Int64)) && (getindex(size(v), 2) > one(Int64))
+check_valid_natural(::Type{<:Contingency}, v) = length(v) > 1 && typeof(isqrt(length(v))) <: Integer
 
 function Distributions.cdf(d::Contingency, x::AbstractArray{T}) where {T}
     @assert first(size(x)) === 2 "$(x) should be length 2 vector "
@@ -161,7 +172,7 @@ function icdf(dist::Contingency, probability::Float64)
     return [cartesianind[1][1], cartesianind[1][2]]
 end
 
-isproper(::KnownExponentialFamilyDistribution{Contingency}) = true
+isproper(::ExponentialFamilyDistribution{Contingency}) = true
 
 function Random.rand(rng::AbstractRNG, dist::Contingency{T}) where {T}
     container = Vector{T}(undef, 2)
@@ -195,34 +206,16 @@ end
 
 closed_prod_rule(::Type{<:Contingency}, ::Type{<:Contingency}) = ClosedProd()
 
-basemeasure(::Union{<:KnownExponentialFamilyDistribution{Contingency}, <:Contingency}, x) = 1.0
+basemeasureconstant(::ExponentialFamilyDistribution{<:Contingency}) = ConstantBaseMeasure()
+basemeasureconstant(::Type{<:Contingency}) = ConstantBaseMeasure()
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Contingency}, x)
-    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
-    K = first(size(getnaturalparameters(ef)))
-    ss = zeros(K, K)
-    for m in 1:K
-        for n in 1:K
-            if x[1] == m && x[2] == n
-                ss[m, n] = 1
-            end
-        end
-    end
-
-    return ss
-end
-
-function sufficientstatistics(dist::Contingency, x::Vector{Int64})
-    @assert typeof(x) <: Vector{<:Integer} && first(size(x)) === 2 "x should be a length 2 vector of integer"
-    K = first(size(contingency_matrix(dist)))
-    ss = zeros(K, K)
-    for m in 1:K
-        for n in 1:K
-            if x[1] == m && x[2] == n
-                ss[m, n] = 1
-            end
-        end
-    end
-
-    return ss
+basemeasure(::Type{<:Contingency}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{<:Contingency}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{<:Contingency}, x) = one(eltype(x))
+    
+sufficientstatistics(type::Type{<:Contingency}) = x -> sufficientstatistics(type,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}) = x -> sufficientstatistics(ef,x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}, x) 
+    len = length(getnaturalparameters(ef))
+    return OneElement((x[2] - 1)*isqrt(len) + x[1]  , len)
 end

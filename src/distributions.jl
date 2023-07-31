@@ -179,7 +179,10 @@ dim: 2
 )
 ```
 """
-logpdf_sample_optimized(something) = (something, something)
+logpdf_sample_optimized(something) = (logpdf_optimized(something), sample_optimized(something))
+
+logpdf_optimized(something) = something
+sample_optimized(something) = something
 
 """
     FactorizedJoint

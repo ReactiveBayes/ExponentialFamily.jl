@@ -2,6 +2,7 @@ export Laplace
 using Distributions
 import Distributions: Laplace, params, logpdf
 using DomainSets
+using StaticArrays
 
 vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
@@ -9,17 +10,17 @@ closed_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
-    ef_left::KnownExponentialFamilyDistribution{T},
-    ef_right::KnownExponentialFamilyDistribution{T}
+    ef_left::ExponentialFamilyDistribution{T},
+    ef_right::ExponentialFamilyDistribution{T}
 ) where {T <: Laplace}
     (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
     (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
     if conditioner_left == conditioner_right
-        return KnownExponentialFamilyDistribution(Laplace, η_left + η_right, conditioner_left)
+        return ExponentialFamilyDistribution(Laplace, η_left + η_right, conditioner_left)
     else
-        basemeasure = (x) -> 1.0
-        sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right)]
-        sorted_conditioner = sort([conditioner_left, conditioner_right])
+        basemeasure = (x) -> one(x)
+        sufficientstatistics = (x) -> SA[abs(x - conditioner_left), abs(x - conditioner_right)]
+        sorted_conditioner = sort(SA[conditioner_left, conditioner_right])
         function logpartition(η)
             A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
             A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
@@ -32,14 +33,15 @@ function Base.prod(
 
             return log(A1 * B1 + A2 * B2 + A3 * B3)
         end
-        naturalparameters = [η_left, η_right]
+        naturalparameters = vcat(η_left, η_right)
         supp = RealInterval{Float64}(-Inf, Inf)
 
         return ExponentialFamilyDistribution(
-            Float64,
+            Univariate,
+            naturalparameters,
+            nothing,
             basemeasure,
             sufficientstatistics,
-            naturalparameters,
             logpartition,
             supp
         )
@@ -53,14 +55,14 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
     if location_left == location_right
         return Laplace(location_left, scale_left * scale_right / (scale_left + scale_right))
     else
-        ef_left = convert(KnownExponentialFamilyDistribution, left)
-        ef_right = convert(KnownExponentialFamilyDistribution, right)
+        ef_left = convert(ExponentialFamilyDistribution, left)
+        ef_right = convert(ExponentialFamilyDistribution, right)
 
         (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
         (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
-        basemeasure = (x) -> 1.0
-        sufficientstatistics = (x) -> [abs(x - conditioner_left), abs(x - conditioner_right)]
-        sorted_conditioner = sort([conditioner_left, conditioner_right])
+        basemeasure = (x) -> one(x)
+        sufficientstatistics = (x) -> SA[abs(x - conditioner_left), abs(x - conditioner_right)]
+        sorted_conditioner = sort(SA[conditioner_left, conditioner_right])
         function logpartition(η)
             A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
             A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
@@ -73,60 +75,67 @@ function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
 
             return log(A1 * B1 + A2 * B2 + A3 * B3)
         end
-        naturalparameters = [η_left, η_right]
+        naturalparameters = vcat(η_left, η_right)
         supp = RealInterval{Float64}(-Inf, Inf)
 
         return ExponentialFamilyDistribution(
-            Float64,
+            Univariate,
+            naturalparameters,
+            nothing,
             basemeasure,
             sufficientstatistics,
-            naturalparameters,
             logpartition,
             supp
         )
     end
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf, Inf)
+support(::Union{<:ExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf, Inf)
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Laplace)
-    μ, θ = params(dist)
-    return KnownExponentialFamilyDistribution(Laplace, -inv(θ), μ)
+pack_naturalparameters(dist::Laplace) = [-inv((params(dist)[2]))]
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Laplace}) = (first(getnaturalparameters(ef)), )
+
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Laplace)
+    μ, _ = params(dist)
+    return ExponentialFamilyDistribution(Laplace, pack_naturalparameters(dist), μ)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Laplace})
-    return Laplace(getconditioner(exponentialfamily), -inv(getnaturalparameters(exponentialfamily)))
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Laplace})
+    return Laplace(getconditioner(exponentialfamily), -inv(first(unpack_naturalparameters(exponentialfamily))))
 end
 
 check_valid_natural(::Type{<:Laplace}, params) = length(params) == 1
 
 check_valid_conditioner(::Type{<:Laplace}, conditioner) = true
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
-    getnaturalparameters(exponentialfamily) < 0
+isproper(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
+    first(unpack_naturalparameters(exponentialfamily)) < 0
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Laplace}) =
-    log(-2 / getnaturalparameters(exponentialfamily))
-basemeasure(::KnownExponentialFamilyDistribution{Laplace}, x) =
-    one(typeof(x))
+logpartition(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
+    log(-2 / first(unpack_naturalparameters(exponentialfamily)))
 
-basemeasure(::Laplace, x) = one(typeof(x))
+basemeasure(::ExponentialFamilyDistribution{Laplace}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{Laplace}, x::Real) =
+    one(x)
 
-fisherinformation(ef::KnownExponentialFamilyDistribution{Laplace}) = 1 / getnaturalparameters(ef)^2
+basemeasure(::Laplace, x::Real) = one(x)
+
+fisherinformation(ef::ExponentialFamilyDistribution{Laplace}) = SA[inv(first(unpack_naturalparameters(ef))^2)]
 
 function fisherinformation(dist::Laplace)
     # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
     # Expectation of sign function will be zero and expectation of square of sign will be 1. 
     b = scale(dist)
-    return [1/b^2 0; 0 1/b^2]
+    return SA[1/b^2 0; 0 1/b^2]
 end
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Laplace}, x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}) = x -> sufficientstatistics(ef,x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}, x)
     μ = getconditioner(ef)
-    return abs(x - μ)
+    return SA[abs(x - μ)]
 end
 
 function sufficientstatistics(dist::Laplace, x)
     μ, _ = params(dist)
-    return abs(x - μ)
+    return SA[abs(x - μ)]
 end

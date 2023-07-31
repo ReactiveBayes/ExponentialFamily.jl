@@ -53,3 +53,8 @@ ExponentialFamily.jl can be installed through the Julia package manager. In the 
 ```julia
 pkg> add ExponentialFamily
 ```
+## Installation
+ExponentialFamily.jl can be installed through the Julia package manager. In the Julia REPL, type `]` to enter the package manager mode and run:
+```julia
+pkg> add ExponentialFamily
+```

@@ -1,12 +1,13 @@
 *.jl.*.cov
 *.jl.cov
 *.jl.mem
+**/benchmark_logs
+**/tune.json
 /Manifest.toml
 /docs/build/
 .DS_Store
 
 /.vscode
-
 
 scripts/Manifest.toml
 

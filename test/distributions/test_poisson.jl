@@ -6,25 +6,21 @@ using Random
 using Distributions
 using ForwardDiff
 using StableRNGs
+using LinearAlgebra
 
 import SpecialFunctions: logfactorial, besseli
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 import DomainSets: NaturalNumbers
 
 @testset "Poisson" begin
-    @testset "Constructors" begin
-        @test KnownExponentialFamilyDistribution(Poisson, [10]) == KnownExponentialFamilyDistribution(Poisson, [10])
-        @test KnownExponentialFamilyDistribution(Poisson, 10) == KnownExponentialFamilyDistribution(Poisson, 10)
-    end
-
     @testset "convert" begin
         for i in 1:10
-            @test convert(Distribution, KnownExponentialFamilyDistribution(Poisson, log(i))) ≈ Poisson(i)
-            @test Distributions.logpdf(KnownExponentialFamilyDistribution(Poisson, log(i)), 10) ≈
+            @test convert(Distribution, ExponentialFamilyDistribution(Poisson, [log(i)])) ≈ Poisson(i)
+            @test Distributions.logpdf(ExponentialFamilyDistribution(Poisson, [log(i)]), 10) ≈
                   Distributions.logpdf(Poisson(i), 10)
 
-            @test convert(KnownExponentialFamilyDistribution, Poisson(i)) ==
-                  KnownExponentialFamilyDistribution(Poisson, log(i))
+            @test convert(ExponentialFamilyDistribution, Poisson(i)) ==
+                  ExponentialFamilyDistribution(Poisson, [log(i)])
         end
     end
 
@@ -35,7 +31,7 @@ import DomainSets: NaturalNumbers
         sample_points = collect(1:5)
         for x in sample_points
             @test prod_dist.basemeasure(x) == (1 / factorial(x)^2)
-            @test prod_dist.sufficientstatistics(x) == x
+            @test prod_dist.sufficientstatistics(x) == [x]
         end
         sample_points = [-5, -2, 0, 2, 5]
         for η in sample_points
@@ -48,7 +44,7 @@ import DomainSets: NaturalNumbers
         for x in sample_points
             hist_sum(x) =
                 prod_dist.basemeasure(x) * exp(
-                    prod_dist.sufficientstatistics(x) * prod_dist.naturalparameters -
+                    dot(prod_dist.sufficientstatistics(x) , prod_dist.naturalparameters) -
                     prod_dist.logpartition(prod_dist.naturalparameters)
                 )
             @test sum(hist_sum(x) for x in 0:20) ≈ 1.0
@@ -57,48 +53,36 @@ import DomainSets: NaturalNumbers
 
     @testset "natural parameters related" begin
         @test Distributions.logpdf(Poisson(4), 1) ≈
-              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(4)), 1)
+              Distributions.logpdf(convert(ExponentialFamilyDistribution, Poisson(4)), 1)
         @test Distributions.logpdf(Poisson(5), 1) ≈
-              Distributions.logpdf(convert(KnownExponentialFamilyDistribution, Poisson(5)), 1)
+              Distributions.logpdf(convert(ExponentialFamilyDistribution, Poisson(5)), 1)
 
         for i in 2:10
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, log(i))) === true
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, NaN)) === false
-            @test isproper(KnownExponentialFamilyDistribution(Poisson, Inf)) === false
+            @test isproper(ExponentialFamilyDistribution(Poisson, [log(i)])) === true
+            @test isproper(ExponentialFamilyDistribution(Poisson, [NaN])) === false
+            @test isproper(ExponentialFamilyDistribution(Poisson, [Inf])) === false
         end
     end
 
     @testset "fisher information" begin
-        rng = StableRNG(42)
-        n_samples = 10000
         for λ in 1:10
             dist = Poisson(λ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
-
-            samples = rand(rng, Poisson(λ), n_samples)
-
-            totalHessian = zeros(typeof(λ), 1, 1)
-            for sample in samples
-                totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Poisson(params[1]), sample), [λ])
-            end
-            @test fisherinformation(dist) ≈ first(totalHessian) / n_samples atol = 0.1
-
-            transformation(η) = exp(η)
-            J = ForwardDiff.derivative(transformation, η)
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Poisson, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
+            transformation(η) = exp(η[1])
+            J = ForwardDiff.gradient(transformation, η)
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Poisson, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
             @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean, var" begin
+    @testset "ExponentialFamilyDistribution mean, var" begin
         for λ in 1:10
             dist = Poisson(λ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

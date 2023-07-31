@@ -4,7 +4,7 @@ using Test
 using ExponentialFamily
 using Distributions
 using Random
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 import SpecialFunctions: loggamma
 using ForwardDiff
 @testset "Dirichlet" begin
@@ -50,20 +50,19 @@ end
 end
 
 @testset "natural parameters related" begin
-    @test convert(KnownExponentialFamilyDistribution, Dirichlet([0.6, 0.7])) ==
-          KnownExponentialFamilyDistribution(Dirichlet, [0.6, 0.7] .- 1)
+    @test convert(ExponentialFamilyDistribution, Dirichlet([0.6, 0.7])) ==
+          ExponentialFamilyDistribution(Dirichlet, [0.6, 0.7] .- 1)
 
-    @test logpartition(convert(KnownExponentialFamilyDistribution, Dirichlet([1, 1]))) ≈ 2loggamma(2)
-    @test logpartition(convert(KnownExponentialFamilyDistribution, Dirichlet([0.1, 0.2]))) ≈
+    @test logpartition(convert(ExponentialFamilyDistribution, Dirichlet([1, 1]))) ≈ 2loggamma(2)
+    @test logpartition(convert(ExponentialFamilyDistribution, Dirichlet([0.1, 0.2]))) ≈
           loggamma(0.1) + loggamma(0.2) - loggamma(0.3)
-    @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
-    @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
-    @test isproper(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
-    @test_throws AssertionError basemeasure(KnownExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3]), rand()) ==
-                                1.0
+    @test isproper(ExponentialFamilyDistribution(Dirichlet, [10, 2, 3])) === true
+    @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, 3])) === true
+    @test isproper(ExponentialFamilyDistribution(Dirichlet, [-0.1, -0.2, -3])) === false
+   
     for i in 1:9
         b = Dirichlet([i / 10.0, i / 5, i])
-        bnp = convert(KnownExponentialFamilyDistribution, b)
+        bnp = convert(ExponentialFamilyDistribution, b)
         @test convert(Distribution, bnp) ≈ b
         @test logpdf(bnp, [0.5, 0.4, 0.1]) ≈ logpdf(b, [0.5, 0.4, 0.1])
         @test logpdf(bnp, [0.2, 0.3, 0.5]) ≈ logpdf(b, [0.2, 0.3, 0.5])
@@ -79,18 +78,18 @@ end
           Dirichlet([3.0999999999999996, 2.2, 6.0])
 
     b_01 = Dirichlet([10.0, 10.0, 10.0])
-    nb_01 = convert(KnownExponentialFamilyDistribution, b_01)
+    nb_01 = convert(ExponentialFamilyDistribution, b_01)
     for i in 1:9
         b = Dirichlet([i / 10.0, i / 5, i])
-        bnp = convert(KnownExponentialFamilyDistribution, b)
+        bnp = convert(ExponentialFamilyDistribution, b)
         @test prod(ClosedProd(), b, b_01) ≈ convert(Distribution, prod(bnp, nb_01))
     end
 end
 
-@testset "KnownExponentialFamilyDistribution mean,var and cov" begin
+@testset "ExponentialFamilyDistribution mean,var and cov" begin
     for i in 1:9
         dist = Dirichlet([i / 10.0, i / 5, i])
-        ef = convert(KnownExponentialFamilyDistribution, dist)
+        ef = convert(ExponentialFamilyDistribution, dist)
         @test mean(dist) ≈ mean(ef) atol = 1e-8
         @test var(dist) ≈ var(ef) atol = 1e-8
         @test cov(dist) ≈ cov(dist) atol = 1e-8
@@ -100,11 +99,11 @@ transformation(η) = η .+ 1
 @testset "fisher information" begin
     for i in 1:9
         dist = Dirichlet([i / 10.0, i / 5, i])
-        ef = convert(KnownExponentialFamilyDistribution, dist)
+        ef = convert(ExponentialFamilyDistribution, dist)
         η = getnaturalparameters(ef)
 
         J = ForwardDiff.jacobian(transformation, η)
-        f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, η))
+        f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Dirichlet, η))
         autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
         @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
         @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8

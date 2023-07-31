@@ -7,7 +7,7 @@ using Random
 using StatsFuns
 using ForwardDiff
 import ExponentialFamily:
-    KnownExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
+    ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
     fisherinformation, isvague
 
 @testset "ContinuousBernoulli" begin
@@ -27,22 +27,22 @@ import ExponentialFamily:
     end
 
     @testset "natural parameters related" begin
-        @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))) ≈ log(2)
-        @test logpartition(convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.2))) ≈
+        @test logpartition(convert(ExponentialFamilyDistribution, ContinuousBernoulli(0.5))) ≈ log(2)
+        @test logpartition(convert(ExponentialFamilyDistribution, ContinuousBernoulli(0.2))) ≈
               log((-3 / 4) / log(1 / 4))
         b_99 = ContinuousBernoulli(0.99)
         for i in 1:9
             b = ContinuousBernoulli(i / 10.0)
-            bnp = convert(KnownExponentialFamilyDistribution, b)
+            bnp = convert(ExponentialFamilyDistribution, b)
             @test convert(Distribution, bnp) ≈ b
             @test logpdf(bnp, 1) ≈ logpdf(b, 1)
             @test logpdf(bnp, 0) ≈ logpdf(b, 0)
 
-            @test convert(KnownExponentialFamilyDistribution, b) ==
-                  KnownExponentialFamilyDistribution(ContinuousBernoulli, logit(i / 10.0))
+            @test convert(ExponentialFamilyDistribution, b) ==
+                  ExponentialFamilyDistribution(ContinuousBernoulli, [logit(i / 10.0)])
         end
-        @test isproper(KnownExponentialFamilyDistribution(ContinuousBernoulli, 10)) === true
-        @test basemeasure(KnownExponentialFamilyDistribution(ContinuousBernoulli, 10), 0.2) == 1.0
+        @test isproper(ExponentialFamilyDistribution(ContinuousBernoulli, [10])) === true
+        @test basemeasure(ExponentialFamilyDistribution(ContinuousBernoulli, [10]), 0.2) == 1.0
     end
 
     @testset "prod" begin
@@ -52,9 +52,9 @@ import ExponentialFamily:
         @test prod(ClosedProd(), ContinuousBernoulli(0.78), ContinuousBernoulli(0.05)) ≈
               ContinuousBernoulli(0.1572580645161291)
 
-        left = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.5))
-        right = convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
-        @test prod(left, right) == convert(KnownExponentialFamilyDistribution, ContinuousBernoulli(0.6))
+        left = convert(ExponentialFamilyDistribution, ContinuousBernoulli(0.5))
+        right = convert(ExponentialFamilyDistribution, ContinuousBernoulli(0.6))
+        @test prod(left, right) == convert(ExponentialFamilyDistribution, ContinuousBernoulli(0.6))
     end
 
     @testset "rand" begin
@@ -76,49 +76,47 @@ import ExponentialFamily:
 
     @testset "fisher information" begin
         function transformation(params)
-            return logistic(params)
+            return logistic(params[1])
         end
 
         for κ in 0.000001:0.01:0.49
             dist = ContinuousBernoulli(κ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(ContinuousBernoulli, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-9
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-9
         end
 
         for κ in 0.51:0.01:0.99
             dist = ContinuousBernoulli(κ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(ContinuousBernoulli, η))
-            df = (η) -> ForwardDiff.derivative(f_logpartition, η)
-            autograd_information = (η) -> ForwardDiff.derivative(df, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-9
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(ContinuousBernoulli, η))
+            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+            @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-9
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-9
         end
 
         for κ in 0.499:0.0001:0.50001
             dist = ContinuousBernoulli(κ)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
 
-            J = ForwardDiff.derivative(transformation, η)
-            @test J^2 * fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-9
+            J = ForwardDiff.gradient(transformation, η)
+            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-9
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean var" begin
+    @testset "ExponentialFamilyDistribution mean var" begin
         for ν in 0.1:0.1:0.99
             dist = ContinuousBernoulli(ν)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test var(dist) ≈ var(ef) atol = 1e-8
         end

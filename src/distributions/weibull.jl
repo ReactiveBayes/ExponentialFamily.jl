@@ -4,13 +4,14 @@ import Distributions: Weibull, params
 using DomainSets
 using SpecialFunctions: digamma
 using HCubature
+using StaticArrays
 
 closed_prod_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T <: Weibull}
     conditioner_left = getconditioner(left)
     conditioner_right = getconditioner(right)
@@ -19,7 +20,7 @@ function Base.prod(
     supp = DomainSets.HalfLine()
     if conditioner_left == conditioner_right
         basemeasure = (x) -> x^(2 * (conditioner_left - 1))
-        sufficientstatistics = (x) -> x^(conditioner_left)
+        sufficientstatistics = (x) -> SA[x^(conditioner_left)]
         logpartition =
             (η) ->
                 log(abs(first(η))^(1 / conditioner_left)) + loggamma(2 - 1 / conditioner_left) -
@@ -27,17 +28,18 @@ function Base.prod(
         naturalparameters = η_left + η_right
 
         return ExponentialFamilyDistribution(
-            Float64,
+            Univariate,
+            naturalparameters,
+            nothing,
             basemeasure,
             sufficientstatistics,
-            naturalparameters,
             logpartition,
             supp
         )
     else
         basemeasure = (x) -> x^(conditioner_left + conditioner_right - 2)
         sufficientstatistics = (x) -> [x^conditioner_left, x^conditioner_right]
-        naturalparameters = [η_left, η_right]
+        naturalparameters = vcat(η_left, η_right)
         logpartition =
             (η) -> log(
                 first(
@@ -52,10 +54,11 @@ function Base.prod(
             )
 
         return ExponentialFamilyDistribution(
-            Float64,
+            Univariate,
+            naturalparameters,
+            nothing,
             basemeasure,
             sufficientstatistics,
-            naturalparameters,
             logpartition,
             supp
         )
@@ -63,8 +66,8 @@ function Base.prod(
 end
 
 function Base.prod(::ClosedProd, left::Weibull, right::Weibull)
-    ef_left = convert(KnownExponentialFamilyDistribution, left)
-    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    ef_left = convert(ExponentialFamilyDistribution, left)
+    ef_right = convert(ExponentialFamilyDistribution, right)
 
     return prod(ClosedProd(), ef_left, ef_right)
 end
@@ -72,34 +75,43 @@ end
 check_valid_natural(::Type{<:Weibull}, params) = length(params) === 1
 check_valid_conditioner(::Type{<:Weibull}, conditioner) = isreal(conditioner) && conditioner > 0
 
-function isproper(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
-    η = getnaturalparameters(exponentialfamily)
+pack_naturalparameters(dist::Weibull) = [-(1 / scale(dist))^(shape(dist))]
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Weibull}) 
+    η = getnaturalparameters(ef)
+    @inbounds η1 = η[1]
+    return (η1, )
+end
+
+function isproper(exponentialfamily::ExponentialFamilyDistribution{Weibull})
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return η < 0
 end
 
 function basemeasure(dist::Weibull, x)
-    @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     return x^(shape(dist) - 1)
 end
-function basemeasure(weibull::KnownExponentialFamilyDistribution{Weibull}, x)
-    @assert 0 <= x "sufficientstatistics for Weibull should be evaluated at values greater than 0"
+
+basemeasureconstant(::ExponentialFamilyDistribution{Weibull}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Weibull}) = NonConstantBaseMeasure()
+basemeasure(ef::ExponentialFamilyDistribution{Weibull}) = basemeasure(ef,x)
+function basemeasure(weibull::ExponentialFamilyDistribution{Weibull}, x)
     return x^(getconditioner(weibull) - 1)
 end
-Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Weibull) =
-    KnownExponentialFamilyDistribution(Weibull, -(1 / scale(dist))^(shape(dist)), shape(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Weibull) =
+    ExponentialFamilyDistribution(Weibull, pack_naturalparameters(dist), shape(dist))
 
-function Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
+function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Weibull})
     k = getconditioner(exponentialfamily)
-    η = getnaturalparameters(exponentialfamily)
+    (η, ) = unpack_naturalparameters(exponentialfamily)
     return Weibull(k, (-1 / η)^(1 / k))
 end
 
-function logpartition(exponentialfamily::KnownExponentialFamilyDistribution{Weibull})
-    return -log(-getnaturalparameters(exponentialfamily)) - log(getconditioner(exponentialfamily))
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Weibull})
+    return -log(-first(unpack_naturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
 end
 
-fisherinformation(exponentialfamily::KnownExponentialFamilyDistribution{Weibull}) =
-    inv(getnaturalparameters(exponentialfamily))^2
+fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Weibull}) =
+    SA[inv(first(unpack_naturalparameters(exponentialfamily)))^2;;]
 
 function fisherinformation(dist::Weibull)
     α = shape(dist)
@@ -113,20 +125,19 @@ function fisherinformation(dist::Weibull)
     a21 = a12
     a22 = α^2 / (θ^2)
 
-    return [a11 a12; a21 a22]
+    return SA[a11 a12; a21 a22]
 end
 
-support(::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
-insupport(union::Union{<:KnownExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
+support(::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
+insupport(union::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
 
-function sufficientstatistics(ef::KnownExponentialFamilyDistribution{Weibull}, x)
-    @assert insupport(ef, x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
+sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}) = (x) -> sufficientstatistics(ef,x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}, x)
     k = getconditioner(ef)
-    return x^k
+    return SA[x^k]
 end
 
 function sufficientstatistics(dist::Weibull, x)
-    @assert insupport(dist, x) "sufficientstatistics for Weibull should be evaluated at values greater than 0"
     k = shape(dist)
-    return x^k
+    return SA[x^k]
 end

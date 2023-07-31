@@ -5,8 +5,9 @@ using ExponentialFamily
 using Distributions
 using Random
 using StatsFuns
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure
 import Distributions: cdf
+import LoopVectorization: vmap
 
 @testset "Contingency" begin
     @testset "common" begin
@@ -62,19 +63,16 @@ import Distributions: cdf
     @testset "natural parameters related" begin
         d1           = vague(Contingency, 2)
         d2           = vague(Contingency, 2)
-        ηcontingency = KnownExponentialFamilyDistribution(Contingency, log.([0.1/0.15 0.7/0.15; 0.05/0.15 1.0]))
-        @test getnaturalparameters(ηcontingency) == log.([0.1/0.15 0.7/0.15; 0.05/0.15 1.0])
-        @test convert(KnownExponentialFamilyDistribution, Contingency([0.1 0.7; 0.05 0.15])) ==
-              KnownExponentialFamilyDistribution(Contingency, log.([0.1/0.15 0.7/0.15; 0.05/0.15 1.0]))
+        ηcontingency = ExponentialFamilyDistribution(Contingency, vec(vmap(d->log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
+        @test getnaturalparameters(ηcontingency) == vec(vmap(d->log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0]))
+        @test convert(ExponentialFamilyDistribution, Contingency([0.1 0.7; 0.05 0.15])) ==
+              ExponentialFamilyDistribution(Contingency, vec(vmap(d->log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
         @test d1 == d2
-        @test convert(KnownExponentialFamilyDistribution, d1) ==
-              KnownExponentialFamilyDistribution(Contingency, log.([1.0 1.0; 1.0 1.0]))
+        @test convert(ExponentialFamilyDistribution, d1) ==
+              ExponentialFamilyDistribution(Contingency, vec(vmap(d -> log(d),[1.0 1.0; 1.0 1.0])))
         @test convert(Distribution, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
         @test prod(ηcontingency, ηcontingency) ==
-              KnownExponentialFamilyDistribution(Contingency, 2log.([0.1/0.15 0.7/0.15; 0.05/0.15 1.0]))
-
-        @test basemeasure(d1, rand()) == 1.0
-        @test basemeasure(d2, [1, 2]) == 1.0
+              ExponentialFamilyDistribution(Contingency, vec(vmap(d -> 2log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
 
         @test logpartition(ηcontingency) == log(0.1 / 0.15 + 0.7 / 0.15 + 0.05 / 0.15 + 1.0)
     end
@@ -132,7 +130,7 @@ import Distributions: cdf
         end
     end
 
-    @testset "prod KnownExponentialFamilyDistribution" begin
+    @testset "prod ExponentialFamilyDistribution" begin
         for i in 2:50
             p1 = rand(i, i)
             p2 = rand(i, i)
@@ -140,15 +138,15 @@ import Distributions: cdf
             p2 = p2 ./ sum(p2)
             distleft = Contingency(p1)
             distright = Contingency(p2)
-            efleft = convert(KnownExponentialFamilyDistribution, distleft)
-            efright = convert(KnownExponentialFamilyDistribution, distright)
+            efleft = convert(ExponentialFamilyDistribution, distleft)
+            efright = convert(ExponentialFamilyDistribution, distright)
 
             ηleft = getnaturalparameters(efleft)
             ηright = getnaturalparameters(efright)
 
             efprod = prod(efleft, efright)
             distprod = prod(ClosedProd(), distleft, distright)
-            @test efprod == KnownExponentialFamilyDistribution(Contingency, ηleft + ηright)
+            @test efprod == ExponentialFamilyDistribution(Contingency, ηleft + ηright)
             @test distprod ≈ convert(Distribution, efprod)
         end
     end

@@ -3,7 +3,6 @@ export ProductDistribution, ClosedProd, ClosedProd, ProdGeneric, LinearizedProdu
 import Distributions
 import Base: prod, show, showerror
 
-struct ClosedProd end
 """
     ClosedProd
 
@@ -14,6 +13,7 @@ Note: `ClosedProd` ignores `missing` values and simply returns the non-`missing`
 
 See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdGeneric`](@ref)
 """
+struct ClosedProd end
 
 """
     prod(strategy, left, right)
@@ -100,6 +100,7 @@ struct ProdPreserveTypeRight end
 prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
 struct ClosedProdUnknown end
+
 """
     closed_prod_rule(::Type, ::Type)
 Returns either `ProdClosed` or `ClosedProdUnknown` for two given distribution types.
@@ -339,26 +340,26 @@ function prod(
     return ProductDistribution(push!(getleft(left), right), getright(left))
 end
 
-closed_prod_rule(::KnownExponentialFamilyDistribution{T1}, ::KnownExponentialFamilyDistribution{T2}) where {T1, T2} =
+closed_prod_rule(::ExponentialFamilyDistribution{T1}, ::ExponentialFamilyDistribution{T2}) where {T1, T2} =
     closed_prod_rule(T1, T2)
 closed_prod_rule(
-    ::Type{<:KnownExponentialFamilyDistribution{T1}},
-    ::Type{<:KnownExponentialFamilyDistribution{T2}}
+    ::Type{<:ExponentialFamilyDistribution{T1}},
+    ::Type{<:ExponentialFamilyDistribution{T2}}
 ) where {T1, T2} = closed_prod_rule(T1, T2)
 
 function prod(
-    left::KnownExponentialFamilyDistribution{T1},
-    right::KnownExponentialFamilyDistribution{T2}
+    left::ExponentialFamilyDistribution{T1},
+    right::ExponentialFamilyDistribution{T2}
 ) where {T1, T2}
     return prod(closed_prod_rule(T1, T2), left, right)
 end
 
 function prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T}
-    KnownExponentialFamilyDistribution(
+    ExponentialFamilyDistribution(
         T,
         getnaturalparameters(left) + getnaturalparameters(right),
         getconditioner(left)
@@ -366,7 +367,7 @@ function prod(
 end
 
 function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
-    efleft = convert(KnownExponentialFamilyDistribution, left)
-    efright = convert(KnownExponentialFamilyDistribution, right)
+    efleft = convert(ExponentialFamilyDistribution, left)
+    efright = convert(ExponentialFamilyDistribution, right)
     return convert(Distribution, prod(efleft, efright))
 end

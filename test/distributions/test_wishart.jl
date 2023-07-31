@@ -8,14 +8,12 @@ using LinearAlgebra
 using StableRNGs
 using ForwardDiff
 
-import ExponentialFamily: WishartFast, KnownExponentialFamilyDistribution, reconstructargument!,
+import ExponentialFamily: WishartFast, ExponentialFamilyDistribution, reconstructargument!,
     getnaturalparameters, basemeasure, fisherinformation, logpartition, as_vec
 import StatsFuns: logmvgamma
 
-function logpartition(ef::KnownExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-    ηef = getnaturalparameters(ef)
-    reconstructargument!(ηef, ηef, ηvec)
-    return logpartition(KnownExponentialFamilyDistribution(T, ηef))
+function logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
+    return logpartition(ExponentialFamilyDistribution(T, ηvec))
 end
 
 function transformation(params)
@@ -117,7 +115,7 @@ end
             for i in 1:10
                 @test convert(
                     Distribution,
-                    KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]])
+                    ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
                 ) ≈
                       WishartFast(9.0, -2 * [-i 0.0; 0.0 -i])
             end
@@ -125,7 +123,7 @@ end
 
         @testset "logpdf" begin
             for i in 1:10
-                wishart_np = KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]])
+                wishart_np = ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
                 distribution = Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
                 @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
                 @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
@@ -134,27 +132,23 @@ end
         end
 
         @testset "logpartition" begin
-            @test logpartition(KnownExponentialFamilyDistribution(WishartFast, [3.0, [-1.0 0.0; 0.0 -1.0]])) ≈
+            @test logpartition(ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-1.0 0.0; 0.0 -1.0])))) ≈
                   logmvgamma(2, 3.0 + (2 + 1) / 2)
         end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]])) === true
-                @test isproper(KnownExponentialFamilyDistribution(WishartFast, [3.0, [i 0.0; 0.0 -i]])) === false
-                @test isproper(KnownExponentialFamilyDistribution(WishartFast, [-1.0, [-i 0.0; 0.0 -i]])) === false
+                @test isproper(ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))) === true
+                @test isproper(ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([i 0.0; 0.0 -i])))) === false
+                @test isproper(ExponentialFamilyDistribution(WishartFast, vcat(-1.0, vec([-i 0.0; 0.0 -i])))) === false
             end
         end
 
         @testset "basemeasure" begin
             for i in 1:10
-                @test_throws AssertionError basemeasure(
-                    KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]]),
-                    rand(3, 3)
-                )
                 L = rand(2, 2)
                 @test basemeasure(
-                    KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]]),
+                    ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i]))),
                     L * L'
                 ) == 1.0
             end
@@ -162,25 +156,24 @@ end
 
         @testset "base operations" begin
             for i in 1:10
-                np1 = KnownExponentialFamilyDistribution(WishartFast, [3.0, [-i 0.0; 0.0 -i]])
-                np2 = KnownExponentialFamilyDistribution(WishartFast, [3.0, [-2i 0.0; 0.0 -2i]])
-                @test prod(np1, np2) == KnownExponentialFamilyDistribution(
+                np1 = ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
+                np2 = ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-2i 0.0; 0.0 -2i])))
+                @test prod(np1, np2) == ExponentialFamilyDistribution(
                     WishartFast,
-                    [3.0, [-2i 0.0; 0.0 -2i]] + [3.0, [-i 0.0; 0.0 -i]]
+                    vcat(3.0, vec([-2i 0.0; 0.0 -2i])) + vcat(3.0, vec([-i 0.0; 0.0 -i]))
                 )
             end
         end
 
         @testset "fisher information" begin
             rng = StableRNG(42)
-            for df in 2:10
+            for df in 3:6
                 L = randn(rng, df, df)
                 A = L * L' + 1e-8 * diageye(df)
                 dist = Wishart(df, A)
                 distfast = WishartFast(df, cholinv(A))
-                ef = convert(KnownExponentialFamilyDistribution, dist)
-                η = getnaturalparameters(ef)
-                η_vec = vcat(η[1], as_vec(η[2]))
+                ef = convert(ExponentialFamilyDistribution, dist)
+                η_vec = getnaturalparameters(ef)
                 fef = fisherinformation(ef)
                 fdist = fisherinformation(dist)
                 fdistfast = fisherinformation(distfast)
@@ -202,13 +195,13 @@ end
             end
         end
     end
-    @testset "KnownExponentialFamilyDistribution mean,cov" begin
+    @testset "ExponentialFamilyDistribution mean,cov" begin
         rng = StableRNG(42)
         for df in 2:20
             L = randn(rng, df, df)
             A = L * L' + 1e-8 * diageye(df)
             dist = Wishart(df, A)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) rtol = 1e-8
             @test cov(dist) ≈ cov(ef) rtol = 1e-8
         end

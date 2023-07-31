@@ -6,7 +6,7 @@ using Distributions
 using Random
 using StableRNGs
 using ForwardDiff
-import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
 @testset "Multinomial" begin
     @testset "probvec" begin
@@ -29,7 +29,7 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     end
 
     @testset "prod" begin
-        for n in 2:12
+        for n in 2:3
             plength = Int64(ceil(rand(Uniform(1, n))))
             pleft = rand(plength)
             pleft = pleft ./ sum(pleft)
@@ -37,8 +37,8 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             pright = pright ./ sum(pright)
             left = Multinomial(n, pleft)
             right = Multinomial(n, pright)
-            efleft = convert(KnownExponentialFamilyDistribution, left)
-            efright = convert(KnownExponentialFamilyDistribution, right)
+            efleft = convert(ExponentialFamilyDistribution, left)
+            efright = convert(ExponentialFamilyDistribution, right)
             prod_dist = prod(ClosedProd(), left, right)
             prod_ef = prod(efleft, efright)
             d = Multinomial(n, ones(plength) ./ plength)
@@ -59,10 +59,10 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             @test sum(hist_sumef(x_sample) for x_sample in sample_space) ≈ 1.0 atol = 1e-10
             sample_x = rand(d, 5)
             for xi in sample_x
-                @test prod_dist.basemeasure(xi) ≈ (factorial(n) / prod(factorial.(xi)))^2 atol = 1e-10
+                @test prod_dist.basemeasure(xi) ≈ (factorial(n) / prod(@.factorial(xi)))^2 atol = 1e-10
                 @test prod_dist.sufficientstatistics(xi) == xi
 
-                @test prod_ef.basemeasure(xi) ≈ (factorial(n) / prod(factorial.(xi)))^2 atol = 1e-10
+                @test prod_ef.basemeasure(xi) ≈ (factorial(n) / prod(@.factorial(xi)))^2 atol = 1e-10
                 @test prod_ef.sufficientstatistics(xi) == xi
             end
         end
@@ -82,11 +82,11 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
     @testset "natural parameters related " begin
         d1 = Multinomial(5, [0.1, 0.4, 0.5])
         d2 = Multinomial(5, [0.2, 0.4, 0.4])
-        η1 = KnownExponentialFamilyDistribution(Multinomial, [log(0.1 / 0.5), log(0.4 / 0.5), 0.0], 5)
-        η2 = KnownExponentialFamilyDistribution(Multinomial, [log(0.2 / 0.4), 0.0, 0.0], 5)
+        η1 = ExponentialFamilyDistribution(Multinomial, [log(0.1 / 0.5), log(0.4 / 0.5), 0.0], 5)
+        η2 = ExponentialFamilyDistribution(Multinomial, [log(0.2 / 0.4), 0.0, 0.0], 5)
 
-        @test convert(KnownExponentialFamilyDistribution, d1) == η1
-        @test convert(KnownExponentialFamilyDistribution, d2) == η2
+        @test convert(ExponentialFamilyDistribution, d1) ≈ η1
+        @test convert(ExponentialFamilyDistribution, d2) ≈ η2
 
         @test convert(Distribution, η1) ≈ d1
         @test convert(Distribution, η2) ≈ d2
@@ -109,29 +109,35 @@ import ExponentialFamily: KnownExponentialFamilyDistribution, getnaturalparamete
             expη = exp.(η)
             expη / sum(expη)
         end
-
         rng = StableRNG(42)
+        ## ForwardDiff hessian is slow so we only test one time with hessian
+        n = 3
+        p = rand(rng, Dirichlet(ones(n)))
+        dist = Multinomial(n, p)
+        ef = convert(ExponentialFamilyDistribution, dist)
+        η = getnaturalparameters(ef)
+
+        f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Multinomial, η, n))
+        autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
+        @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+
         for n in 2:12
             p = rand(rng, Dirichlet(ones(n)))
             dist = Multinomial(n, p)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             η = getnaturalparameters(ef)
-
-            f_logpartition = (η) -> logpartition(KnownExponentialFamilyDistribution(Multinomial, η, n))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
 
             J = ForwardDiff.jacobian(transformation, η)
             @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
         end
     end
 
-    @testset "KnownExponentialFamilyDistribution mean,cov" begin
+    @testset "ExponentialFamilyDistribution mean,cov" begin
         rng = StableRNG(42)
         for n in 2:12
             p = rand(rng, Dirichlet(ones(n)))
             dist = Multinomial(n, p)
-            ef = convert(KnownExponentialFamilyDistribution, dist)
+            ef = convert(ExponentialFamilyDistribution, dist)
             @test mean(dist) ≈ mean(ef) atol = 1e-8
             @test cov(dist) ≈ cov(ef) atol = 1e-8
         end

@@ -4,7 +4,10 @@ import SpecialFunctions: digamma, loggamma
 import Base: eltype
 import Distributions: pdf, logpdf
 
-using BlockDiagonals
+import SparseArrays: blockdiag,sparse
+import FillArrays: Ones, Eye
+import LoopVectorization: vmap, vmapreduce
+using LinearAlgebra
 
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     a::A
@@ -17,6 +20,7 @@ Base.eltype(::MatrixDirichlet{T}) where {T} = T
 vague(::Type{<:MatrixDirichlet}, dims::Int)              = MatrixDirichlet(ones(dims, dims))
 vague(::Type{<:MatrixDirichlet}, dims1::Int, dims2::Int) = MatrixDirichlet(ones(dims1, dims2))
 vague(::Type{<:MatrixDirichlet}, dims::Tuple)            = MatrixDirichlet(ones(dims))
+vectorized_length(dist::MatrixDirichlet)                 = length(dist.a)
 
 function Distributions.entropy(dist::MatrixDirichlet)
     return mapreduce(+, eachcol(dist.a)) do column
@@ -27,8 +31,8 @@ function Distributions.entropy(dist::MatrixDirichlet)
 end
 
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
-    η = Base.convert(KnownExponentialFamilyDistribution, dist)
-    return -logpartition(η) + tr(getnaturalparameters(η)' * log.(x))
+    ef = Base.convert(ExponentialFamilyDistribution, dist)
+    return -logpartition(ef) + tr(first(unpack_naturalparameters(ef))' * log.(x))
 end
 
 Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
@@ -39,66 +43,91 @@ closed_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = ClosedP
 
 function Base.prod(::ClosedProd, left::MatrixDirichlet, right::MatrixDirichlet)
     T = promote_samplefloattype(left, right)
-    return MatrixDirichlet(left.a + right.a .- one(T))
+    return MatrixDirichlet(left.a + right.a - Ones{T}(size(left.a)))
 end
 
-logpartition(exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
-    mapreduce(
-        d -> logpartition(KnownExponentialFamilyDistribution(Dirichlet, d)),
+function pack_naturalparameters(distribution::MatrixDirichlet) 
+    return vec(distribution.a) - Ones{Float64}(vectorized_length(distribution))
+end
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MatrixDirichlet})
+    vectorized = getnaturalparameters(ef) 
+    len = length(vectorized)
+    Ssize = isqrt(len)
+    return (reshape(view(vectorized, 1:len), Ssize, Ssize), )
+end
+
+##TODO: this code needs to be optimized
+logpartition(exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
+    vmapreduce(
+        d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
         +,
-        eachcol(getnaturalparameters(exponentialfamily))
+        eachcol(first(unpack_naturalparameters(exponentialfamily)))
     )
 
-Base.convert(::Type{Distribution}, exponentialfamily::KnownExponentialFamilyDistribution{MatrixDirichlet}) =
-    MatrixDirichlet(getnaturalparameters(exponentialfamily) .+ one(Float64))
+Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
+    MatrixDirichlet(first(unpack_naturalparameters(exponentialfamily)) .+ one(Float64))
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::MatrixDirichlet)
-    KnownExponentialFamilyDistribution(MatrixDirichlet, dist.a .- one(Float64))
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixDirichlet)
+    ExponentialFamilyDistribution(MatrixDirichlet, pack_naturalparameters(dist))
 end
 
-isproper(exponentialfamily::KnownExponentialFamilyDistribution{<:MatrixDirichlet}) =
+isproper(exponentialfamily::ExponentialFamilyDistribution{<:MatrixDirichlet}) =
     all(isless.(-1, getnaturalparameters(exponentialfamily)))
 
-check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Matrix)
+check_valid_natural(::Type{<:MatrixDirichlet}, params) = (typeof(params) <: Vector)
 
+basemeasure(::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}) = one(Float64)
 function basemeasure(
-    ::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
+    ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
-    return 1.0
+    return one(eltype(x))
 end
-
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}) = x -> sufficientstatistics(ef,x)
 function sufficientstatistics(
-    ::Union{<:KnownExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
+    ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
 ) where {T}
-    return log.(x)
+    return vec(vmap(d -> log(d), x))
 end
 
-function fisherinformation(ef::KnownExponentialFamilyDistribution{MatrixDirichlet})
-    ηp1 = getnaturalparameters(ef) .+ 1
+# #this works  50 allocations
+# function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
+#     ηp1 = unpack_naturalparameters(ef) .+ 1
+#     ηvect = collect(Vector, eachcol(ηp1))
+#     n = length(ηvect)
+#     ηvect0 = sum(ηvect)
+#     matrices = [@inbounds sparse(diagm(trigamma.(ηvect[i])) - Ones{Float64}(n, n) * trigamma(ηvect0[i])) for i in 1:n]
+#     return blockdiag(Tuple(matrices)...)
+# end
 
-    ηvect = collect(Vector, eachcol(ηp1))
-    n = length(ηvect)
+## this works 48 allocations
+# function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
+#     η = unpack_naturalparameters(ef)
+#     ones = Ones{Float64}(size(η))
+#     ηvect0_trigammas = map(d -> ones*d, map(d ->trigamma(d), sum(η+ones,dims=1)))
+#     trigammas = map(d -> diagm(d), map(d -> trigamma.(d), eachcol(η+ones)))
 
-    ηvect0 = sum.(ηvect)
+#     blockdiag(Tuple(map(d -> sparse(d[2] - d[1]) , Iterators.zip(Tuple(trigammas),Tuple(ηvect0_trigammas))))...)
+# end
 
-    pre_diag = [diagm(trigamma.(ηvect[i])) for i in 1:n]
-    fi_pre = [ones(n, n) * trigamma(ηvect0[i]) for i in 1:n]
+## this works 36 allocations
+function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
+    (η, )    = unpack_naturalparameters(ef)
+    ones = Ones{Float64}(size(η))
+    ηp1  = η+ones
 
-    return BlockDiagonal(pre_diag - fi_pre)
+    matrices = map(d -> sparse(Diagonal(d[2]) - d[1]*ones) , 
+        Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
+    
+    return blockdiag(Tuple(matrices)...)
 end
 
 function fisherinformation(dist::MatrixDirichlet)
     ηp1 = dist.a
 
-    ηvect = collect(Vector, eachcol(ηp1))
-    n = length(ηvect)
-
-    ηvect0 = sum.(ηvect)
-
-    pre_diag = [diagm(trigamma.(ηvect[i])) for i in 1:n]
-    fi_pre = [ones(n, n) * trigamma(ηvect0[i]) for i in 1:n]
-
-    return BlockDiagonal(pre_diag - fi_pre)
+    matrices = map(d -> sparse(Diagonal(d[2]) - d[1]*Ones{Float64}(size(ηp1))) , 
+        Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
+    
+    return blockdiag(Tuple(matrices)...)
 end

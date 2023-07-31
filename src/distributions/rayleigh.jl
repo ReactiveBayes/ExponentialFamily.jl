@@ -2,6 +2,7 @@ export Rayleigh
 
 import Distributions: Rayleigh, params
 using DomainSets
+using StaticArrays
 
 vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
@@ -9,64 +10,69 @@ prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ClosedProd()
 
 function Base.prod(
     ::ClosedProd,
-    left::KnownExponentialFamilyDistribution{T},
-    right::KnownExponentialFamilyDistribution{T}
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
 ) where {T <: Rayleigh}
     η1 = getnaturalparameters(left)
     η2 = getnaturalparameters(right)
     naturalparameters = η1 + η2
     basemeasure = (x) -> 4 * x^2 / sqrt(pi)
-    sufficientstatistics = (x) -> x^2
-    logpartition = (η) -> log(η^(-3 / 2))
+    sufficientstatistics = (x) -> SA[x^2]
+    logpartition = (η) -> (-3 / 2)log(η)
     support = DomainSets.HalfLine()
 
     return ExponentialFamilyDistribution(
-        Float64,
+        Univariate,
+        naturalparameters,
+        nothing,
         basemeasure,
         sufficientstatistics,
-        naturalparameters,
         logpartition,
         support
     )
 end
 
 function Base.prod(::ClosedProd, left::T, right::T) where {T <: Rayleigh}
-    ef_left = convert(KnownExponentialFamilyDistribution, left)
-    ef_right = convert(KnownExponentialFamilyDistribution, right)
+    ef_left = convert(ExponentialFamilyDistribution, left)
+    ef_right = convert(ExponentialFamilyDistribution, right)
     return prod(ClosedProd(), ef_left, ef_right)
 end
 
-function isproper(ef::KnownExponentialFamilyDistribution{Rayleigh})
+pack_naturalparameters(dist::Rayleigh) = [MINUSHALF / first(params(dist))^2]
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Rayleigh})
     η = getnaturalparameters(ef)
-    return (η < 0)
+    @inbounds η1 = η[1]
+    return (η1, )
 end
 
-function Base.convert(::Type{KnownExponentialFamilyDistribution}, dist::Rayleigh)
-    σ = first(params(dist))
-    KnownExponentialFamilyDistribution(Rayleigh, -1 / (2 * σ^2))
-end
+isproper(ef::ExponentialFamilyDistribution{Rayleigh}) = first(unpack_naturalparameters(ef)) < 0
 
-function Base.convert(::Type{Distribution}, ef::KnownExponentialFamilyDistribution{Rayleigh})
-    η = getnaturalparameters(ef)
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Rayleigh) = ExponentialFamilyDistribution(Rayleigh, pack_naturalparameters(dist))
+    
+function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Rayleigh})
+    (η, ) = unpack_naturalparameters(ef)
     return Rayleigh(sqrt(-1 / (2η)))
 end
 
 check_valid_natural(::Type{<:Rayleigh}, v) = length(v) === 1
 
-logpartition(ef::KnownExponentialFamilyDistribution{Rayleigh}) = -log(-2 * getnaturalparameters(ef))
+logpartition(ef::ExponentialFamilyDistribution{Rayleigh}) = -log(-2 * first(unpack_naturalparameters(ef)))
 
-fisherinformation(dist::Rayleigh) = 4 / scale(dist)^2
+fisherinformation(dist::Rayleigh) = SA[4 / scale(dist)^2;;]
 
-fisherinformation(ef::KnownExponentialFamilyDistribution{Rayleigh}) = inv(getnaturalparameters(ef)^2)
+fisherinformation(ef::ExponentialFamilyDistribution{Rayleigh}) = SA[inv(first(unpack_naturalparameters(ef))^2);;]
 
-support(::KnownExponentialFamilyDistribution{Rayleigh}) = ClosedInterval{Real}(0, Inf)
+support(::ExponentialFamilyDistribution{Rayleigh}) = ClosedInterval{Real}(0, Inf)
 
-function sufficientstatistics(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
-    @assert insupport(union, x) "Rayleigh sufficient statistics should be evaluated at values greater than 0"
-    return x^2
+
+basemeasureconstant(::ExponentialFamilyDistribution{Rayleigh}) = NonConstantBaseMeasure()
+basemeasureconstant(::Type{<:Rayleigh}) = NonConstantBaseMeasure()
+
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> sufficientstatistics(ef,x)
+function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
+    return SA[x^2]
 end
-
-function basemeasure(union::Union{<:KnownExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
-    @assert insupport(union, x) "Rayleigh base measure should be evaluated at values greater than 0"
+basemeasure(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> basemeasure(ef,x)
+function basemeasure(::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
     return x
 end
