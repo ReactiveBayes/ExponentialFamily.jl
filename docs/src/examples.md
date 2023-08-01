@@ -1,4 +1,4 @@
-## Examples
+# [Examples](@id examples)
 In these examples, we demonstrate how to use ExponentialFamily.jl to compute the product of probability distributions.
 ### Example 1: Bernoulli distribution
 
