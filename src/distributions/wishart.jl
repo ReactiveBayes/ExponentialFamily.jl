@@ -177,19 +177,21 @@ end
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:WishartFast})
     η = getnaturalparameters(ef)
     len = length(η)
-    n = Int64(isqrt(len-1))
+    n = Int64(isqrt(len - 1))
     @inbounds η1 = η[1]
-    @inbounds η2 = reshape(view(η,2:len),n,n)
+    @inbounds η2 = reshape(view(η, 2:len), n, n)
 
     return η1, η2
 end
 
 check_valid_natural(::Type{<:Union{WishartFast, Wishart}}, params) = length(params) >= 5
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartFast) = ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartFast) =
+    ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart) = ExponentialFamilyDistribution(WishartFast,pack_naturalparameters(dist) )
-   
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart) =
+    ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:WishartFast})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
@@ -247,7 +249,7 @@ function basemeasure(
     return one(eltype(x))
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:WishartFast}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:WishartFast}) = (x) -> sufficientstatistics(ef, x)
 
 function sufficientstatistics(
     ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},

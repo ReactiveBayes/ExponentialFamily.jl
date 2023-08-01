@@ -15,7 +15,7 @@ function reconstructed_logpartition(::ExponentialFamilyDistribution{T}, ηvec) w
 end
 
 function test_partition(ef::ExponentialFamilyDistribution{MatrixDirichlet})
-    (η, ) = unpack_naturalparameters(ef)
+    (η,) = unpack_naturalparameters(ef)
     return sum(loggamma.(η .+ 1.0)) - sum(loggamma.(sum(η .+ 1.0, dims = 1)))
 end
 @testset "MatrixDirichlet" begin
@@ -101,12 +101,12 @@ end
 
     @testset "natural parameters related" begin
         @test convert(ExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
-              ExponentialFamilyDistribution(MatrixDirichlet, view([0.6 0.7; 1.0 2.0],:) .- 1)
+              ExponentialFamilyDistribution(MatrixDirichlet, view([0.6 0.7; 1.0 2.0], :) .- 1)
         b_01 = MatrixDirichlet([1.0 10.0; 2.0 10.0])
         nb_01 = convert(ExponentialFamilyDistribution, b_01)
         @test logpartition(nb_01) ==
               mapreduce(
-            d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
+            d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector, d))),
             +,
             eachcol(first(unpack_naturalparameters(nb_01)))
         )

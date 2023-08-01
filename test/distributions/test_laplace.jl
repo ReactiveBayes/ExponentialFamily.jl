@@ -10,7 +10,7 @@ using ForwardDiff
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, ExponentialFamilyDistribution, logpartition,
     basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, getconditioner, fisherinformation,
-    logpdf, support,getsupport
+    logpdf, support, getsupport
 
 @testset "Laplace" begin
     @testset "vague" begin

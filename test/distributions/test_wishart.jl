@@ -181,7 +181,7 @@ end
                 ## causes fisherinformation to be non-positive definite.
                 J = ForwardDiff.jacobian(transformation, η_vec)
                 @test fef ≈ J' * fdist * J rtol = 1e-8
-                @test fdist ≈  fdistfast  rtol=1e-8
+                @test fdist ≈ fdistfast rtol = 1e-8
                 f_logpartition = (η_vec) -> logpartition(ef, η_vec)
                 autograd_information = (η_vec) -> ForwardDiff.hessian(f_logpartition, η_vec)
                 ag_fi = autograd_information(η_vec)

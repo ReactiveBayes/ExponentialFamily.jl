@@ -186,9 +186,8 @@ function Base.prod(::ClosedProd, left::InverseWishartImproper, right::InverseWis
     return InverseWishartImproper(df, V)
 end
 
-
 function pack_naturalparameters(dist::Union{InverseWishartImproper, InverseWishart})
-    dof, scale  = params(dist)
+    dof, scale = params(dist)
     p = first(size(scale))
 
     return vcat(-(dof + p + 1) / 2, vec(-scale / 2))
@@ -197,16 +196,16 @@ end
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
     η = getnaturalparameters(ef)
     len = length(η)
-    n = Int64(isqrt(len-1))
+    n = Int64(isqrt(len - 1))
     @inbounds η1 = η[1]
-    @inbounds η2 = reshape(view(η,2:len),n,n)
+    @inbounds η2 = reshape(view(η, 2:len), n, n)
 
     return η1, η2
 end
 
 check_valid_natural(::Type{<:Union{InverseWishartImproper, InverseWishart}}, params) = length(params) >= 5
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart}) = 
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart}) =
     ExponentialFamilyDistribution(InverseWishartImproper, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
@@ -262,7 +261,7 @@ function basemeasure(
     return one(eltype(x))
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:InverseWishartImproper}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:InverseWishartImproper}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::ExponentialFamilyDistribution{<:InverseWishartImproper},
     x

@@ -102,7 +102,7 @@ function Base.convert(
     ::Type{Distribution},
     exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily}
 )
-    η1,η2 = unpack_naturalparameters(exponentialfamily)
+    η1, η2 = unpack_naturalparameters(exponentialfamily)
     return GammaShapeRate(η1 + one(η1), -η2)
 end
 
@@ -121,7 +121,7 @@ end
 
 support(::Union{<:ExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) =
     OpenInterval{Real}(0, Inf)
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::ExponentialFamilyDistribution{<:GammaDistributionsFamily},
     x::Real

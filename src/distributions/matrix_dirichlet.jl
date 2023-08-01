@@ -4,7 +4,7 @@ import SpecialFunctions: digamma, loggamma
 import Base: eltype
 import Distributions: pdf, logpdf
 
-import SparseArrays: blockdiag,sparse
+import SparseArrays: blockdiag, sparse
 import FillArrays: Ones, Eye
 import LoopVectorization: vmap, vmapreduce
 using LinearAlgebra
@@ -55,20 +55,20 @@ function Base.prod(::ClosedProd, left::MatrixDirichlet, right::MatrixDirichlet)
     return MatrixDirichlet(left.a + right.a - Ones{T}(size(left.a)))
 end
 
-function pack_naturalparameters(distribution::MatrixDirichlet) 
+function pack_naturalparameters(distribution::MatrixDirichlet)
     return vec(distribution.a) - Ones{Float64}(vectorized_length(distribution))
 end
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MatrixDirichlet})
-    vectorized = getnaturalparameters(ef) 
+    vectorized = getnaturalparameters(ef)
     len = length(vectorized)
     Ssize = isqrt(len)
-    return (reshape(view(vectorized, 1:len), Ssize, Ssize), )
+    return (reshape(view(vectorized, 1:len), Ssize, Ssize),)
 end
 
 ##TODO: this code needs to be optimized
 logpartition(exponentialfamily::ExponentialFamilyDistribution{MatrixDirichlet}) =
     vmapreduce(
-        d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector,d))),
+        d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector, d))),
         +,
         eachcol(first(unpack_naturalparameters(exponentialfamily)))
     )
@@ -92,7 +92,8 @@ function basemeasure(
 ) where {T}
     return one(eltype(x))
 end
-sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet}) =
+    x -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::Union{<:ExponentialFamilyDistribution{MatrixDirichlet}, <:MatrixDirichlet},
     x::Matrix{T}
@@ -122,21 +123,21 @@ end
 
 ## this works 36 allocations
 function fisherinformation(ef::ExponentialFamilyDistribution{MatrixDirichlet})
-    (η, )    = unpack_naturalparameters(ef)
+    (η,) = unpack_naturalparameters(ef)
     ones = Ones{Float64}(size(η))
-    ηp1  = η+ones
+    ηp1 = η + ones
 
-    matrices = map(d -> sparse(Diagonal(d[2]) - d[1]*ones) , 
-        Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
-    
+    matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * ones),
+        Iterators.zip(map(d -> trigamma(d), sum(ηp1, dims = 1)), map(d -> trigamma.(d), eachcol(ηp1))))
+
     return blockdiag(Tuple(matrices)...)
 end
 
 function fisherinformation(dist::MatrixDirichlet)
     ηp1 = dist.a
 
-    matrices = map(d -> sparse(Diagonal(d[2]) - d[1]*Ones{Float64}(size(ηp1))) , 
-        Iterators.zip(map(d ->trigamma(d), sum(ηp1,dims=1)),map(d -> trigamma.(d), eachcol(ηp1))))
-    
+    matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * Ones{Float64}(size(ηp1))),
+        Iterators.zip(map(d -> trigamma(d), sum(ηp1, dims = 1)), map(d -> trigamma.(d), eachcol(ηp1))))
+
     return blockdiag(Tuple(matrices)...)
 end

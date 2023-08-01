@@ -37,7 +37,7 @@ import LogExpFunctions: logsumexp
 
     @testset "natural parameters related" begin
         ηcat = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
-        dist = Categorical([1/2, 1/2])
+        dist = Categorical([1 / 2, 1 / 2])
         η1   = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
         η2   = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
 
@@ -51,7 +51,7 @@ import LogExpFunctions: logsumexp
 
         @test basemeasure(η1, 2) == 1.0
         @test basemeasure(η1, 1) == 1.0
-       
+
         @test logpartition(ηcat) == logsumexp(getnaturalparameters(ηcat))
 
         categoricalef = ExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])

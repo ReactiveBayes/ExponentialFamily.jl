@@ -43,15 +43,16 @@ pack_naturalparameters(dist::Rayleigh) = [MINUSHALF / first(params(dist))^2]
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Rayleigh})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
-    return (η1, )
+    return (η1,)
 end
 
 isproper(ef::ExponentialFamilyDistribution{Rayleigh}) = first(unpack_naturalparameters(ef)) < 0
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Rayleigh) = ExponentialFamilyDistribution(Rayleigh, pack_naturalparameters(dist))
-    
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Rayleigh) =
+    ExponentialFamilyDistribution(Rayleigh, pack_naturalparameters(dist))
+
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Rayleigh})
-    (η, ) = unpack_naturalparameters(ef)
+    (η,) = unpack_naturalparameters(ef)
     return Rayleigh(sqrt(-1 / (2η)))
 end
 
@@ -65,15 +66,15 @@ fisherinformation(ef::ExponentialFamilyDistribution{Rayleigh}) = SA[inv(first(un
 
 support(::ExponentialFamilyDistribution{Rayleigh}) = ClosedInterval{Real}(0, Inf)
 
-
 basemeasureconstant(::ExponentialFamilyDistribution{Rayleigh}) = NonConstantBaseMeasure()
 basemeasureconstant(::Type{<:Rayleigh}) = NonConstantBaseMeasure()
 
-sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) =
+    (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
     return SA[x^2]
 end
-basemeasure(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> basemeasure(ef,x)
+basemeasure(ef::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}) = (x) -> basemeasure(ef, x)
 function basemeasure(::Union{<:ExponentialFamilyDistribution{Rayleigh}, <:Rayleigh}, x::Real)
     return x
 end

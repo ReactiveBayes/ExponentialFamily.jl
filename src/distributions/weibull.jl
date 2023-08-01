@@ -77,14 +77,14 @@ check_valid_natural(::Type{<:Weibull}, params) = length(params) === 1
 check_valid_conditioner(::Type{<:Weibull}, conditioner) = isreal(conditioner) && conditioner > 0
 
 pack_naturalparameters(dist::Weibull) = [-(1 / scale(dist))^(shape(dist))]
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Weibull}) 
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Weibull})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
-    return (η1, )
+    return (η1,)
 end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{Weibull})
-    (η, ) = unpack_naturalparameters(exponentialfamily)
+    (η,) = unpack_naturalparameters(exponentialfamily)
     return η < 0
 end
 
@@ -94,7 +94,7 @@ end
 
 basemeasureconstant(::ExponentialFamilyDistribution{Weibull}) = NonConstantBaseMeasure()
 basemeasureconstant(::Type{<:Weibull}) = NonConstantBaseMeasure()
-basemeasure(ef::ExponentialFamilyDistribution{Weibull}) = basemeasure(ef,x)
+basemeasure(ef::ExponentialFamilyDistribution{Weibull}) = basemeasure(ef, x)
 function basemeasure(weibull::ExponentialFamilyDistribution{Weibull}, x)
     return x^(getconditioner(weibull) - 1)
 end
@@ -103,7 +103,7 @@ Base.convert(::Type{ExponentialFamilyDistribution}, dist::Weibull) =
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Weibull})
     k = getconditioner(exponentialfamily)
-    (η, ) = unpack_naturalparameters(exponentialfamily)
+    (η,) = unpack_naturalparameters(exponentialfamily)
     return Weibull(k, (-1 / η)^(1 / k))
 end
 
@@ -132,7 +132,7 @@ end
 support(::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
 insupport(union::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}, x)
     k = getconditioner(ef)
     return SA[x^k]

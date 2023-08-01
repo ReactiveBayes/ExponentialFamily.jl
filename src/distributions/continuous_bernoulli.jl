@@ -53,7 +53,7 @@ end
 mean(::VagueContinuousBernoulli, dist::ContinuousBernoulli) = 1 / 2
 
 function var(::NonVagueContinuousBernoulli, dist::ContinuousBernoulli)
-    (η, ) = unpack_naturalparameters(convert(ExponentialFamilyDistribution, dist))
+    (η,) = unpack_naturalparameters(convert(ExponentialFamilyDistribution, dist))
     eη = exp(η)
     return (-eη * (η^2 + 2) + eη^2 + 1) / ((eη - 1)^2 * η^2)
 end
@@ -95,12 +95,12 @@ end
 
 closed_prod_rule(::Type{<:ContinuousBernoulli}, ::Type{<:ContinuousBernoulli}) = ClosedProd()
 
-pack_naturalparameters(dist::ContinuousBernoulli) =  [log(succprob(dist) / (one(Float64) - succprob(dist)))]
+pack_naturalparameters(dist::ContinuousBernoulli) = [log(succprob(dist) / (one(Float64) - succprob(dist)))]
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli})
     η = getnaturalparameters(ef)
     @inbounds logprobability = η[1]
 
-    return (logprobability, )
+    return (logprobability,)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli})
@@ -127,7 +127,7 @@ function logpartition(
     ::NonVagueContinuousBernoulli,
     exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}
 )
-    (η, ) = unpack_naturalparameters(exponentialfamily)
+    (η,) = unpack_naturalparameters(exponentialfamily)
     return log((exp(η) - 1) / η + tiny)
 end
 logpartition(::VagueContinuousBernoulli, exponentialfamily::ExponentialFamilyDistribution{ContinuousBernoulli}) =
@@ -153,7 +153,7 @@ end
 fisherinformation(ef::ExponentialFamilyDistribution{ContinuousBernoulli}) = fisherinformation(isvague(ef), ef)
 fisherinformation(::VagueContinuousBernoulli, ef::ExponentialFamilyDistribution{ContinuousBernoulli}) = SA[1 / 12;;]
 function fisherinformation(::NonVagueContinuousBernoulli, ef::ExponentialFamilyDistribution{ContinuousBernoulli})
-    (η, ) = unpack_naturalparameters(ef)
+    (η,) = unpack_naturalparameters(ef)
     return SA[inv(η^2) - exp(η) / (exp(η) - 1)^2;;]
 end
 
@@ -179,7 +179,7 @@ function insupport(dist::ContinuousBernoulli, x::Real)
     return x ∈ support(dist)
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::ExponentialFamilyDistribution{ContinuousBernoulli},
     x::Real
@@ -187,8 +187,9 @@ function sufficientstatistics(
     return SA[x]
 end
 
-basemeasure(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}) = basemeasure(ef,isvague(ef))
-basemeasure(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}, ::VagueContinuousBernoulli) = exp(logpartition(ef))
+basemeasure(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}) = basemeasure(ef, isvague(ef))
+basemeasure(ef::ExponentialFamilyDistribution{<:ContinuousBernoulli}, ::VagueContinuousBernoulli) =
+    exp(logpartition(ef))
 basemeasure(::ExponentialFamilyDistribution{<:ContinuousBernoulli}, ::NonVagueContinuousBernoulli) = one(Float64)
 basemeasure(
     exponentialfamily::ExponentialFamilyDistribution{<:ContinuousBernoulli},

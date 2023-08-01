@@ -38,13 +38,13 @@ end
 
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Beta})
     vectorized = getnaturalparameters(ef)
-    @inbounds η1 = vectorized[1] 
+    @inbounds η1 = vectorized[1]
     @inbounds η2 = vectorized[2]
     return η1, η2
 end
 
 function isproper(ef::ExponentialFamilyDistribution{Beta})
-    αm1,βm1 = unpack_naturalparameters(ef)
+    αm1, βm1 = unpack_naturalparameters(ef)
     return ((αm1 + one(αm1)) > zero(αm1)) && ((βm1 + one(βm1)) > zero(βm1))
 end
 
@@ -53,14 +53,14 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Beta)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Beta})
-    αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
+    αm1, βm1 = unpack_naturalparameters(exponentialfamily)
     return Beta(αm1 + one(αm1), βm1 + one(βm1), check_args = false)
 end
 
 check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{Beta}) 
-    αm1 , βm1 = unpack_naturalparameters(exponentialfamily)
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Beta})
+    αm1, βm1 = unpack_naturalparameters(exponentialfamily)
     return logbeta(
         αm1 + one(αm1),
         βm1 + one(βm1)
@@ -77,10 +77,10 @@ basemeasureconstant(::Type{<:Beta}) = ConstantBaseMeasure()
 basemeasure(::Type{<:Beta}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Beta}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Beta}, x) = one(x)
-    
-sufficientstatistics(type::Type{<:Beta}) = x -> sufficientstatistics(type,x)
+
+sufficientstatistics(type::Type{<:Beta}) = x -> sufficientstatistics(type, x)
 sufficientstatistics(::Type{<:Beta}, x) = SA[log(x), log(one(x) - x)]
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Beta}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Beta}) = x -> sufficientstatistics(ef, x)
 sufficientstatistics(::ExponentialFamilyDistribution{<:Beta}, x) = SA[log(x), log(one(x) - x)]
 
 function fisherinformation(dist::Beta)

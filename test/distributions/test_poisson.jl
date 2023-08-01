@@ -44,7 +44,7 @@ import DomainSets: NaturalNumbers
         for x in sample_points
             hist_sum(x) =
                 prod_dist.basemeasure(x) * exp(
-                    dot(prod_dist.sufficientstatistics(x) , prod_dist.naturalparameters) -
+                    dot(prod_dist.sufficientstatistics(x), prod_dist.naturalparameters) -
                     prod_dist.logpartition(prod_dist.naturalparameters)
                 )
             @test sum(hist_sum(x) for x in 0:20) ≈ 1.0

@@ -14,7 +14,6 @@ import Distributions: pdf!
 import StatsFuns: logmvgamma
 
 function logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-
     return logpartition(ExponentialFamilyDistribution(T, ηvec))
 end
 
@@ -207,11 +206,17 @@ end
 
         @testset "isproper" begin
             for i in 1:10
-                @test isproper(ExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([-i 0.0; 0.0 -i])))) ===
+                @test isproper(
+                    ExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([-i 0.0; 0.0 -i])))
+                ) ===
                       false
-                @test isproper(ExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([i 0.0; 0.0 -i])))) ===
+                @test isproper(
+                    ExponentialFamilyDistribution(InverseWishartImproper, vcat(3.0, vec([i 0.0; 0.0 -i])))
+                ) ===
                       false
-                @test isproper(ExponentialFamilyDistribution(InverseWishartImproper, vcat(-1.0, vec([-i 0.0; 0.0 -i])))) ===
+                @test isproper(
+                    ExponentialFamilyDistribution(InverseWishartImproper, vcat(-1.0, vec([-i 0.0; 0.0 -i])))
+                ) ===
                       true
             end
         end
