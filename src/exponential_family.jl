@@ -151,19 +151,22 @@ Base.:(≈)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistrib
     distributiontype(left) == distributiontype(right)
 
 """
-Everywhere in the package, we stick to a convention that we represent exponential family distributions in the following form:
-
-``f_X(x\\mid\\theta) = h(x)\\,\\exp\\!\\bigl[\\,\\eta(\\theta) \\cdot T(x) - A(\\theta)\\,\\bigr]``.
-
-So the `logpartition` sign should align with this form.
+The function `logpartition` computes the log partition of an exponential family distribution.
 """
 function logpartition end
 
+"""
+The function `basemeasure` computes the base measure of an exponential family distribution.
+"""
 function basemeasure end
+
+"""
+The function `sufficientstatistics` calculates the sufficient statistics of an exponential family distribution.
+"""
 function sufficientstatistics end
 
 """
-Fisher information
+The function `fisherinformation` is used to compute the Fisher information matrix of an exponential family distribution. `fisherinformation` calculates the Fisher information matrix based on the natural parameters of the distribution.
 """
 function fisherinformation end
 

@@ -7,11 +7,11 @@ import StatsFuns: logπ, logmvgamma
 import SpecialFunctions: digamma, loggamma
 
 """
-InverseWishartImproper{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+InverseWishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
 
-The `InverseWishartImproper` struct represents an improper Inverse Wishart distribution. It is similar to the `InverseWishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `InverseWishart` messages. 
+The `InverseWishartFast` struct represents an improper Inverse Wishart distribution. It is similar to the `InverseWishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `InverseWishart` messages. 
 
-For model creation and regular usage, it is recommended to use `InverseWishart` from `Distributions.jl`. The `InverseWishartImproper` distribution is intended for internal purposes and should not be directly used by regular users.
+For model creation and regular usage, it is recommended to use `InverseWishart` from `Distributions.jl`. The `InverseWishartFast` distribution is intended for internal purposes and should not be directly used by regular users.
 
 # Fields
 - `ν::T`: The degrees of freedom parameter of the inverse Wishart distribution.
@@ -19,42 +19,42 @@ For model creation and regular usage, it is recommended to use `InverseWishart` 
 
 ## Note
 
-The `InverseWishartImproper` distribution does not enforce input argument validation, making it suitable for specialized cases where improper message constructions are needed.
+The `InverseWishartFast` distribution does not enforce input argument validation, making it suitable for specialized cases where improper message constructions are needed.
 """
-struct InverseWishartImproper{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+struct InverseWishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν::T
     S::A
 end
 
-function InverseWishartImproper(ν::Real, S::AbstractMatrix{<:Real})
+function InverseWishartFast(ν::Real, S::AbstractMatrix{<:Real})
     T = promote_type(typeof(ν), eltype(S))
-    return InverseWishartImproper(convert(T, ν), convert(AbstractArray{T}, S))
+    return InverseWishartFast(convert(T, ν), convert(AbstractArray{T}, S))
 end
 
-InverseWishartImproper(ν::Integer, S::AbstractMatrix{Real}) = InverseWishartImproper(float(ν), S)
+InverseWishartFast(ν::Integer, S::AbstractMatrix{Real}) = InverseWishartFast(float(ν), S)
 
-Distributions.params(dist::InverseWishartImproper) = (dist.ν, dist.S)
-Distributions.mean(dist::InverseWishartImproper)   = mean(convert(InverseWishart, dist))
-Distributions.var(dist::InverseWishartImproper)    = var(convert(InverseWishart, dist))
-Distributions.cov(dist::InverseWishartImproper)    = cov(convert(InverseWishart, dist))
-Distributions.mode(dist::InverseWishartImproper)   = mode(convert(InverseWishart, dist))
+Distributions.params(dist::InverseWishartFast) = (dist.ν, dist.S)
+Distributions.mean(dist::InverseWishartFast)   = mean(convert(InverseWishart, dist))
+Distributions.var(dist::InverseWishartFast)    = var(convert(InverseWishart, dist))
+Distributions.cov(dist::InverseWishartFast)    = cov(convert(InverseWishart, dist))
+Distributions.mode(dist::InverseWishartFast)   = mode(convert(InverseWishart, dist))
 
-mean_cov(dist::InverseWishartImproper) = mean_cov(convert(InverseWishart, dist))
+mean_cov(dist::InverseWishartFast) = mean_cov(convert(InverseWishart, dist))
 
-Base.size(dist::InverseWishartImproper)           = size(dist.S)
-Base.size(dist::InverseWishartImproper, dim::Int) = size(dist.S, dim)
+Base.size(dist::InverseWishartFast)           = size(dist.S)
+Base.size(dist::InverseWishartFast, dim::Int) = size(dist.S, dim)
 
-const InverseWishartDistributionsFamily{T} = Union{InverseWishart{T}, InverseWishartImproper{T}}
+const InverseWishartDistributionsFamily{T} = Union{InverseWishart{T}, InverseWishartFast{T}}
 
-to_marginal(dist::InverseWishartImproper) = convert(InverseWishart, dist)
+to_marginal(dist::InverseWishartFast) = convert(InverseWishart, dist)
 
-function Base.convert(::Type{InverseWishartImproper{T}}, distribution::InverseWishartImproper) where {T}
+function Base.convert(::Type{InverseWishartFast{T}}, distribution::InverseWishartFast) where {T}
     (ν, S) = params(distribution)
-    return InverseWishartImproper(convert(T, ν), convert(AbstractMatrix{T}, S))
+    return InverseWishartFast(convert(T, ν), convert(AbstractMatrix{T}, S))
 end
 
 # from "Parametric Bayesian Estimation of Differential Entropy and Relative Entropy" Gupta et al.
-function Distributions.entropy(dist::InverseWishartImproper)
+function Distributions.entropy(dist::InverseWishartFast)
     d = size(dist, 1)
     ν, S = params(dist)
     d * (d - 1) / 4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i) / 2), +, 1:d) + ν / 2 * d +
@@ -62,27 +62,27 @@ function Distributions.entropy(dist::InverseWishartImproper)
     (ν + d + 1) / 2 * mapreduce(i -> digamma((ν - d + i) / 2), +, 1:d)
 end
 
-function Distributions.mean(::typeof(logdet), dist::InverseWishartImproper)
+function Distributions.mean(::typeof(logdet), dist::InverseWishartFast)
     d = size(dist, 1)
     ν, S = params(dist)
     return -(mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) - logdet(S))
 end
 
-function Distributions.mean(::typeof(inv), dist::InverseWishartImproper)
+function Distributions.mean(::typeof(inv), dist::InverseWishartFast)
     return mean(cholinv, dist)
 end
 
-function Distributions.mean(::typeof(cholinv), dist::InverseWishartImproper)
+function Distributions.mean(::typeof(cholinv), dist::InverseWishartFast)
     ν, S = params(dist)
     return mean(Wishart(ν, cholinv(S)))
 end
 
-function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartImproper{T}, n::Int) where {T}
+function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartFast{T}, n::Int) where {T}
     container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
     return rand!(rng, sampleable, container)
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartImproper, x::AbstractVector{<:AbstractMatrix})
+function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartFast, x::AbstractVector{<:AbstractMatrix})
     # This is an adapted version of sampling from Distributions.jl
     (df, S⁻¹) = Distributions.params(sampleable)
     S = cholinv(S⁻¹)
@@ -120,7 +120,7 @@ end
 
 function Distributions.pdf!(
     out::AbstractArray{<:Real},
-    distribution::InverseWishartImproper,
+    distribution::InverseWishartFast,
     samples::AbstractArray{<:AbstractMatrix{<:Real}, O}
 ) where {O}
     @assert length(out) === length(samples) "Invalid dimensions in pdf!"
@@ -155,23 +155,23 @@ vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 
-function Base.convert(::Type{InverseWishart}, dist::InverseWishartImproper)
+function Base.convert(::Type{InverseWishart}, dist::InverseWishartFast)
     (ν, S) = params(dist)
     return InverseWishart(ν, Matrix(Hermitian(S)))
 end
 
-Base.convert(::Type{InverseWishartImproper}, dist::InverseWishart) = InverseWishartImproper(params(dist)...)
+Base.convert(::Type{InverseWishartFast}, dist::InverseWishart) = InverseWishartFast(params(dist)...)
 
 function logpdf_sample_optimized(dist::InverseWishart)
-    optimized_dist = convert(InverseWishartImproper, dist)
+    optimized_dist = convert(InverseWishartFast, dist)
     return (optimized_dist, optimized_dist)
 end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
-# We want to compute `prod` only for `InverseWishartImproper` messages as they are significantly faster in creation
-closed_prod_rule(::Type{<:InverseWishartImproper}, ::Type{<:InverseWishartImproper}) = ClosedProd()
+# We want to compute `prod` only for `InverseWishartFast` messages as they are significantly faster in creation
+closed_prod_rule(::Type{<:InverseWishartFast}, ::Type{<:InverseWishartFast}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::InverseWishartImproper, right::InverseWishartImproper)
+function Base.prod(::ClosedProd, left::InverseWishartFast, right::InverseWishartFast)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two InverseWishart distributions of different sizes"
 
     d = size(left, 1)
@@ -183,17 +183,17 @@ function Base.prod(::ClosedProd, left::InverseWishartImproper, right::InverseWis
 
     df = ldf + rdf + d + 1
 
-    return InverseWishartImproper(df, V)
+    return InverseWishartFast(df, V)
 end
 
-function pack_naturalparameters(dist::Union{InverseWishartImproper, InverseWishart})
+function pack_naturalparameters(dist::Union{InverseWishartFast, InverseWishart})
     dof, scale = params(dist)
     p = first(size(scale))
 
     return vcat(-(dof + p + 1) / 2, vec(-scale / 2))
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
     η = getnaturalparameters(ef)
     len = length(η)
     n = Int64(isqrt(len - 1))
@@ -203,18 +203,18 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:InverseWis
     return η1, η2
 end
 
-check_valid_natural(::Type{<:Union{InverseWishartImproper, InverseWishart}}, params) = length(params) >= 5
+check_valid_natural(::Type{<:Union{InverseWishartFast, InverseWishart}}, params) = length(params) >= 5
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartImproper, InverseWishart}) =
-    ExponentialFamilyDistribution(InverseWishartImproper, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartFast, InverseWishart}) =
+    ExponentialFamilyDistribution(InverseWishartFast, pack_naturalparameters(dist))
 
-function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
+function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:InverseWishartFast})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     return InverseWishart(-(2 * η1 + p + 1), -2 * η2)
 end
 
-function logpartition(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
+function logpartition(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     term1 = (η1 + (p + 1) / 2) * logdet(-η2)
@@ -222,12 +222,12 @@ function logpartition(ef::ExponentialFamilyDistribution{<:InverseWishartImproper
     return term1 + term2
 end
 
-function isproper(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
+function isproper(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
     η1, η2 = unpack_naturalparameters(ef)
     isposdef(-η2) && (η1 < 0)
 end
 
-function fisherinformation(ef::ExponentialFamilyDistribution{<:InverseWishartImproper})
+function fisherinformation(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
     η1, η2 = unpack_naturalparameters(ef)
     p = first(size(η2))
     invη2 = inv(η2)
@@ -249,21 +249,21 @@ function fisherinformation(dist::InverseWishart)
     return hessian
 end
 
-function insupport(ef::ExponentialFamilyDistribution{InverseWishartImproper, P, C, Safe}, x::Matrix) where {P, C}
+function insupport(ef::ExponentialFamilyDistribution{InverseWishartFast, P, C, Safe}, x::Matrix) where {P, C}
     return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
 end
 
-basemeasure(::ExponentialFamilyDistribution{<:InverseWishartImproper}) = one(Float64)
+basemeasure(::ExponentialFamilyDistribution{<:InverseWishartFast}) = one(Float64)
 function basemeasure(
-    ::ExponentialFamilyDistribution{<:InverseWishartImproper},
+    ::ExponentialFamilyDistribution{<:InverseWishartFast},
     x
 )
     return one(eltype(x))
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:InverseWishartImproper}) = (x) -> sufficientstatistics(ef, x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:InverseWishartFast}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
-    ::ExponentialFamilyDistribution{<:InverseWishartImproper},
+    ::ExponentialFamilyDistribution{<:InverseWishartFast},
     x
 )
     return vcat(chollogdet(x), vec(cholinv(x)))
