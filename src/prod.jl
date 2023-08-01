@@ -1,4 +1,5 @@
 export ProductDistribution, ClosedProd, ClosedProd, ProdGeneric, LinearizedProductDistribution
+export ProdPreserveType, ProdPreserveTypeLeft, ProdPreserveTypeRight
 
 import Distributions
 import Base: prod, show, showerror
@@ -7,7 +8,7 @@ import Base: prod, show, showerror
     ClosedProd
 
 `ClosedProd` is one of the strategies for `prod` function. This strategy uses analytical prod methods but does not constraint a prod to be in any specific form.
-It throws an `NoClosedProdException` if no analytical rules is available, use `ProdGeneric` prod strategy to fallback to approximation methods.
+It throws a `MethodError` if no analytical rule is available, use `ProdGeneric` prod strategy to fallback to approximation methods.
 
 Note: `ClosedProd` ignores `missing` values and simply returns the non-`missing` argument. Returns `missing` in case if both arguments are `missing`.
 
@@ -18,8 +19,8 @@ struct ClosedProd end
 """
     prod(strategy, left, right)
 
-`prod` function is used to find a product of two probability distrubutions (or any other objects) over same variable (e.g. 𝓝(x|μ_1, σ_1) × 𝓝(x|μ_2, σ_2)).
-There are multiple strategies for prod function, e.g. `ClosedProd`, `ProdGeneric` or `ProdPreserveType`.
+`prod` function is used to find a product of two probability distributions (or any other objects) over same variable (e.g. 𝓝(x|μ_1, σ_1) × 𝓝(x|μ_2, σ_2)).
+There are multiple strategies for prod function, e.g. `ClosedProd`, `GenericProd` or `PreserveTypeProd`.
 
 # Examples:
 ```jldoctest
@@ -33,341 +34,354 @@ mean(product), var(product)
 (0.0, 0.5)
 ```
 
-See also: [`closed_prod_rule`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
+See also: [`default_prod_rule`](@ref), [`ClosedProd`](@ref), [`GenericProd`](@ref), [`PreserveTypeProd`](@ref)
 """
-prod(::ClosedProd, left, right) = throw(NoClosedProdException(left, right))
+prod(::ClosedProd, left, right) = throw(MethodError(prod, (ClosedProd(), left, right)))
 
 prod(::ClosedProd, ::Missing, right)     = right
 prod(::ClosedProd, left, ::Missing)      = left
 prod(::ClosedProd, ::Missing, ::Missing) = missing
 
 """
-    NoClosedProdException(left, right)
+    PreserveTypeProd{T}
 
-This exception is thrown in the `prod` function in case if a cloed prod between `left` and `right` is not available or not implemented.
+`PreserveTypeProd` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in some specific form.
+By default it uses the strategy from `default_prod_rule` and converts the output to the prespecified type but can be overwritten 
+for some distributions for better performance.
 
-See also: [`ClosedProd`](@ref), [`prod`]
+See also: [`prod`](@ref), [`ClosedProd`](@ref), [`PreserveTypeLeftProd`](@ref), [`PreserveTypeRightProd`](@ref)
 """
-struct NoClosedProdException{L, R} <: Exception
-    left  :: L
-    right :: R
-end
+struct PreserveTypeProd{T} end
 
-function Base.showerror(io::IO, err::NoClosedProdException)
-    print(io, "NoClosedProdException: ")
-    print(io, "  No closed product rule available to compute a product of $(err.left) and $(err.right).")
-    print(
-        io,
-        "  Possible fix: implement `prod(::ClosedProd, left::$(typeof(err.left)), right::$(typeof(err.right))) = ...`"
-    )
-end
+PreserveTypeProd(::Type{T}) where {T} = PreserveTypeProd{T}()
 
-export ProdPreserveType, ProdPreserveTypeLeft, ProdPreserveTypeRight
+prod(::PreserveTypeProd{T}, left, right) where {T} = convert(T, prod(default_prod_rule(left, right), left, right))
 
 """
-    ProdPreserveType{T}
-`ProdPreserveType` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in some specific form.
-By default it fallbacks to a `ClosedProd` strategy and converts an output to a prespecified type but can be overwritten for some distributions
-for better performance.
-See also: [`prod`](@ref), [`ClosedProd`](@ref), [`ProdPreserveTypeLeft`](@ref), [`ProdPreserveTypeRight`](@ref)
+    PreserveTypeLeftProd
+
+An alias for the `PreserveTypeProd(L)` where `L` is the type of the `left` argument of the `prod` function.
+
+See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeRightProd`](@ref)
 """
-struct ProdPreserveType{T} end
+struct PreserveTypeLeftProd end
 
-ProdPreserveType(::Type{T}) where {T} = ProdPreserveType{T}()
-
-prod(::ProdPreserveType{T}, left, right) where {T} = convert(T, prod(ClosedProd(), left, right))
+prod(::PreserveTypeLeftProd, left::L, right) where {L} = prod(ProdPreserveType(L), left, right)
 
 """
-    ProdPreserveTypeLeft
-`ProdPreserveTypeLeft` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in the functional form as `left` argument.
-By default it fallbacks to a `ProdPreserveType` strategy and converts an output to a prespecified type but can be overwritten for some distributions
-for better performance.
-See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeRight`](@ref)
+    PreserveTypeRightProd
+
+An alias for the `PreserveTypeProd(R)` where `R` is the type of the `right` argument of the `prod` function.    
+
+See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeLeftProd`](@ref)
 """
-struct ProdPreserveTypeLeft end
+struct PreserveTypeRightProd end
 
-prod(::ProdPreserveTypeLeft, left::L, right) where {L} = prod(ProdPreserveType(L), left, right)
-
-"""
-    ProdPreserveTypeRight
-`ProdPreserveTypeRight` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in the functional form as `right` argument.
-By default it fallbacks to a `ProdPreserveType` strategy and converts an output to a prespecified type but can be overwritten for some distributions
-for better performance.
-See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdPreserveTypeLeft`](@ref)
-"""
-struct ProdPreserveTypeRight end
-
-prod(::ProdPreserveTypeRight, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
-
-struct ClosedProdUnknown end
+prod(::PreserveTypeRightProd, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
 
 """
-    closed_prod_rule(::Type, ::Type)
-Returns either `ProdClosed` or `ClosedProdUnknown` for two given distribution types.
-Returns `ClosedProdUnknown` by default.
-See also: [`prod`](@ref), [`ProdClosed`](@ref), [`ProdGeneric`](@ref)
+    UnspecifiedProd
+
+A strategy for the `prod` function, which does not compute the `prod`, but instead fails in run-time and prints a descriptive error message.
+
+See also: [`prod`](@ref), [`ClosedProd`](@ref), [`GenericProd`](@ref)
 """
-closed_prod_rule(::Type, ::Type) = ClosedProdUnknown()
+struct UnspecifiedProd end
 
-struct ProductDistribution{L, R}
-    left  :: L
-    right :: R
-end
+prod(::UnspecifiedProd, ::Missing, right)     = right
+prod(::UnspecifiedProd, left, ::Missing)      = left
+prod(::UnspecifiedProd, ::Missing, ::Missing) = missing
 
-Base.:(==)(left::ProductDistribution, right::ProductDistribution) =
-    (getleft(left) == getleft(right)) && (getright(left) == getright(right))
+"""
+    default_prod_rule(::Type, ::Type)
 
-Base.show(io::IO, product::ProductDistribution) =
-    print(io, "ProductDistribution(", getleft(product), ",", getright(product), ")")
+Returns the most suitable `prod` rule for two given distribution types.
+Returns `UnspecifiedProd` by default.
 
-getleft(product::ProductDistribution)  = product.left
-getright(product::ProductDistribution) = product.right
+See also: [`prod`](@ref), [`ClosedProd`](@ref), [`GenericProd`](@ref)
+"""
+default_prod_rule(::Type, ::Type) = UnspecifiedProd()
 
-function support(product::ProductDistribution)
-    lsupport = support(getleft(product))
-    rsupport = support(getright(product))
-    if lsupport != rsupport
-        error("Product $product has different support for left and right entries.")
+"""
+    fuse_supports(left, right)
+
+Fuse supports of two distributions of `left` and `right`.
+By default, checks that the supports are identical and throws an error otherwise.
+Can implement specific fusions for specific distributions.
+
+See also: [`prod`](@ref), [`ProductOf`](@ref)
+"""
+function fuse_supports(left, right)
+    if !isequal(support(left), support(right))
+        error("Cannot form a `ProductOf` $(left) & `$(right)`. Support is incompatible.")
     end
-    return lsupport
+    return support(left)
 end
 
-Distributions.pdf(product::ProductDistribution, x)    = Distributions.pdf(getleft(product), x) * Distributions.pdf(getright(product), x)
-Distributions.logpdf(product::ProductDistribution, x) = Distributions.logpdf(getleft(product), x) + Distributions.logpdf(getright(product), x)
+"""
+    ProductOf
 
-variate_form(::P) where {P <: ProductDistribution}           = variate_form(P)
-variate_form(::Type{ProductDistribution{L, R}}) where {L, R} = _check_product_variate_form(variate_form(L), variate_form(R))
+A generic structure representing a product of two distributions. 
+Can be viewed as a tuple of `(left, right)`. 
+Does not check nor supports neither variate forms during the creation stage.
+Uses the `fuse_support` function to fuse supports of two different distributions.
+
+This object does not define any statistical properties (such as `mean` or `var` etc) and cannot be used as a distribution explicitly.
+Instead, it must be further approximated as a member of some other distribution. 
+
+See also: [`prod`](@ref), [`GenericProd`](@ref), [`fuse_support`](@ref)
+"""
+struct ProductOf{L, R}
+    left  :: L
+    right :: R
+end
+
+getleft(product::ProductOf)  = product.left
+getright(product::ProductOf) = product.right
+
+function Base.:(==)(left::ProductOf, right::ProductOf)
+    return (getleft(left) == getleft(right)) && (getright(left) == getright(right))
+end
+
+function Base.show(io::IO, product::ProductOf)
+    print(io, "ProductOf(", getleft(product), ",", getright(product), ")")
+end
+
+function support(product::ProductOf)
+    return fuse_supports(getleft(product), getright(product))
+end
+
+Distributions.pdf(product::ProductOf, x)    = exp(logpdf(product, x))
+Distributions.logpdf(product::ProductOf, x) = Distributions.logpdf(getleft(product), x) + Distributions.logpdf(getright(product), x)
+
+variate_form(::P) where {P <: ProductOf} = variate_form(P)
+variate_form(::Type{ProductOf{L, R}}) where {L, R} = _check_product_variate_form(variate_form(L), variate_form(R))
 
 _check_product_variate_form(::Type{F}, ::Type{F}) where {F <: VariateForm}                       = F
-_check_product_variate_form(::Type{F1}, ::Type{F2}) where {F1 <: VariateForm, F2 <: VariateForm} = error("ProductDistribution has different variate forms for left ($F1) and right ($F2) entries.")
+_check_product_variate_form(::Type{F1}, ::Type{F2}) where {F1 <: VariateForm, F2 <: VariateForm} = error("`ProductOf` has different variate forms for left ($F1) and right ($F2) entries.")
 
-value_support(::P) where {P <: ProductDistribution}           = value_support(P)
-value_support(::Type{ProductDistribution{L, R}}) where {L, R} = _check_product_value_support(value_support(L), value_support(R))
+value_support(::P) where {P <: ProductOf}           = value_support(P)
+value_support(::Type{ProductOf{L, R}}) where {L, R} = _check_product_value_support(value_support(L), value_support(R))
 
 _check_product_value_support(::Type{S}, ::Type{S}) where {S <: ValueSupport}                        = S
-_check_product_value_support(::Type{S1}, ::Type{S2}) where {S1 <: ValueSupport, S2 <: ValueSupport} = error("ProductDistribution has different value supports for left ($S1) and right ($S2) entries.")
+_check_product_value_support(::Type{S1}, ::Type{S2}) where {S1 <: ValueSupport, S2 <: ValueSupport} = error("`ProductOf` has different value supports for left ($S1) and right ($S2) entries.")
 
 """
-    ProdGeneric{C}
+    GenericProd
 
-`ProdGeneric` is one of the strategies for `prod` function. This strategy does not fail in case of no closed rule is available, but simply creates a product tree, there all nodes represent the `prod` function and all leaves are valid `Distribution` object.
-This object does not define any statistical properties (such as `mean` or `var` etc) and cannot be used during the inference procedure. However this object plays imporant part in the functional form constraints implementation. 
-In a few words this object keeps all the information of a product of messages and propagates this information in the functional form constraint.
+`GenericProd` is one of the strategies for `prod` function. This strategy does always produces a result, 
+even if the closed form product is not availble, in which case simply returns the `ProductOf` object. `GenericProd` sometimes 
+fallbacks to the `default_prod_rule` which it may or may not use under some circumstances. 
+For example if the `default_prod_rule` is `ClosedProd` - `ProdGeneric` will try to optimize the tree with 
+analytical closed solutions (if possible).
 
-`ProdGeneric` has a "fallback" method, which it may or may not use under some circumstances. For example if the `fallback` method is `ClosedProd` (which is the default one) - `ProdGeneric` will try to optimize `prod` tree with analytical solutions where possible.
-
-See also: [`prod`](@ref), [`ProductDistribution`](@ref), [`ClosedProd`](@ref), [`ProdPreserveType`](@ref), [`closed_prod_rule`](@ref), [`LinearizedProductDistribution`](@ref)
+See also: [`prod`](@ref), [`ProductOf`](@ref), [`ClosedProd`](@ref), [`PreserveTypeProd`](@ref), [`default_prod_rule`](@ref)
 """
-struct ProdGeneric{C}
-    prod_constraint::C
-end
+struct GenericProd end
 
-Base.show(io::IO, prod::ProdGeneric) = print(io, "ProdGeneric(fallback = ", prod.prod_constraint, ")")
+Base.show(io::IO, ::GenericProd) = print(io, "ProdGeneric()")
 
-get_constraint(prod_generic::ProdGeneric) = prod_generic.prod_constraint
+prod(::GenericProd, ::Missing, right)     = right
+prod(::GenericProd, left, ::Missing)      = left
+prod(::GenericProd, ::Missing, ::Missing) = missing
 
-ProdGeneric() = ProdGeneric(ClosedProd())
+prod(::GenericProd, left::L, right::R) where {L, R} = prod(GenericProd(), default_prod_rule(L, R), left, right)
 
-prod(::ProdGeneric, ::Missing, right)     = right
-prod(::ProdGeneric, left, ::Missing)      = left
-prod(::ProdGeneric, ::Missing, ::Missing) = missing
+prod(::GenericProd, specified_prod, left, right) = prod(specified_prod, left, right)
+prod(::GenericProd, ::UnspecifiedProd, left, right) = ProductOf(left, right)
 
-prod(generic::ProdGeneric, left::L, right::R) where {L, R} = prod(generic, closed_prod_rule(L, R), left, right)
+# Try to fuse the tree with analytical solutions (if possible)
+# Case (L × R) × T
+prod(::GenericProd, left::ProductOf{L, R}, right::T) where {L, R, T} =
+    prod(GenericProd(), default_prod_rule(L, T), default_prod_rule(R, T), left, right)
 
-prod(generic::ProdGeneric, ::ClosedProd, left, right) = prod(get_constraint(generic), left, right)
-prod(generic::ProdGeneric, ::ClosedProdUnknown, left, right) = ProductDistribution(left, right)
+# (L × R) × T cannot be fused, simply return the `ProductOf`
+prod(::GenericProd, ::UnspecifiedProd, ::UnspecifiedProd, left::ProductOf, right) = ProductOf(left, right)
 
-# In this methods the general rule is the folowing: If we see that one of the arguments of `ProductDistribution` has the same function form 
-# as second argument of `prod` function it is better to try to `prod` them together with `NoConstraint` strategy.
-prod(generic::ProdGeneric, left::ProductDistribution{L, R}, right::T) where {L, R, T} =
-    prod(generic, closed_prod_rule(L, T), closed_prod_rule(R, T), left, right)
+# (L × R) × T can be fused efficiently as (L × T) × R, because L × T has defined the `something` default prod
+prod(::GenericProd, something, ::UnspecifiedProd, left::ProductOf, right) =
+    ProductOf(prod(something, getleft(left), right), getright(left))
 
-prod(generic::ProdGeneric, left::T, right::ProductDistribution{L, R}) where {L, R, T} =
-    prod(generic, closed_prod_rule(T, L), closed_prod_rule(T, R), left, right)
+# (L × R) × T can be fused efficiently as L × (R × T), because R × T has defined the `something` default prod
+prod(::GenericProd, ::UnspecifiedProd, something, left::ProductOf, right) =
+    ProductOf(getleft(left), prod(something, getright(left), right))
 
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left::ProductDistribution, right) =
-    ProductDistribution(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left::ProductDistribution, right) =
-    ProductDistribution(prod(get_constraint(generic), getleft(left), right), getright(left))
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left::ProductDistribution, right) =
-    ProductDistribution(getleft(left), prod(get_constraint(generic), getright(left), right))
+# (L × R) × T can be fused efficiently as L × (R × T), because both L × T and R × T has defined the `something` default prod, but we choose R × T
+prod(::GenericProd, _, something, left::ProductOf, right) =
+    ProductOf(getleft(left), prod(something, getright(left), right))
 
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProdUnknown, left, right::ProductDistribution) =
-    ProductDistribution(left, right)
-prod(generic::ProdGeneric, ::ClosedProd, ::ClosedProdUnknown, left, right::ProductDistribution) =
-    ProductDistribution(prod(get_constraint(generic), left, getleft(right)), getright(right))
-prod(generic::ProdGeneric, ::ClosedProdUnknown, ::ClosedProd, left, right::ProductDistribution) =
-    ProductDistribution(getleft(right), prod(get_constraint(generic), left, getright(right)))
+# Case T × (L × R)
+prod(::GenericProd, left::T, right::ProductOf{L, R}) where {L, R, T} =
+    prod(GenericProd(), default_prod_rule(T, L), default_prod_rule(T, R), left, right)
 
-function prod(
-    generic::ProdGeneric,
-    left::ProductDistribution{L1, R1},
-    right::ProductDistribution{L2, R2}
-) where {L1, R1, L2, R2}
-    return prod(
-        generic,
-        closed_prod_rule(L1, L2),
-        closed_prod_rule(L1, R2),
-        closed_prod_rule(R1, L2),
-        closed_prod_rule(R1, R2),
-        left,
-        right
-    )
-end
+# T × (L × R) cannot be fused, simply return the `ProductOf`
+prod(::GenericProd, ::UnspecifiedProd, ::UnspecifiedProd, left, right::ProductOf) = ProductOf(left, right)
 
-prod(::ProdGeneric, _, _, _, _, left::ProductDistribution, right::ProductDistribution) =
-    ProductDistribution(left, right)
+# T × (L × R) can be fused efficiently as (T × L) × R, because T × L has defined the `something` default prod
+prod(::GenericProd, something, ::UnspecifiedProd, left, right::ProductOf) =
+    ProductOf(prod(something, left, getleft(right)), getright(right))
 
-function prod(
-    generic::ProdGeneric,
-    ::ClosedProd,
-    _,
-    _,
-    ::ClosedProd,
-    left::ProductDistribution,
-    right::ProductDistribution
-)
-    return prod(
-        generic,
-        prod(get_constraint(generic), getleft(left), getleft(right)),
-        prod(get_constraint(generic), getright(left), getright(right))
-    )
-end
+# T × (L × R) can be fused efficiently as L × (T × R), because T × R has defined the `something` default prod
+prod(::GenericProd, ::UnspecifiedProd, soemthing, left, right::ProductOf) =
+    ProductOf(getleft(right), prod(something, left, getright(right)))
+
+# T × (L × R) can be fused efficiently as L × (T × R), because both T × L and T × R has defined the `something` default prod, but we choose T × L
+prod(::GenericProd, something, _, left, right::ProductOf) =
+    ProductOf(prod(something, left, getleft(right)), getright(right))
+
+# TODO we can extend this logic to `ProductOf × ProductOf`, it would require to define many many methods though
 
 """
-    LinearizedProductDistribution
+    LinearizedProductOf
 
-An efficient __linearized__ implementation of product of multiple generic ExponentialFamilyDistribution objects.
-This structure prevents `ProductDistribution` tree from growing too much in case of identical objects. 
+An efficient __linearized__ implementation of product of multiple distributions.
+This structure prevents `ProductOf` tree from growing too much in case of identical objects. 
 This trick significantly reduces Julia compilation times when closed product rules are not available but distributions are of the same type.
-Essentially this structure linearizes leaves of the `ProductDistribution` tree in case if it sees objects of the same type (via dispatch).
+Essentially this structure linearizes leaves of the `ProductOf` tree in case if it sees objects of the same type (via dispatch).
 
-See also: [`ProductDistribution`](@ref)
+See also: [`ProductOf`](@ref), [`GenericProd`]
 """
-struct LinearizedProductDistribution{F}
+struct LinearizedProductOf{F}
     vector::Vector{F}
     length::Int # `length` here is needed for extra safety as we implicitly mutate `vector` in `prod`
 end
 
-function Base.push!(product::LinearizedProductDistribution{F}, item::F) where {F}
+function Base.push!(product::LinearizedProductOf{F}, item::F) where {F}
     vector  = product.vector
     vlength = length(vector)
-    return LinearizedProductDistribution(push!(vector, item), vlength + 1)
+    return LinearizedProductOf(push!(vector, item), vlength + 1)
 end
 
-getdomain(product::LinearizedProductDistribution) = getdomain(first(product.vector))
-getlogpdf(product::LinearizedProductDistribution) = getlogpdf(first(product.vector))
+support(dist::LinearizedProductOf) = support(first(dist.vector))
 
-Base.eltype(product::LinearizedProductDistribution) = eltype(first(product.vector))
-Base.:(==)(left::LinearizedProductDistribution, right::LinearizedProductDistribution) =
-    (left.vector == right.vector) && (left.length == right.length)
+Base.eltype(product::LinearizedProductOf) = eltype(first(product.vector))
 
-paramfloattype(product::LinearizedProductDistribution) = paramfloattype(first(product.vector))
-samplefloattype(product::LinearizedProductDistribution) = samplefloattype(first(product.vector))
+Base.:(==)(left::LinearizedProductOf, right::LinearizedProductOf) =
+    (left.length == right.length) && (left.vector == right.vector)
 
-variate_form(::Type{<:LinearizedProductDistribution{F}}) where {F} = variate_form(F)
-variate_form(::LinearizedProductDistribution{F}) where {F}         = variate_form(F)
+samplefloattype(product::LinearizedProductOf) = samplefloattype(first(product.vector))
 
-value_support(::Type{<:LinearizedProductDistribution{F}}) where {F} = value_support(F)
-value_support(::LinearizedProductDistribution{F}) where {F}         = value_support(F)
+variate_form(::Type{<:LinearizedProductOf{F}}) where {F} = variate_form(F)
+variate_form(::LinearizedProductOf{F}) where {F}         = variate_form(F)
 
-Base.show(io::IO, dist::LinearizedProductDistribution) = print(io, "LinearizedProductDistribution(", support(dist), ")")
+value_support(::Type{<:LinearizedProductOf{F}}) where {F} = value_support(F)
+value_support(::LinearizedProductOf{F}) where {F}         = value_support(F)
 
-support(dist::LinearizedProductDistribution) = support(first(dist.vector))
+Base.show(io::IO, product::LinearizedProductOf{F}) where {F} =
+    print(io, "LinearizedProductOf(", F, ", length = ", product.length, ")")
 
-Distributions.logpdf(dist::LinearizedProductDistribution, x) =
+Distributions.logpdf(dist::LinearizedProductOf, x) =
     mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
 
-Distributions.pdf(dist::LinearizedProductDistribution, x) = exp(logpdf(dist, x))
+Distributions.pdf(dist::LinearizedProductOf, x) = exp(logpdf(dist, x))
 
 function prod(
-    ::ProdGeneric,
-    ::ClosedProdUnknown,
-    ::ClosedProdUnknown,
-    left::ProductDistribution{L, R},
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
+    left::ProductOf{L, R},
     right::R
 ) where {L, R}
-    return ProductDistribution(getleft(left), LinearizedProductDistribution(R[getright(left), right], 2))
+    return ProductOf(getleft(left), LinearizedProductOf(R[getright(left), right], 2))
 end
 
 function prod(
-    ::ProdGeneric,
-    ::ClosedProdUnknown,
-    ::ClosedProdUnknown,
-    left::ProductDistribution{L, R},
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
+    left::ProductOf{L, R},
     right::L
 ) where {L, R}
-    return ProductDistribution(LinearizedProductDistribution(L[getleft(left), right], 2), getright(left))
+    return ProductOf(LinearizedProductOf(L[getleft(left), right], 2), getright(left))
 end
 
 function prod(
-    ::ProdGeneric,
-    ::ClosedProdUnknown,
-    ::ClosedProdUnknown,
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
     left::L,
-    right::ProductDistribution{L, R}
+    right::ProductOf{L, R}
 ) where {L, R}
-    return ProductDistribution(LinearizedProductDistribution(L[left, getleft(right)], 2), getright(right))
+    return ProductOf(LinearizedProductOf(L[left, getleft(right)], 2), getright(right))
 end
 
 function prod(
-    ::ProdGeneric,
-    ::ClosedProdUnknown,
-    ::ClosedProdUnknown,
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
     left::R,
-    right::ProductDistribution{L, R}
+    right::ProductOf{L, R}
 ) where {L, R}
-    return ProductDistribution(getleft(right), LinearizedProductDistribution(R[left, getright(right)], 2))
+    return ProductOf(getleft(right), LinearizedProductOf(R[left, getright(right)], 2))
 end
 
 function prod(
-    ::ProdGeneric,
-    ::ClosedProdUnknown,
-    ::ClosedProdUnknown,
-    left::ProductDistribution{L, LinearizedProductDistribution{R}},
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
+    left::ProductOf{L, LinearizedProductOf{R}},
     right::R
 ) where {L, R}
-    return ProductDistribution(getleft(left), push!(getright(left), right))
+    return ProductOf(getleft(left), push!(getright(left), right))
 end
 
 function prod(
-    ::ProdGeneric,
-    ::ClosedProdUnknown,
-    ::ClosedProdUnknown,
-    left::ProductDistribution{LinearizedProductDistribution{L}, R},
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
+    left::ProductOf{LinearizedProductOf{L}, R},
     right::L
 ) where {L, R}
-    return ProductDistribution(push!(getleft(left), right), getright(left))
+    return ProductOf(push!(getleft(left), right), getright(left))
 end
 
-closed_prod_rule(::ExponentialFamilyDistribution{T1}, ::ExponentialFamilyDistribution{T2}) where {T1, T2} =
-    closed_prod_rule(T1, T2)
-closed_prod_rule(
-    ::Type{<:ExponentialFamilyDistribution{T1}},
-    ::Type{<:ExponentialFamilyDistribution{T2}}
-) where {T1, T2} = closed_prod_rule(T1, T2)
+# We assume that we can always execute the `ClosedProd` for any ExponentialFamilyDistribution
+default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) = ClosedProd()
 
+# Case when both supertypes are of type `Distribution` and we have the `ClosedProd` for them
+# The idea here is that converting from `ExponentialFamilyDistribution` to a `Distribution` should be free
+# So we simply convert `EF` representation to the `Distribution` representation, call their closed product and convert back
 function prod(
-    left::ExponentialFamilyDistribution{T1},
-    right::ExponentialFamilyDistribution{T2}
-) where {T1, T2}
-    return prod(closed_prod_rule(T1, T2), left, right)
+    left::ExponentialFamilyDistribution{D1},
+    right::ExponentialFamilyDistribution{D2}
+) where {D1 <: Distribution, D2 <: Distribution}
+    error("This method should be generalized to accept the `ClosedProd` as its first argument. TODO.")
+    # Should be compiled out anyway
+    if default_prod_rule(D1, D2) === ClosedProd()
+        return convert(
+            ExponentialFamilyDistribution,
+            prod(ClosedProd(), convert(Distribution, left), convert(Distribution, left))
+        )
+    end
+    # We assume that we can always execute the `ClosedProd` for any ExponentialFamilyDistribution
+    return prod(ClosedProd(), left, right)
 end
 
+function prod(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
+    return prod(ClosedProd(), left, right)
+end
+
+# Case when both `ExponentialFamilyDistribution` are of the same `Distribution` type 
+# But for some reason we don't have the `ClosedProd` defined for them
 function prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
-) where {T}
-    ExponentialFamilyDistribution(
-        T,
-        getnaturalparameters(left) + getnaturalparameters(right),
-        getconditioner(left)
-    )
+) where {T <: Distribution}
+    # Here we need to check that the basemeasures are constants and that the conditioners are the same 
+    # only then we can sum-up the natural parameters, for now I leave this method as `not implemented`
+    # but it is definitely should be properly implemented
+    error("Not properly implemented")
+    # ExponentialFamilyDistribution(
+    #     T,
+    #     getnaturalparameters(left) + getnaturalparameters(right),
+    #     getconditioner(left)
+    # )
 end
 
 function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
-    efleft = convert(ExponentialFamilyDistribution, left)
-    efright = convert(ExponentialFamilyDistribution, right)
-    return convert(Distribution, prod(efleft, efright))
+    error("This method should go away.")
+    # efleft = convert(ExponentialFamilyDistribution, left)
+    # efright = convert(ExponentialFamilyDistribution, right)
+    # return convert(Distribution, prod(efleft, efright))
 end

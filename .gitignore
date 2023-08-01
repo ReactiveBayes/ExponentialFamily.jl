@@ -11,3 +11,6 @@
 
 scripts/Manifest.toml
 
+.ipynb_checkpoints
+*.ipynb
+

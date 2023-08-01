@@ -440,10 +440,12 @@ function check_valid_natural(::Type{<:NormalDistributionsFamily}, params)
     len = length(params) 
     return (len + len^2) % 2 == 0
 end
+
 function pack_naturalparameters(dist::UnivariateGaussianDistributionsFamily) 
     weightedmean, precision = weightedmean_precision(dist)
     return [weightedmean, precision * MINUSHALF]
 end
+
 function pack_naturalparameters(dist::MultivariateGaussianDistributionsFamily)
     weightedmean, precision = weightedmean_precision(dist)
     return vcat(weightedmean,vec(precision * MINUSHALF))
