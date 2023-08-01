@@ -1,4 +1,4 @@
-module KnownExponentialFamilyDistributionsTest
+module ExponentialFamilyDistributionsTest
 
 using Test
 using ExponentialFamily
