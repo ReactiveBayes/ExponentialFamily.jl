@@ -28,6 +28,7 @@ function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
     return prod(efleft, efright)
 end
 
+# NOTE: The product of two Binomial distributions is NOT a Binomial distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},

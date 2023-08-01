@@ -7,10 +7,19 @@ import StatsFuns: logπ, logmvgamma
 import SpecialFunctions: digamma, loggamma
 
 """
-    InverseWishartImproper
+InverseWishartImproper{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
 
-Same as `InverseWishart` from `Distributions.jl`, but does not check input arguments and allows creating improper `InverseWishart` message.
-For model creation use `InverseWishart` from `Distributions.jl`. Regular user should never interact with `InverseWishartImproper`.
+The `InverseWishartImproper` struct represents an improper Inverse Wishart distribution. It is similar to the `InverseWishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `InverseWishart` messages. 
+
+For model creation and regular usage, it is recommended to use `InverseWishart` from `Distributions.jl`. The `InverseWishartImproper` distribution is intended for internal purposes and should not be directly used by regular users.
+
+# Fields
+- `ν::T`: The degrees of freedom parameter of the inverse Wishart distribution.
+- `S::A`: The scale matrix parameter of the inverse Wishart distribution.
+
+## Note
+
+The `InverseWishartImproper` distribution does not enforce input argument validation, making it suitable for specialized cases where improper message constructions are needed.
 """
 struct InverseWishartImproper{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν::T

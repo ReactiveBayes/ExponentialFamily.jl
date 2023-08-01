@@ -9,6 +9,7 @@ Distributions.cov(dist::Poisson) = var(dist)
 
 closed_prod_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = ClosedProd()
 
+# NOTE: The product of two Poisson distributions is NOT a Poisson distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},

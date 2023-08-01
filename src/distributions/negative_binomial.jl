@@ -18,6 +18,8 @@ function convert_eltype(
 end
 
 closed_prod_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
+
+# NOTE: The product of two NegativeBinomial distributions is NOT a NegativeBinomial distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},

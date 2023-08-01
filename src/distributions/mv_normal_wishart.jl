@@ -2,6 +2,18 @@ export MvNormalWishart
 using Distributions
 import StatsFuns: logmvgamma
 using Random
+
+"""
+MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real} <: ContinuousMatrixDistribution
+
+A multivariate normal-Wishart distribution, where `T` is the element type of the arrays `M` and matrices `V`, and `K` and `N` are real numbers. This distribution is a joint distribution of a multivariate normal random variable with mean `μ` and a Wishart-distributed random matrix with scale matrix `Ψ`, degrees of freedom `ν`, and the scalar `κ` as a scaling parameter.
+
+# Fields
+- `μ::M`: The mean vector of the multivariate normal distribution.
+- `Ψ::V`: The scale matrix of the Wishart distribution.
+- `κ::K`: The scaling parameter of the Wishart distribution.
+- `ν::N`: The degrees of freedom of the Wishart distribution
+"""
 struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real} <:
        ContinuousMatrixDistribution
     μ::M
@@ -15,8 +27,6 @@ struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Re
         κ::K,
         ν::N
     ) where {T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real}
-        # @assert κ > 0 "κ parameter should be positive. Please fix κ = $(κ) "
-        # @assert ν > length(μ) "ν parameter should be greater than the dimension. Please fix ν = $(ν) "
         new{T, M, V, K, N}(μ, Ψ, κ, ν)
     end
 end

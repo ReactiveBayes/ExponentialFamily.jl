@@ -16,6 +16,7 @@ function Base.prod(::ClosedProd, left::Chisq, right::Chisq)
     return prod(ef_left, ef_right)
 end
 
+# NOTE: The product of two Chisq distributions is NOT a Chisq distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},

@@ -48,6 +48,7 @@ function Base.prod(
     end
 end
 
+# TODO: check for redundant code
 function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
     location_left, scale_left = params(left)
     location_right, scale_right = params(right)

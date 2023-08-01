@@ -8,6 +8,7 @@ using StaticArrays
 
 closed_prod_rule(::Type{<:Weibull}, ::Type{<:Weibull}) = ClosedProd()
 
+# NOTE: The product of two Weibull distributions is NOT a Weibull distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},

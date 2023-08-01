@@ -17,6 +17,7 @@ end
 
 closed_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
+# NOTE: The product of two Multinomial distributions is NOT a Multinomial distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},

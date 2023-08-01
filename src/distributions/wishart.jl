@@ -6,13 +6,19 @@ import LinearAlgebra
 import SpecialFunctions: digamma
 
 """
-    WishartFast
+WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
 
-Same as `Wishart` from `Distributions.jl`, but does not check input arguments and allows creating improper `Wishart` message.
-For model creation use `Wishart` from `Distributions.jl`. Regular user should never interact with `WishartFast`.
+The `WishartFast` struct represents a fast version of the Wishart distribution. It is similar to the `Wishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `Wishart` messages.
 
-Note that internally `WishartFast` stores (and creates with) inverse of its-scale matrix, but (for backward compatibility) `params()` function returns the scale matrix itself. 
-This is done for better stability in the message passing update rules for `ReactiveMP.jl`.
+For model creation and regular usage, it is recommended to use `Wishart` from `Distributions.jl`. The `WishartFast` distribution is intended for internal purposes and should not be directly used by regular users.
+
+## Fields
+- `ν::T`: The degrees of freedom parameter of the Wishart distribution.
+- `invS::A`: The inverse scale matrix parameter of the Wishart distribution.
+
+## Note
+
+Internally, `WishartFast` stores and creates the inverse of its scale matrix. However, the `params()` function returns the scale matrix itself for backward compatibility. This is done to ensure better stability in the message passing update rules for `ReactiveMP.jl`.
 """
 struct WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν    :: T

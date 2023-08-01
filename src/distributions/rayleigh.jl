@@ -8,6 +8,7 @@ vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
 prod_analytical_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = ClosedProd()
 
+# NOTE: The product of two Rayleigh distributions is NOT a Rayleigh distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},
