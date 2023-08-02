@@ -66,7 +66,7 @@ See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeRightProd`](
 """
 struct PreserveTypeLeftProd end
 
-prod(::PreserveTypeLeftProd, left::L, right) where {L} = prod(ProdPreserveType(L), left, right)
+prod(::PreserveTypeLeftProd, left::L, right) where {L} = prod(PreserveTypeProd(L), left, right)
 
 """
     PreserveTypeRightProd
@@ -77,7 +77,7 @@ See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeLeftProd`](@
 """
 struct PreserveTypeRightProd end
 
-prod(::PreserveTypeRightProd, left, right::R) where {R} = prod(ProdPreserveType(R), left, right)
+prod(::PreserveTypeRightProd, left, right::R) where {R} = prod(PreserveTypeProd(R), left, right)
 
 """
     UnspecifiedProd
@@ -101,6 +101,11 @@ Returns `UnspecifiedProd` by default.
 See also: [`prod`](@ref), [`ClosedProd`](@ref), [`GenericProd`](@ref)
 """
 default_prod_rule(::Type, ::Type) = UnspecifiedProd()
+
+default_prod_rule(not_a_type, ::Type{R}) where {R} = default_prod_rule(typeof(not_a_type), R)
+default_prod_rule(::Type{L}, not_a_type) where {L} = default_prod_rule(L, typeof(not_a_type))
+default_prod_rule(not_a_type_left, not_a_type_right) =
+    default_prod_rule(typeof(not_a_type_left), typeof(not_a_type_right))
 
 """
     fuse_supports(left, right)
@@ -222,7 +227,7 @@ prod(::GenericProd, something, ::UnspecifiedProd, left, right::ProductOf) =
     ProductOf(prod(something, left, getleft(right)), getright(right))
 
 # T × (L × R) can be fused efficiently as L × (T × R), because T × R has defined the `something` default prod
-prod(::GenericProd, ::UnspecifiedProd, soemthing, left, right::ProductOf) =
+prod(::GenericProd, ::UnspecifiedProd, something, left, right::ProductOf) =
     ProductOf(getleft(right), prod(something, left, getright(right)))
 
 # T × (L × R) can be fused efficiently as L × (T × R), because both T × L and T × R has defined the `something` default prod, but we choose T × L
@@ -254,6 +259,7 @@ end
 
 support(dist::LinearizedProductOf) = support(first(dist.vector))
 
+Base.length(product::LinearizedProductOf) = product.length
 Base.eltype(product::LinearizedProductOf) = eltype(first(product.vector))
 
 Base.:(==)(left::LinearizedProductOf, right::LinearizedProductOf) =
@@ -274,6 +280,28 @@ Distributions.logpdf(dist::LinearizedProductOf, x) =
     mapreduce((d) -> logpdf(d, x), +, view(dist.vector, 1:min(dist.length, length(dist.vector))))
 
 Distributions.pdf(dist::LinearizedProductOf, x) = exp(logpdf(dist, x))
+
+# We assume that it is better (really) to preserve the type of the `LinearizedProductOf`, it is just faster for the compiler
+default_prod_rule(::Type{F}, ::Type{LinearizedProductOf{F}}) where {F} = PreserveTypeProd(LinearizedProductOf{F})
+default_prod_rule(::Type{LinearizedProductOf{F}}, ::Type{F}) where {F} = PreserveTypeProd(LinearizedProductOf{F})
+
+function prod(::PreserveTypeProd{LinearizedProductOf{F}}, product::LinearizedProductOf{F}, item::F) where {F}
+    return push!(product, item)
+end
+
+function prod(::PreserveTypeProd{LinearizedProductOf{F}}, item::F, product::LinearizedProductOf{F}) where {F}
+    return push!(product, item)
+end
+
+function prod(
+    ::GenericProd,
+    ::UnspecifiedProd,
+    ::UnspecifiedProd,
+    left::ProductOf{F, F},
+    right::F
+) where {F}
+    return LinearizedProductOf(F[getleft(left), getright(left), right], 3)
+end
 
 function prod(
     ::GenericProd,
@@ -333,55 +361,4 @@ function prod(
     right::L
 ) where {L, R}
     return ProductOf(push!(getleft(left), right), getright(left))
-end
-
-# We assume that we can always execute the `ClosedProd` for any ExponentialFamilyDistribution
-default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) = ClosedProd()
-
-# Case when both supertypes are of type `Distribution` and we have the `ClosedProd` for them
-# The idea here is that converting from `ExponentialFamilyDistribution` to a `Distribution` should be free
-# So we simply convert `EF` representation to the `Distribution` representation, call their closed product and convert back
-function prod(
-    left::ExponentialFamilyDistribution{D1},
-    right::ExponentialFamilyDistribution{D2}
-) where {D1 <: Distribution, D2 <: Distribution}
-    error("This method should be generalized to accept the `ClosedProd` as its first argument. TODO.")
-    # Should be compiled out anyway
-    if default_prod_rule(D1, D2) === ClosedProd()
-        return convert(
-            ExponentialFamilyDistribution,
-            prod(ClosedProd(), convert(Distribution, left), convert(Distribution, left))
-        )
-    end
-    # We assume that we can always execute the `ClosedProd` for any ExponentialFamilyDistribution
-    return prod(ClosedProd(), left, right)
-end
-
-function prod(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
-    return prod(ClosedProd(), left, right)
-end
-
-# Case when both `ExponentialFamilyDistribution` are of the same `Distribution` type 
-# But for some reason we don't have the `ClosedProd` defined for them
-function prod(
-    ::ClosedProd,
-    left::ExponentialFamilyDistribution{T},
-    right::ExponentialFamilyDistribution{T}
-) where {T <: Distribution}
-    # Here we need to check that the basemeasures are constants and that the conditioners are the same 
-    # only then we can sum-up the natural parameters, for now I leave this method as `not implemented`
-    # but it is definitely should be properly implemented
-    error("Not properly implemented")
-    # ExponentialFamilyDistribution(
-    #     T,
-    #     getnaturalparameters(left) + getnaturalparameters(right),
-    #     getconditioner(left)
-    # )
-end
-
-function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
-    error("This method should go away.")
-    # efleft = convert(ExponentialFamilyDistribution, left)
-    # efright = convert(ExponentialFamilyDistribution, right)
-    # return convert(Distribution, prod(efleft, efright))
 end

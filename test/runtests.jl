@@ -2,6 +2,8 @@ using ExponentialFamily
 using Test
 
 @testset "ExponentialFamily" begin
+
+    include("test_prod.jl")
     include("test_distributions.jl")
     include("test_exponential_family.jl")
 

@@ -184,3 +184,54 @@ mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(conv
 var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
 cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
 rand(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = rand(convert(T,ef))
+
+# We assume that we want to preserve the `ExponentialFamilyDistribution` when working with two `ExponentialFamilyDistribution`s
+# default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) = PreserveTypeProd(ExponentialFamilyDistribution)
+
+# Case when both supertypes are of type `Distribution` and we have the `ClosedProd` for them
+# The idea here is that converting from `ExponentialFamilyDistribution` to a `Distribution` should be free
+# So we simply convert `EF` representation to the `Distribution` representation, call their closed product and convert back
+# function prod(
+#     left::ExponentialFamilyDistribution{D1},
+#     right::ExponentialFamilyDistribution{D2}
+# ) where {D1 <: Distribution, D2 <: Distribution}
+#     error("This method should be generalized to accept the `ClosedProd` as its first argument. TODO.")
+#     # Should be compiled out anyway
+#     if default_prod_rule(D1, D2) === ClosedProd()
+#         return convert(
+#             ExponentialFamilyDistribution,
+#             prod(ClosedProd(), convert(Distribution, left), convert(Distribution, left))
+#         )
+#     end
+#     # We assume that we can always execute the `ClosedProd` for any ExponentialFamilyDistribution
+#     return prod(ClosedProd(), left, right)
+# end
+
+# function prod(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
+#     return prod(ClosedProd(), left, right)
+# end
+
+# Case when both `ExponentialFamilyDistribution` are of the same `Distribution` type 
+# But for some reason we don't have the `ClosedProd` defined for them
+# function prod(
+#     ::ClosedProd,
+#     left::ExponentialFamilyDistribution{T},
+#     right::ExponentialFamilyDistribution{T}
+# ) where {T <: Distribution}
+#     # Here we need to check that the basemeasures are constants and that the conditioners are the same 
+#     # only then we can sum-up the natural parameters, for now I leave this method as `not implemented`
+#     # but it is definitely should be properly implemented
+#     error("Not properly implemented")
+#     # ExponentialFamilyDistribution(
+#     #     T,
+#     #     getnaturalparameters(left) + getnaturalparameters(right),
+#     #     getconditioner(left)
+#     # )
+# end
+
+# function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
+#     error("This method should go away.")
+#     # efleft = convert(ExponentialFamilyDistribution, left)
+#     # efright = convert(ExponentialFamilyDistribution, right)
+#     # return convert(Distribution, prod(efleft, efright))
+# end
