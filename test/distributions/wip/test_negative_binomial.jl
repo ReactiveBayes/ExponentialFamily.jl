@@ -94,10 +94,10 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, b
     @testset "fisher information" begin
         for η in 1:10, r in 1:10
             ef = ExponentialFamilyDistribution(NegativeBinomial, [-η], r)
-            dist = convert(Distribution,ef)
+            dist = convert(Distribution, ef)
             f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(NegativeBinomial, η, r))
             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            J = ForwardDiff.gradient(transformation,[-η] )
+            J = ForwardDiff.gradient(transformation, [-η])
             fef = fisherinformation(ef)
             fdist = fisherinformation(dist)
             @test first(fef) ≈ first(autograd_information([-η]))

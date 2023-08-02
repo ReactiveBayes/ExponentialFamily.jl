@@ -12,7 +12,7 @@ using SparseArrays
 
 import ExponentialFamily:
     ExponentialFamilyDistribution, ExponentialFamilyDistribution, logpartition,
-    basemeasure, fisherinformation,getnaturalparameters
+    basemeasure, fisherinformation, getnaturalparameters
 
 @testset "Normal" begin
     @testset "Univariate conversions" begin
@@ -364,10 +364,9 @@ import ExponentialFamily:
             for i in 1:10
                 @test basemeasure(
                     ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i]))),
-                    rand(2)) == (2pi)^(-1)              
+                    rand(2)) == (2pi)^(-1)
             end
         end
-   
     end
 end
 

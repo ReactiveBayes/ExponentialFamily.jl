@@ -18,6 +18,8 @@ function convert_eltype(
 end
 
 closed_prod_rule(::Type{<:NegativeBinomial}, ::Type{<:NegativeBinomial}) = ClosedProd()
+
+# NOTE: The product of two NegativeBinomial distributions is NOT a NegativeBinomial distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},
@@ -38,7 +40,7 @@ function Base.prod(
     end
 
     function logpartition(η)
-        return log(sum(binomial_prod(x + rleft - 1, x + rright - 1, x) * exp(η[1]* x) for x in 0:max(rright, rleft)))
+        return log(sum(binomial_prod(x + rleft - 1, x + rright - 1, x) * exp(η[1] * x) for x in 0:max(rright, rleft)))
     end
 
     supp = NaturalNumbers()
@@ -62,11 +64,11 @@ function Base.prod(::ClosedProd, left::T, right::T) where {T <: NegativeBinomial
 end
 
 pack_naturalparameters(dist::NegativeBinomial) = [log(one(Float64) - params(dist)[2])]
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:NegativeBinomial}) 
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:NegativeBinomial})
     η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
-    
-    return (η1, )
+
+    return (η1,)
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::NegativeBinomial)
@@ -88,7 +90,7 @@ function check_valid_conditioner(::Type{<:NegativeBinomial}, conditioner)
 end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial})
-    (η, ) = unpack_naturalparameters(exponentialfamily)
+    (η,) = unpack_naturalparameters(exponentialfamily)
     return η ≤ 0
 end
 
@@ -97,10 +99,9 @@ logpartition(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial})
 
 support(::ExponentialFamilyDistribution{NegativeBinomial}) = NaturalNumbers()
 
-
 basemeasureconstant(::ExponentialFamilyDistribution{NegativeBinomial}) = NonConstantBaseMeasure()
 basemeasureconstant(::Type{<:NegativeBinomial}) = NonConstantBaseMeasure()
-basemeasure(ef::ExponentialFamilyDistribution{NegativeBinomial}) = (x) -> basemeasure(ef,x)
+basemeasure(ef::ExponentialFamilyDistribution{NegativeBinomial}) = (x) -> basemeasure(ef, x)
 function basemeasure(exponentialfamily::ExponentialFamilyDistribution{NegativeBinomial}, x::Real)
     return binomial(Int(x + getconditioner(exponentialfamily) - 1), x)
 end
@@ -111,7 +112,7 @@ end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{NegativeBinomial})
     r = getconditioner(ef)
-    (η, ) = unpack_naturalparameters(ef)
+    (η,) = unpack_naturalparameters(ef)
     return SA[r * exp(η) / (one(Float64) - exp(η))^2;;]
 end
 
@@ -120,7 +121,7 @@ function fisherinformation(dist::NegativeBinomial)
     SA[r / (p^2 * (one(p) - p));;]
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{NegativeBinomial}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{NegativeBinomial}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::ExponentialFamilyDistribution{NegativeBinomial},
     x::Real

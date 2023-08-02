@@ -2,7 +2,8 @@ module KnownExponentialFamilyDistributionTest
 
 using ExponentialFamily, Test, StatsFuns
 import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec, pack_naturalparameters, unpack_naturalparameters,insupport
+    ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec,
+    pack_naturalparameters, unpack_naturalparameters, insupport
 import Distributions: pdf, logpdf, cdf
 @testset "ExponentialFamilyDistribution" begin
     ef1 = ExponentialFamilyDistribution(Bernoulli, [0.9])
@@ -12,7 +13,7 @@ import Distributions: pdf, logpdf, cdf
 
     @test getnaturalparameters(ef1) + getnaturalparameters(ef2) == [1.1]
     @test getnaturalparameters(ef1) - getnaturalparameters(ef2) == [0.7]
-    (logprobability1, ) = unpack_naturalparameters(ef1)
+    (logprobability1,) = unpack_naturalparameters(ef1)
     @test Base.convert(Bernoulli, ef1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
     @test Base.convert(ExponentialFamilyDistribution, Bernoulli(0.9)) ==
           ExponentialFamilyDistribution(Bernoulli, [logit(0.9)])
@@ -22,7 +23,7 @@ import Distributions: pdf, logpdf, cdf
     @test_throws AssertionError ExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), f)
 
     @test insupport(ef1, 1) == true
-    @test insupport(ef1 , 0) == true
+    @test insupport(ef1, 0) == true
 end
 
 @testset "pdf,cdf" begin

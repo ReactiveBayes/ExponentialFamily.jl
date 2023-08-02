@@ -96,7 +96,8 @@ function basemeasure(::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:
     return (1 / 2pi)^(length(x) * HALF)
 end
 
-sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}) =
+    (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher},
     x::Vector

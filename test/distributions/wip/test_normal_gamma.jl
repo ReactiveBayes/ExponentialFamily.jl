@@ -58,7 +58,7 @@ end
             @test logpdf(dist, [m, s]) ≈ log(normal_gamma_pdf(m, s, m, s, a, b))
         end
     end
-    transformation(η) = [η[1]/ (-2η[2]), -2η[2], η[3] + 1/2, -η[4] + (η[1]^2 / 4η[2])]
+    transformation(η) = [η[1] / (-2η[2]), -2η[2], η[3] + 1 / 2, -η[4] + (η[1]^2 / 4η[2])]
     @testset "fisher information (naturalparameters)" begin
         rng = StableRNG(42)
         for i in 1:0.1:5
@@ -78,7 +78,6 @@ end
             @test J' * fdist * J ≈ fef
         end
     end
-
 
     @testset "sampling" begin
         rng = StableRNG(42)

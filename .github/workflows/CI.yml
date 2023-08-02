@@ -1,9 +1,9 @@
 name: CI
 on:
   pull_request:
-    types: [review_requested,reopened,synchronize]
+    types: [review_requested, reopened, synchronize]
   pull_request_review:
-    types: [submitted,edited]
+    types: [submitted, edited]
   push:
     branches:
       - 'main'
@@ -11,32 +11,56 @@ on:
   check_run:
     types: [rerequested]
 concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
-  test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.7'
-          - '1.8'
-          - '1.9'
-          - 'nightly'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
+#   test:
+#     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         version:
+#           - '1.7'
+#           - '1.8'
+#           - '1.9'
+#           - 'nightly'
+#         os:
+#           - ubuntu-latest
+#         arch:
+#           - x64
+#     steps:
+#       - uses: actions/checkout@v2
+#       - uses: julia-actions/setup-julia@v1
+#         with:
+#           version: ${{ matrix.version }}
+#           arch: ${{ matrix.arch }}
+#       - uses: julia-actions/cache@v1
+#       - uses: julia-actions/julia-buildpkg@v1
+#       - uses: julia-actions/julia-runtest@v1
+    
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    # needs: test
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
+      - uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
         with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-docs-${{ env.cache-name }}-${{ hashFiles('**/docs/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-docs-${{ env.cache-name }}-
+            ${{ runner.os }}-docs-
+            ${{ runner.os }}-
+      - uses: julia-actions/julia-buildpkg@latest          
+        with:
+          version: '1.9'
+      - run: make docs
+        env:
+          PYTHON: ""
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

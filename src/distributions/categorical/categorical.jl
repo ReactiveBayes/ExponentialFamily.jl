@@ -27,18 +27,20 @@ end
 
 function pack_naturalparameters(dist::Categorical)
     p = probvec(dist)
-    return LoopVectorization.vmap(d -> log(d/p[end]), p)
+    return LoopVectorization.vmap(d -> log(d / p[end]), p)
 end
 
-unpack_naturalparameters(ef::ExponentialFamilyDistribution{Categorical}) = (getnaturalparameters(ef), )
-    
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical) = ExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{Categorical}) = (getnaturalparameters(ef),)
 
-Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Categorical}) = Categorical(softmax(getnaturalparameters(exponentialfamily)))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical) =
+    ExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
+
+Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Categorical}) =
+    Categorical(softmax(getnaturalparameters(exponentialfamily)))
 
 check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{Categorical}) 
+function logpartition(exponentialfamily::ExponentialFamilyDistribution{Categorical})
     logsumexp(getnaturalparameters(exponentialfamily))
 end
 isproper(::ExponentialFamilyDistribution{Categorical}) = true
@@ -88,7 +90,8 @@ basemeasure(::Type{<:Categorical}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Categorical}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Real) = one(x)
 basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Vector) = one(eltype(x))
-    
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}) = x -> sufficientstatistics(ef,x)
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}, x::Real) = OneElement(x,length(getnaturalparameters(ef)))
+
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}) = x -> sufficientstatistics(ef, x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}, x::Real) =
+    OneElement(x, length(getnaturalparameters(ef)))
 sufficientstatistics(::ExponentialFamilyDistribution{<:Categorical}, x::Vector) = x

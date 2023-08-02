@@ -24,7 +24,7 @@ end
 
 check_valid_natural(::Type{<:LogNormal}, params) = length(params) === 2
 
-function pack_naturalparameters(dist::LogNormal) 
+function pack_naturalparameters(dist::LogNormal)
     μ, scale = params(dist)
     var = scale^2
 
@@ -39,15 +39,16 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:LogNormal}
     return η1, η2
 end
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::LogNormal) = ExponentialFamilyDistribution(LogNormal, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::LogNormal) =
+    ExponentialFamilyDistribution(LogNormal, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{LogNormal})
-    η1,η2 = unpack_naturalparameters(exponentialfamily)
+    η1, η2 = unpack_naturalparameters(exponentialfamily)
     return LogNormal(-η1 / (2 * η2), sqrt(-1 / (2 * η2)))
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{LogNormal})
-    η1,η2 = unpack_naturalparameters(exponentialfamily)
+    η1, η2 = unpack_naturalparameters(exponentialfamily)
     return -(η1)^2 / (4 * η2) - log(-2η2) / 2
 end
 
@@ -60,13 +61,13 @@ support(::Union{<:ExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = Clos
 
 basemeasureconstant(::ExponentialFamilyDistribution{LogNormal}) = NonConstantBaseMeasure()
 basemeasureconstant(::Type{<:LogNormal}) = NonConstantBaseMeasure()
-basemeasure(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> basemeasure(ef,x)
+basemeasure(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> basemeasure(ef, x)
 function basemeasure(::ExponentialFamilyDistribution{LogNormal}, x::Real)
     return inv(sqrt(TWOPI) * x)
 end
 
 function basemeasure(::LogNormal, x::Real)
-    return  inv(sqrt(TWOPI) * x)
+    return inv(sqrt(TWOPI) * x)
 end
 
 function fisherinformation(d::LogNormal)
@@ -75,11 +76,11 @@ function fisherinformation(d::LogNormal)
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{LogNormal})
-    η1,η2 = unpack_naturalparameters(ef)
+    η1, η2 = unpack_naturalparameters(ef)
     return SA[-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(::ExponentialFamilyDistribution{LogNormal}, x::Real)
     return SA[log(x), log(x)^2]
 end

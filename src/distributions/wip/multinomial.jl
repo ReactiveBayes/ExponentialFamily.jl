@@ -17,6 +17,7 @@ end
 
 closed_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
 
+# NOTE: The product of two Multinomial distributions is NOT a Multinomial distribution.
 function Base.prod(
     ::ClosedProd,
     left::ExponentialFamilyDistribution{T},
@@ -55,12 +56,12 @@ function Base.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
     return prod(ClosedProd(), ef_left, ef_right)
 end
 
-function pack_naturalparameters(dist::Multinomial) 
+function pack_naturalparameters(dist::Multinomial)
     @inbounds p = params(dist)[2]
-    return vmap(log, p/p[end])
+    return vmap(log, p / p[end])
 end
 
-unpack_naturalparameters(ef::ExponentialFamilyDistribution{Multinomial}) = (getnaturalparameters(ef), )
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{Multinomial}) = (getnaturalparameters(ef),)
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Multinomial)
     n, _ = params(dist)
@@ -138,10 +139,9 @@ function insupport(ef::ExponentialFamilyDistribution{Multinomial, P, C, Safe}, x
     return n == getconditioner(ef)
 end
 
-
 basemeasureconstant(::ExponentialFamilyDistribution{Multinomial}) = NonConstantBaseMeasure()
 basemeasureconstant(::Type{<:Multinomial}) = NonConstantBaseMeasure()
-basemeasure(ef::ExponentialFamilyDistribution{Multinomial}) = (x) -> basemeasure(ef,x)
+basemeasure(ef::ExponentialFamilyDistribution{Multinomial}) = (x) -> basemeasure(ef, x)
 function basemeasure(::ExponentialFamilyDistribution{Multinomial}, x::Vector)
     n = Int(sum(x))
     return factorial(n) / prod(@.factorial(x))
@@ -153,4 +153,5 @@ function basemeasure(::Multinomial, x::Vector)
 end
 
 sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector) = x
-sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}) =
+    x -> sufficientstatistics(ef, x)

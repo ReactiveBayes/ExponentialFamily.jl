@@ -113,7 +113,6 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, f
 
     @testset "fisherinformation" begin
         function reconstructed_logpartition(::ExponentialFamilyDistribution{T}, ηvec) where {T}
-
             return logpartition(ExponentialFamilyDistribution(T, ηvec))
         end
 
