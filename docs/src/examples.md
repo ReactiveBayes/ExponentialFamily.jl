@@ -1,6 +1,8 @@
 # [Examples](@id examples)
 In these examples, we demonstrate how to use ExponentialFamily.jl to compute the product of probability distributions.
-### Example 1: Bernoulli distribution
+
+## Examples of distributions' product 
+### Bernoulli distribution
 
 ```julia
 using ExponentialFamily, Distributions
@@ -19,7 +21,7 @@ ef_prod = prod(ef_left, ef_right)
 
 We created two Bernoulli distributions and compute their product using the `ClosedProd` trait. We also show how to convert the `Bernoulli` distributions to `ExponentialFamilyDistribution`, compute the product of the exponential family distributions, and convert the product back to a `Bernoulli` distribution.
 
-### Example 2: Laplace distribution
+### Laplace distribution
 ```julia
 using ExponentialFamily
 import ExponentialFamily: ExponentialFamilyDistribution
@@ -37,3 +39,29 @@ prod(ClosedProd(), dist_left, dist_right)
 ```
 
 We create two `Laplace` distributions and compute their product using the `ClosedProd` function. We also note that the product of `Laplace` distributions with different location parameters is not a `Laplace` distribution but still a member of the exponential family.
+
+
+## Other examples
+
+```julia
+using ExponentialFamily
+import ExponentialFamily: ExponentialFamilyDistribution, fisherinformation
+
+## Multivariate Normal example
+dist = MvNormalMeanCovariance([1.0, 1.0], [1.0 0.0; 0.0 1.0])
+@show fisherinformation(ef)
+@show pdf(dist, [1.0, 1.0])
+
+## LogNormal example
+dist = LogNormal(0.0, 1.0)
+ef = convert(ExponentialFamilyDistribution, dist)
+@show fisherinformation(ef)
+@show fisherinformation(dist)
+@show pdf(ef, 2)
+
+## Poisson example
+ef = ExponentialFamilyDistribution(Poisson, [1.0])
+@show fisherinformation(ef)
+@show pdf(ef, 2)
+
+```

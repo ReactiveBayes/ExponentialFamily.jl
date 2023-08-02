@@ -3,13 +3,13 @@ export NormalMeanPrecision
 import StatsFuns: log2π, invsqrt2π
 
 """
-NormalMeanPrecision{T <: Real} <: ContinuousUnivariateDistribution
+    NormalMeanPrecision{T <: Real} <: ContinuousUnivariateDistribution
 
-A normal distribution with a known mean `μ` and precision `w`.
+    A normal distribution with a known mean `μ` and precision `w`.
 
-# Fields
-- `μ::T`: The mean of the normal distribution.
-- `w::T`: The precision of the normal distribution.
+    # Fields
+    - `μ::T`: The mean of the normal distribution.
+    - `w::T`: The precision of the normal distribution.
 """
 struct NormalMeanPrecision{T <: Real} <: ContinuousUnivariateDistribution
     μ::T

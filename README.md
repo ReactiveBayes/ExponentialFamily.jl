@@ -23,7 +23,7 @@ ExponentialFamily.jl is a Julia package that extends the functionality of Distri
 
 - **Analytic Products**: The package provides support for analytic products of distributions belonging to the same exponential family. These products are useful for conjugate computations in inference algorithms, enabling efficient calculations in Bayesian inference and other probabilistic models.
   
-- **Fisher Information**: ExponentialFamily.jl also offers computation of the Fisher Information for various distributions. The Fisher Information is a crucial quantity in statistical inference, providing insights into the sensitivity of a model's parameters to changes in the data. This feature allows users to gain a deeper understanding of the behavior and performance of their probabilistic models.
+- **Fisher Information**: ExponentialFamily.jl also offers computation of the [Fisher Information (FI)](https://en.wikipedia.org/wiki/Fisher_information) for various distributions. FI is a crucial quantity in statistical inference, providing insights into the sensitivity of a model's parameters to changes in the data. Essentially FI is the hessian of logpartition with respect to vectorized natural parameters. FI allows users to gain a deeper understanding of the behavior and performance of their probabilistic models.
 
 ## Installation
 ExponentialFamily.jl can be installed through the Julia package manager. In the Julia REPL, type `]` to enter the package manager mode and run:

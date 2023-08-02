@@ -103,9 +103,9 @@ struct ClosedProdUnknown end
 
 """
     closed_prod_rule(::Type, ::Type)
-Returns either `ProdClosed` or `ClosedProdUnknown` for two given distribution types.
+Returns either `ClosedProd` or `ClosedProdUnknown` for two given distribution types.
 Returns `ClosedProdUnknown` by default.
-See also: [`prod`](@ref), [`ProdClosed`](@ref), [`ProdGeneric`](@ref)
+See also: [`prod`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
 """
 closed_prod_rule(::Type, ::Type) = ClosedProdUnknown()
 
@@ -117,7 +117,7 @@ closed_prod_rule(::Type, ::Type) = ClosedProdUnknown()
     # Arguments
     - `left`: The left component distribution.
     - `right`: The right component distribution.
-    """
+"""
 struct ProductDistribution{L, R}
     left  :: L
     right :: R

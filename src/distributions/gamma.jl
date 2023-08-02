@@ -9,14 +9,14 @@ using StaticArrays
 """
     GammaShapeScale{T}
 
-A continuous univariate gamma distribution parametrized by its shape `α` and scale `β` parameters.
+    A continuous univariate gamma distribution parametrized by its shape `α` and scale `β` parameters.
 
-# Parameters
-- `α`: The shape parameter of the gamma distribution. It should be a positive real number.
-- `β`: The scale parameter of the gamma distribution. It should be a positive real number.
+    # Fields
+    - `α`: The shape parameter of the gamma distribution. It should be a positive real number.
+    - `β`: The scale parameter of the gamma distribution. It should be a positive real number.
 
-# Note
- - GammaShapeScale is an alias for Gamma from Distributions.jl.
+    # Note
+    - GammaShapeScale is an alias for Gamma from Distributions.jl.
 """
 const GammaShapeScale = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}

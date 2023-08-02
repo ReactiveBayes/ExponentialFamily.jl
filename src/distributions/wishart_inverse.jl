@@ -7,19 +7,19 @@ import StatsFuns: logπ, logmvgamma
 import SpecialFunctions: digamma, loggamma
 
 """
-InverseWishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+    InverseWishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
 
-The `InverseWishartFast` struct represents an improper Inverse Wishart distribution. It is similar to the `InverseWishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `InverseWishart` messages. 
+    The `InverseWishartFast` struct represents an improper Inverse Wishart distribution. It is similar to the `InverseWishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `InverseWishart` messages. 
 
-For model creation and regular usage, it is recommended to use `InverseWishart` from `Distributions.jl`. The `InverseWishartFast` distribution is intended for internal purposes and should not be directly used by regular users.
+    For model creation and regular usage, it is recommended to use `InverseWishart` from `Distributions.jl`. The `InverseWishartFast` distribution is intended for internal purposes and should not be directly used by regular users.
 
-# Fields
-- `ν::T`: The degrees of freedom parameter of the inverse Wishart distribution.
-- `S::A`: The scale matrix parameter of the inverse Wishart distribution.
+    # Fields
+    - `ν::T`: The degrees of freedom parameter of the inverse Wishart distribution.
+    - `S::A`: The scale matrix parameter of the inverse Wishart distribution.
 
-## Note
+    ## Note
 
-The `InverseWishartFast` distribution does not enforce input argument validation, making it suitable for specialized cases where improper message constructions are needed.
+    The `InverseWishartFast` distribution does not enforce input argument validation, making it suitable for specialized cases where improper message constructions are needed.
 """
 struct InverseWishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν::T

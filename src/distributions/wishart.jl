@@ -6,19 +6,19 @@ import LinearAlgebra
 import SpecialFunctions: digamma
 
 """
-WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
+    WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
 
-The `WishartFast` struct represents a fast version of the Wishart distribution. It is similar to the `Wishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `Wishart` messages.
+    The `WishartFast` struct represents a fast version of the Wishart distribution. It is similar to the `Wishart` distribution from `Distributions.jl`, but it does not check input arguments, allowing the creation of improper `Wishart` messages.
 
-For model creation and regular usage, it is recommended to use `Wishart` from `Distributions.jl`. The `WishartFast` distribution is intended for internal purposes and should not be directly used by regular users.
+    For model creation and regular usage, it is recommended to use `Wishart` from `Distributions.jl`. The `WishartFast` distribution is intended for internal purposes and should not be directly used by regular users.
 
-## Fields
-- `ν::T`: The degrees of freedom parameter of the Wishart distribution.
-- `invS::A`: The inverse scale matrix parameter of the Wishart distribution.
+    ## Fields
+    - `ν::T`: The degrees of freedom parameter of the Wishart distribution.
+    - `invS::A`: The inverse scale matrix parameter of the Wishart distribution.
 
-## Note
+    ## Note
 
-Internally, `WishartFast` stores and creates the inverse of its scale matrix. However, the `params()` function returns the scale matrix itself for backward compatibility. This is done to ensure better stability in the message passing update rules for `ReactiveMP.jl`.
+    Internally, `WishartFast` stores and creates the inverse of its scale matrix. However, the `params()` function returns the scale matrix itself for backward compatibility. This is done to ensure better stability in the message passing update rules for `ReactiveMP.jl`.
 """
 struct WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     ν    :: T
