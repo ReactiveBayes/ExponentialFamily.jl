@@ -5,11 +5,11 @@ import StatsFuns: log2π, invsqrt2π
 """
     NormalMeanVariance{T <: Real} <: ContinuousUnivariateDistribution
 
-    A normal distribution with a known mean `μ` and variance `v`.
+A normal distribution with a known mean `μ` and variance `v`.
 
-    # Fields
-    - `μ::T`: The mean of the normal distribution.
-    - `v::T`: The variance of the normal distribution.
+# Fields
+- `μ::T`: The mean of the normal distribution.
+- `v::T`: The variance of the normal distribution.
 """
 struct NormalMeanVariance{T <: Real} <: ContinuousUnivariateDistribution
     μ::T

@@ -12,11 +12,11 @@ using LinearAlgebra
 """
     MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
 
-    A matrix-valued Dirichlet distribution, where `T` is the element type of the matrix `A`.
-    The `a` field stores the matrix parameter of the distribution.
+A matrix-valued Dirichlet distribution, where `T` is the element type of the matrix `A`.
+The `a` field stores the matrix parameter of the distribution.
 
-    # Fields
-    - `a::A`: The matrix parameter of the Dirichlet distribution.
+# Fields
+- `a::A`: The matrix parameter of the Dirichlet distribution.
 """
 struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
     a::A

@@ -66,6 +66,7 @@ export ProdPreserveType, ProdPreserveTypeLeft, ProdPreserveTypeRight
 
 """
     ProdPreserveType{T}
+    
 `ProdPreserveType` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in some specific form.
 By default it fallbacks to a `ClosedProd` strategy and converts an output to a prespecified type but can be overwritten for some distributions
 for better performance.
@@ -79,6 +80,7 @@ prod(::ProdPreserveType{T}, left, right) where {T} = convert(T, prod(ClosedProd(
 
 """
     ProdPreserveTypeLeft
+
 `ProdPreserveTypeLeft` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in the functional form as `left` argument.
 By default it fallbacks to a `ProdPreserveType` strategy and converts an output to a prespecified type but can be overwritten for some distributions
 for better performance.
@@ -90,6 +92,7 @@ prod(::ProdPreserveTypeLeft, left::L, right) where {L} = prod(ProdPreserveType(L
 
 """
     ProdPreserveTypeRight
+
 `ProdPreserveTypeRight` is one of the strategies for `prod` function. This strategy constraint an output of a prod to be in the functional form as `right` argument.
 By default it fallbacks to a `ProdPreserveType` strategy and converts an output to a prespecified type but can be overwritten for some distributions
 for better performance.
@@ -103,6 +106,7 @@ struct ClosedProdUnknown end
 
 """
     closed_prod_rule(::Type, ::Type)
+
 Returns either `ClosedProd` or `ClosedProdUnknown` for two given distribution types.
 Returns `ClosedProdUnknown` by default.
 See also: [`prod`](@ref), [`ClosedProd`](@ref), [`ProdGeneric`](@ref)
@@ -112,11 +116,11 @@ closed_prod_rule(::Type, ::Type) = ClosedProdUnknown()
 """
     ProductDistribution{L, R}(left::L, right::R)
 
-    A product distribution structure composed of two distributions `left` and `right`.
+A product distribution structure composed of two distributions `left` and `right`.
 
-    # Arguments
-    - `left`: The left component distribution.
-    - `right`: The right component distribution.
+# Arguments
+- `left`: The left component distribution.
+- `right`: The right component distribution.
 """
 struct ProductDistribution{L, R}
     left  :: L

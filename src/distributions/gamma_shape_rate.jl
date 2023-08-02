@@ -8,11 +8,11 @@ import Random: rand
 """
     GammaShapeRate{T <: Real}
 
-    A univariate gamma distribution parametrized by its shape `a` and rate `b`.
+A univariate gamma distribution parametrized by its shape `a` and rate `b`.
 
-    # Fields
-    - `a`: The shape parameter of the gamma distribution. It should be a positive real number.
-    - `b`: The rate parameter of the gamma distribution. It should be a positive real number.
+# Fields
+- `a`: The shape parameter of the gamma distribution. It should be a positive real number.
+- `b`: The rate parameter of the gamma distribution. It should be a positive real number.
 """
 struct GammaShapeRate{T <: Real} <: ContinuousUnivariateDistribution
     a::T

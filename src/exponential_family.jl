@@ -10,16 +10,16 @@ struct Unsafe end
 """
     ExponentialFamilyDistribution(::Type{T}, naturalparameters, [ conditioner, basemeasure, sufficientstatistics, logpartition, support, supportcheck ])
 
-    `ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
-    Methods defined are `basemeasure` ,`sufficientstatistics`,  `naturalparameters`, `logpartition` and `support`.
+`ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
+Methods defined are `basemeasure` ,`sufficientstatistics`,  `naturalparameters`, `logpartition` and `support`.
 
-    - `getbasemeasure` returns a positive a valued function. 
-    - `getsufficientstatistics` returns an iterable of functions such as [x, x^2] or [x, logx].
-    - `getnaturalparameters` returns an iterable holding the values of the natural parameters. 
-    - `getlogpartition` return a function that depends on the naturalparameters and it ensures that the distribution is normalized to 1. 
-    - `support` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use the `insupport` to check if a values is in support.
+- `getbasemeasure` returns a positive a valued function. 
+- `getsufficientstatistics` returns an iterable of functions such as [x, x^2] or [x, logx].
+- `getnaturalparameters` returns an iterable holding the values of the natural parameters. 
+- `getlogpartition` return a function that depends on the naturalparameters and it ensures that the distribution is normalized to 1. 
+- `support` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use the `insupport` to check if a values is in support.
 
-    See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
+See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
 struct ExponentialFamilyDistribution{T, P, C, H, S, Z, A, B}
     naturalparameters::P
@@ -57,7 +57,7 @@ end
 """
     getlogpartition(ef::ExponentialFamilyDistribution)
 
-    Get the log partition of the exponential family distribution `ef`.
+Get the log partition of the exponential family distribution `ef`.
 """
 getlogpartition(ef::ExponentialFamilyDistribution) = getlogpartition(ef.logpartition, ef)
 getlogpartition(::Nothing, ef::ExponentialFamilyDistribution) = logpartition(ef)
@@ -66,7 +66,7 @@ getlogpartition(something, ::ExponentialFamilyDistribution) = something
 """
     getbasemeasure(ef::ExponentialFamilyDistribution)
 
-    Get the base measure of the exponential family distribution `ef`.
+Get the base measure of the exponential family distribution `ef`.
 """
 getbasemeasure(ef::ExponentialFamilyDistribution) = getbasemeasure(ef.basemeasure, ef)
 getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution) = basemeasure(ef)
@@ -75,7 +75,7 @@ getbasemeasure(something, ::ExponentialFamilyDistribution) = something
 """
     getsufficientstatistics(ef::ExponentialFamilyDistribution)
 
-    Get the sufficient statistics of the exponential family distribution `ef`.
+Get the sufficient statistics of the exponential family distribution `ef`.
 """
 getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.sufficientstatistics, ef)
 getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution) = sufficientstatistics(ef)
@@ -84,7 +84,7 @@ getsufficientstatistics(something, ::ExponentialFamilyDistribution) = something
 """
     getsupport(ef::ExponentialFamilyDistribution)
 
-    Get the support of the exponential family distribution `ef`.
+Get the support of the exponential family distribution `ef`.
 """
 getsupport(ef::ExponentialFamilyDistribution) = getsupport(ef.support, ef)
 getsupport(::Nothing, ef::ExponentialFamilyDistribution) = support(ef)
@@ -92,15 +92,15 @@ getsupport(something, ::ExponentialFamilyDistribution) = something
 
 """
     getconditioner(exponentialfamily::ExponentialFamilyDistribution)
-    
-    Get the conditioner of the exponential family distribution `ef`. conditioner is a fixed parameter that is used to ensure that the distribution belongs to the exponential family.
+
+Get the conditioner of the exponential family distribution `ef`. conditioner is a fixed parameter that is used to ensure that the distribution belongs to the exponential family.
 """
 getconditioner(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.conditioner
 
 """
     getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution)
 
-    Get the natural parameters of the exponential family distribution `ef`.
+Get the natural parameters of the exponential family distribution `ef`.
 """
 getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.naturalparameters
 
@@ -111,14 +111,14 @@ basemeasureconstant(::ExponentialFamilyDistribution) = ConstantBaseMeasure()
 """
     Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T}, x) where {T <: Distribution}
 
-    Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
+Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
 
-    # Arguments
-    - `exponentialfamily`: The exponential family distribution.
-    - `x`: The input value.
+# Arguments
+- `exponentialfamily`: The exponential family distribution.
+- `x`: The input value.
 
-    # Returns
-    - The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
+# Returns
+- The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
 
 """
 Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T}, x) where {T <: Distribution} =
@@ -127,15 +127,15 @@ Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T}, x) whe
 """
     Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P, C, Z, A, B}, x, ::ConstantBaseMeasure)
 
-    Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
+Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
 
-    # Arguments
-    - `exponentialfamily`: The exponential family distribution.
-    - `x`: The input value.
-    - `::ConstantBaseMeasure`: A marker for the constant base measure (used for dispatch).
+# Arguments
+- `exponentialfamily`: The exponential family distribution.
+- `x`: The input value.
+- `::ConstantBaseMeasure`: A marker for the constant base measure (used for dispatch).
 
-    # Returns
-    - The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
+# Returns
+- The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
 
 """
 function Distributions.logpdf(
@@ -155,15 +155,15 @@ end
 """
     Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P, C, Z, A, B}, x, ::NonConstantBaseMeasure)
 
-    Evaluate the log-density of the exponential family distribution for the input `x` with non-constant base measure.
+Evaluate the log-density of the exponential family distribution for the input `x` with non-constant base measure.
 
-    # Arguments
-    - `exponentialfamily`: The exponential family distribution.
-    - `x`: The input value.
-    - `::NonConstantBaseMeasure`: A marker for the non-constant base measure (used for dispatch).
+# Arguments
+- `exponentialfamily`: The exponential family distribution.
+- `x`: The input value.
+- `::NonConstantBaseMeasure`: A marker for the non-constant base measure (used for dispatch).
 
-    # Returns
-    - The log-density of `exponentialfamily` evaluated at `x` with non-constant base measure.
+# Returns
+- The log-density of `exponentialfamily` evaluated at `x` with non-constant base measure.
 
 """
 function Distributions.logpdf(
@@ -209,20 +209,21 @@ end
 """
     Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x)
 
-    Evaluate the probability density function of the exponential family distribution for the input `x`.
+Evaluate the probability density function of the exponential family distribution for the input `x`.
 """
 Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
 """
     Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x)
 
-    Evaluate the cumulative distribution function of the exponential family distribution for the input `x`.
+Evaluate the cumulative distribution function of the exponential family distribution for the input `x`.
 """
 Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x) =
     Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
 
 """
     insupport(ef::ExponentialFamilyDistribution, x)
-    Check if the input `x` is in the support of the exponential family distribution `ef`.
+
+Check if the input `x` is in the support of the exponential family distribution `ef`.
 """
 insupport(ef::ExponentialFamilyDistribution, x) = insupport(ef.supportcheck, ef, x)
 insupport(::Safe, ef, x) = x ∈ support(ef)
@@ -249,40 +250,40 @@ Base.:(≈)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistrib
     distributiontype(left) == distributiontype(right)
 
 """
-    The function `logpartition` computes the log partition of an exponential family distribution.
+The function `logpartition` computes the log partition of an exponential family distribution.
 """
 function logpartition end
 
 """
-    The function `basemeasure` computes the base measure of an exponential family distribution.
+The function `basemeasure` computes the base measure of an exponential family distribution.
 """
 function basemeasure end
 
 """
-    The function `sufficientstatistics` calculates the sufficient statistics of an exponential family distribution.
+The function `sufficientstatistics` calculates the sufficient statistics of an exponential family distribution.
 """
 function sufficientstatistics end
 
 """
-    The function `fisherinformation` is used to compute the Fisher information matrix of an exponential family distribution. `fisherinformation` calculates the Fisher information matrix based on the natural parameters of the distribution.
+The function `fisherinformation` is used to compute the Fisher information matrix of an exponential family distribution. `fisherinformation` calculates the Fisher information matrix based on the natural parameters of the distribution.
 """
 function fisherinformation end
 
 """
     reconstruct_array!(η, ηef, ηvec; start = 1)
 
-    Reconstruct an `AbstractArray` from a flattened `Vector` of values `ηvec` so that its shape matches that of the `AbstractArray` `η`.
+Reconstruct an `AbstractArray` from a flattened `Vector` of values `ηvec` so that its shape matches that of the `AbstractArray` `η`.
 
-    If a unique element of `η` corresponds to a scalar value, the scalar is assigned directly to the corresponding index of `η`. If the unique element of `η` is a non-scalar value, the function reshapes the appropriate slice of `ηvec` to match the shape of that element and assigns it to the corresponding indices of `η`.
+If a unique element of `η` corresponds to a scalar value, the scalar is assigned directly to the corresponding index of `η`. If the unique element of `η` is a non-scalar value, the function reshapes the appropriate slice of `ηvec` to match the shape of that element and assigns it to the corresponding indices of `η`.
 
-    Use the optional `start` argument to specify the beginning index when flattening `ηvec`.
+Use the optional `start` argument to specify the beginning index when flattening `ηvec`.
 
-    This function is useful for converting vectorized parameters into an appropriate size of natural parameters for a particular distribution.
+This function is useful for converting vectorized parameters into an appropriate size of natural parameters for a particular distribution.
 
-    # Arguments
-    - `η`: Mutable `AbstractArray` to store the reconstructed values. The size and shape of `η` should match the desired size and shape of the reconstructed `AbstractArray`.
-    - `ηvec`: A `Vector` containing the flattened values of the target `AbstractArray`.
-    - `start` (optional): An integer argument used to set the starting index of `ηvec`.
+# Arguments
+- `η`: Mutable `AbstractArray` to store the reconstructed values. The size and shape of `η` should match the desired size and shape of the reconstructed `AbstractArray`.
+- `ηvec`: A `Vector` containing the flattened values of the target `AbstractArray`.
+- `start` (optional): An integer argument used to set the starting index of `ηvec`.
 
 """
 function reconstructargument!(η, ηef, ηvec; start = 1)
