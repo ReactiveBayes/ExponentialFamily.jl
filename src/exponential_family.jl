@@ -91,11 +91,15 @@ getsupport(::Nothing, ef::ExponentialFamilyDistribution) = support(ef)
 getsupport(something, ::ExponentialFamilyDistribution) = something
 
 """
+    getconditioner(exponentialfamily::ExponentialFamilyDistribution)
+    
     Get the conditioner of the exponential family distribution `ef`. conditioner is a fixed parameter that is used to ensure that the distribution belongs to the exponential family.
 """
 getconditioner(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.conditioner
 
 """
+    getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution)
+
     Get the natural parameters of the exponential family distribution `ef`.
 """
 getnaturalparameters(exponentialfamily::ExponentialFamilyDistribution) = exponentialfamily.naturalparameters
