@@ -18,10 +18,9 @@ ExponentialFamily.getlogpartition
 ExponentialFamily.getbasemeasure
 ExponentialFamily.getsufficientstatistics
 ExponentialFamily.getnaturalparameters
-ExpontentialFamily.getsupport
+ExponentialFamily.getsupport
 ExponentialFamily.logpdf
 ExponentialFamily.pdf
-ExpontentialFamily.cdf
 ExponentialFamily.fisherinformation
 ```
 
@@ -52,4 +51,9 @@ prod(::ClosedProd, left, right)
 ExponentialFamily.ProdPreserveType
 ExponentialFamily.ProdPreserveTypeLeft
 ExponentialFamily.ProdGeneric
+ExponentialFamily.ProdPreserveTypeRight
+ExponentialFamily.closed_prod_rule
+ExponentialFamily.ClosedProd
+ExponentialFamily.LinearizedProductDistribution
+ExponentialFamily.ProductDistribution
 ```
