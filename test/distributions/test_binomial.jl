@@ -67,7 +67,7 @@ import ExponentialFamily:
                 prod_dist = prod(efleft, efright)
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        dot(prod_dist.sufficientstatistics(x) , prod_dist.naturalparameters) -
+                        dot(prod_dist.sufficientstatistics(x), prod_dist.naturalparameters) -
                         prod_dist.logpartition(prod_dist.naturalparameters)
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
@@ -88,7 +88,7 @@ import ExponentialFamily:
                 prod_dist = prod(ClosedProd(), left, right)
                 hist_sum(x) =
                     prod_dist.basemeasure(x) * exp(
-                        dot(prod_dist.sufficientstatistics(x) , prod_dist.naturalparameters) -
+                        dot(prod_dist.sufficientstatistics(x), prod_dist.naturalparameters) -
                         prod_dist.logpartition(prod_dist.naturalparameters[1])
                     )
                 @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9

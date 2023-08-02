@@ -25,7 +25,7 @@ end
 check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
 
 pack_naturalparameters(dist::Exponential) = [-inv(dist.θ)]
-unpack_naturalparameters(ef::ExponentialFamilyDistribution) = (first(getnaturalparameters(ef)), )
+unpack_naturalparameters(ef::ExponentialFamilyDistribution) = (first(getnaturalparameters(ef)),)
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Exponential)
     return ExponentialFamilyDistribution(Exponential, pack_naturalparameters(dist))
 end
@@ -45,12 +45,11 @@ support(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}) = 
 
 basemeasure(::ExponentialFamilyDistribution{Exponential}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Exponential}, x::Real) = one(x)
-    
+
 fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
     SA[inv(first(unpack_naturalparameters(exponentialfamily))^2);;]
 
 fisherinformation(dist::Exponential) = SA[inv(dist.θ^2);;]
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{Exponential}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{Exponential}) = (x) -> sufficientstatistics(ef, x)
 sufficientstatistics(::ExponentialFamilyDistribution{Exponential}, x::Real) = SA[x]
-

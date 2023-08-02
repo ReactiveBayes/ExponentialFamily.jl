@@ -23,9 +23,8 @@ function normal_wishart_pdf(x::Vector{Float64},
 end
 
 # Derrivative-friendly function for the natural parameters of the MvNormalWishart distribution
-logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where 
-        {T, F <: Real} = logpartition(ExponentialFamilyDistribution(T, ηvec))
-
+logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
+{T, F <: Real} = logpartition(ExponentialFamilyDistribution(T, ηvec))
 
 @testset "MvNormalWishart" begin
     @testset "common" begin
@@ -47,7 +46,7 @@ logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
             dist = MvNormalWishart(m, Ψ, κ, ν)
             ef = convert(ExponentialFamilyDistribution, dist)
 
-            @test getnaturalparameters(ef) ≈ vcat(κ * m, vec(-(1 / 2) * (inv(Ψ) + κ * m*m')), -κ / 2, (ν - j) / 2)
+            @test getnaturalparameters(ef) ≈ vcat(κ * m, vec(-(1 / 2) * (inv(Ψ) + κ * m * m')), -κ / 2, (ν - j) / 2)
             @test invscatter(convert(Distribution, ef)) ≈ cholinv(Ψ)
             @test dof(convert(Distribution, ef)) == 2 * j + 1
         end
@@ -76,7 +75,7 @@ logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where
             ηvec = getnaturalparameters(ef)
             expsuffstats = sum(st(sample[1], sample[2]) for sample in samples) / nsamples
             expsuffstatsvec = ForwardDiff.gradient(x -> logpartition(ef, x), ηvec)
-            @test expsuffstats ≈  expsuffstatsvec rtol = 0.1
+            @test expsuffstats ≈ expsuffstatsvec rtol = 0.1
         end
     end
 

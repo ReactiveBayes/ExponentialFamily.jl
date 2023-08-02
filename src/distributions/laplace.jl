@@ -48,6 +48,7 @@ function Base.prod(
     end
 end
 
+# TODO: check for redundant code
 function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
     location_left, scale_left = params(left)
     location_right, scale_right = params(right)
@@ -93,7 +94,7 @@ end
 support(::Union{<:ExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf, Inf)
 
 pack_naturalparameters(dist::Laplace) = [-inv((params(dist)[2]))]
-unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Laplace}) = (first(getnaturalparameters(ef)), )
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Laplace}) = (first(getnaturalparameters(ef)),)
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Laplace)
     μ, _ = params(dist)
@@ -129,7 +130,7 @@ function fisherinformation(dist::Laplace)
     return SA[1/b^2 0; 0 1/b^2]
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}) = x -> sufficientstatistics(ef, x)
 function sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}, x)
     μ = getconditioner(ef)
     return SA[abs(x - μ)]

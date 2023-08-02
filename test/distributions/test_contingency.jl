@@ -63,13 +63,13 @@ import LoopVectorization: vmap
     @testset "natural parameters related" begin
         d1           = vague(Contingency, 2)
         d2           = vague(Contingency, 2)
-        ηcontingency = ExponentialFamilyDistribution(Contingency, vec(vmap(d->log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
-        @test getnaturalparameters(ηcontingency) == vec(vmap(d->log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0]))
+        ηcontingency = ExponentialFamilyDistribution(Contingency, vec(vmap(d -> log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
+        @test getnaturalparameters(ηcontingency) == vec(vmap(d -> log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0]))
         @test convert(ExponentialFamilyDistribution, Contingency([0.1 0.7; 0.05 0.15])) ==
-              ExponentialFamilyDistribution(Contingency, vec(vmap(d->log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
+              ExponentialFamilyDistribution(Contingency, vec(vmap(d -> log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))
         @test d1 == d2
         @test convert(ExponentialFamilyDistribution, d1) ==
-              ExponentialFamilyDistribution(Contingency, vec(vmap(d -> log(d),[1.0 1.0; 1.0 1.0])))
+              ExponentialFamilyDistribution(Contingency, vec(vmap(d -> log(d), [1.0 1.0; 1.0 1.0])))
         @test convert(Distribution, ηcontingency) ≈ Contingency([0.1 0.7; 0.05 0.15])
         @test prod(ηcontingency, ηcontingency) ==
               ExponentialFamilyDistribution(Contingency, vec(vmap(d -> 2log(d), [0.1/0.15 0.7/0.15; 0.05/0.15 1.0])))

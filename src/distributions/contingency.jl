@@ -24,7 +24,7 @@ The parameter `P` encodes a contingency matrix that specifies the probability of
 
 A `Contingency` distribution over more than two variables requires higher-order tensors as parameters; these are not implemented in ExponentialFamily.jl yet.
 
-# Arguments:
+# Fields:
 - `P`, required, contingency matrix
 - `renormalize`, optional, supports either `Val(true)` or `Val(false)`, specifies whether matrix `P` must be automatically renormalized. Does not modify the original `P` and allocates a new one for the renormalized version. If set to `false` the contingency matrix `P` **must** be normalized by hand, otherwise the result of related calculations might be wrong
 
@@ -107,7 +107,7 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Contingenc
     η = getnaturalparameters(ef)
     len = length(η)
     islen = isqrt(len)
-    return (reshape(view(η,1:len),islen,islen), )
+    return (reshape(view(η, 1:len), islen, islen),)
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Contingency)
@@ -115,7 +115,7 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Contingency)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Contingency})
-    (η, ) = unpack_naturalparameters(exponentialfamily)
+    (η,) = unpack_naturalparameters(exponentialfamily)
     return Contingency(softmax(η))
 end
 
@@ -212,10 +212,10 @@ basemeasureconstant(::Type{<:Contingency}) = ConstantBaseMeasure()
 basemeasure(::Type{<:Contingency}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{<:Contingency}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{<:Contingency}, x) = one(eltype(x))
-    
-sufficientstatistics(type::Type{<:Contingency}) = x -> sufficientstatistics(type,x)
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}) = x -> sufficientstatistics(ef,x)
-function sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}, x) 
+
+sufficientstatistics(type::Type{<:Contingency}) = x -> sufficientstatistics(type, x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}) = x -> sufficientstatistics(ef, x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution{<:Contingency}, x)
     len = length(getnaturalparameters(ef))
-    return OneElement((x[2] - 1)*isqrt(len) + x[1]  , len)
+    return OneElement((x[2] - 1) * isqrt(len) + x[1], len)
 end

@@ -4,6 +4,17 @@ import StatsFuns: loggamma
 using Random
 using StaticArrays
 
+"""
+    NormalGamma{T <: Real} <: ContinuousMultivariateDistribution
+
+A normal-gamma distribution, where `T` is a real number. This distribution is a joint distribution of a normal random variable with mean `μ` and precision `λ`, and a gamma-distributed random variable with shape `α` and rate `β`.
+
+# Fields
+- `μ::T`: The mean of the normal distribution.
+- `λ::T`: The precision of the normal distribution.
+- `α::T`: The shape parameter of the gamma distribution.
+- `β::T`: The rate parameter of the gamma distribution.
+"""
 struct NormalGamma{T <: Real} <: ContinuousMultivariateDistribution
     μ::T
     λ::T
@@ -41,12 +52,12 @@ end
 Distributions.logpdf(dist::NormalGamma, x::AbstractVector{<:Real}) = log(pdf(dist, x))
 
 sufficientstatistics(::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}) =
-    (x, τ) -> SA[τ * x, τ * x^2, log(τ), τ]
+    (x, τ) -> SA[τ*x, τ*x^2, log(τ), τ]
 
 sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{NormalGamma}, <:NormalGamma}, x) =
     sufficientstatistics(union)(x[1], x[2])
 
-function pack_naturalparameters(dist::NormalGamma) 
+function pack_naturalparameters(dist::NormalGamma)
     μ, λ, α, β = params(dist)
     η1 = λ * μ
     η2 = -λ * HALF
@@ -56,8 +67,8 @@ function pack_naturalparameters(dist::NormalGamma)
     return [η1, η2, η3, η4]
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<: NormalGamma})
-    η =  getnaturalparameters(ef)
+function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:NormalGamma})
+    η = getnaturalparameters(ef)
     @inbounds η1 = η[1]
     @inbounds η2 = η[2]
     @inbounds η3 = η[3]
@@ -66,11 +77,12 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<: NormalGam
     return η1, η2, η3, η4
 end
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::NormalGamma) = ExponentialFamilyDistribution(NormalGamma, pack_naturalparameters(dist))
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::NormalGamma) =
+    ExponentialFamilyDistribution(NormalGamma, pack_naturalparameters(dist))
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
-    return NormalGamma(η1*MINUSHALF/ (η2), -2η2, η3 + HALF, -η4 + (η1^2 / 4η2))
+    return NormalGamma(η1 * MINUSHALF / (η2), -2η2, η3 + HALF, -η4 + (η1^2 / 4η2))
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})

@@ -6,7 +6,19 @@ import StatsFuns: log2π
 using IntervalSets
 using StaticArrays
 
-const GammaShapeScale             = Gamma
+"""
+    GammaShapeScale{T}
+
+A continuous univariate gamma distribution parametrized by its shape `α` and scale `β` parameters.
+
+# Fields
+- `α`: The shape parameter of the gamma distribution. It should be a positive real number.
+- `β`: The scale parameter of the gamma distribution. It should be a positive real number.
+
+# Note
+- GammaShapeScale is an alias for Gamma from Distributions.jl.
+"""
+const GammaShapeScale = Gamma
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
 
 Distributions.cov(dist::GammaDistributionsFamily) = var(dist)
@@ -102,7 +114,7 @@ function Base.convert(
     ::Type{Distribution},
     exponentialfamily::ExponentialFamilyDistribution{<:GammaDistributionsFamily}
 )
-    η1,η2 = unpack_naturalparameters(exponentialfamily)
+    η1, η2 = unpack_naturalparameters(exponentialfamily)
     return GammaShapeRate(η1 + one(η1), -η2)
 end
 
@@ -121,7 +133,7 @@ end
 
 support(::Union{<:ExponentialFamilyDistribution{<:GammaDistributionsFamily}, <:GammaDistributionsFamily}) =
     OpenInterval{Real}(0, Inf)
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:GammaDistributionsFamily}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(
     ::ExponentialFamilyDistribution{<:GammaDistributionsFamily},
     x::Real

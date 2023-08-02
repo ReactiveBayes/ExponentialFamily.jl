@@ -22,8 +22,9 @@ function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:VonMises})
     return η1, η2
 end
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::VonMises) = ExponentialFamilyDistribution(VonMises, pack_naturalparameters(dist))
-    
+Base.convert(::Type{ExponentialFamilyDistribution}, dist::VonMises) =
+    ExponentialFamilyDistribution(VonMises, pack_naturalparameters(dist))
+
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{VonMises})
     η1, η2 = unpack_naturalparameters(ef)
     κ = sqrt(η1^2 + η2^2)
@@ -48,7 +49,7 @@ function fisherinformation(dist::VonMises)
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{VonMises})
-    η1,η2 = unpack_naturalparameters(ef)
+    η1, η2 = unpack_naturalparameters(ef)
     u = sqrt(η1^2 + η2^2)
     bessel0 = besseli(0, u)
     bessel1 = besseli(1, u)
@@ -65,11 +66,10 @@ function fisherinformation(ef::ExponentialFamilyDistribution{VonMises})
     return SA[h11 h12; h12 h22]
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{VonMises}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{VonMises}) = (x) -> sufficientstatistics(ef, x)
 function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real)
     return SA[cos(x), sin(x)]
 end
 
 basemeasure(::ExponentialFamilyDistribution{VonMises}) = inv(TWOPI)
 basemeasure(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real) = inv(TWOPI)
-

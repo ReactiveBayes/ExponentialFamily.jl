@@ -8,7 +8,7 @@ using Random
 using StatsFuns
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
-    sufficientstatistics, fisherinformation, pack_naturalparameters,unpack_naturalparameters
+    sufficientstatistics, fisherinformation, pack_naturalparameters, unpack_naturalparameters
 
 @testset "Bernoulli" begin
 

@@ -1,7 +1,7 @@
 export Bernoulli
 
 import Distributions: Bernoulli, succprob, failprob, logpdf
-import StatsFuns: logistic,logit
+import StatsFuns: logistic, logit
 
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 
@@ -69,11 +69,11 @@ end
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Bernoulli})
     vectorized = getnaturalparameters(ef)
     @inbounds η = vectorized[1]
-    return (η, )
+    return (η,)
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
-    (η, ) = unpack_naturalparameters(exponentialfamily)
+    (η,) = unpack_naturalparameters(exponentialfamily)
     return -log(logistic(-η))
 end
 
@@ -102,19 +102,17 @@ function support(::ExponentialFamilyDistribution{<:Bernoulli})
     return SA[0, 1]
 end
 
-
-
 basemeasure(::Type{<:Bernoulli}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Bernoulli}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{Bernoulli}, x) = one(x)
-    
-sufficientstatistics(type::Type{<:Bernoulli}) = x -> sufficientstatistics(type,x)
+
+sufficientstatistics(type::Type{<:Bernoulli}) = x -> sufficientstatistics(type, x)
 sufficientstatistics(::Type{<:Bernoulli}, x::Real) = SA[x]
-sufficientstatistics(ef::ExponentialFamilyDistribution{Bernoulli}) = x -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{Bernoulli}) = x -> sufficientstatistics(ef, x)
 sufficientstatistics(::ExponentialFamilyDistribution{Bernoulli}, x::Real) = SA[x]
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Bernoulli})
-    (η, ) = unpack_naturalparameters(ef)
+    (η,) = unpack_naturalparameters(ef)
     f = logistic(-η)
     return SA[f * (one(f) - f);;]
 end
@@ -123,4 +121,3 @@ function fisherinformation(dist::Bernoulli)
     p = dist.p
     return SA[inv(p * (one(p) - p));;]
 end
-

@@ -8,7 +8,6 @@ using StaticArrays
 using LinearAlgebra
 using LogExpFunctions
 
-
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
 closed_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
@@ -45,7 +44,7 @@ end
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{Dirichlet})
     η = getnaturalparameters(exponentialfamily)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η)
-    secondterm = loggamma(sum(η)+ length(η))
+    secondterm = loggamma(sum(η) + length(η))
     return firstterm - secondterm
 end
 
@@ -68,18 +67,17 @@ function insupport(ef::ExponentialFamilyDistribution{Dirichlet, P, C, Safe}, x) 
     return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
 end
 
-
 basemeasure(::ExponentialFamilyDistribution{<:Dirichlet}) = one(Float64)
 basemeasure(::ExponentialFamilyDistribution{<:Dirichlet}, x) = one(eltype(x))
 
 ## has one allocation
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Dirichlet}) = (x) -> sufficientstatistics(ef,x)
+sufficientstatistics(ef::ExponentialFamilyDistribution{<:Dirichlet}) = (x) -> sufficientstatistics(ef, x)
 sufficientstatistics(::ExponentialFamilyDistribution{<:Dirichlet}, x) = vmap(d -> log(d), x)
 
 function fisherinformation(dist::Dirichlet)
-    α  = probvec(dist)
-    n  = length(α)
-    return Diagonal(map(d->trigamma(d),α)) - Ones{Float64}(n, n) * trigamma(sum(α))
+    α = probvec(dist)
+    n = length(α)
+    return Diagonal(map(d -> trigamma(d), α)) - Ones{Float64}(n, n) * trigamma(sum(α))
 end
 
 function fisherinformation(ef::ExponentialFamilyDistribution{Dirichlet})
