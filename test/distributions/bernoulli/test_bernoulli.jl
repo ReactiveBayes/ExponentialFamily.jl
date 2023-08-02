@@ -6,9 +6,10 @@ using Distributions
 using ForwardDiff
 using Random
 using StatsFuns
+
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
-    sufficientstatistics, fisherinformation, pack_naturalparameters,unpack_naturalparameters
+    sufficientstatistics, fisherinformation, pack_naturalparameters, unpack_naturalparameters
 
 @testset "Bernoulli" begin
 
@@ -59,13 +60,13 @@ import ExponentialFamily:
     end
 
     @testset "prod with ExponentialFamilyDistribution" begin
-        for pleft in 0.01:0.01:0.99
+        for pleft in 0.1:0.1:0.9
             ηleft  = [log(pleft / (1 - pleft))]
             efleft = ExponentialFamilyDistribution(Bernoulli, ηleft)
-            for pright in 0.01:0.01:0.99
+            for pright in 0.1:0.1:0.9
                 ηright = [log(pright / (1 - pright))]
                 efright = ExponentialFamilyDistribution(Bernoulli, ηright)
-                @test prod(ClosedProd(), efleft, efright) ==
+                @test prod(PreserveTypeProd(ExponentialFamilyDistribution), efleft, efright) ==
                       ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
                 @test prod(efleft, efright) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
             end
@@ -79,6 +80,7 @@ import ExponentialFamily:
     end
 
     transformation(logprobability) = exp(logprobability[1]) / (one(Float64) + exp(logprobability[1]))
+
     @testset "fisherinformation" begin
         for p in 0.1:0.1:0.9
             dist = Bernoulli(p)

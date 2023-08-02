@@ -186,7 +186,7 @@ cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(conver
 rand(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = rand(convert(T,ef))
 
 # We assume that we want to preserve the `ExponentialFamilyDistribution` when working with two `ExponentialFamilyDistribution`s
-# default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) = PreserveTypeProd(ExponentialFamilyDistribution)
+default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) = PreserveTypeProd(ExponentialFamilyDistribution)
 
 # Case when both supertypes are of type `Distribution` and we have the `ClosedProd` for them
 # The idea here is that converting from `ExponentialFamilyDistribution` to a `Distribution` should be free

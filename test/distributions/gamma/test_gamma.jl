@@ -9,7 +9,7 @@ using StableRNGs
 
 import SpecialFunctions: loggamma
 import ExponentialFamily:
-    xtlog, ExponentialFamilyDistribution, getnaturalparameters, fisherinformation, basemeasure
+    xtlog, ExponentialFamilyDistribution, getnaturalparameters, fisherinformation, basemeasure, logpartition
 
 @testset "Gamma" begin
     @testset "Constructor" begin

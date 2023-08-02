@@ -47,6 +47,7 @@ Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ
 Distributions.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
 Distributions.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
+Distributions.params(dist::MvNormalMeanCovariance)    = (mean(dist), cov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
@@ -73,15 +74,7 @@ end
 vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
-closed_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
-
-function Base.prod(::ProdPreserveType, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
-    invcovleft  = invcov(left)
-    invcovright = invcov(right)
-    Σ           = cholinv(invcovleft + invcovright)
-    μ           = Σ * (invcovleft * mean(left) + invcovright * mean(right))
-    return MvNormalMeanCovariance(μ, Σ)
-end
+default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     xi_left, W_left = weightedmean_precision(left)

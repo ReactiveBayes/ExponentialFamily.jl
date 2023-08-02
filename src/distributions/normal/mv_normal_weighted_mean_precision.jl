@@ -46,6 +46,7 @@ Distributions.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalWeightedMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalWeightedMeanPrecision)       = cholsqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalWeightedMeanPrecision) = -chollogdet(invcov(dist))
+Distributions.params(dist::MvNormalWeightedMeanPrecision)    = (weightedmean(dist), invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
@@ -77,14 +78,8 @@ end
 vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) =
     MvNormalWeightedMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-closed_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
+default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
     ClosedProd()
-
-function Base.prod(::ProdPreserveType, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
-    xi = weightedmean(left) + weightedmean(right)
-    Λ  = invcov(left) + invcov(right)
-    return MvNormalWeightedMeanPrecision(xi, Λ)
-end
 
 function Base.prod(::ClosedProd, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)

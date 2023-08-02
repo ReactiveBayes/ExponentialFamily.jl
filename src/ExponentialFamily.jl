@@ -4,28 +4,34 @@ using TinyHugeNumbers
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
 
+include("distributions.jl")
 include("prod.jl")
+
 include("cached.jl")
 include("constants.jl")
-include("distributions.jl")
+
 include("exponential_family.jl")
 
-# include("helpers/fixes.jl")
-# include("helpers/algebra/cholesky.jl")
-# include("helpers/algebra/common.jl")
-# include("helpers/algebra/combinatorics.jl")
-# include("helpers/algebra/correction.jl")
+include("helpers/fixes.jl")
+include("helpers/algebra/cholesky.jl")
+include("helpers/algebra/common.jl")
+include("helpers/algebra/combinatorics.jl")
+include("helpers/algebra/correction.jl")
 
-# include("distributions/normal/normal_mean_variance.jl")
-# include("distributions/normal/normal_mean_precision.jl")
-# include("distributions/normal/normal_weighted_mean_precision.jl")
-# include("distributions/normal/mv_normal_mean_covariance.jl")
-# include("distributions/normal/mv_normal_mean_precision.jl")
-# include("distributions/normal/mv_normal_weighted_mean_precision.jl")
-# include("distributions/normal.jl")
+include("distributions/bernoulli/bernoulli.jl")
+include("distributions/categorical/categorical.jl")
 
-# include("distributions/gamma_shape_rate.jl")
-# include("distributions/gamma.jl")
+include("distributions/normal/normal_mean_variance.jl")
+include("distributions/normal/normal_mean_precision.jl")
+include("distributions/normal/normal_weighted_mean_precision.jl")
+include("distributions/normal/mv_normal_mean_covariance.jl")
+include("distributions/normal/mv_normal_mean_precision.jl")
+include("distributions/normal/mv_normal_weighted_mean_precision.jl")
+include("distributions/normal/normal.jl")
+
+include("distributions/gamma/gamma_shape_rate.jl")
+include("distributions/gamma/gamma.jl")
+
 # include("distributions/gamma_inverse.jl")
 # include("distributions/geometric.jl")
 # include("distributions/categorical.jl")
@@ -33,7 +39,6 @@ include("exponential_family.jl")
 # include("distributions/dirichlet.jl")
 # include("distributions/beta.jl")
 # include("distributions/lognormal.jl")
-# include("distributions/bernoulli.jl")
 # include("distributions/binomial.jl")
 # include("distributions/normal_mean_variance.jl")
 # include("distributions/normal_mean_precision.jl")

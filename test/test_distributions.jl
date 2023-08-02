@@ -1,14 +1,14 @@
-module KnownExponentialFamilyDistributionsTest
+module ExponentialFamilyDistributionsTest
 
 using Test
 using ExponentialFamily
 using Distributions
 using StaticArrays
 using StableRNGs
+using LinearAlgebra
 
-import LinearAlgebra: Diagonal
-import ExponentialFamily:
-    convert_eltype, deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype
+import Distributions: variate_form, value_support
+import ExponentialFamily: deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype, paramfloattype, convert_paramfloattype
 import ExponentialFamily: FactorizedJoint
 
 @testset "Distributions" begin
@@ -30,22 +30,26 @@ import ExponentialFamily: FactorizedJoint
             push!(distributions, MvNormalMeanPrecision(rand(rng, T, n)))
             push!(distributions, MvNormalMeanCovariance(rand(rng, T, n)))
             push!(distributions, MvNormalWeightedMeanPrecision(rand(rng, T, n)))
-            push!(distributions, MvNormal(Diagonal(map(abs2, rand(rng, T, n)))))
         end
 
         # Add `Matrixvariate` distributions
         for T in Types, n in (2, 3)
-            push!(distributions, Wishart(one(T), diageye(T, n)))
+            push!(distributions, InverseWishart(5one(T), diageye(T, n)))
+            push!(distributions, Wishart(5one(T), diageye(T, n)))
         end
 
-        return filter((dist) -> variate_form(dist) <: V, distributions)
+        return filter((dist) -> variate_form(typeof(dist)) <: V, distributions)
     end
 
-    @testset "convert_eltype" begin
+    @testset "convert_paramfloattype" begin
         for T in (Float32, Float64, BigFloat)
-            @test @inferred(eltype(convert_eltype(T, [1.0, 1.0]))) === T
-            @test @inferred(eltype(convert_eltype(T, [1.0 1.0; 1.0 1.0]))) === T
-            @test @inferred(eltype(convert_eltype(T, 1.0))) === T
+            @test @inferred(eltype(convert_paramfloattype(T, [1.0, 1.0]))) === T
+            @test @inferred(eltype(convert_paramfloattype(T, [1.0 1.0; 1.0 1.0]))) === T
+            @test @inferred(eltype(convert_paramfloattype(T, 1.0))) === T
+
+            for distribution in fixture_various_distributions()
+                @test @inferred(paramfloattype(convert_paramfloattype(T, distribution))) === T
+            end
         end
     end
 
@@ -60,10 +64,7 @@ import ExponentialFamily: FactorizedJoint
         combinations = [
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Univariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
-            Iterators.product(
-                fixture_various_distributions(Matrixvariate),
-                fixture_various_distributions(Matrixvariate)
-            )
+            Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate))
         ]
         for combination in combinations
             for distributions in combination
@@ -89,26 +90,15 @@ import ExponentialFamily: FactorizedJoint
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Univariate)),
             Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate)),
             Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Multivariate)),
-            Iterators.product(
-                fixture_various_distributions(Multivariate),
-                fixture_various_distributions(Matrixvariate)
-            ),
-            Iterators.product(
-                fixture_various_distributions(Matrixvariate),
-                fixture_various_distributions(Matrixvariate)
-            ),
-            Iterators.product(
-                fixture_various_distributions(Univariate),
-                fixture_various_distributions(Matrixvariate),
-                fixture_various_distributions(Matrixvariate)
-            )
+            Iterators.product(fixture_various_distributions(Multivariate), fixture_various_distributions(Matrixvariate)),
+            Iterators.product(fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate)),
+            Iterators.product(fixture_various_distributions(Univariate), fixture_various_distributions(Matrixvariate), fixture_various_distributions(Matrixvariate))
         ]
         for combination in combinations
             for distributions in combination
                 samples = rand.(distributions)
                 @static if VERSION >= v"1.8"
-                    @test @inferred(promote_samplefloattype(distributions...)) ===
-                          promote_type(deep_eltype.(typeof.(samples))...)
+                    @test @inferred(promote_samplefloattype(distributions...)) === promote_type(deep_eltype.(typeof.(samples))...)
                 else
                     @test promote_samplefloattype(distributions...) === promote_type(deep_eltype.(typeof.(samples))...)
                 end
@@ -117,17 +107,13 @@ import ExponentialFamily: FactorizedJoint
     end
 
     @testset "FactorizedJoint" begin
-        vmultipliers = [
-            (NormalMeanPrecision(),),
-            (NormalMeanVariance(), Beta(1.0, 1.0)),
-            (Normal(), Gamma(), MvNormal(zeros(2), diageye(2)))
-        ]
+        vmultipliers = [(NormalMeanPrecision(),), (NormalMeanVariance(), Beta(1.0, 1.0)), (Normal(), Gamma(), MvNormal(zeros(2), diageye(2)))]
 
         @testset "getindex" begin
             for multipliers in vmultipliers
                 product = FactorizedJoint(multipliers)
                 @test length(product) === length(multipliers)
-                for i in length(multipliers)
+                for i in eachindex(multipliers)
                     @test product[i] === multipliers[i]
                 end
             end
@@ -144,16 +130,9 @@ import ExponentialFamily: FactorizedJoint
             @test FactorizedJoint((NormalMeanVariance(),)) ≈ FactorizedJoint((NormalMeanVariance(),))
             @test !(FactorizedJoint((NormalMeanVariance(),)) ≈ FactorizedJoint((NormalMeanVariance(1, 1),)))
 
-            @test FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈
-                  FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001))) atol = 1e-5
-            @test !(
-                FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈
-                FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 5.0000000001)))
-            )
-            @test !(
-                FactorizedJoint((Gamma(1.0, 2.0), NormalMeanVariance(0.0, 1.0))) ≈
-                FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001)))
-            )
+            @test FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈ FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001))) atol = 1e-5
+            @test !(FactorizedJoint((Gamma(1.0, 1.0), NormalMeanVariance(0.0, 1.0))) ≈ FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 5.0000000001))))
+            @test !(FactorizedJoint((Gamma(1.0, 2.0), NormalMeanVariance(0.0, 1.0))) ≈ FactorizedJoint((Gamma(1.000001, 1.0), NormalMeanVariance(0.0, 1.0000000001))))
         end
     end
 end

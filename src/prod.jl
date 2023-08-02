@@ -1,7 +1,8 @@
-export ProductDistribution, ClosedProd, ClosedProd, ProdGeneric, LinearizedProductDistribution
-export ProdPreserveType, ProdPreserveTypeLeft, ProdPreserveTypeRight
+export ProductDistribution, ClosedProd, PreserveTypeProd, PreserveTypeLeftProd, PreserveTypeRightProd
+export GenericProd, ProductOf, LinearizedProductOf
 
 import Distributions
+import Distributions: VariateForm, ValueSupport, variate_form, value_support, support
 import Base: prod, show, showerror
 
 """

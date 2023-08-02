@@ -3,12 +3,12 @@ export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, p
 export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
     weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
-export variate_form, value_support, promote_variate_type, convert_eltype
 
 using Distributions, Random
 
 import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
-import Distributions: VariateForm, ValueSupport, Distribution, Univariate, Multivariate, Matrixvariate
+import Distributions:
+    VariateForm, ValueSupport, Distribution, Univariate, Multivariate, Matrixvariate, variate_form, value_support
 
 import Base: convert
 
@@ -31,94 +31,119 @@ weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
 
-isproper(something)     = error("`isproper` is not defined for $(something)")
-probvec(something)      = error("Probability vector function probvec() is not defined for $(something)")
-weightedmean(something) = error("Weighted mean is not defined for $(something)")
+"""
+```jldoctest
+error("TODO: add documentaion")
+```
+"""
+function isproper end
 
 """
-    variate_form(distribution_or_type)
-
-Returns the `VariateForm` sub-type (defined in `Distributions.jl`):
-
-- `Univariate`, a scalar number
-- `Multivariate`, a numeric vector
-- `Matrixvariate`, a numeric matrix
-
-Note: supports real-valued containers, for which it defines:
-
-- `variate_form(real) = Univariate`
-- `variate_form(vector_of_reals) = Multivariate`
-- `variate_form(matrix_of_reals) = Matrixvariate`
-
-See also: [`ExponentialFamily.value_support`](@ref)
+```jldoctest
+error("TODO: add documentaion")
+```
 """
-variate_form(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = F
-variate_form(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = F
-
-variate_form(::Type{T}) where {T <: Real} = Univariate
-variate_form(::T) where {T <: Real}       = Univariate
-
-variate_form(::Type{V}) where {T <: Real, V <: AbstractVector{T}} = Multivariate
-variate_form(::V) where {T <: Real, V <: AbstractVector{T}}       = Multivariate
-
-variate_form(::Type{M}) where {T <: Real, M <: AbstractMatrix{T}} = Matrixvariate
-variate_form(::M) where {T <: Real, M <: AbstractMatrix{T}}       = Matrixvariate
-
-# Note that the recent version of `Distributions.jl` has the exact same methods (`variate_form`) with the exact same names, however, old versions do not.
-# We keep that for backward-compatibility with old `Distributions.jl` versions,
-# but probably we should revise this at some point and remove our implementations (except for the `real` constrained versions)
+function probvec end
 
 """
-    value_support(distribution_or_type)
-
-Returns the `ValueSupport` sub-type (defined in `Distributions.jl`):
-
-- `Discrete`, samples take discrete values
-- `Continuous`, samples take continuous real values
-
-See also: [`ExponentialFamily.variate_form`](@ref)
+```jldoctest
+error("TODO: add documentaion")
+```
 """
-value_support(::Distribution{F, S}) where {F <: VariateForm, S <: ValueSupport} = S
-value_support(::Type{<:Distribution{F, S}}) where {F <: VariateForm, S <: ValueSupport} = S
+function weightedmean end
 
-# Note that the recent version of `Distributions.jl` has the exact same methods (`value_support`) with the exact same names, however, old versions do not
-# We keep that for backward-compatibility with old `Distributions.jl` versions, but probably we should revise this at some point and remove our implementations
+# Julia does not really like expressions of the form
+# map((e) -> convert(T, e), collection)
+# because type `T` is inside lambda function
+# https://github.com/JuliaLang/julia/issues/15276
+# https://github.com/JuliaLang/julia/issues/47760
+struct PromoteTypeConverter{T, C}
+    convert::C
+end
+
+PromoteTypeConverter(::Type{T}, convert::C) where {T, C} = PromoteTypeConverter{T, C}(convert)
+
+(converter::PromoteTypeConverter{T})(something) where {T} = converter.convert(T, something)
 
 """
-    promote_variate_type(::Type{ <: VariateForm }, distribution_type)
+    promote_variate_PromoteTypeConverter(::Type{ <: VariateForm }, distribution_type)
 
 Promotes (if possible) a `distribution_type` to be of the specified variate form.
 """
 function promote_variate_type end
 
-promote_variate_type(::D, T) where {D <: Distribution}       = promote_variate_type(variate_form(D), T)
+"""
+    promote_variate_type(::Type{D}, distribution_type) where { D <: Distribution }
+
+Promotes (if possible) a `distribution_type` to be of the same variate form as `D`.
+"""
 promote_variate_type(::Type{D}, T) where {D <: Distribution} = promote_variate_type(variate_form(D), T)
 
 """
-    convert_eltype(::Type{D}, ::Type{E}, distribution)
+    paramfloattype(distribution)
 
-Converts (if possible) the `distribution` to be of type `D{E}`.
+Returns the underlying float type of distribution's parameters.
+
+See also: [`ExponentialFamily.promote_paramfloattype`](@ref), [`ExponentialFamily.convert_paramfloattype`](@ref)
 """
-convert_eltype(::Type{D}, ::Type{E}, distribution::Distribution) where {D <: Distribution, E} =
-    convert(D{E}, distribution)
+paramfloattype(distribution::Distribution) = promote_type(map(deep_eltype, params(distribution))...)
+paramfloattype(nt::NamedTuple) = promote_paramfloattype(values(nt))
+paramfloattype(t::Tuple) = promote_paramfloattype(t...)
+
+# `Bool` is the smallest possible type, should not play any role in the promotion
+paramfloattype(::Nothing) = Bool
 
 """
-    convert_eltype(::Type{E}, container)
+    promote_paramfloattype(distributions...)
 
-Converts (if possible) the elements of the `container` to be of type `E`.
+Promotes `paramfloattype` of the `distributions` to a single type. See also `promote_type`.
+
+See also: [`ExponentialFamily.paramfloattype`](@ref), [`ExponentialFamily.convert_paramfloattype`](@ref)
 """
-convert_eltype(::Type{E}, container::AbstractArray) where {E} = convert(AbstractArray{E}, container)
-convert_eltype(::Type{E}, number::Number) where {E} = convert(E, number)
+promote_paramfloattype(distributions...) = promote_type(map(paramfloattype, distributions)...)
+
+"""
+    convert_paramfloattype(::Type{T}, distribution)
+
+Converts (if possible) the params float type of the `distribution` to be of type `T`.
+
+See also: [`ExponentialFamily.paramfloattype`](@ref), [`ExponentialFamily.promote_paramfloattype`](@ref)
+"""
+convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} =
+    automatic_convert_paramfloattype(
+        distribution_typename(distribution),
+        map(convert_paramfloattype(T), params(distribution))
+    )
+convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(convert_paramfloattype(T), collection)
+convert_paramfloattype(collection::NamedTuple) = convert_paramfloattype(paramfloattype(collection), collection)
+convert_paramfloattype(::Type{T}) where {T} = PromoteTypeConverter(T, convert_paramfloattype)
+
+# We attempt to automatically construct a new distribution with a desired paramfloattype
+# This function assumes that the constructor `D(...)` accepts the same order of parameters as 
+# returned from the `params` function. It is the case for distributions from `Distributions.jl`
+automatic_convert_paramfloattype(::Type{D}, params) where {D <: Distribution} = D(params...)
+automatic_convert_paramfloattype(::Type{D}, params) where {D} =
+    error("Cannot automatically construct a distribution of type `$D` with params = $(params)")
+
+"""
+    convert_paramfloattype(::Type{T}, container)
+
+Converts (if possible) the elements of the `container` to be of type `T`.
+"""
+convert_paramfloattype(::Type{T}, container::AbstractArray) where {T} = convert(AbstractArray{T}, container)
+convert_paramfloattype(::Type{T}, number::Number) where {T} = convert(T, number)
+convert_paramfloattype(::Type, ::Nothing) = nothing
 
 """
     sampletype(distribution)
 
 Returns a type of the distribution. By default fallbacks to the `eltype`.
 
+See also: [`ExponentialFamily.samplefloattype`](@ref), [`ExponentialFamily.promote_sampletype`](@ref), [`ExponentialFamily.promote_samplefloattype`](@ref)
 """
 sampletype(distribution) = eltype(distribution)
 
-sampletype(distribution::Distribution) = sampletype(variate_form(distribution), distribution)
+sampletype(distribution::Distribution) = sampletype(variate_form(typeof(distribution)), distribution)
 sampletype(::Type{Univariate}, distribution) = eltype(distribution)
 sampletype(::Type{Multivariate}, distribution) = Vector{eltype(distribution)}
 sampletype(::Type{Matrixvariate}, distribution) = Matrix{eltype(distribution)}
@@ -129,6 +154,7 @@ sampletype(::Type{Matrixvariate}, distribution) = Matrix{eltype(distribution)}
 Returns a type of the distribution or the underlying float type in case if sample is `Multivariate` or `Matrixvariate`. 
 By default fallbacks to the `deep_eltype(sampletype(distribution))`.
 
+See also: [`ExponentialFamily.sampletype`](@ref), [`ExponentialFamily.promote_sampletype`](@ref), [`ExponentialFamily.promote_samplefloattype`](@ref)
 """
 samplefloattype(distribution) = deep_eltype(sampletype(distribution))
 
@@ -137,16 +163,18 @@ samplefloattype(distribution) = deep_eltype(sampletype(distribution))
 
 Promotes `sampletype` of the `distributions` to a single type. See also `promote_type`.
 
+See also: [`ExponentialFamily.sampletype`](@ref), [`ExponentialFamily.samplefloattype`](@ref), [`ExponentialFamily.promote_samplefloattype`](@ref)
 """
-promote_sampletype(distributions...) = promote_type(sampletype.(distributions)...)
+promote_sampletype(distributions...) = promote_type(map(sampletype, distributions)...)
 
 """
     promote_samplefloattype(distributions...)
 
 Promotes `samplefloattype` of the `distributions` to a single type. See also `promote_type`.
 
+See also: [`ExponentialFamily.sampletype`](@ref), [`ExponentialFamily.samplefloattype`](@ref), [`ExponentialFamily.promote_sampletype`](@ref)
 """
-promote_samplefloattype(distributions...) = promote_type(samplefloattype.(distributions)...)
+promote_samplefloattype(distributions...) = promote_type(map(samplefloattype, distributions)...)
 
 """
     logpdf_sample_optimized(distribution) 
@@ -187,8 +215,8 @@ sample_optimized(something) = something
 """
     FactorizedJoint
 
-`FactorizedJoint` represents a joint distribution of independent random variables. Use `getindex()` function or square-brackets indexing to access
-the marginal distribution for individual variables.
+`FactorizedJoint` represents a joint distribution of independent random variables. 
+Use `getindex()` function or square-brackets indexing to access the marginal distribution for individual variables.
 """
 struct FactorizedJoint{T}
     multipliers::T
@@ -196,13 +224,25 @@ end
 
 getmultipliers(joint::FactorizedJoint) = joint.multipliers
 
-Base.getindex(joint::FactorizedJoint, i::Int) = getindex(getmultipliers(joint), i)
+Base.@propagate_inbounds Base.getindex(joint::FactorizedJoint, i::Int) = getindex(getmultipliers(joint), i)
 
 Base.length(joint::FactorizedJoint) = length(joint.multipliers)
 
 function Base.isapprox(x::FactorizedJoint, y::FactorizedJoint; kwargs...)
     length(x) === length(y) &&
-        all(pair -> isapprox(pair[1], pair[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
+        all(tuple -> isapprox(tuple[1], tuple[2]; kwargs...), zip(getmultipliers(x), getmultipliers(y)))
 end
 
 Distributions.entropy(joint::FactorizedJoint) = mapreduce(entropy, +, getmultipliers(joint))
+
+paramfloattype(joint::FactorizedJoint) = paramfloattype(getmultipliers(joint))
+
+convert_paramfloattype(::Type{T}, joint::FactorizedJoint) where {T} =
+    FactorizedJoint(map(e -> convert_paramfloattype(T, joint), getmultipliers(joint)))
+
+## Utils
+
+# Returns a wrapper distribution for a `<:Distribution` type
+@generated function distribution_typename(distribution)
+    return Base.typename(distribution).name
+end

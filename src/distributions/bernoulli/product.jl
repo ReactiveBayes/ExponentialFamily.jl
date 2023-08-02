@@ -1,4 +1,4 @@
-closed_prod_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ClosedProd()
+default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
@@ -10,7 +10,7 @@ function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
     return Bernoulli(pprod / norm)
 end
 
-closed_prod_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ClosedProd()
+default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ClosedProd()
 
 function Base.prod(::ClosedProd, left::Bernoulli, right::Categorical)
     p_left = probvec(left)
