@@ -9,3 +9,11 @@ format: scripts_init ## Code formating run
 
 benchmark: scripts_init ## Code formating run
 	julia --startup-file=no --project=scripts/ scripts/benchmark.jl
+
+.PHONY: docs
+
+doc_init:
+	julia --project=docs -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate();'
+
+docs: doc_init ## Generate documentation
+	julia --project=docs/ docs/make.jl
