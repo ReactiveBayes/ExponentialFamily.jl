@@ -75,14 +75,6 @@ function support(ef::ExponentialFamilyDistribution{Categorical})
     return ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
 end
 
-function insupport(ef::ExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Real) where {P, C}
-    return x ∈ support(ef)
-end
-
-function insupport(union::ExponentialFamilyDistribution{Categorical, P, C, Safe}, x::Vector) where {P, C}
-    return typeof(x) <: Vector{<:Integer} && sum(x) == 1 && length(x) == maximum(support(union))
-end
-
 basemeasureconstant(::ExponentialFamilyDistribution{Categorical}) = ConstantBaseMeasure()
 basemeasureconstant(::Type{<:Categorical}) = ConstantBaseMeasure()
 

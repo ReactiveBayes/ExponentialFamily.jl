@@ -31,6 +31,8 @@ weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
 
+insupport(support, value) = value ∈ support
+
 """
 ```jldoctest
 error("TODO: add documentaion")
