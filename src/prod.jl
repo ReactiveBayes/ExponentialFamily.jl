@@ -109,6 +109,15 @@ See also: [`prod`](@ref), [`ProdClosed`](@ref), [`ProdGeneric`](@ref)
 """
 closed_prod_rule(::Type, ::Type) = ClosedProdUnknown()
 
+"""
+    ProductDistribution{L, R}(left::L, right::R)
+
+    A product distribution structure composed of two distributions `left` and `right`.
+
+    # Arguments
+    - `left`: The left component distribution.
+    - `right`: The right component distribution.
+    """
 struct ProductDistribution{L, R}
     left  :: L
     right :: R

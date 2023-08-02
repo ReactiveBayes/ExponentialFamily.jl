@@ -10,7 +10,7 @@ makedocs(
     strict   = [ :doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block ],
     pages    = [
         "Home"      => "index.md",
-        "Methods"   => "functionality.md",
+        "Library"   => "library.md",
         "Examples"  => "examples.md",
     ],
 

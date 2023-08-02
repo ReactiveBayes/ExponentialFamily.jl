@@ -6,6 +6,14 @@ using StaticArrays
 using Random
 import LogExpFunctions: logexpm1
 
+"""
+    ContinuousBernoulli{T}
+
+A univariate continuous Bernoulli distribution parametrized by its success probability `λ`.
+
+# Parameters
+- `λ`: The success probability of the continuous Bernoulli distribution. It should be a real number in the interval (0, 1)
+"""
 struct ContinuousBernoulli{T} <: ContinuousUnivariateDistribution
     λ::T
     ContinuousBernoulli(λ::T) where {T <: Real} = begin
