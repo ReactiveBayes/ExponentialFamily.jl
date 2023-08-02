@@ -1,8 +1,6 @@
 export ExponentialFamilyDistribution
 
-using Distributions, LinearAlgebra, StaticArrays
-
-import Random: rand
+using Distributions, LinearAlgebra, StaticArrays, Random
 
 """
     getbasemeasure(::ExponentialFamilyDistribution)
@@ -202,186 +200,98 @@ getsupport(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFam
 
 insupport(ef::ExponentialFamilyDistribution, value) = insupport(getsupport(ef), value)
 
+"""
+A trait object representing that the base measure is constant.
+"""
 struct ConstantBaseMeasure end
+
+"""
+A trait object representing that the base measure is **not** constant.
+"""
 struct NonConstantBaseMeasure end
 
-basemeasureconstant(::ExponentialFamilyDistribution) = ConstantBaseMeasure()
+"""
+    isbasemeasureconstant(something)
+
+Returns either `NonConstantBaseMeasure()` or `ConstantBaseMeasure()` depending on if the base measure is a constant with respect to the natural parameters of `something` or not.
+
+See also: [`getbasemeasure`](@ref), [`basemeasure`](@ref)
+"""
+function isbasemeasureconstant end
+
+isbasemeasureconstant(ef::ExponentialFamilyDistribution) = isbasemeasureconstant(getbasemeasure(ef))
+
+# For safety, by default, we assume that any base measure function is not a constant
+# This is not always the case, e.g. when a function is (η) -> 1
+# In such cases the `isbasemeasureconstant` must have a specific method
+isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 """
-    Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T}, x) where {T <: Distribution}
+    logpdf(ef::ExponentialFamilyDistribution, x)
 
-Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
-
-# Arguments
-- `exponentialfamily`: The exponential family distribution.
-- `x`: The input value.
-
-# Returns
-- The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
-
+Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
-Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T}, x) where {T <: Distribution} =
-    logpdf(exponentialfamily, x, basemeasureconstant(exponentialfamily))
+function Distributions.logpdf(ef::ExponentialFamilyDistribution, x)
+    # TODO: Think of what to do with this assert
+    @assert insupport(ef, x)
 
-"""
-    Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P, C, Z, A, B}, x, ::ConstantBaseMeasure)
+    statistics = sufficientstatistics(ef)
+    basemeasure = basemeasure(ef)
+    logpartition = logpartition(ef)
 
-Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
-
-# Arguments
-- `exponentialfamily`: The exponential family distribution.
-- `x`: The input value.
-- `::ConstantBaseMeasure`: A marker for the constant base measure (used for dispatch).
-
-# Returns
-- The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
-
-"""
-function Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution, x, _)
-    @assert insupport(exponentialfamily, x)
-    η = getnaturalparameters(exponentialfamily)
-    statistics = getsufficientstatistics(exponentialfamily)(x)
-    basemeasure = getbasemeasure(exponentialfamily)
-    logpartition = getlogpartition(exponentialfamily)
     return log(basemeasure) + dot(η, statistics) - logpartition
 end
 
 """
-    Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P, C, Z, A, B}, x, ::NonConstantBaseMeasure)
+    pdf(ef::ExponentialFamilyDistribution, x)
 
-Evaluate the log-density of the exponential family distribution for the input `x` with non-constant base measure.
-
-# Arguments
-- `exponentialfamily`: The exponential family distribution.
-- `x`: The input value.
-- `::NonConstantBaseMeasure`: A marker for the non-constant base measure (used for dispatch).
-
-# Returns
-- The log-density of `exponentialfamily` evaluated at `x` with non-constant base measure.
+Evaluates and returns the probability density function of the exponential family distribution for the input `x`.
+"""
+Distributions.pdf(ef::ExponentialFamilyDistribution, x) = exp(logpdf(ef, x))
 
 """
-function Distributions.logpdf(
-    exponentialfamily::ExponentialFamilyDistribution{T},
-    x,
-    ::NonConstantBaseMeasure
-) where
-    {T <: Distribution}
-    @assert insupport(exponentialfamily, x)
-    η = getnaturalparameters(exponentialfamily)
-    statistics = getsufficientstatistics(exponentialfamily)(x)
-    basemeasure = getbasemeasure(exponentialfamily)(x)
-    logpartition = getlogpartition(exponentialfamily)
-    return log(basemeasure) + dot(η, statistics) - logpartition
-end
+    cdf(ef::ExponentialFamilyDistribution, x)
+
+Evaluates and returns the cumulative distribution function of the exponential family distribution for the input `x`.
+"""
+Distributions.cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution} =
+    Distributions.cdf(Base.convert(Distribution, ef), x)
+
+variate_form(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = variate_form(D)
+variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm} = V
+
+value_support(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = value_support(D)
+
+# HM TODO (bvdmitri), how to define value support for an arbitrary `Univariate`, this is not possible currently
+# value_support(::Type{<:ExponentialFamilyDistribution{D}}) where { D <: Distribution } = value_support(D)
+
+distributiontype(::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Distribution} = T
 
 """
-    Distributions.logpdf(exponentialfamily::ExponentialFamilyDistribution{T, H, S, P, C, Z, A, B}, x)
+    check_valid_natural(distribution_type, η)
 
-Evaluate the log-density of the exponential family distribution for the input `x` with constant base measure.
-
-# Arguments
-- `exponentialfamily`: The exponential family distribution.
-- `x`: The input value.
-
-# Returns
-- The log-density of `exponentialfamily` evaluated at `x` with constant base measure.
-
+Checks if the vector of natural parameters `η` can represent the `distribution_type`.
 """
-function Distributions.logpdf(
-    exponentialfamily::ExponentialFamilyDistribution{T},
-    x
-) where
-{T <: VariateForm}
-    @assert insupport(exponentialfamily, x)
-    η = getnaturalparameters(exponentialfamily)
-    statistics = getsufficientstatistics(exponentialfamily)(x)
-    basemeasure = getbasemeasure(exponentialfamily)(x)
-    logpartition = getlogpartition(exponentialfamily)
-    return log(basemeasure) + dot(η, statistics) - logpartition(η)
-end
-
-"""
-    Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x)
-
-Evaluate the probability density function of the exponential family distribution for the input `x`.
-"""
-Distributions.pdf(exponentialfamily::ExponentialFamilyDistribution, x) = exp(logpdf(exponentialfamily, x))
-"""
-    Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x)
-
-Evaluate the cumulative distribution function of the exponential family distribution for the input `x`.
-"""
-Distributions.cdf(exponentialfamily::ExponentialFamilyDistribution, x) =
-    Distributions.cdf(Base.convert(Distribution, exponentialfamily), x)
-
-"""
-    insupport(ef::ExponentialFamilyDistribution, x)
-
-Check if the input `x` is in the support of the exponential family distribution `ef`.
-"""
-insupport(ef::ExponentialFamilyDistribution, x) = x ∈ getsupport(ef)
-
-variate_form(::P) where {P <: ExponentialFamilyDistribution} = variate_form(P)
-variate_form(::Type{<:ExponentialFamilyDistribution{T}}) where {T} = variate_form(T)
-distributiontype(::ExponentialFamilyDistribution{T}) where {T} = T
-distributiontype(::Type{<:ExponentialFamilyDistribution{T}}) where {T} = T
-check_valid_conditioner(::Type{T}, conditioner) where {T} = conditioner === nothing
-
 function check_valid_natural end
 
-Base.convert(::Type{T}, exponentialfamily::ExponentialFamilyDistribution) where {T <: Distribution} =
-    Base.convert(T, Base.convert(Distribution, exponentialfamily))
-
-Base.:(==)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) =
-    getnaturalparameters(left) == getnaturalparameters(right) && getconditioner(left) == getconditioner(right) &&
-    distributiontype(left) == distributiontype(right)
-
-Base.:(≈)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) =
-    getnaturalparameters(left) ≈ getnaturalparameters(right) && getconditioner(left) == getconditioner(right) &&
-    distributiontype(left) == distributiontype(right)
-
 """
-    reconstruct_array!(η, ηef, ηvec; start = 1)
+    check_valid_conditioner(distribution_type, conditioner)
 
-Reconstruct an `AbstractArray` from a flattened `Vector` of values `ηvec` so that its shape matches that of the `AbstractArray` `η`.
-
-If a unique element of `η` corresponds to a scalar value, the scalar is assigned directly to the corresponding index of `η`. If the unique element of `η` is a non-scalar value, the function reshapes the appropriate slice of `ηvec` to match the shape of that element and assigns it to the corresponding indices of `η`.
-
-Use the optional `start` argument to specify the beginning index when flattening `ηvec`.
-
-This function is useful for converting vectorized parameters into an appropriate size of natural parameters for a particular distribution.
-
-# Arguments
-- `η`: Mutable `AbstractArray` to store the reconstructed values. The size and shape of `η` should match the desired size and shape of the reconstructed `AbstractArray`.
-- `ηvec`: A `Vector` containing the flattened values of the target `AbstractArray`.
-- `start` (optional): An integer argument used to set the starting index of `ηvec`.
-
+Checks if the `conditioner` holds a correct value for the `distribution_type`.
 """
-function reconstructargument!(η, ηef, ηvec; start = 1)
-    # Check if η and ηef have compatible dimensions
-    @assert length(η) == length(ηef) "η and ηef must have the same length"
+function check_valid_conditioner end
 
-    # Check if η and ηvec have compatible dimensions
-    expected_size = sum([length(elem) for elem in ηef])
-    @assert length(ηvec) == expected_size "Expected size of ηef $(expected_size), but the ηvec has length $(length(ηvec))"
+Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} = Base.convert(T, Base.convert(Distribution, ef))
 
-    @inbounds for i in eachindex(η)
-        stop = start + length(ηef[i]) - 1
-        ind = start:stop
-        if length(ηef[i]) == 1
-            η[i] = first(ηvec[ind])
-        else
-            @views η[i] = reshape(ηvec[ind], size(ηef[i]))
-        end
-        start = stop + 1
-    end
-    return η
-end
+Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
+Distributions.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
+Distributions.cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
 
-mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
-var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
-cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
-rand(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = rand(convert(T, ef))
+Random.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
+Random.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)
+
+Random.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args...) where { T <: Distribution } = rand(rng, convert(T, ef), args...)
+Random.rand!(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args...) where { T <: Distribution } = rand!(rng, convert(T, ef), args...)
 
 # We assume that we want to preserve the `ExponentialFamilyDistribution` when working with two `ExponentialFamilyDistribution`s
 default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) =
