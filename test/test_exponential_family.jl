@@ -3,7 +3,7 @@ module KnownExponentialFamilyDistributionTest
 using ExponentialFamily, Test, StatsFuns
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
-import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport
+import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
 import ExponentialFamily: getnaturalparameters, getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
 import ExponentialFamily: ExponentialFamilyDistributionAttributes
 
@@ -31,9 +31,11 @@ struct ArbitraryDistributionFromExponentialFamily <: ContinuousUnivariateDistrib
 ExponentialFamily.check_valid_natural(::Type{ArbitraryDistributionFromExponentialFamily}, η) = true
 ExponentialFamily.check_valid_conditioner(::Type{ArbitraryDistributionFromExponentialFamily}, ::Nothing) = true
 
-ExponentialFamily.getbasemeasure(::Type{ArbitraryDistributionFromExponentialFamily}) = (x) -> 1 / x
+ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryDistributionFromExponentialFamily}) = ConstantBaseMeasure()
+
+ExponentialFamily.getbasemeasure(::Type{ArbitraryDistributionFromExponentialFamily}) = (x) -> oneunit(x)
 ExponentialFamily.getsufficientstatistics(::Type{ArbitraryDistributionFromExponentialFamily}) =
-    ((x) -> x, (η) -> log.(η))
+    ((x) -> x, (x) -> log(x))
 ExponentialFamily.getlogpartition(::Type{ArbitraryDistributionFromExponentialFamily}) = (η) -> 1 / sum(η)
 ExponentialFamily.getsupport(::Type{ArbitraryDistributionFromExponentialFamily}) = RealInterval(0, Inf)
 
@@ -99,9 +101,9 @@ end
     @testset let member = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0])
         η = getnaturalparameters(member)
 
-        @test basemeasure(member, 2.0) ≈ 0.5
-        @test getbasemeasure(member)(2.0) ≈ 0.5
-        @test getbasemeasure(member)(4.0) ≈ 0.25
+        @test basemeasure(member, 2.0) ≈ 1.0
+        @test getbasemeasure(member)(2.0) ≈ 1.0
+        @test getbasemeasure(member)(4.0) ≈ 1.0
 
         @test all(sufficientstatistics(member, 2.0) .≈ (2.0, log(2.0)))
         @test all(map(f -> f(2.0), getsufficientstatistics(member)) .≈ (2.0, log(2.0)))
@@ -117,6 +119,27 @@ end
 
         @test member == member
         @test member ≈ member
+
+        _similar = similar(member)      
+        _prod = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [4.0])
+
+        @test prod(ClosedProd(), member, member) == _prod
+        @test prod(GenericProd(), member, member) == _prod
+        @test prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member) == _prod
+        @test prod(PreserveTypeLeftProd(), member, member) == _prod
+        @test prod(PreserveTypeRightProd(), member, member) == _prod
+
+        # Test that the generic prod version does not allocate as much as simply creating a similar ef member
+        # This is important, because the generic prod version should simply call the in-place version
+        @test @allocated(prod(ClosedProd(), member, member)) == @allocated(similar(member))
+        @test @allocated(prod(GenericProd(), member, member)) == @allocated(similar(member))
+        @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) == @allocated(similar(member))
+
+        @test prod!(_similar, member, member) == _prod
+
+        # Test that the generic in-place prod! version does not allocate at all
+        @test @allocated(prod!(_similar, member, member)) === 0
+        
     end
 
     @test vague(ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily}) isa

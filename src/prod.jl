@@ -3,7 +3,7 @@ export GenericProd, ProductOf, LinearizedProductOf
 
 import Distributions
 import Distributions: VariateForm, ValueSupport, variate_form, value_support, support
-import Base: prod, show, showerror
+import Base: prod, prod!, show, showerror
 
 """
     ClosedProd

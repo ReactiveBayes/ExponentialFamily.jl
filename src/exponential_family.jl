@@ -3,6 +3,7 @@ export ExponentialFamilyDistribution
 export getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
 export basemeasure, sufficientstatistics, logpartition, insupport
 
+using LoopVectorization
 using Distributions, LinearAlgebra, StaticArrays, Random
 
 """
@@ -352,12 +353,30 @@ vague(::Type{ExponentialFamilyDistribution{T}}, args...) where { T <: Distributi
 default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) =
     PreserveTypeProd(ExponentialFamilyDistribution)
 
+function prod(::ClosedProd, left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
+    return prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
+end
+
 function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T}
     # Se here we assume that if both left has the exact same base measure and this base measure is `ConstantBaseMeasure`
+    # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocated more than `similar(left)`)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() && isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
         if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
-            return ExponentialFamilyDistribution(T, getnaturalparameters(left) + getnaturalparameters(right))
+            return Base.prod!(similar(left), left, right)
         end
     end
     error("Generic product of two exponential family members is not implemented.")
+end
+
+function Base.prod!(container::ExponentialFamilyDistribution{T}, left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where { T }
+    # First check if we can actually simply sum-up the natural parameters
+    # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocate in this simple case)
+    if isbasemeasureconstant(left) === ConstantBaseMeasure() && isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
+        if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
+            LoopVectorization.vmap!(+, getnaturalparameters(container), getnaturalparameters(left), getnaturalparameters(right))
+            return container
+        end
+    end
+    # If the check fails, do not do un-safe operation and simply fallback to the `PreserveTypeProd(ExponentialFamilyDistribution)`
+    return prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
 end
