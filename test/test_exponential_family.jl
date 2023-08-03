@@ -124,8 +124,6 @@ end
         @test @inferred(pdf(member, 2.0)) ≈ exp(3.75 + 2log(2))
         @test @inferred(pdf(member, 4.0)) ≈ exp(7.75 + 4log(2))
 
-        # @test @allocated(logpdf(member, 2.0)) === 0
-
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
 

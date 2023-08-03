@@ -49,7 +49,7 @@ import ExponentialFamily:
             @testset let d = Bernoulli(p)
                 @test length(pack_naturalparameters(d)) === 1
 
-                ef = convert(ExponentialFamilyDistribution, d)
+                ef = @inferred(convert(ExponentialFamilyDistribution, d))
                 η₁ = log(p / (1 - p))
 
                 @test all(unpack_naturalparameters(ef) .≈ (η₁,))
@@ -62,27 +62,31 @@ import ExponentialFamily:
 
                 for x in (0, 1)
                     # We believe in the implementation in the `Distributions.jl`
-                    @test logpdf(ef, x) ≈ logpdf(d, x)
-                    @test pdf(ef, x) ≈ pdf(d, x)
-                    @test mean(ef) ≈ mean(d)
-                    @test var(ef) ≈ var(d)
-                    @test std(ef) ≈ std(d)
+                    @test @inferred(logpdf(ef, x)) ≈ logpdf(d, x)
+                    @test @inferred(pdf(ef, x)) ≈ pdf(d, x)
+                    @test @inferred(mean(ef)) ≈ mean(d)
+                    @test @inferred(var(ef)) ≈ var(d)
+                    @test @inferred(std(ef)) ≈ std(d)
                     @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), d)
                     @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), d, 10))
                     @test all(rand!(StableRNG(42), ef, zeros(10)) .≈ rand!(StableRNG(42), d, zeros(10)))
 
-                    @test isbasemeasureconstant(ef) === ConstantBaseMeasure()
-                    @test basemeasure(ef, x) === one(x)
-                    @test sufficientstatistics(ef, x) === (x,)
-                    @test logpartition(ef) ≈ log(1 + exp(η₁))
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === one(x)
+                    @test @inferred(sufficientstatistics(ef, x)) === (x,)
+                    @test @inferred(logpartition(ef)) ≈ log(1 + exp(η₁))
 
-                    # Test that the desired methods do not allocate
+                    # Test that the selected methods do not allocate
+                    @test @allocated(logpdf(ef, x)) === 0
+                    @test @allocated(pdf(ef, x)) === 0
+                    @test @allocated(mean(ef)) === 0
+                    @test @allocated(var(ef)) === 0
                     @test @allocated(basemeasure(ef, x)) === 0
                     @test @allocated(sufficientstatistics(ef, x)) === 0
                 end
 
-                @test !insupport(ef, -0.5)
-                @test !insupport(ef, 0.5)
+                @test !@inferred(insupport(ef, -0.5))
+                @test !@inferred(insupport(ef, 0.5))
 
                 # Not in the support
                 @test_throws Exception logpdf(ef, 0.5)
@@ -92,25 +96,35 @@ import ExponentialFamily:
     end
 
     @testset "prod with Distribution" begin
-        @test prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
-        @test prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
-        @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
+        @test @inferred(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
+        @test @inferred(prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
+        @test @inferred(prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
+
+        @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
     end
 
     @testset "prod with ExponentialFamilyDistribution" for pleft in 0.1:0.8:0.9, pright in 0.1:0.8:0.9
-        efleft = convert(ExponentialFamilyDistribution, Bernoulli(pleft))
-        efright = convert(ExponentialFamilyDistribution, Bernoulli(pright))
-        ηleft = getnaturalparameters(efleft)
-        ηright = getnaturalparameters(efright)
+        efleft = @inferred(convert(ExponentialFamilyDistribution, Bernoulli(pleft)))
+        efright = @inferred(convert(ExponentialFamilyDistribution, Bernoulli(pright)))
+        ηleft = @inferred(getnaturalparameters(efleft))
+        ηright = @inferred(getnaturalparameters(efright))
 
         for strategy in (
+            ClosedProd(),
+            GenericProd(),
             PreserveTypeProd(ExponentialFamilyDistribution),
             PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
         )
-            @test prod(strategy, efleft, efright) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+            @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
         end
 
-        @test prod(PreserveTypeProd(Bernoulli), efleft, efright) ≈
+        @test @inferred(prod!(similar(efleft), efleft, efright)) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+
+        let _similar = similar(efleft)
+            @test @allocated(prod!(_similar, efleft, efright)) === 0
+        end
+
+        @test @inferred(prod(PreserveTypeProd(Bernoulli), efleft, efright)) ≈
               prod(ClosedProd(), Bernoulli(pleft), Bernoulli(pright))
     end
 
