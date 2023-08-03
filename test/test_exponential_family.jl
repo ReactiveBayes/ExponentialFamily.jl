@@ -44,7 +44,7 @@ ExponentialFamily.vague(::Type{ArbitraryDistributionFromExponentialFamily}) =
     ArbitraryDistributionFromExponentialFamily()
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, ::ArbitraryDistributionFromExponentialFamily)
-    return ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0])
+    return ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
 end
 
 ## ===========================================================================
@@ -64,7 +64,7 @@ end
     end
 
     @testset let member =
-            ExponentialFamilyDistribution(Univariate, [2.0], nothing, ArbitraryExponentialFamilyAttributes)
+            ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
         η = getnaturalparameters(member)
 
         @test basemeasure(member, 2.0) ≈ 0.5
@@ -75,9 +75,9 @@ end
         @test all(map(f -> f(2.0), getsufficientstatistics(member)) .≈ (2.0, log(2.0)))
         @test all(map(f -> f(4.0), getsufficientstatistics(member)) .≈ (4.0, log(4.0)))
 
-        @test logpartition(member) ≈ 0.5
-        @test getlogpartition(member)([2.0]) ≈ 0.5
-        @test getlogpartition(member)([4.0]) ≈ 0.25
+        @test logpartition(member) ≈ 0.25
+        @test getlogpartition(member)([2.0, 2.0]) ≈ 0.25
+        @test getlogpartition(member)([4.0, 4.0]) ≈ 0.125
 
         @test getsupport(member) == RealInterval(0, Inf)
         @test insupport(member, 1.0)
@@ -91,7 +91,7 @@ end
         # But we do expect the functions to work anyway given proper values
         @test basemeasure(_similar, 2.0) ≈ 0.5
         @test all(sufficientstatistics(_similar, 2.0) .≈ (2.0, log(2.0)))
-        @test logpartition(_similar, η) ≈ 0.5
+        @test logpartition(_similar, η) ≈ 0.25
         @test getsupport(_similar) == RealInterval(0, Inf)
     end
 end
@@ -99,7 +99,7 @@ end
 @testset "ExponentialFamilyDistribution" begin
 
     # See the `ArbitraryDistributionFromExponentialFamily` defined in the fixtures (above)
-    @testset let member = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0])
+    @testset let member = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
         η = getnaturalparameters(member)
 
         @test basemeasure(member, 2.0) ≈ 1.0
@@ -110,19 +110,25 @@ end
         @test all(map(f -> f(2.0), getsufficientstatistics(member)) .≈ (2.0, log(2.0)))
         @test all(map(f -> f(4.0), getsufficientstatistics(member)) .≈ (4.0, log(4.0)))
 
-        @test logpartition(member) ≈ 0.5
-        @test getlogpartition(member)([2.0]) ≈ 0.5
-        @test getlogpartition(member)([4.0]) ≈ 0.25
+        @test logpartition(member) ≈ 0.25
+        @test getlogpartition(member)([2.0, 2.0]) ≈ 0.25
+        @test getlogpartition(member)([4.0, 4.0]) ≈ 0.125
 
         @test getsupport(member) == RealInterval(0, Inf)
         @test insupport(member, 1.0)
         @test !insupport(member, -1.0)
 
+        # Computed by hand
+        @test logpdf(member, 2.0) ≈ (3.75 + 2log(2))
+        @test logpdf(member, 4.0) ≈ (7.75 + 4log(2))
+        @test pdf(member, 2.0) ≈ exp(3.75 + 2log(2))
+        @test pdf(member, 4.0) ≈ exp(7.75 + 4log(2))
+
         @test member == member
         @test member ≈ member
 
         _similar = similar(member)      
-        _prod = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [4.0])
+        _prod = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [4.0, 4.0])
 
         @test prod(ClosedProd(), member, member) == _prod
         @test prod(GenericProd(), member, member) == _prod
