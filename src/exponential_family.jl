@@ -1,5 +1,8 @@
 export ExponentialFamilyDistribution
 
+export getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
+export basemeasure, sufficientstatistics, logpartition, insupport
+
 using Distributions, LinearAlgebra, StaticArrays, Random
 
 """
@@ -139,42 +142,41 @@ See also: [`ExponentialFamilyDistributionAttributes`](@ref)
 getattributes(ef::ExponentialFamilyDistribution) = ef.attributes
 
 """
-    basemeasure(::ExponentialFamilyDistribution)
+    basemeasure(::ExponentialFamilyDistribution, x)
 
-Returns the computed value of `basemeasure` of the exponential family distribution.
+Returns the computed value of `basemeasure` of the exponential family distribution at the point `x`.
 
 See also: [`getbasemeasure`](@ref)
 """
-function basemeasure(ef::ExponentialFamilyDistribution)
-    return getbasemeasure(ef)(getnaturalparameters(ef))
+function basemeasure(ef::ExponentialFamilyDistribution, x)
+    return getbasemeasure(ef)(x)
 end
 
 """
     sufficientstatistics(::ExponentialFamilyDistribution)
 
-Returns the computed values of `sufficientstatistics` of the exponential family distribution.
+Returns the computed values of `sufficientstatistics` of the exponential family distribution at the point `x`.
 """
-function sufficientstatistics(ef::ExponentialFamilyDistribution)
-    return let η = getnaturalparameters(ef)
-        map(f -> f(η), getsufficientstatistics(ef))
-    end
+function sufficientstatistics(ef::ExponentialFamilyDistribution, x)
+    return map(f -> f(x), getsufficientstatistics(ef))
 end
 
 """
-    logpartition(::ExponentialFamilyDistribution)
+    logpartition(::ExponentialFamilyDistribution, η)
 
-Return the computed value of `logpartition` of the exponential family distribution.
+Return the computed value of `logpartition` of the exponential family distribution at the point `η`
+By default `η = getnaturalparameters(ef)`.
 
 See also: [`getlogpartition`](@ref)
 """
-function logpartition(ef::ExponentialFamilyDistribution)
-    return getlogpartition(ef)(getnaturalparameters(ef))
+function logpartition(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef))
+    return getlogpartition(ef)(η)
 end
 
 """
-    fisherinformation(::ExponentialFamilyDistribution)
+    fisherinformation(distribution)
 
-Return the computed value of `fisherinformation` of the exponential family distribution.
+Return the computed value of `fisherinformation` of the `distribution`.
 """
 function fisherinformation end
 
@@ -198,6 +200,9 @@ getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsuppo
 getsupport(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getsupport(attributes)
 
+# For all `<:Distribution` the `support` function should be defined
+getsupport(::Type{T}) where {T <: Distribution} = Distributions.support(T)
+
 insupport(ef::ExponentialFamilyDistribution, value) = insupport(getsupport(ef), value)
 
 """
@@ -220,6 +225,7 @@ See also: [`getbasemeasure`](@ref), [`basemeasure`](@ref)
 function isbasemeasureconstant end
 
 isbasemeasureconstant(ef::ExponentialFamilyDistribution) = isbasemeasureconstant(getbasemeasure(ef))
+isbasemeasureconstant(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = isbasemeasureconstant(T)
 
 # For safety, by default, we assume that any base measure function is not a constant
 # This is not always the case, e.g. when a function is (η) -> 1
@@ -235,11 +241,14 @@ function Distributions.logpdf(ef::ExponentialFamilyDistribution, x)
     # TODO: Think of what to do with this assert
     @assert insupport(ef, x)
 
-    statistics = sufficientstatistics(ef)
-    basemeasure = basemeasure(ef)
-    logpartition = logpartition(ef)
+    η = getnaturalparameters(ef)
 
-    return log(basemeasure) + dot(η, statistics) - logpartition
+    # Use `_` to avoid name collisions with the actual functions
+    _statistics = sufficientstatistics(ef, x)
+    _basemeasure = basemeasure(ef, x)
+    _logpartition = logpartition(ef)
+
+    return log(_basemeasure) + dot(η, _statistics) - _logpartition
 end
 
 """
@@ -272,75 +281,83 @@ distributiontype(::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Distrib
 
 Checks if the vector of natural parameters `η` can represent the `distribution_type`.
 """
-function check_valid_natural end
+check_valid_natural(T, η) = error("The `$(η)` are not valid natural parameters for a distribution of type `$(T)`.")
 
 """
     check_valid_conditioner(distribution_type, conditioner)
 
 Checks if the `conditioner` holds a correct value for the `distribution_type`.
 """
-function check_valid_conditioner end
+check_valid_conditioner(T, conditioner) =
+    error("The `$(conditioner)` is not a valid conditioner for a distribution of type `$(T)`.")
 
-Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} = Base.convert(T, Base.convert(Distribution, ef))
+"""
+    pack_naturalparameters(distribution)
+
+This function returns the natural parameters of the `distribution` in a vectorized (packed) form.
+"""
+function pack_naturalparameters end
+
+"""
+    unpack_naturalparameters(::Type{T}, naturalparameters)
+
+This function "unpack" the vectorized form of the natural parameters in a tuple.
+"""
+function unpack_naturalparameters end
+
+unpack_naturalparameters(ef::ExponentialFamilyDistribution{T}) where {T} =
+    unpack_naturalparameters(T, getnaturalparameters(ef))
+
+Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} =
+    Base.convert(T, Base.convert(Distribution, ef))
 
 Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
 Distributions.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
+Distributions.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
 Distributions.cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
 
 Random.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
 Random.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)
 
-Random.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args...) where { T <: Distribution } = rand(rng, convert(T, ef), args...)
-Random.rand!(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args...) where { T <: Distribution } = rand!(rng, convert(T, ef), args...)
+Random.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args::Integer...) where {T <: Distribution} =
+    rand(rng, convert(T, ef), args...)
+
+Random.rand!(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, container) where {T <: Distribution} =
+    rand!(rng, convert(T, ef), container)
+
+Base.isapprox(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution; kwargs...) = false
+Base.:(==)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) = false
+
+function Base.isapprox(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}; kwargs...) where {T}
+    return getbasemeasure(left) == getbasemeasure(right) && getsufficientstatistics(left) == getsufficientstatistics(right) && 
+        getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) && getconditioner(left) == getconditioner(right) &&
+        isapprox(getnaturalparameters(left), getnaturalparameters(right); kwargs...)
+end
+
+function Base.:(==)(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T}
+    return getbasemeasure(left) == getbasemeasure(right) && getsufficientstatistics(left) == getsufficientstatistics(right) && 
+        getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) && getconditioner(left) == getconditioner(right) &&
+        getnaturalparameters(left) == getnaturalparameters(right)
+end
+
+Base.similar(ef::ExponentialFamilyDistribution) = similar(ef, eltype(getnaturalparameters(ef)))
+
+function Base.similar(ef::ExponentialFamilyDistribution{T}, ::Type{F}) where {T, F} 
+    return ExponentialFamilyDistribution(T, similar(getnaturalparameters(ef), F), getconditioner(ef), getattributes(ef))
+end
+
+vague(::Type{ExponentialFamilyDistribution{T}}, args...) where { T <: Distribution } = convert(ExponentialFamilyDistribution, vague(T, args...))
 
 # We assume that we want to preserve the `ExponentialFamilyDistribution` when working with two `ExponentialFamilyDistribution`s
 default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) =
     PreserveTypeProd(ExponentialFamilyDistribution)
 
-# Case when both supertypes are of type `Distribution` and we have the `ClosedProd` for them
-# The idea here is that converting from `ExponentialFamilyDistribution` to a `Distribution` should be free
-# So we simply convert `EF` representation to the `Distribution` representation, call their closed product and convert back
-# function prod(
-#     left::ExponentialFamilyDistribution{D1},
-#     right::ExponentialFamilyDistribution{D2}
-# ) where {D1 <: Distribution, D2 <: Distribution}
-#     error("This method should be generalized to accept the `ClosedProd` as its first argument. TODO.")
-#     # Should be compiled out anyway
-#     if default_prod_rule(D1, D2) === ClosedProd()
-#         return convert(
-#             ExponentialFamilyDistribution,
-#             prod(ClosedProd(), convert(Distribution, left), convert(Distribution, left))
-#         )
-#     end
-#     # We assume that we can always execute the `ClosedProd` for any ExponentialFamilyDistribution
-#     return prod(ClosedProd(), left, right)
-# end
-
-# function prod(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
-#     return prod(ClosedProd(), left, right)
-# end
-
-# Case when both `ExponentialFamilyDistribution` are of the same `Distribution` type 
-# But for some reason we don't have the `ClosedProd` defined for them
-# function prod(
-#     ::ClosedProd,
-#     left::ExponentialFamilyDistribution{T},
-#     right::ExponentialFamilyDistribution{T}
-# ) where {T <: Distribution}
-#     # Here we need to check that the basemeasures are constants and that the conditioners are the same 
-#     # only then we can sum-up the natural parameters, for now I leave this method as `not implemented`
-#     # but it is definitely should be properly implemented
-#     error("Not properly implemented")
-#     # ExponentialFamilyDistribution(
-#     #     T,
-#     #     getnaturalparameters(left) + getnaturalparameters(right),
-#     #     getconditioner(left)
-#     # )
-# end
-
-# function prod(::ClosedProd, left::Distribution{T}, right::Distribution{T}) where {T}
-#     error("This method should go away.")
-#     # efleft = convert(ExponentialFamilyDistribution, left)
-#     # efright = convert(ExponentialFamilyDistribution, right)
-#     # return convert(Distribution, prod(efleft, efright))
-# end
+function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T}
+    # Se here we assume that if both left has the exact same base measure and this base measure is `ConstantBaseMeasure`
+    if isbasemeasureconstant(left) === ConstantBaseMeasure() && isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
+        if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
+            return ExponentialFamilyDistribution(T, getnaturalparameters(left) + getnaturalparameters(right))
+        end
+    end
+    error("Generic product of two exponential family members is not implemented.")
+end

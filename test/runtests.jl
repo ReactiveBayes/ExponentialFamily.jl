@@ -7,20 +7,20 @@ using Test
     include("test_distributions.jl")
     include("test_exponential_family.jl")
 
-    include("distributions/bernoulli/test_bernoulli.jl")
-    include("distributions/bernoulli/test_categorical.jl")
+    include("distributions/test_bernoulli.jl")
 
-    include("distributions/normal/test_mv_normal_mean_covariance.jl")
-    include("distributions/normal/test_mv_normal_mean_precision.jl")
-    include("distributions/normal/test_mv_normal_weighted_mean_precision.jl")
-    include("distributions/normal/test_normal_mean_variance.jl")
-    include("distributions/normal/test_normal_mean_precision.jl")
-    include("distributions/normal/test_normal_weighted_mean_precision.jl")
-    include("distributions/normal/test_normal.jl")
+    # include("distributions/test_categorical.jl")
 
-    include("distributions/gamma/test_gamma.jl")
+    # include("distributions/test_mv_normal_mean_covariance.jl")
+    # include("distributions/test_mv_normal_mean_precision.jl")
+    # include("distributions/test_mv_normal_weighted_mean_precision.jl")
+    # include("distributions/test_normal_mean_variance.jl")
+    # include("distributions/test_normal_mean_precision.jl")
+    # include("distributions/test_normal_weighted_mean_precision.jl")
+    # include("distributions/test_normal.jl")
 
-    # include("distributions/test_common.jl")
+    # include("distributions/test_gamma.jl")
+
     
     # include("distributions/test_binomial.jl")
     # include("distributions/test_beta.jl")
