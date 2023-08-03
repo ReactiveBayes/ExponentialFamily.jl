@@ -6,6 +6,7 @@ import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
 import ExponentialFamily: getnaturalparameters, getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
 import ExponentialFamily: ExponentialFamilyDistributionAttributes
+import ExponentialFamily: paramfloattype, convert_paramfloattype
 
 # import ExponentialFamily:
 #     ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec,
@@ -136,6 +137,12 @@ end
         @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) == @allocated(similar(member))
 
         @test prod!(_similar, member, member) == _prod
+        
+        # Test that the in-place prod preserves the container paramfloatype
+        for F in (Float16, Float32, Float64)
+            @test paramfloattype(prod!(similar(member, F), member, member)) === F
+            @test prod!(similar(member, F), member, member) == convert_paramfloattype(F, _prod)
+        end
 
         # Test that the generic in-place prod! version does not allocate at all
         @test @allocated(prod!(_similar, member, member)) === 0

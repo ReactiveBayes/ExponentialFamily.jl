@@ -312,6 +312,14 @@ unpack_naturalparameters(ef::ExponentialFamilyDistribution{T}) where {T} =
 Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} =
     Base.convert(T, Base.convert(Distribution, ef))
 
+function paramfloattype(ef::ExponentialFamilyDistribution)
+    return deep_eltype(getnaturalparameters(ef))
+end
+
+function convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T}) where {F, T}
+    return ExponentialFamilyDistribution(T, convert_paramfloattype(F, getnaturalparameters(ef)), getconditioner(ef), getattributes(ef))
+end
+
 Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
 Distributions.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
 Distributions.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
@@ -362,7 +370,11 @@ function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Exponenti
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocated more than `similar(left)`)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() && isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
         if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
-            return Base.prod!(similar(left), left, right)
+            # Find the promoted float type of both natural parameters
+            F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
+            # Create a suitable container for the in-place `prod!` operation, we use the `left` as a suitable candidate
+            container = similar(left, F)
+            return Base.prod!(container, left, right)
         end
     end
     error("Generic product of two exponential family members is not implemented.")
