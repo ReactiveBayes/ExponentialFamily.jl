@@ -118,7 +118,8 @@ import ExponentialFamily:
             @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
         end
 
-        @test @inferred(prod!(similar(efleft), efleft, efright)) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+        @test @inferred(prod!(similar(efleft), efleft, efright)) ==
+              ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
 
         let _similar = similar(efleft)
             @test @allocated(prod!(_similar, efleft, efright)) === 0

@@ -37,6 +37,7 @@ cached(operation, object) = cached(cache_for(operation, object), operation, obje
 cached(::NoCachedImplementation, operation, _) = operation
 
 # Return the infused version of the `operation` in case cache is not `NoCachedImplementation`
-cached(cache, operation, _) = let cache = cache
-    (args...) -> operation(cache, args...)
-end
+cached(cache, operation, _) =
+    let cache = cache
+        (args...) -> operation(cache, args...)
+    end

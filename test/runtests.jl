@@ -2,7 +2,6 @@ using ExponentialFamily
 using Test
 
 @testset "ExponentialFamily" begin
-
     include("test_prod.jl")
     include("test_distributions.jl")
     include("test_exponential_family.jl")
@@ -21,7 +20,6 @@ using Test
 
     # include("distributions/test_gamma.jl")
 
-    
     # include("distributions/test_binomial.jl")
     # include("distributions/test_beta.jl")
     # include("distributions/test_categorical.jl")
@@ -29,7 +27,7 @@ using Test
     # include("distributions/test_dirichlet_matrix.jl")
     # include("distributions/test_dirichlet.jl")
     # include("distributions/test_exponential.jl")
-    
+
     # include("distributions/test_gamma_inverse.jl")
     # include("distributions/test_lognormal.jl")
     # include("distributions/test_multinomial.jl")

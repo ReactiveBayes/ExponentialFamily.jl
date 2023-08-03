@@ -375,7 +375,9 @@ logpdf_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal
 sample_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
 sample_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
 
-function logpdf_sample_optimized(dist::Union{UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily})
+function logpdf_sample_optimized(
+    dist::Union{UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily}
+)
     # For Gaussian both sample and logpdf are the same in terms of optimality
     optimal = logpdf_optimized(dist)
     return (optimal, optimal)

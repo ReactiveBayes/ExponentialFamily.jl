@@ -140,10 +140,11 @@ end
         # This is important, because the generic prod version should simply call the in-place version
         @test @allocated(prod(ClosedProd(), member, member)) <= @allocated(similar(member))
         @test @allocated(prod(GenericProd(), member, member)) <= @allocated(similar(member))
-        @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) <= @allocated(similar(member))
+        @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) <=
+              @allocated(similar(member))
 
         @test @inferred(prod!(_similar, member, member)) == _prod
-        
+
         # Test that the in-place prod preserves the container paramfloatype
         for F in (Float16, Float32, Float64)
             @test @inferred(paramfloattype(prod!(similar(member, F), member, member))) === F
@@ -152,7 +153,6 @@ end
 
         # Test that the generic in-place prod! version does not allocate at all
         @test @allocated(prod!(_similar, member, member)) === 0
-        
     end
 
     @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily})) isa

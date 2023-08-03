@@ -317,7 +317,12 @@ function paramfloattype(ef::ExponentialFamilyDistribution)
 end
 
 function convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T}) where {F, T}
-    return ExponentialFamilyDistribution(T, convert_paramfloattype(F, getnaturalparameters(ef)), getconditioner(ef), getattributes(ef))
+    return ExponentialFamilyDistribution(
+        T,
+        convert_paramfloattype(F, getnaturalparameters(ef)),
+        getconditioner(ef),
+        getattributes(ef)
+    )
 end
 
 Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
@@ -337,25 +342,34 @@ Random.rand!(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, container) 
 Base.isapprox(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution; kwargs...) = false
 Base.:(==)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) = false
 
-function Base.isapprox(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}; kwargs...) where {T}
-    return getbasemeasure(left) == getbasemeasure(right) && getsufficientstatistics(left) == getsufficientstatistics(right) && 
-        getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) && getconditioner(left) == getconditioner(right) &&
-        isapprox(getnaturalparameters(left), getnaturalparameters(right); kwargs...)
+function Base.isapprox(
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T};
+    kwargs...
+) where {T}
+    return getbasemeasure(left) == getbasemeasure(right) &&
+           getsufficientstatistics(left) == getsufficientstatistics(right) &&
+           getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) &&
+           getconditioner(left) == getconditioner(right) &&
+           isapprox(getnaturalparameters(left), getnaturalparameters(right); kwargs...)
 end
 
 function Base.:(==)(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T}
-    return getbasemeasure(left) == getbasemeasure(right) && getsufficientstatistics(left) == getsufficientstatistics(right) && 
-        getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) && getconditioner(left) == getconditioner(right) &&
-        getnaturalparameters(left) == getnaturalparameters(right)
+    return getbasemeasure(left) == getbasemeasure(right) &&
+           getsufficientstatistics(left) == getsufficientstatistics(right) &&
+           getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) &&
+           getconditioner(left) == getconditioner(right) &&
+           getnaturalparameters(left) == getnaturalparameters(right)
 end
 
 Base.similar(ef::ExponentialFamilyDistribution) = similar(ef, eltype(getnaturalparameters(ef)))
 
-function Base.similar(ef::ExponentialFamilyDistribution{T}, ::Type{F}) where {T, F} 
+function Base.similar(ef::ExponentialFamilyDistribution{T}, ::Type{F}) where {T, F}
     return ExponentialFamilyDistribution(T, similar(getnaturalparameters(ef), F), getconditioner(ef), getattributes(ef))
 end
 
-vague(::Type{ExponentialFamilyDistribution{T}}, args...) where { T <: Distribution } = convert(ExponentialFamilyDistribution, vague(T, args...))
+vague(::Type{ExponentialFamilyDistribution{T}}, args...) where {T <: Distribution} =
+    convert(ExponentialFamilyDistribution, vague(T, args...))
 
 # We assume that we want to preserve the `ExponentialFamilyDistribution` when working with two `ExponentialFamilyDistribution`s
 default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) =
@@ -365,10 +379,15 @@ function prod(::ClosedProd, left::ExponentialFamilyDistribution, right::Exponent
     return prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
 end
 
-function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T}
+function prod(
+    ::PreserveTypeProd{ExponentialFamilyDistribution},
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
+) where {T}
     # Se here we assume that if both left has the exact same base measure and this base measure is `ConstantBaseMeasure`
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocated more than `similar(left)`)
-    if isbasemeasureconstant(left) === ConstantBaseMeasure() && isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
+    if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
+       isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
         if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
             # Find the promoted float type of both natural parameters
             F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
@@ -380,12 +399,22 @@ function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Exponenti
     error("Generic product of two exponential family members is not implemented.")
 end
 
-function Base.prod!(container::ExponentialFamilyDistribution{T}, left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where { T }
+function Base.prod!(
+    container::ExponentialFamilyDistribution{T},
+    left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}
+) where {T}
     # First check if we can actually simply sum-up the natural parameters
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocate in this simple case)
-    if isbasemeasureconstant(left) === ConstantBaseMeasure() && isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
+    if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
+       isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
         if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
-            LoopVectorization.vmap!(+, getnaturalparameters(container), getnaturalparameters(left), getnaturalparameters(right))
+            LoopVectorization.vmap!(
+                +,
+                getnaturalparameters(container),
+                getnaturalparameters(left),
+                getnaturalparameters(right)
+            )
             return container
         end
     end

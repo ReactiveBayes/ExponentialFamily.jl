@@ -6,7 +6,8 @@ using Random
 using LinearAlgebra
 using Distributions
 
-import ExponentialFamily: ExponentialFamilyDistribution, prod, default_prod_rule, ProductOf, LinearizedProductOf, getleft, getright
+import ExponentialFamily:
+    ExponentialFamilyDistribution, prod, default_prod_rule, ProductOf, LinearizedProductOf, getleft, getright
 import ExponentialFamily:
     UnspecifiedProd, PreserveTypeProd, PreserveTypeLeftProd, PreserveTypeRightProd, ClosedProd, GenericProd
 
@@ -45,12 +46,10 @@ Base.convert(::Type{Int}, ::ObjectWithClosedProd2) = 2
 
 @testset "UnspecifiedProd" begin
     @testset "`default_prod_rule` should return `UnspecifiedProd` for two unknown objects" begin
-        
         @test default_prod_rule(SomeUnknownObject, SomeUnknownObject) === UnspecifiedProd()
     end
 
     @testset "`missing` should be ignored with the `UnspecifiedProd`" begin
-        
         @test prod(UnspecifiedProd(), missing, SomeUnknownObject()) === SomeUnknownObject()
         @test prod(UnspecifiedProd(), SomeUnknownObject(), missing) === SomeUnknownObject()
         @test prod(UnspecifiedProd(), missing, missing) === missing
@@ -67,7 +66,6 @@ end
 end
 
 @testset "PreserveTypeProd" begin
-
     @testset "`missing` should be ignored with the `PreserveTypeProd`" begin
         # Can convert the result of the prod to the desired type
         @test prod(PreserveTypeProd(SomeUnknownObject), missing, SomeUnknownObject()) isa SomeUnknownObject
@@ -78,26 +76,34 @@ end
         @test_throws MethodError prod(PreserveTypeProd(SomeUnknownObject), missing, missing)
     end
 
-    @testset "`PreserveTypeLeftProd` should preserve the type of the left argument" begin 
+    @testset "`PreserveTypeLeftProd` should preserve the type of the left argument" begin
         @test prod(PreserveTypeLeftProd(), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa ObjectWithClosedProd1
         @test prod(PreserveTypeLeftProd(), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa ObjectWithClosedProd2
     end
 
-    @testset "`PreserveTypeRightProd` should preserve the type of the left argument" begin 
+    @testset "`PreserveTypeRightProd` should preserve the type of the left argument" begin
         @test prod(PreserveTypeRightProd(), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa ObjectWithClosedProd2
         @test prod(PreserveTypeRightProd(), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa ObjectWithClosedProd1
     end
 
-    @testset "`ProdPreserveType(T)` should preserve the desired type of `T`" begin 
-        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa ObjectWithClosedProd1
-        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa ObjectWithClosedProd1
-        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa ObjectWithClosedProd1
-        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa ObjectWithClosedProd1
+    @testset "`ProdPreserveType(T)` should preserve the desired type of `T`" begin
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd1
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd1
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd1
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd1
 
-        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa ObjectWithClosedProd2
-        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa ObjectWithClosedProd2
-        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa ObjectWithClosedProd2
-        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd2
 
         # The output can be converted to an `Int` (see the fixtures above)
         @test prod(PreserveTypeProd(Int), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa Int
@@ -111,7 +117,6 @@ end
         @test_throws MethodError prod(PreserveTypeProd(Float64), ObjectWithClosedProd2(), ObjectWithClosedProd1())
         @test_throws MethodError prod(PreserveTypeProd(Float64), ObjectWithClosedProd2(), ObjectWithClosedProd2())
     end
-
 end
 
 @testset "GenericProd" begin
