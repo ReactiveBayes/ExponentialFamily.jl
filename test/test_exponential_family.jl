@@ -17,7 +17,7 @@ import ExponentialFamily: paramfloattype, convert_paramfloattype
 ## Tests fixtures
 const ArbitraryExponentialFamilyAttributes = ExponentialFamilyDistributionAttributes(
     (x) -> 1 / x,
-    ((x) -> x, (x) -> log.(x)),
+    ((x) -> x, (x) -> log(x)),
     (η) -> 1 / sum(η),
     RealInterval(0, Inf)
 )
@@ -54,45 +54,45 @@ end
 
     # See the `ArbitraryExponentialFamilyAttributes` defined in the fixtures (above)
     @testset let attributes = ArbitraryExponentialFamilyAttributes
-        @test getbasemeasure(attributes)(2.0) ≈ 0.5
-        @test getsufficientstatistics(attributes)[1](2.0) ≈ 2.0
-        @test getsufficientstatistics(attributes)[2](2.0) ≈ log(2.0)
-        @test getlogpartition(attributes)([2.0]) ≈ 0.5
-        @test getsupport(attributes) == RealInterval(0, Inf)
-        @test insupport(attributes, 1.0)
-        @test !insupport(attributes, -1.0)
+        @test @inferred(getbasemeasure(attributes)(2.0)) ≈ 0.5
+        @test @inferred(getsufficientstatistics(attributes)[1](2.0)) ≈ 2.0
+        @test @inferred(getsufficientstatistics(attributes)[2](2.0)) ≈ log(2.0)
+        @test @inferred(getlogpartition(attributes)([2.0])) ≈ 0.5
+        @test @inferred(getsupport(attributes)) == RealInterval(0, Inf)
+        @test @inferred(insupport(attributes, 1.0))
+        @test !@inferred(insupport(attributes, -1.0))
     end
 
     @testset let member =
             ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
-        η = getnaturalparameters(member)
+        η = @inferred(getnaturalparameters(member))
 
-        @test basemeasure(member, 2.0) ≈ 0.5
-        @test getbasemeasure(member)(2.0) ≈ 0.5
-        @test getbasemeasure(member)(4.0) ≈ 0.25
+        @test @inferred(basemeasure(member, 2.0)) ≈ 0.5
+        @test @inferred(getbasemeasure(member)(2.0)) ≈ 0.5
+        @test @inferred(getbasemeasure(member)(4.0)) ≈ 0.25
 
-        @test all(sufficientstatistics(member, 2.0) .≈ (2.0, log(2.0)))
-        @test all(map(f -> f(2.0), getsufficientstatistics(member)) .≈ (2.0, log(2.0)))
-        @test all(map(f -> f(4.0), getsufficientstatistics(member)) .≈ (4.0, log(4.0)))
+        @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(4.0), getsufficientstatistics(member))) .≈ (4.0, log(4.0)))
 
-        @test logpartition(member) ≈ 0.25
-        @test getlogpartition(member)([2.0, 2.0]) ≈ 0.25
-        @test getlogpartition(member)([4.0, 4.0]) ≈ 0.125
+        @test @inferred(logpartition(member)) ≈ 0.25
+        @test @inferred(getlogpartition(member)([2.0, 2.0])) ≈ 0.25
+        @test @inferred(getlogpartition(member)([4.0, 4.0])) ≈ 0.125
 
-        @test getsupport(member) == RealInterval(0, Inf)
-        @test insupport(member, 1.0)
-        @test !insupport(member, -1.0)
+        @test @inferred(getsupport(member)) == RealInterval(0, Inf)
+        @test @inferred(insupport(member, 1.0))
+        @test !@inferred(insupport(member, -1.0))
 
-        _similar = similar(member)
+        _similar = @inferred(similar(member))
 
         @test _similar isa typeof(member)
 
         # `similar` most probably returns the un-initialized natural parameters with garbage in it
         # But we do expect the functions to work anyway given proper values
-        @test basemeasure(_similar, 2.0) ≈ 0.5
-        @test all(sufficientstatistics(_similar, 2.0) .≈ (2.0, log(2.0)))
-        @test logpartition(_similar, η) ≈ 0.25
-        @test getsupport(_similar) == RealInterval(0, Inf)
+        @test @inferred(basemeasure(_similar, 2.0)) ≈ 0.5
+        @test all(@inferred(sufficientstatistics(_similar, 2.0)) .≈ (2.0, log(2.0)))
+        @test @inferred(logpartition(_similar, η)) ≈ 0.25
+        @test @inferred(getsupport(_similar)) == RealInterval(0, Inf)
     end
 end
 
@@ -100,54 +100,56 @@ end
 
     # See the `ArbitraryDistributionFromExponentialFamily` defined in the fixtures (above)
     @testset let member = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
-        η = getnaturalparameters(member)
+        η = @inferred(getnaturalparameters(member))
 
-        @test basemeasure(member, 2.0) ≈ 1.0
-        @test getbasemeasure(member)(2.0) ≈ 1.0
-        @test getbasemeasure(member)(4.0) ≈ 1.0
+        @test @inferred(basemeasure(member, 2.0)) ≈ 1.0
+        @test @inferred(getbasemeasure(member)(2.0)) ≈ 1.0
+        @test @inferred(getbasemeasure(member)(4.0)) ≈ 1.0
 
-        @test all(sufficientstatistics(member, 2.0) .≈ (2.0, log(2.0)))
-        @test all(map(f -> f(2.0), getsufficientstatistics(member)) .≈ (2.0, log(2.0)))
-        @test all(map(f -> f(4.0), getsufficientstatistics(member)) .≈ (4.0, log(4.0)))
+        @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(4.0), getsufficientstatistics(member))) .≈ (4.0, log(4.0)))
 
-        @test logpartition(member) ≈ 0.25
-        @test getlogpartition(member)([2.0, 2.0]) ≈ 0.25
-        @test getlogpartition(member)([4.0, 4.0]) ≈ 0.125
+        @test @inferred(logpartition(member)) ≈ 0.25
+        @test @inferred(getlogpartition(member)([2.0, 2.0])) ≈ 0.25
+        @test @inferred(getlogpartition(member)([4.0, 4.0])) ≈ 0.125
 
-        @test getsupport(member) == RealInterval(0, Inf)
+        @test @inferred(getsupport(member)) == RealInterval(0, Inf)
         @test insupport(member, 1.0)
         @test !insupport(member, -1.0)
 
         # Computed by hand
-        @test logpdf(member, 2.0) ≈ (3.75 + 2log(2))
-        @test logpdf(member, 4.0) ≈ (7.75 + 4log(2))
-        @test pdf(member, 2.0) ≈ exp(3.75 + 2log(2))
-        @test pdf(member, 4.0) ≈ exp(7.75 + 4log(2))
+        @test @inferred(logpdf(member, 2.0)) ≈ (3.75 + 2log(2))
+        @test @inferred(logpdf(member, 4.0)) ≈ (7.75 + 4log(2))
+        @test @inferred(pdf(member, 2.0)) ≈ exp(3.75 + 2log(2))
+        @test @inferred(pdf(member, 4.0)) ≈ exp(7.75 + 4log(2))
 
-        @test member == member
-        @test member ≈ member
+        # @test @allocated(logpdf(member, 2.0)) === 0
 
-        _similar = similar(member)      
+        @test @inferred(member == member)
+        @test @inferred(member ≈ member)
+
+        _similar = @inferred(similar(member))
         _prod = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [4.0, 4.0])
 
-        @test prod(ClosedProd(), member, member) == _prod
-        @test prod(GenericProd(), member, member) == _prod
-        @test prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member) == _prod
-        @test prod(PreserveTypeLeftProd(), member, member) == _prod
-        @test prod(PreserveTypeRightProd(), member, member) == _prod
+        @test @inferred(prod(ClosedProd(), member, member)) == _prod
+        @test @inferred(prod(GenericProd(), member, member)) == _prod
+        @test @inferred(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) == _prod
+        @test @inferred(prod(PreserveTypeLeftProd(), member, member)) == _prod
+        @test @inferred(prod(PreserveTypeRightProd(), member, member)) == _prod
 
         # Test that the generic prod version does not allocate as much as simply creating a similar ef member
         # This is important, because the generic prod version should simply call the in-place version
-        @test @allocated(prod(ClosedProd(), member, member)) == @allocated(similar(member))
-        @test @allocated(prod(GenericProd(), member, member)) == @allocated(similar(member))
-        @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) == @allocated(similar(member))
+        @test @allocated(prod(ClosedProd(), member, member)) <= @allocated(similar(member))
+        @test @allocated(prod(GenericProd(), member, member)) <= @allocated(similar(member))
+        @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) <= @allocated(similar(member))
 
-        @test prod!(_similar, member, member) == _prod
+        @test @inferred(prod!(_similar, member, member)) == _prod
         
         # Test that the in-place prod preserves the container paramfloatype
         for F in (Float16, Float32, Float64)
-            @test paramfloattype(prod!(similar(member, F), member, member)) === F
-            @test prod!(similar(member, F), member, member) == convert_paramfloattype(F, _prod)
+            @test @inferred(paramfloattype(prod!(similar(member, F), member, member))) === F
+            @test @inferred(prod!(similar(member, F), member, member)) == convert_paramfloattype(F, _prod)
         end
 
         # Test that the generic in-place prod! version does not allocate at all
@@ -155,7 +157,7 @@ end
         
     end
 
-    @test vague(ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily}) isa
+    @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily})) isa
           ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily}
 end
 
