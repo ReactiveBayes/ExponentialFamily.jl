@@ -4,6 +4,7 @@
 **/benchmark_logs
 **/tune.json
 /Manifest.toml
+docs/Manifest.toml
 /docs/build/
 .DS_Store
 
