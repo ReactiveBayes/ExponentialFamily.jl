@@ -51,10 +51,13 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
             @testset let d = Bernoulli(p)
 
                 tuple_of_θ = params(d)
-                tuple_of_η = map(MeanToNatural(Bernoulli), tuple_of_θ)
+                tuple_of_η = MeanToNatural(Bernoulli)(tuple_of_θ)
 
-                @test all(map(NaturalToMean(Bernoulli), tuple_of_η) .≈ tuple_of_θ)
+                @test all(NaturalToMean(Bernoulli)(tuple_of_η) .≈ tuple_of_θ)
                 @test all(unpack_parameters(Bernoulli, pack_parameters(Bernoulli, tuple_of_η)) .== tuple_of_η)
+
+                @test @inferred(isproper(MeanParametersSpace(), Bernoulli, pack_parameters(Bernoulli, tuple_of_θ)))
+                @test @inferred(isproper(NaturalParametersSpace(), Bernoulli, pack_parameters(Bernoulli, tuple_of_η)))
 
                 ef = @inferred(convert(ExponentialFamilyDistribution, d))
                 η₁ = log(p / (1 - p))
@@ -64,7 +67,7 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
 
                 @test isproper(ef)
                 @test ef isa ExponentialFamilyDistribution{Bernoulli}
-                @test convert(Distribution, ef) ≈ d
+                @test @inferred(convert(Distribution, ef)) ≈ d
                 @test @allocated(convert(Distribution, ef)) === 0
 
                 for x in (0, 1)
@@ -93,6 +96,13 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
                 end
 
                 @test fisherinformation(ef) ≈ fisherinformation_fortests(ef)
+
+                # Jacobian based fisher information from the mean parameter space
+                m = map(NaturalToMean(Bernoulli), getnaturalparameters(ef))
+                J = ForwardDiff.jacobian(NaturalToMean(Bernoulli), getnaturalparameters(ef))
+                Fₘ = getfisherinformation(MeanParametersSpace(), Bernoulli)(m)
+                
+                @test fisherinformation(ef) ≈ (J * Fₘ * J')
                 
                 # These tests might not be super reliable on different hardware, but it must actually pass
                 @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
@@ -106,6 +116,12 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
                 @test_throws Exception logpdf(ef, -0.5)
             end
         end
+
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), Bernoulli, [ -1 ])
+        @test !isproper(MeanParametersSpace(), Bernoulli, [ 0.5, 0.5 ])
+        @test !isproper(NaturalParametersSpace(), Bernoulli, [ 0.5, 0.5 ])
+
     end
 
     @testset "prod with Distribution" begin

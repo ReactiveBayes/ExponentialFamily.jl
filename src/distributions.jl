@@ -33,25 +33,8 @@ weightedmean_precision(something) = weightedmean_invcov(something)
 
 insupport(support, value) = value ∈ support
 
-"""
-```jldoctest
-error("TODO: add documentaion")
-```
-"""
-function isproper end
-
-"""
-```jldoctest
-error("TODO: add documentaion")
-```
-"""
 function probvec end
 
-"""
-```jldoctest
-error("TODO: add documentaion")
-```
-"""
 function weightedmean end
 
 # Julia does not really like expressions of the form

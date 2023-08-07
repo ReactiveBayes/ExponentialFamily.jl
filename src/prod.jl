@@ -9,11 +9,11 @@ import Base: prod, prod!, show, showerror
     ClosedProd
 
 `ClosedProd` is one of the strategies for `prod` function. This strategy uses analytical prod methods but does not constraint a prod to be in any specific form.
-It throws a `MethodError` if no analytical rule is available, use `ProdGeneric` prod strategy to fallback to approximation methods.
+It throws a `MethodError` if no analytical rule is available, use `GenericProd` prod strategy to fallback to approximation methods.
 
 Note: `ClosedProd` ignores `missing` values and simply returns the non-`missing` argument. Returns `missing` in case if both arguments are `missing`.
 
-See also: [`prod`](@ref), [`ProdPreserveType`](@ref), [`ProdGeneric`](@ref)
+See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`GenericProd`](@ref)
 """
 struct ClosedProd end
 
@@ -178,14 +178,14 @@ _check_product_value_support(::Type{S1}, ::Type{S2}) where {S1 <: ValueSupport, 
 `GenericProd` is one of the strategies for `prod` function. This strategy does always produces a result, 
 even if the closed form product is not availble, in which case simply returns the `ProductOf` object. `GenericProd` sometimes 
 fallbacks to the `default_prod_rule` which it may or may not use under some circumstances. 
-For example if the `default_prod_rule` is `ClosedProd` - `ProdGeneric` will try to optimize the tree with 
+For example if the `default_prod_rule` is `ClosedProd` - `GenericProd` will try to optimize the tree with 
 analytical closed solutions (if possible).
 
 See also: [`prod`](@ref), [`ProductOf`](@ref), [`ClosedProd`](@ref), [`PreserveTypeProd`](@ref), [`default_prod_rule`](@ref)
 """
 struct GenericProd end
 
-Base.show(io::IO, ::GenericProd) = print(io, "ProdGeneric()")
+Base.show(io::IO, ::GenericProd) = print(io, "GenericProd()")
 
 prod(::GenericProd, ::Missing, right)     = right
 prod(::GenericProd, left, ::Missing)      = left

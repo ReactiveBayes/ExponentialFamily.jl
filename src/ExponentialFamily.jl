@@ -7,7 +7,7 @@ export tiny, huge
 include("distributions.jl")
 include("prod.jl")
 
-include("cached.jl")
+# include("cached.jl")
 include("constants.jl")
 
 include("exponential_family.jl")

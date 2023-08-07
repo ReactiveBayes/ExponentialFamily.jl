@@ -63,17 +63,17 @@ compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bern
 
 # Natural parametrization
 
-isproper(::ExponentialFamilyDistribution{<:Bernoulli}) = true
+isproper(::NaturalParametersSpace, ::Type{Bernoulli}, η) = length(η) === 1
+isproper(::MeanParametersSpace, ::Type{Bernoulli}, θ) = length(θ) === 1 && 0 <= first(θ) <= 1
 
-check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
-check_valid_conditioner(::Type{<:Bernoulli}, ::Nothing) = true
+check_valid_conditioner(::Type{Bernoulli}, ::Nothing) = true
 
-function Base.map(::MeanToNatural{Bernoulli}, tuple_of_θ::Tuple{Any})
+function (::MeanToNatural{Bernoulli})(tuple_of_θ::Tuple{Any})
     (p, ) = tuple_of_θ
     return (logit(p), )
 end
 
-function Base.map(::NaturalToMean{Bernoulli}, tuple_of_η::Tuple{Any})
+function (::NaturalToMean{Bernoulli})(tuple_of_η::Tuple{Any})
     (η₁, ) = tuple_of_η
     return (logistic(η₁), )
 end
@@ -107,4 +107,9 @@ end
 getlogpartition(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin 
     (p, ) = unpack_parameters(Bernoulli, θ)
     return -log(one(p) - p)
+end
+
+getfisherinformation(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
+    (p, ) = unpack_parameters(Bernoulli, θ)
+    return SA[ inv(p * (one(p) - p));; ]
 end
