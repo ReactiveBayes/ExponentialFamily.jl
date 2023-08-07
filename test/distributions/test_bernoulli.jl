@@ -54,6 +54,10 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
                 tuple_of_η = MeanToNatural(Bernoulli)(tuple_of_θ)
 
                 @test all(NaturalToMean(Bernoulli)(tuple_of_η) .≈ tuple_of_θ)
+                @test all(MeanToNatural(Bernoulli)(tuple_of_θ) .≈ tuple_of_η)
+                @test all(NaturalToMean(Bernoulli)(pack_parameters(Bernoulli, tuple_of_η)) .≈ pack_parameters(Bernoulli, tuple_of_θ))
+                @test all(MeanToNatural(Bernoulli)(pack_parameters(Bernoulli, tuple_of_θ)) .≈ pack_parameters(Bernoulli, tuple_of_η))
+
                 @test all(unpack_parameters(Bernoulli, pack_parameters(Bernoulli, tuple_of_η)) .== tuple_of_η)
 
                 @test @inferred(isproper(MeanParametersSpace(), Bernoulli, pack_parameters(Bernoulli, tuple_of_θ)))
@@ -98,7 +102,7 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
                 @test fisherinformation(ef) ≈ fisherinformation_fortests(ef)
 
                 # Jacobian based fisher information from the mean parameter space
-                m = map(NaturalToMean(Bernoulli), getnaturalparameters(ef))
+                m = NaturalToMean(Bernoulli)(getnaturalparameters(ef))
                 J = ForwardDiff.jacobian(NaturalToMean(Bernoulli), getnaturalparameters(ef))
                 Fₘ = getfisherinformation(MeanParametersSpace(), Bernoulli)(m)
                 

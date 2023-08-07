@@ -29,7 +29,7 @@ const ArbitraryExponentialFamilyAttributes = ExponentialFamilyDistributionAttrib
 # - `support`
 struct ArbitraryDistributionFromExponentialFamily <: ContinuousUnivariateDistribution end
 
-ExponentialFamily.check_valid_natural(::Type{ArbitraryDistributionFromExponentialFamily}, η) = true
+ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}, η) = true
 ExponentialFamily.check_valid_conditioner(::Type{ArbitraryDistributionFromExponentialFamily}, ::Nothing) = true
 
 ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryDistributionFromExponentialFamily}) = ConstantBaseMeasure()

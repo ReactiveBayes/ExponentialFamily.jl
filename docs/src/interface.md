@@ -116,8 +116,8 @@ basemeasure_of_bernoilli(0)
 
 ```@docs
 isproper(::Type{T}, η) where { T <: Distribution }
-getbasemeasure(::Type{T}) where { T <: Distribution }
-getsufficientstatistics(::Type{T}) where { T <: Distribution }
+getbasemeasure(::Type{<:Distribution})
+getsufficientstatistics(::Type{<:Distribution}
 getlogpartition(::Type{T}) where { T <: Distribution }
 getfisherinformation(::Type{T}) where { T <: Distribution }
 ```

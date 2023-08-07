@@ -279,8 +279,13 @@ insupport(ef::ExponentialFamilyDistribution, value) = insupport(getsupport(ef), 
 getsupport(::Type{T}) where {T <: Distribution} = Distributions.support(T)
 
 # Convenient mappings from a vectorized form to a vectorized form for distributions
-(transformation::NaturalToMean{T})(v::AbstractVector) where { T <: Distribution } = pack_parameters(T, map(transformation, unpack_parameters(T, v)))
-(transformation::MeanToNatural{T})(v::AbstractVector) where { T <: Distribution } = pack_parameters(T, map(transformation, unpack_parameters(T, v)))
+function (transformation::NaturalToMean{T})(v::AbstractVector) where { T <: Distribution } 
+    return pack_parameters(T, transformation(unpack_parameters(T, v)))
+end
+
+function (transformation::MeanToNatural{T})(v::AbstractVector) where { T <: Distribution } 
+    return pack_parameters(T, transformation(unpack_parameters(T, v)))
+end
 
 """
     isproper([ space = NaturalParametersSpace() ], ::Type{T}, parameters) where { T <: Distribution }
@@ -296,20 +301,20 @@ isproper(::Type{T}, parameters) where { T <: Distribution } = isproper(NaturalPa
 isproper(ef::ExponentialFamilyDistribution{T}) where { T <: Distribution } = isproper(NaturalParametersSpace(), T, getnaturalparameters(ef))
 
 """
-    getbasemeasure(::Type{T}) where { T <: Distribution }
+    getbasemeasure(::Type{<:Distribution})
 
 A specific verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 """
-getbasemeasure(::Type{T}) where { T <: Distribution }
+getbasemeasure(::Type{<:Distribution})
 
 """
-    getsufficientstatistics(::Type{T}) where { T <: Distribution }
+    getsufficientstatistics(::Type{<:Distribution})
 
 A specific verion of `getsufficientstatistics` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 """
-getsufficientstatistics(::Type{T}) where { T <: Distribution }
+getsufficientstatistics(::Type{<:Distribution})
 
 """
     getlogpartition([ space = NaturalParametersSpace() ], ::Type{T}) where { T <: Distribution }
