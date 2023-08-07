@@ -5,7 +5,7 @@ using ExponentialFamily, Test, StatsFuns
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
 import ExponentialFamily: getnaturalparameters, getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
-import ExponentialFamily: ExponentialFamilyDistributionAttributes
+import ExponentialFamily: ExponentialFamilyDistributionAttributes, NaturalParametersSpace
 import ExponentialFamily: paramfloattype, convert_paramfloattype
 
 # import ExponentialFamily:
@@ -37,7 +37,7 @@ ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryDistributionFromExponent
 ExponentialFamily.getbasemeasure(::Type{ArbitraryDistributionFromExponentialFamily}) = (x) -> oneunit(x)
 ExponentialFamily.getsufficientstatistics(::Type{ArbitraryDistributionFromExponentialFamily}) =
     ((x) -> x, (x) -> log(x))
-ExponentialFamily.getlogpartition(::Type{ArbitraryDistributionFromExponentialFamily}) = (η) -> 1 / sum(η)
+ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}) = (η) -> 1 / sum(η)
 ExponentialFamily.getsupport(::Type{ArbitraryDistributionFromExponentialFamily}) = RealInterval(0, Inf)
 
 ExponentialFamily.vague(::Type{ArbitraryDistributionFromExponentialFamily}) =

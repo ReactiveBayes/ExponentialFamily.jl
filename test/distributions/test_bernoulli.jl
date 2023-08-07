@@ -10,8 +10,10 @@ using StableRNGs
 
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, insupport,
-    sufficientstatistics, fisherinformation, pack_naturalparameters, unpack_naturalparameters, isbasemeasureconstant,
-    ConstantBaseMeasure
+    sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
+    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace
+
+fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), Bernoulli)(η), getnaturalparameters(ef))
 
 @testset "Bernoulli" begin
 
@@ -47,13 +49,18 @@ import ExponentialFamily:
         # Check conversions and general statistics 
         @testset for p in 0.1:0.1:0.9
             @testset let d = Bernoulli(p)
-                @test length(pack_naturalparameters(d)) === 1
+
+                tuple_of_θ = params(d)
+                tuple_of_η = map(MeanToNatural(Bernoulli), tuple_of_θ)
+
+                @test all(map(NaturalToMean(Bernoulli), tuple_of_η) .≈ tuple_of_θ)
+                @test all(unpack_parameters(Bernoulli, pack_parameters(Bernoulli, tuple_of_η)) .== tuple_of_η)
 
                 ef = @inferred(convert(ExponentialFamilyDistribution, d))
                 η₁ = log(p / (1 - p))
 
-                @test all(unpack_naturalparameters(ef) .≈ (η₁,))
-                @test @allocated(unpack_naturalparameters(ef)) === 0
+                @test all(unpack_parameters(ef) .≈ (η₁,))
+                @test @allocated(unpack_parameters(ef)) === 0
 
                 @test isproper(ef)
                 @test ef isa ExponentialFamilyDistribution{Bernoulli}
@@ -84,6 +91,12 @@ import ExponentialFamily:
                     @test @allocated(basemeasure(ef, x)) === 0
                     @test @allocated(sufficientstatistics(ef, x)) === 0
                 end
+
+                @test fisherinformation(ef) ≈ fisherinformation_fortests(ef)
+                
+                # These tests might not be super reliable on different hardware, but it must actually pass
+                @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
+                @test @allocated(fisherinformation(ef)) === 0
 
                 @test !@inferred(insupport(ef, -0.5))
                 @test !@inferred(insupport(ef, 0.5))
@@ -128,22 +141,6 @@ import ExponentialFamily:
         @test @inferred(prod(PreserveTypeProd(Bernoulli), efleft, efright)) ≈
               prod(ClosedProd(), Bernoulli(pleft), Bernoulli(pright))
     end
-
-    # transformation(logprobability) = exp(logprobability[1]) / (one(Float64) + exp(logprobability[1]))
-
-    # @testset "fisherinformation" begin
-    #     for p in 0.1:0.1:0.9
-    #         dist = Bernoulli(p)
-    #         ef = convert(ExponentialFamilyDistribution, dist)
-    #         η = getnaturalparameters(ef)
-
-    #         f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Bernoulli, η))
-    #         autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-    #         @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-    #         J = ForwardDiff.gradient(transformation, η)
-    #         @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
-    #     end
-    # end
 
 end
 

@@ -61,50 +61,50 @@ end
 compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
     compute_logscale(new_dist, right_dist, left_dist)
 
-function fisherinformation(dist::Bernoulli)
-    (p,) = params(dist)
-    return SA[inv(p * (one(p) - p));;]
-end
-
 # Natural parametrization
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{Bernoulli}) = true
+isproper(::ExponentialFamilyDistribution{<:Bernoulli}) = true
 
 check_valid_natural(::Type{<:Bernoulli}, params) = (length(params) === 1)
 check_valid_conditioner(::Type{<:Bernoulli}, ::Nothing) = true
 
-function pack_naturalparameters(distribution::Bernoulli)
-    p = succprob(distribution)
-    return [logit(p)]
+function Base.map(::MeanToNatural{Bernoulli}, tuple_of_θ::Tuple{Any})
+    (p, ) = tuple_of_θ
+    return (logit(p), )
 end
 
-function unpack_naturalparameters(::Type{Bernoulli}, η)
-    return (first(η),)
+function Base.map(::NaturalToMean{Bernoulli}, tuple_of_η::Tuple{Any})
+    (η₁, ) = tuple_of_η
+    return (logistic(η₁), )
 end
 
-isbasemeasureconstant(::Type{<:Bernoulli}) = ConstantBaseMeasure()
+function pack_parameters(::Type{Bernoulli}, parameters::Tuple)
+    return [ first(parameters) ]
+end
 
-getbasemeasure(::Type{<:Bernoulli}) = (x) -> oneunit(x)
-getsufficientstatistics(::Type{<:Bernoulli}) = (identity,)
-getlogpartition(::Type{<:Bernoulli}) = (η) -> begin
-    (η₁,) = unpack_naturalparameters(Bernoulli, η)
+function unpack_parameters(::Type{Bernoulli}, packed)
+    return (first(packed),)
+end
+
+isbasemeasureconstant(::Type{Bernoulli}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{Bernoulli}) = (x) -> oneunit(x)
+getsufficientstatistics(::Type{Bernoulli}) = (identity,)
+
+getlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
+    (η₁,) = unpack_parameters(Bernoulli, η)
     return -log(logistic(-η₁))
 end
 
-function fisherinformation(ef::ExponentialFamilyDistribution{Bernoulli})
-    (η₁,) = unpack_naturalparameters(ef)
+getfisherinformation(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
+    (η₁,) = unpack_parameters(Bernoulli, η)
     f = logistic(-η₁)
     return SA[f * (one(f) - f);;]
 end
 
-## Conversions
+# Mean parametrization
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Bernoulli})
-    (η₁,) = unpack_naturalparameters(exponentialfamily)
-    return Bernoulli(logistic(η₁))
-end
-
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Bernoulli)
-    @assert !(succprob(dist) ≈ 1) "Bernoulli natural parameters are not defiend for p = 1."
-    return ExponentialFamilyDistribution(Bernoulli, pack_naturalparameters(dist))
+getlogpartition(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin 
+    (p, ) = unpack_parameters(Bernoulli, θ)
+    return -log(one(p) - p)
 end
