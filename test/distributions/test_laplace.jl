@@ -3,10 +3,7 @@ module LaplaceTest
 using ExponentialFamily, Distributions
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, getconditioner, compute_logscale, logpartition, basemeasure, insupport,
-    sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
-    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule
+include("../testutils.jl")
 
 # Fisher information can in principle be computed with the `hessian` from `ForwardDiff` with relatively high-mean_precision
 # Its fine to use it in tests, but we also check that our implementation is faster
@@ -30,70 +27,16 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         # Check conversions and general statistics 
         @testset for location in (-1.0, 0.0, 1.0), scale in (0.25, 0.5, 2.0)
             @testset let d = Laplace(location, scale)
-                tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(Laplace, params(d))
 
-                @test all(tuple_of_θ .=== (scale,))
-                @test conditioner === location
-
-                tuple_of_η = MeanToNatural(Laplace)(tuple_of_θ, conditioner)
-
-                @test all(NaturalToMean(Laplace)(tuple_of_η, conditioner) .≈ tuple_of_θ)
-                @test all(MeanToNatural(Laplace)(tuple_of_θ, conditioner) .≈ tuple_of_η)
-                @test all(NaturalToMean(Laplace)(pack_parameters(Laplace, tuple_of_η), conditioner) .≈ pack_parameters(Laplace, tuple_of_θ))
-                @test all(MeanToNatural(Laplace)(pack_parameters(Laplace, tuple_of_θ), conditioner) .≈ pack_parameters(Laplace, tuple_of_η))
-
-                @test all(unpack_parameters(Laplace, pack_parameters(Laplace, tuple_of_η)) .== tuple_of_η)
-
-                @test @inferred(isproper(MeanParametersSpace(), Laplace, pack_parameters(Bernoulli, tuple_of_θ), location))
-                @test @inferred(isproper(NaturalParametersSpace(), Laplace, pack_parameters(Bernoulli, tuple_of_η), location))
-
-                ef = @inferred(convert(ExponentialFamilyDistribution, d))
+                ef = test_exponentialfamily_interface(d)
                 η₁ = -1 / scale
 
-                @test all(unpack_parameters(ef) .≈ (η₁,))
-                @test @allocated(unpack_parameters(ef)) === 0
-
-                @test isproper(ef)
-                @test ef isa ExponentialFamilyDistribution{Laplace}
-                @test @inferred(convert(Distribution, ef)) ≈ d
-                @test @allocated(convert(Distribution, ef)) === 0
-
                 for x in (-1.0, 0.0, 1.0)
-                    # We believe in the implementation in the `Distributions.jl`
-                    @test @inferred(logpdf(ef, x)) ≈ logpdf(d, x)
-                    @test @inferred(pdf(ef, x)) ≈ pdf(d, x)
-                    @test @inferred(mean(ef)) ≈ mean(d)
-                    @test @inferred(var(ef)) ≈ var(d)
-                    @test @inferred(std(ef)) ≈ std(d)
-                    @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), d)
-                    @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), d, 10))
-                    @test all(rand!(StableRNG(42), ef, zeros(10)) .≈ rand!(StableRNG(42), d, zeros(10)))
-
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === oneunit(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (abs(x - location),)
                     @test @inferred(logpartition(ef)) ≈ log(-2 / η₁)
-
-                    # # Test that the selected methods do not allocate
-                    @test @allocated(logpdf(ef, x)) === 0
-                    @test @allocated(pdf(ef, x)) === 0
-                    @test @allocated(mean(ef)) === 0
-                    @test @allocated(var(ef)) === 0
-                    @test @allocated(basemeasure(ef, x)) === 0
-                    @test @allocated(sufficientstatistics(ef, x)) === 0
                 end
-
-                @test fisherinformation(ef) ≈ fisherinformation_fortests(ef)
-
-                # Jacobian based fisher information from the mean parameter space
-                m = NaturalToMean(Laplace)(getnaturalparameters(ef), getconditioner(ef))
-                J = ForwardDiff.jacobian(Base.Fix2(NaturalToMean(Laplace), getconditioner(ef)), getnaturalparameters(ef))
-                Fₘ = getfisherinformation(MeanParametersSpace(), Laplace, getconditioner(ef))(m)
-
-                @test fisherinformation(ef) ≈ (J * Fₘ * J')
-
-                @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
-                @test @allocated(fisherinformation(ef)) === 0
             end
         end
 
@@ -104,7 +47,6 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
             @test !isproper(space, Laplace, [1.0], NaN)
             @test !isproper(space, Laplace, [0.5, 0.5], 1.0)
             
-
             # Conditioner is required
             @test_throws Exception isproper(space, Laplace, [0.5 ], [ 0.5, 0.5 ])
             @test_throws Exception isproper(space, Laplace, [1.0], nothing)

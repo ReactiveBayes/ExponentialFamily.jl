@@ -1,6 +1,8 @@
 using ExponentialFamily
 using Test
 
+include("testutils.jl")
+
 @testset "ExponentialFamily" begin
     include("test_prod.jl")
     include("test_distributions.jl")

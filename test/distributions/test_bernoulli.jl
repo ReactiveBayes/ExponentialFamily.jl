@@ -3,10 +3,7 @@ module BernoulliTest
 using ExponentialFamily, Distributions
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, insupport,
-    sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
-    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule
+include("../testutils.jl")
 
 # Fisher information can in principle be computed with the `hessian` from `ForwardDiff` with relatively high-mean_precision
 # Its fine to use it in tests, but we also check that our implementation is faster
@@ -25,6 +22,8 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         @test succprob(d) === 0.5
         @test failprob(d) === 0.5
     end
+
+
 
     @testset "probvec" begin
         @test probvec(Bernoulli(0.5)) === (0.5, 0.5)
@@ -46,67 +45,16 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         # Check conversions and general statistics 
         @testset for p in 0.1:0.1:0.9
             @testset let d = Bernoulli(p)
-                tuple_of_θ = params(d)
-                tuple_of_η = MeanToNatural(Bernoulli)(tuple_of_θ)
-
-                @test all(NaturalToMean(Bernoulli)(tuple_of_η) .≈ tuple_of_θ)
-                @test all(MeanToNatural(Bernoulli)(tuple_of_θ) .≈ tuple_of_η)
-                @test all(NaturalToMean(Bernoulli)(pack_parameters(Bernoulli, tuple_of_η)) .≈ pack_parameters(Bernoulli, tuple_of_θ))
-                @test all(MeanToNatural(Bernoulli)(pack_parameters(Bernoulli, tuple_of_θ)) .≈ pack_parameters(Bernoulli, tuple_of_η))
-
-                @test all(unpack_parameters(Bernoulli, pack_parameters(Bernoulli, tuple_of_η)) .== tuple_of_η)
-
-                @test @inferred(isproper(MeanParametersSpace(), Bernoulli, pack_parameters(Bernoulli, tuple_of_θ)))
-                @test @inferred(isproper(NaturalParametersSpace(), Bernoulli, pack_parameters(Bernoulli, tuple_of_η)))
-
-                ef = @inferred(convert(ExponentialFamilyDistribution, d))
-                η₁ = log(p / (1 - p))
-
-                @test all(unpack_parameters(ef) .≈ (η₁,))
-                @test @allocated(unpack_parameters(ef)) === 0
-
-                @test isproper(ef)
-                @test ef isa ExponentialFamilyDistribution{Bernoulli}
-                @test @inferred(convert(Distribution, ef)) ≈ d
-                @test @allocated(convert(Distribution, ef)) === 0
+                
+                ef = test_exponentialfamily_interface(d)
+                η₁ = logit(p)
 
                 for x in (0, 1)
-                    # We believe in the implementation in the `Distributions.jl`
-                    @test @inferred(logpdf(ef, x)) ≈ logpdf(d, x)
-                    @test @inferred(pdf(ef, x)) ≈ pdf(d, x)
-                    @test @inferred(mean(ef)) ≈ mean(d)
-                    @test @inferred(var(ef)) ≈ var(d)
-                    @test @inferred(std(ef)) ≈ std(d)
-                    @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), d)
-                    @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), d, 10))
-                    @test all(rand!(StableRNG(42), ef, zeros(10)) .≈ rand!(StableRNG(42), d, zeros(10)))
-
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === oneunit(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (x,)
                     @test @inferred(logpartition(ef)) ≈ log(1 + exp(η₁))
-
-                    # Test that the selected methods do not allocate
-                    @test @allocated(logpdf(ef, x)) === 0
-                    @test @allocated(pdf(ef, x)) === 0
-                    @test @allocated(mean(ef)) === 0
-                    @test @allocated(var(ef)) === 0
-                    @test @allocated(basemeasure(ef, x)) === 0
-                    @test @allocated(sufficientstatistics(ef, x)) === 0
                 end
-
-                @test fisherinformation(ef) ≈ fisherinformation_fortests(ef)
-
-                # Jacobian based fisher information from the mean parameter space
-                m = NaturalToMean(Bernoulli)(getnaturalparameters(ef))
-                J = ForwardDiff.jacobian(NaturalToMean(Bernoulli), getnaturalparameters(ef))
-                Fₘ = getfisherinformation(MeanParametersSpace(), Bernoulli)(m)
-
-                @test fisherinformation(ef) ≈ (J * Fₘ * J')
-
-                # These tests might not be super reliable on different hardware, but it must actually pass
-                @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
-                @test @allocated(fisherinformation(ef)) === 0
 
                 @test !@inferred(insupport(ef, -0.5))
                 @test !@inferred(insupport(ef, 0.5))
