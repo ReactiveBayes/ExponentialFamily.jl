@@ -1,6 +1,6 @@
 module KnownExponentialFamilyDistributionTest
 
-using ExponentialFamily, Distributions, Test, StatsFuns
+using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
@@ -117,6 +117,11 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
 
         _similar = @inferred(similar(member))
 
+        # The standard `@allocated` is not really reliable in this test 
+        # We avoid using the `BenchmarkTools`, but here it is essential
+        @test @ballocated(logpdf($member, 1.0)) === 0
+        @test @ballocated(pdf($member, 1.0)) === 0
+
         @test _similar isa typeof(member)
 
         # `similar` most probably returns the un-initialized natural parameters with garbage in it
@@ -158,6 +163,11 @@ end
         @test @inferred(logpdf(member, 4.0)) ≈ (7.75 + 4log(2))
         @test @inferred(pdf(member, 2.0)) ≈ exp(3.75 + 2log(2))
         @test @inferred(pdf(member, 4.0)) ≈ exp(7.75 + 4log(2))
+
+        # The standard `@allocated` is not really reliable in this test 
+        # We avoid using the `BenchmarkTools`, but here it is essential
+        @test @ballocated(logpdf($member, 2.0)) === 0
+        @test @ballocated(pdf($member, 2.0)) === 0
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
@@ -222,6 +232,11 @@ end
         @test @inferred(logpdf(member, 4.0)) ≈ (log(4.0 ^ -2) + log(4.0 + 2) + 2.0)
         @test @inferred(pdf(member, 2.0)) ≈ exp((log(2.0 ^ -2) + log(2.0 + 2) + 2.0))
         @test @inferred(pdf(member, 4.0)) ≈ exp((log(4.0 ^ -2) + log(4.0 + 2) + 2.0))
+
+        # The standard `@allocated` is not really reliable in this test 
+        # We avoid using the `BenchmarkTools`, but here it is essential
+        @test @ballocated(logpdf($member, 2.0)) === 0
+        @test @ballocated(pdf($member, 2.0)) === 0
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)

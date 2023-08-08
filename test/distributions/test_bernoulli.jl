@@ -13,6 +13,8 @@ import ExponentialFamily:
     sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
     ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace
 
+# Fisher information can in principle be computed with the `hessian` from `ForwardDiff` with relatively high-mean_precision
+# Its fine to use it in tests, but we also check that our implementation is faster
 fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), Bernoulli)(η), getnaturalparameters(ef))
 
 @testset "Bernoulli" begin
