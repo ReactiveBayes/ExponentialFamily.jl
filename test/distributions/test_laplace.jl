@@ -25,23 +25,6 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         @test params(d) === (0.0, 1e12)
     end
 
-    @testset "prod with Distribution" begin
-        @test default_prod_rule(Laplace, Laplace) === PreserveTypeProd(Laplace)
-
-        @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.0, 0.5))) ≈ Laplace(0.0, 0.25)
-        @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(1.0, 1.0), Laplace(1.0, 1.0))) ≈ Laplace(1.0, 0.5)
-        @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(2.0, 3.0), Laplace(2.0, 7.0))) ≈ Laplace(2.0, 2.1)
-
-        # GenericProd should always check the default strategy and fallback if available
-        @test @inferred(prod(GenericProd(), Laplace(0.0, 0.5), Laplace(0.0, 0.5))) ≈ Laplace(0.0, 0.25)
-        @test @inferred(prod(GenericProd(), Laplace(1.0, 1.0), Laplace(1.0, 1.0))) ≈ Laplace(1.0, 0.5)
-        @test @inferred(prod(GenericProd(), Laplace(2.0, 3.0), Laplace(2.0, 7.0))) ≈ Laplace(2.0, 2.1)
-
-        # Different location parameters cannot be compute a closed prod with the same type
-        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.01, 0.5))
-        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(1.0, 0.5), Laplace(-1.0, 0.5))
-    end
-
     @testset "ExponentialFamilyDistribution{Laplace}" begin
 
         # Check conversions and general statistics 
@@ -129,6 +112,23 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         end
 
         @test_throws Exception convert(ExponentialFamilyDistribution, Laplace(Inf, Inf))
+    end
+
+    @testset "prod with Distribution" begin
+        @test default_prod_rule(Laplace, Laplace) === PreserveTypeProd(Laplace)
+
+        @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.0, 0.5))) ≈ Laplace(0.0, 0.25)
+        @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(1.0, 1.0), Laplace(1.0, 1.0))) ≈ Laplace(1.0, 0.5)
+        @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(2.0, 3.0), Laplace(2.0, 7.0))) ≈ Laplace(2.0, 2.1)
+
+        # GenericProd should always check the default strategy and fallback if available
+        @test @inferred(prod(GenericProd(), Laplace(0.0, 0.5), Laplace(0.0, 0.5))) ≈ Laplace(0.0, 0.25)
+        @test @inferred(prod(GenericProd(), Laplace(1.0, 1.0), Laplace(1.0, 1.0))) ≈ Laplace(1.0, 0.5)
+        @test @inferred(prod(GenericProd(), Laplace(2.0, 3.0), Laplace(2.0, 7.0))) ≈ Laplace(2.0, 2.1)
+
+        # Different location parameters cannot be compute a closed prod with the same type
+        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.01, 0.5))
+        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(1.0, 0.5), Laplace(-1.0, 0.5))
     end
 
     @testset "prod with ExponentialFamilyDistribution" begin
