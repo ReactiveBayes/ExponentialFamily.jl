@@ -23,8 +23,6 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         @test failprob(d) === 0.5
     end
 
-
-
     @testset "probvec" begin
         @test probvec(Bernoulli(0.5)) === (0.5, 0.5)
         @test probvec(Bernoulli(0.3)) === (0.7, 0.3)
@@ -41,10 +39,8 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
     end
 
     @testset "ExponentialFamilyDistribution{Bernoulli}" begin
-
         @testset for p in 0.1:0.1:0.9
             @testset let d = Bernoulli(p)
-                
                 ef = test_exponentialfamily_interface(d)
                 η₁ = logit(p)
 
@@ -69,7 +65,7 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         @test !isproper(MeanParametersSpace(), Bernoulli, [0.5, 0.5])
         @test !isproper(NaturalParametersSpace(), Bernoulli, [0.5, 0.5])
         @test !isproper(NaturalParametersSpace(), Bernoulli, [Inf])
-        
+
         @test_throws Exception convert(ExponentialFamilyDistribution, Bernoulli(1.0)) # We cannot convert from `1.0`, `logit` function returns `Inf`
     end
 
@@ -90,29 +86,18 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
     end
 
     @testset "prod with ExponentialFamilyDistribution" for pleft in 0.1:0.1:0.9, pright in 0.1:0.1:0.9
-        efleft = @inferred(convert(ExponentialFamilyDistribution, Bernoulli(pleft)))
-        efright = @inferred(convert(ExponentialFamilyDistribution, Bernoulli(pright)))
-        ηleft = @inferred(getnaturalparameters(efleft))
-        ηright = @inferred(getnaturalparameters(efright))
-
-        for strategy in (
-            ClosedProd(),
-            GenericProd(),
-            PreserveTypeProd(ExponentialFamilyDistribution),
-            PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
-        )
-            @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+        let left = Bernoulli(pleft), right = Bernoulli(pright)
+            @test test_generic_simple_exponentialfamily_product(
+                left,
+                right,
+                strategies = (
+                    ClosedProd(),
+                    GenericProd(),
+                    PreserveTypeProd(ExponentialFamilyDistribution),
+                    PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
+                )
+            )
         end
-
-        @test @inferred(prod!(similar(efleft), efleft, efright)) ==
-              ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
-
-        let _similar = similar(efleft)
-            @test @allocated(prod!(_similar, efleft, efright)) === 0
-        end
-
-        @test @inferred(prod(PreserveTypeProd(Bernoulli), efleft, efright)) ≈
-            prod(ClosedProd(), Bernoulli(pleft), Bernoulli(pright))
     end
 end
 

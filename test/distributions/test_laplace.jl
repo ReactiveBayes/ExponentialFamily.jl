@@ -23,10 +23,8 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
     end
 
     @testset "ExponentialFamilyDistribution{Laplace}" begin
-
         @testset for location in (-1.0, 0.0, 1.0), scale in (0.25, 0.5, 2.0)
             @testset let d = Laplace(location, scale)
-
                 ef = test_exponentialfamily_interface(d)
                 η₁ = -1 / scale
 
@@ -45,9 +43,9 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
             @test !isproper(space, Laplace, [NaN], 1.0)
             @test !isproper(space, Laplace, [1.0], NaN)
             @test !isproper(space, Laplace, [0.5, 0.5], 1.0)
-            
+
             # Conditioner is required
-            @test_throws Exception isproper(space, Laplace, [0.5 ], [ 0.5, 0.5 ])
+            @test_throws Exception isproper(space, Laplace, [0.5], [0.5, 0.5])
             @test_throws Exception isproper(space, Laplace, [1.0], nothing)
             @test_throws Exception isproper(space, Laplace, [1.0], nothing)
         end
@@ -73,29 +71,14 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
     end
 
     @testset "prod with ExponentialFamilyDistribution" begin
-        @test default_prod_rule(ExponentialFamilyDistribution{Laplace}, ExponentialFamilyDistribution{Laplace}) ===
-              PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
-
         for location in (0.0, 1.0), sleft in 0.1:0.1:0.9, sright in 0.1:0.1:0.9
-            efleft = @inferred(convert(ExponentialFamilyDistribution, Laplace(location, sleft)))
-            efright = @inferred(convert(ExponentialFamilyDistribution, Laplace(location, sright)))
-
-            ηleft = @inferred(getnaturalparameters(efleft))
-            ηright = @inferred(getnaturalparameters(efright))
-
-            for strategy in (PreserveTypeProd(ExponentialFamilyDistribution{Laplace}), GenericProd())
-                @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(Laplace, ηleft + ηright, location)
+            let left = Laplace(location, sleft), right = Laplace(location, sright)
+                @test test_generic_simple_exponentialfamily_product(
+                    left,
+                    right,
+                    strategies = (PreserveTypeProd(ExponentialFamilyDistribution{Laplace}), GenericProd())
+                )
             end
-
-            @test @inferred(prod!(similar(efleft), efleft, efright)) ==
-                  ExponentialFamilyDistribution(Laplace, ηleft + ηright, location)
-
-            let _similar = similar(efleft)
-                @test @allocated(prod!(_similar, efleft, efright)) === 0
-            end
-
-            @test @inferred(prod(PreserveTypeProd(Laplace), efleft, efright)) ≈
-                  prod(PreserveTypeProd(Laplace), Laplace(location, sleft), Laplace(location, sright))
         end
 
         # Different location parameters cannot be compute a closed prod with the same type

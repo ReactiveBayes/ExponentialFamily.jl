@@ -6,8 +6,9 @@ import ExponentialFamily:
     sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
     ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule
 
-function test_exponentialfamily_interface(distribution; 
+function test_exponentialfamily_interface(distribution;
     test_parameters_conversion = true,
+    test_similar_creation = true,
     test_distribution_conversion = true,
     test_packing_unpacking = true,
     test_isproper = true,
@@ -22,6 +23,7 @@ function test_exponentialfamily_interface(distribution;
     @test ef isa ExponentialFamilyDistribution{T}
 
     test_parameters_conversion && run_test_parameters_conversion(distribution)
+    test_similar_creation && run_test_similar_creation(distribution)
     test_distribution_conversion && run_test_distribution_conversion(distribution)
     test_packing_unpacking && run_test_packing_unpacking(distribution)
     test_isproper && run_test_isproper(distribution)
@@ -40,7 +42,7 @@ function run_test_parameters_conversion(distribution)
     @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(distribution))
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
-    
+
     @test conditioner === getconditioner(ef)
 
     # Check the `conditioned` conversions, should work for un-conditioned members as well
@@ -66,6 +68,14 @@ function run_test_parameters_conversion(distribution)
     @test all(unpack_parameters(T, pack_parameters(T, tuple_of_θ)) .== tuple_of_θ)
 end
 
+function run_test_similar_creation(distribution)
+    T = ExponentialFamily.distribution_typewrapper(distribution)
+
+    ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
+
+    @test similar(ef) isa ExponentialFamilyDistribution{T}
+end
+
 function run_test_distribution_conversion(distribution)
     T = ExponentialFamily.distribution_typewrapper(distribution)
 
@@ -73,7 +83,7 @@ function run_test_distribution_conversion(distribution)
 
     @test @inferred(convert(Distribution, ef)) ≈ distribution
     @test @allocated(convert(Distribution, ef)) === 0
-end 
+end
 
 function run_test_packing_unpacking(distribution)
     T = ExponentialFamily.distribution_typewrapper(distribution)
@@ -85,7 +95,6 @@ function run_test_packing_unpacking(distribution)
 
     @test all(unpack_parameters(ef) .≈ tuple_of_η)
     @test @allocated(unpack_parameters(ef)) === 0
-
 end
 
 function run_test_isproper(distribution)
@@ -106,7 +115,7 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
 
     # ! do not use `rand(distribution, nsamples)`
     # ! do not use fixed RNG
-    samples = [ rand(distribution) for _ in 1:nsamples ] 
+    samples = [rand(distribution) for _ in 1:nsamples]
 
     for x in samples
         # We believe in the implementation in the `Distributions.jl`
@@ -142,7 +151,6 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
             @test @allocated(basemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
-
     end
 end
 
@@ -164,7 +172,7 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
         @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
     end
 
-    if assume_no_allocations 
+    if assume_no_allocations
         @test @allocated(fisherinformation(ef)) === 0
     end
 end
@@ -187,11 +195,64 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
         m = NaturalToMean(T)(η)
         J = ForwardDiff.jacobian(NaturalToMean(T), η)
         Fₘ = getfisherinformation(MeanParametersSpace(), T)(m)
-    
+
         @test fisherinformation(ef) ≈ (J * Fₘ * J')
     end
 
-    if assume_no_allocations 
+    if assume_no_allocations
         @test @allocated(getfisherinformation(MeanParametersSpace(), T, conditioner)(m)) === 0
     end
+end
+
+# This generic testing works only for the same distributions `D`
+function test_generic_simple_exponentialfamily_product(
+    left::D,
+    right::D;
+    strategies = (GenericProd(),),
+    test_inplace_version = true,
+    test_inplace_assume_zero_allocations = true,
+    test_preserve_type_prod_of_distribution = true
+) where {D}
+    Tl = ExponentialFamily.distribution_typewrapper(left)
+    Tr = ExponentialFamily.distribution_typewrapper(right)
+
+    @test Tl === Tr
+
+    T = Tl
+
+    efleft = @inferred(convert(ExponentialFamilyDistribution, left))
+    efright = @inferred(convert(ExponentialFamilyDistribution, right))
+    ηleft = @inferred(getnaturalparameters(efleft))
+    ηright = @inferred(getnaturalparameters(efright))
+
+    if (!isnothing(getconditioner(efleft)) || !isnothing(getconditioner(efright)))
+        @test isapprox(getconditioner(efleft), getconditioner(efright))
+    end
+
+    for strategy in strategies
+        @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(T, ηleft + ηright, getconditioner(efleft))
+
+        # Double check the `conditioner` free methods
+        if isnothing(getconditioner(efleft)) && isnothing(getconditioner(efright))
+            @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(T, ηleft + ηright)
+        end
+    end
+
+    if test_inplace_version
+        @test @inferred(prod!(similar(efleft), efleft, efright)) ==
+              ExponentialFamilyDistribution(T, ηleft + ηright, getconditioner(efleft))
+
+        if test_inplace_assume_zero_allocations
+            let _similar = similar(efleft)
+                @test @allocated(prod!(_similar, efleft, efright)) === 0
+            end
+        end
+    end
+
+    if test_preserve_type_prod_of_distribution
+        @test @inferred(prod(PreserveTypeProd(T), efleft, efright)) ≈
+              prod(PreserveTypeProd(T), left, right)
+    end
+
+    return true
 end
