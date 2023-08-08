@@ -169,7 +169,7 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
     end
 
     if assume_ours_faster
-        @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
+        @test @elapsed(fisherinformation(ef)) < (@elapsed(ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T, conditioner)(η), η)))
     end
 
     if assume_no_allocations

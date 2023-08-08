@@ -5,10 +5,6 @@ using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
 include("../testutils.jl")
 
-# Fisher information can in principle be computed with the `hessian` from `ForwardDiff` with relatively high-mean_precision
-# Its fine to use it in tests, but we also check that our implementation is faster
-fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), Bernoulli)(η), getnaturalparameters(ef))
-
 @testset "Bernoulli" begin
 
     # Bernoulli comes from Distributions.jl and most of the things should be covered there
