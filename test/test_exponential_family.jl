@@ -22,11 +22,7 @@ const ArbitraryExponentialFamilyAttributes = ExponentialFamilyDistributionAttrib
     RealInterval(0, Inf)
 )
 
-# Defines its own 
-# - `basemeasure`
-# - `sufficientstatistics`
-# - `logpartition`
-# - `support`
+# Arbitrary distribution (un-conditioned)
 struct ArbitraryDistributionFromExponentialFamily <: ContinuousUnivariateDistribution 
     p1 :: Float64
     p2 :: Float64
@@ -50,7 +46,7 @@ Distributions.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p
 
 ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η) = (η[1], η[2], )
 
-# Conditional member of exponential family
+# Arbitrary distribution (conditioned)
 struct ArbitraryConditionedDistributionFromExponentialFamily <: ContinuousUnivariateDistribution 
     con :: Int
     p1 :: Float64
