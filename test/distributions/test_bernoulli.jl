@@ -1,17 +1,12 @@
 module BernoulliTest
 
-using Test
-using ExponentialFamily
-using Distributions
-using ForwardDiff
-using Random
-using StatsFuns
-using StableRNGs
+using ExponentialFamily, Distributions
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, insupport,
     sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
-    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace
+    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule
 
 # Fisher information can in principle be computed with the `hessian` from `ForwardDiff` with relatively high-mean_precision
 # Its fine to use it in tests, but we also check that our implementation is faster
@@ -126,17 +121,28 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         @test !isproper(MeanParametersSpace(), Bernoulli, [-1])
         @test !isproper(MeanParametersSpace(), Bernoulli, [0.5, 0.5])
         @test !isproper(NaturalParametersSpace(), Bernoulli, [0.5, 0.5])
+        @test !isproper(NaturalParametersSpace(), Bernoulli, [Inf])
+        
+        @test_throws Exception convert(ExponentialFamilyDistribution, Bernoulli(1.0)) # We cannot convert from `1.0`, `logit` function returns `Inf`
     end
 
     @testset "prod with Distribution" begin
+        @test default_prod_rule(Bernoulli, Bernoulli) === ClosedProd()
+
         @test @inferred(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
         @test @inferred(prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
         @test @inferred(prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
 
+        # GenericProd should always check the default strategy and fallback if available
+        @test @inferred(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
+        @test @inferred(prod(GenericProd(), Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
+        @test @inferred(prod(GenericProd(), Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
+
         @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
     end
 
-    @testset "prod with ExponentialFamilyDistribution" for pleft in 0.1:0.8:0.9, pright in 0.1:0.8:0.9
+    @testset "prod with ExponentialFamilyDistribution" for pleft in 0.1:0.1:0.9, pright in 0.1:0.1:0.9
         efleft = @inferred(convert(ExponentialFamilyDistribution, Bernoulli(pleft)))
         efright = @inferred(convert(ExponentialFamilyDistribution, Bernoulli(pright)))
         ηleft = @inferred(getnaturalparameters(efleft))
@@ -159,7 +165,7 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         end
 
         @test @inferred(prod(PreserveTypeProd(Bernoulli), efleft, efright)) ≈
-              prod(ClosedProd(), Bernoulli(pleft), Bernoulli(pright))
+            prod(ClosedProd(), Bernoulli(pleft), Bernoulli(pright))
     end
 end
 
