@@ -42,7 +42,6 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
 
     @testset "ExponentialFamilyDistribution{Bernoulli}" begin
 
-        # Check conversions and general statistics 
         @testset for p in 0.1:0.1:0.9
             @testset let d = Bernoulli(p)
                 
