@@ -90,16 +90,12 @@ join_conditioner
 
 ### Efficient packing of the natural parameters into a vectorized form
 
-The `ExponentialFamilyDistribution` type stores its natural parameters in a vectorized, or packed, format. This is done for the sake of efficiency and to enhance compatibility with autodiff packages like `ForwardDiff`, which anticipate a single parameter vector. As a result, the tuple of natural parameters needs to be converted to its corresponding vectorized form and vice versa. To achieve this, the package provides the `pack_parameters` and `unpack_parameters` functions, which follow this interface:
+The `ExponentialFamilyDistribution` type stores its natural parameters in a vectorized, or packed, format. This is done for the sake of efficiency and to enhance compatibility with autodiff packages like `ForwardDiff`, which anticipate a single parameter vector. As a result, the tuple of natural parameters needs to be converted to its corresponding vectorized form and vice versa. To achieve this, the package provides the `flatten_parameters`, `pack_parameters` and `unpack_parameters` functions.
 
-```julia
-function ExponentialFamily.pack_parameters(::Type{T}, tuple_of_parameters) where { T <: Distribution }
-    return [ ... ] # return corresponding vectorized form
-end
-
-function ExponentialFamily.unpack_parameters(::Type{T}, vector_of_parameters) where { T <: Distribution }
-    return (..., ) # return corresponding tuple form
-end
+```@docs
+ExponentialFamily.flatten_parameters
+ExponentialFamily.pack_parameters
+ExponentialFamily.unpack_parameters
 ```
 
 These functions are not exported by default, but it's important to note that the `ExponentialFamilyDistributions` type doesn't actually store the parameter tuple internally. Instead, the `getnaturalparameters` function returns the corresponding vectorized (packed) form of the natural parameters.

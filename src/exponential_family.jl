@@ -405,7 +405,7 @@ isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
-function Distributions.logpdf(ef::ExponentialFamilyDistribution, x)
+function Distributions.logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
     # TODO: Think of what to do with this assert
     @assert insupport(ef, x)
 
@@ -416,7 +416,7 @@ function Distributions.logpdf(ef::ExponentialFamilyDistribution, x)
     _basemeasure = basemeasure(ef, x)
     _logpartition = logpartition(ef)
 
-    return log(_basemeasure) + dot(η, _statistics) - _logpartition
+    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - _logpartition
 end
 
 """
@@ -445,12 +445,22 @@ distributiontype(::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Distrib
 """
     pack_parameters(::Type{T}, params::Tuple)
 
-This function returns the parameters of the `distribution` in a vectorized (packed) form.
-Optionally accepts the `space` of the parameters, which is equal to `NaturalParametersSpace`.
-
-See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
+This function returns the parameters of a distribution of type `T` in a flattened form without actually allocating the container.
 """
-function pack_parameters end
+flatten_parameters(params::Tuple) = Iterators.flatten(params)
+
+# Ignore the `T` by default, assume all the distribution can be flattened with the generic version 
+# If the assumption does not hold, implement a specific method
+flatten_parameters(::Type{T}, params::Tuple) where {T} = flatten_parameters(params)
+
+"""
+    pack_parameters(::Type{T}, params::Tuple)
+
+This function returns the parameters of a distribution of type `T` in a vectorized (packed) form.
+"""
+function pack_parameters(::Type{T}, params::Tuple) where { T <: Distribution } 
+    return collect(flatten_parameters(T, params))
+end
 
 """
     unpack_parameters(::Type{T}, parameters)

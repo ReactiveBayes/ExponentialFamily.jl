@@ -48,8 +48,7 @@ Distributions.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p
 (::MeanToNatural{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] + 1, params[2] + 1)
 (::NaturalToMean{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] - 1, params[2] - 1)
 
-ExponentialFamily.pack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, tuple_of_η) = collect(tuple_of_η)
-ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η) = (η..., )
+ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η) = (η[1], η[2], )
 
 # Conditional member of exponential family
 struct ArbitraryConditionedDistributionFromExponentialFamily <: ContinuousUnivariateDistribution 
@@ -76,8 +75,7 @@ ExponentialFamily.join_conditioner(::Type{ArbitraryConditionedDistributionFromEx
 (::MeanToNatural{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] + conditioner,)
 (::NaturalToMean{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] - conditioner,)
 
-ExponentialFamily.pack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, tuple_of_η) = collect(tuple_of_η)
-ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η) = (η..., )
+ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η) = (η[1], )
 
 
 
@@ -238,6 +236,9 @@ end
             @test @inferred(paramfloattype(similar(member, F))) === F
         end
     end
+
+    @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily})) isa
+          ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily}
 end
 
 end

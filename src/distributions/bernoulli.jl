@@ -76,10 +76,6 @@ function (::NaturalToMean{Bernoulli})(tuple_of_η::Tuple{Any})
     return (logistic(η₁), )
 end
 
-function pack_parameters(::Type{Bernoulli}, parameters::Tuple)
-    return [ first(parameters) ]
-end
-
 function unpack_parameters(::Type{Bernoulli}, packed)
     return (first(packed),)
 end
