@@ -228,6 +228,6 @@ convert_paramfloattype(::Type{T}, joint::FactorizedJoint) where {T} =
 ## Utils
 
 # Returns a wrapper distribution for a `<:Distribution` type
-@generated function distribution_typename(distribution)
-    return Base.typename(distribution).name
+@generated function distribution_typewrapper(distribution)
+    return Base.typename(distribution).wrapper
 end

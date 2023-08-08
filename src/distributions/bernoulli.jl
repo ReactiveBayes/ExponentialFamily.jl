@@ -63,10 +63,8 @@ compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bern
 
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{Bernoulli}, η) = length(η) === 1
-isproper(::MeanParametersSpace, ::Type{Bernoulli}, θ) = length(θ) === 1 && 0 <= first(θ) <= 1
-
-check_valid_conditioner(::Type{Bernoulli}, ::Nothing) = true
+isproper(::NaturalParametersSpace, ::Type{Bernoulli}, η, conditioner) = isnothing(conditioner) && (length(η) === 1) && (!isinf(first(η)))
+isproper(::MeanParametersSpace, ::Type{Bernoulli}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 1) && (0 <= first(θ) <= 1)
 
 function (::MeanToNatural{Bernoulli})(tuple_of_θ::Tuple{Any})
     (p, ) = tuple_of_θ

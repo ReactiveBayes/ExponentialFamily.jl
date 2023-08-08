@@ -83,8 +83,9 @@ tuple_of_θ = NaturalToMean(Bernoulli)(tuple_of_η)
 While the `ExponentialFamily` package employs the respective `map(::MeanToNatural{<:Distribution}, params)` and `map(::NaturalToMean{<:Distribution}, params)` where needed, it's also possible to call these functions manually. For instance, the generic implementation of the `convert` function between `ExponentialFamilyDistribution` and `Distribution` is built in terms of `MeanToNatural` and `NaturalToMean`. Moreover, the `convert` function performs checks to ensure that the provided parameters and conditioner are suitable for a specific distribution type.
 
 ```@docs
-isproper(::Type{T}, parameters) where { T <: Distribution }
-ExponentialFamily.check_valid_conditioner
+isproper(::Type{T}, parameters, conditioner = nothing) where { T <: Distribution }
+separate_conditioner
+join_conditioner
 ```
 
 ### Efficient packing of the natural parameters into a vectorized form
@@ -116,7 +117,7 @@ basemeasure_of_bernoilli(0)
 
 ```@docs
 isproper(::Type{T}, η) where { T <: Distribution }
-getbasemeasure(::Type{<:Distribution})
+getbasemeasure(::Type{T}, conditioner) where { T <: Distribution }
 getsufficientstatistics(::Type{<:Distribution}
 getlogpartition(::Type{T}) where { T <: Distribution }
 getfisherinformation(::Type{T}) where { T <: Distribution }

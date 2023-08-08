@@ -15,23 +15,35 @@ import Base: map
     MeanToNatural(::Type{T})
  
 Return the transformation function that maps the parameters in the mean parameters space to the natural parameters space for a distribution of type `T`.
+The transformation function is of signature `(params_in_mean_space, [ conditioner ]) -> params_in_natural_space`.
 
 See also: [`NaturalToMean`](@ref)
 """
 struct MeanToNatural{T} end
 
-MeanToNatural(::Type{T}) where T = MeanToNatural{T}()
+MeanToNatural(::Type{T}) where {T} = MeanToNatural{T}()
+
+# If the `conditioner` is nothing simply ignore it in the signature then
+function (transformation::MeanToNatural)(params, ::Nothing)
+    return transformation(params)
+end
 
 """
     NaturalToMean(::Type{T})
 
 Return the transformation function that maps the parameters in the natural parameters space to the mean parameters space for a distribution of type `T`.
+The transformation function is of signature `(params_in_natural_space, [ conditioner ]) -> params_in_mean_space`.
 
 See also: [`MeanToNatural`](@ref)
 """
 struct NaturalToMean{T} end
 
-NaturalToMean(::Type{T}) where T = NaturalToMean{T}()
+NaturalToMean(::Type{T}) where {T} = NaturalToMean{T}()
+
+# If the `conditioner` is nothing simply ignore it in the signature then
+function (transformation::NaturalToMean)(params, ::Nothing)
+    return transformation(params)
+end
 
 """
     MeanParametersSpace
@@ -122,6 +134,8 @@ getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.sup
 
 insupport(attributes::ExponentialFamilyDistributionAttributes, value) = insupport(getsupport(attributes), value)
 
+value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
+
 """
     ExponentialFamilyDistribution(::Type{T}, naturalparameters, conditioner, attributes)
 
@@ -164,15 +178,11 @@ function ExponentialFamilyDistribution(
     naturalparameters::P,
     conditioner = nothing
 ) where {T <: Distribution, P}
-    if !isproper(NaturalParametersSpace(), T, naturalparameters)
+    if !isproper(NaturalParametersSpace(), T, naturalparameters, conditioner)
         error("Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
-    end
-    if !check_valid_conditioner(T, conditioner)
-        error("$(conditioner) is not a valid conditioner for distribution $(T).")
     end
     return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
 end
-
 
 """
     isproper(::ExponentialFamilyDistribution)
@@ -244,27 +254,29 @@ By default `η = getnaturalparameters(ef)`.
 
 See also: [`getfisherinformation`](@ref)
 """
-function fisherinformation(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef)) 
+function fisherinformation(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef))
     return getfisherinformation(ef)(η)
 end
 
 getbasemeasure(ef::ExponentialFamilyDistribution) = getbasemeasure(ef.attributes, ef)
-getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getbasemeasure(T)
+getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getbasemeasure(T, getconditioner(ef))
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getbasemeasure(attributes)
 
 getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.attributes, ef)
-getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsufficientstatistics(T)
+getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
+    getsufficientstatistics(T, getconditioner(ef))
 getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getsufficientstatistics(attributes)
 
 getlogpartition(ef::ExponentialFamilyDistribution) = getlogpartition(ef.attributes, ef)
-getlogpartition(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getlogpartition(T)
+getlogpartition(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getlogpartition(T, getconditioner(ef))
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getlogpartition(attributes)
 
 getfisherinformation(ef::ExponentialFamilyDistribution) = getfisherinformation(ef.attributes, ef)
-getfisherinformation(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getfisherinformation(T)
+getfisherinformation(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
+    getfisherinformation(T, getconditioner(ef))
 getfisherinformation(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     error("TODO: not implemented. Should we call ForwardDiff here?")
 
@@ -279,53 +291,67 @@ insupport(ef::ExponentialFamilyDistribution, value) = insupport(getsupport(ef), 
 getsupport(::Type{T}) where {T <: Distribution} = Distributions.support(T)
 
 # Convenient mappings from a vectorized form to a vectorized form for distributions
-function (transformation::NaturalToMean{T})(v::AbstractVector) where { T <: Distribution } 
+function (transformation::NaturalToMean{T})(v::AbstractVector) where {T <: Distribution}
     return pack_parameters(T, transformation(unpack_parameters(T, v)))
 end
 
-function (transformation::MeanToNatural{T})(v::AbstractVector) where { T <: Distribution } 
+function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
     return pack_parameters(T, transformation(unpack_parameters(T, v)))
 end
 
 """
-    isproper([ space = NaturalParametersSpace() ], ::Type{T}, parameters) where { T <: Distribution }
+    isproper([ space = NaturalParametersSpace() ], ::Type{T}, parameters, conditioner = nothing) where { T <: Distribution }
 
 A specific verion of `isproper` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
+For conditional exponential family distributions requires an extra `conditioner` argument.
 
 See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
 """
-isproper(::Type{T}, parameters) where { T <: Distribution } = isproper(NaturalParametersSpace(), T, parameters)
+isproper(::Type{T}, parameters, conditioner = nothing) where {T <: Distribution} =
+    isproper(NaturalParametersSpace(), T, parameters, conditioner)
+isproper(space::Union{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}, parameters) where {T} =
+    isproper(space, T, parameters, nothing)
 
-isproper(ef::ExponentialFamilyDistribution{T}) where { T <: Distribution } = isproper(NaturalParametersSpace(), T, getnaturalparameters(ef))
+isproper(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
+    isproper(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
 
 """
-    getbasemeasure(::Type{<:Distribution})
+    getbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
 A specific verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
+For conditional exponential family distributions requires an extra `conditioner` argument.
 """
-getbasemeasure(::Type{<:Distribution})
+getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(T)
 
 """
-    getsufficientstatistics(::Type{<:Distribution})
+    getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])
 
 A specific verion of `getsufficientstatistics` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
+For conditional exponential family distributions requires an extra `conditioner` argument.
 """
-getsufficientstatistics(::Type{<:Distribution})
+getsufficientstatistics(::Type{T}, ::Nothing) where {T <: Distribution} = getsufficientstatistics(T)
 
 """
-    getlogpartition([ space = NaturalParametersSpace() ], ::Type{T}) where { T <: Distribution }
+    getlogpartition([ space = NaturalParametersSpace() ], ::Type{T}, [ conditioner ]) where { T <: Distribution }
 
 A specific verion of `getlogpartition` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
+For conditional exponential family distributions requires an extra `conditioner` argument.
 
 See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
 """
-getlogpartition(::Type{T}) where { T <: Distribution } = getlogpartition(NaturalParametersSpace(), T)
+getlogpartition(::Type{T}, conditioner = nothing) where {T <: Distribution} =
+    getlogpartition(NaturalParametersSpace(), T, conditioner)
+getlogpartition(
+    space::Union{MeanParametersSpace, NaturalParametersSpace},
+    ::Type{T},
+    ::Nothing
+) where {T <: Distribution} = getlogpartition(space, T)
 
 """
     getfisherinformation([ space = NaturalParametersSpace() ], ::Type{T}) where { T <: Distribution }
@@ -333,10 +359,17 @@ getlogpartition(::Type{T}) where { T <: Distribution } = getlogpartition(Natural
 A specific verion of `getfisherinformation` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
+For conditional exponential family distributions requires an extra `conditioner` argument.
 
 See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
 """
-getfisherinformation(::Type{T}) where { T <: Distribution } = getfisherinformation(NaturalParametersSpace(), T)
+getfisherinformation(::Type{T}, conditioner = nothing) where {T <: Distribution} =
+    getfisherinformation(NaturalParametersSpace(), T, conditioner)
+getfisherinformation(
+    space::Union{MeanParametersSpace, NaturalParametersSpace},
+    ::Type{T},
+    ::Nothing
+) where {T <: Distribution} = getfisherinformation(space, T)
 
 """
 A trait object representing that the base measure is constant.
@@ -405,19 +438,9 @@ variate_form(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distributio
 variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm} = V
 
 value_support(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = value_support(D)
-
-# HM TODO (bvdmitri), how to define value support for an arbitrary `Univariate`, this is not possible currently
-# value_support(::Type{<:ExponentialFamilyDistribution{D}}) where { D <: Distribution } = value_support(D)
+value_support(::Type{<:ExponentialFamilyDistribution{D, P, C, A}}) where {D, P, C, A} = value_support(A)
 
 distributiontype(::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Distribution} = T
-
-"""
-    check_valid_conditioner(distribution_type, conditioner)
-
-Checks if the `conditioner` holds a correct value for the `distribution_type`.
-"""
-check_valid_conditioner(T, conditioner) =
-    error("The `$(conditioner)` is not a valid conditioner for a distribution of type `$(T)`.")
 
 """
     pack_parameters(::Type{T}, params::Tuple)
@@ -438,23 +461,78 @@ function unpack_parameters end
 
 unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = unpack_parameters(T, getnaturalparameters(ef))
 
+"""
+    separate_conditioner(::Type{T}, params) where {T <: Distribution}
+
+Separates the conditioner argument from `params` and returns a tuple of `(conditioned_params, conditioner)`.
+By default returns `(params, nothing)` but can be overwritten for certain distributions.
+
+```jldoctest
+julia> (cparams, conditioner) = ExponentialFamily.separate_conditioner(Laplace, (0.0, 1.0))
+((1.0, ), 0.0)
+
+julia> params = ExponentialFamily.join_conditioner(Laplace, cparams, conditioner)
+(0.0, 1.0)
+
+julia> Laplace(params...) == Laplace(0.0, 1.0)
+true
+```
+
+See also: [`ExponentialFamily.join_conditioner`](@ref)
+"""
+separate_conditioner(::Type{T}, params) where {T <: Distribution} = (params, nothing)
+
+"""
+    join_conditioner(::Type{T}, params, conditioner) where { T <: Distribution }
+
+Joins the conditioner argument with the `params` and returns a tuple of joined params, such that it can be used in a constructor of the `T` distribution.
+
+```jldoctest
+julia> (cparams, conditioner) = ExponentialFamily.separate_conditioner(Laplace, (0.0, 1.0))
+((1.0, ), 0.0)
+
+julia> params = ExponentialFamily.join_conditioner(Laplace, cparams, conditioner)
+(0.0, 1.0)
+
+julia> Laplace(params...) == Laplace(0.0, 1.0)
+true
+```
+
+See also: [`ExponentialFamily.separate_conditioner`](@ref)
+"""
+join_conditioner(::Type{T}, params, ::Nothing) where {T <: Distribution} = params
+
 Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} =
     Base.convert(T, Base.convert(Distribution, ef))
 
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
-function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where { T <: Distribution }
+function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}
     tuple_of_η = unpack_parameters(ef)
-    params = NaturalToMean(T)(tuple_of_η)
+    conditioner = getconditioner(ef)
+    # Convert the conditioned natural parameters space into its corresponding mean parameters space
+    cparams = NaturalToMean(T)(tuple_of_η, conditioner)
+
+    # `Distributions.jl` stores the params in a single tuple, so we need to join the parameters and the conditioner
+    params = join_conditioner(T, cparams, conditioner)
+
     return T(params...)
 end
 
 # Generic convert from a member of `Distributions` to its equivalent representation in `ExponentialFamilyDistribution`
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Distribution)
-    T = distribution_typename(dist)
+    # Get the type wrapper, e.g. `Bernoulli{Float64, ...}` becomes just `Bernoulli`
+    T = distribution_typewrapper(dist)
+
     tuple_if_θ = params(dist)
-    tuple_of_η = MeanToNatural(T)(tuple_if_θ)
+    # Separate the parameters and the conditioner, the `params` function returns all together
+    cparams, conditioner = separate_conditioner(T, tuple_if_θ)
+
+    # Convert the conditioned `cparams` into the natural parameters space
+    tuple_of_η = MeanToNatural(T)(cparams, conditioner)
+    # Pack the parameters for efficiency
     η = pack_parameters(T, tuple_of_η)
-    return ExponentialFamilyDistribution(T, η)
+
+    return ExponentialFamilyDistribution(T, η, conditioner)
 end
 
 function paramfloattype(ef::ExponentialFamilyDistribution)
@@ -505,6 +583,24 @@ function Base.:(==)(left::ExponentialFamilyDistribution{T}, right::ExponentialFa
            getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) &&
            getconditioner(left) == getconditioner(right) &&
            getnaturalparameters(left) == getnaturalparameters(right)
+end
+
+function Base.isapprox(left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T};
+    kwargs...) where {T <: Distribution}
+    if (isnothing(getconditioner(left)) && isnothing(getconditioner(right)))
+        return isapprox(getnaturalparameters(left), getnaturalparameters(right); kwargs...)
+    end
+    return isapprox(getconditioner(left), getconditioner(right); kwargs...) &&
+           isapprox(getnaturalparameters(left), getnaturalparameters(right); kwargs...)
+end
+
+function Base.:(==)(left::ExponentialFamilyDistribution{T},
+    right::ExponentialFamilyDistribution{T}) where {T <: Distribution}
+    if (isnothing(getconditioner(left)) && isnothing(getconditioner(right)))
+        return getnaturalparameters(left) == getnaturalparameters(right)
+    end
+    return getconditioner(left) == getconditioner(right) && getnaturalparameters(left) == getnaturalparameters(right)
 end
 
 Base.similar(ef::ExponentialFamilyDistribution) = similar(ef, eltype(getnaturalparameters(ef)))

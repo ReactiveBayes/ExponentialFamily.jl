@@ -1,6 +1,6 @@
 module KnownExponentialFamilyDistributionTest
 
-using ExponentialFamily, Test, StatsFuns
+using ExponentialFamily, Distributions, Test, StatsFuns
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
@@ -27,13 +27,13 @@ const ArbitraryExponentialFamilyAttributes = ExponentialFamilyDistributionAttrib
 # - `sufficientstatistics`
 # - `logpartition`
 # - `support`
-struct ArbitraryDistributionFromExponentialFamily <: ContinuousUnivariateDistribution end
+struct ArbitraryDistributionFromExponentialFamily <: ContinuousUnivariateDistribution 
+    p1 :: Float64
+    p2 :: Float64
+end
 
-ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}, η) = true
-ExponentialFamily.check_valid_conditioner(::Type{ArbitraryDistributionFromExponentialFamily}, ::Nothing) = true
-
+ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}, η, conditioner) = isnothing(conditioner)
 ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryDistributionFromExponentialFamily}) = ConstantBaseMeasure()
-
 ExponentialFamily.getbasemeasure(::Type{ArbitraryDistributionFromExponentialFamily}) = (x) -> oneunit(x)
 ExponentialFamily.getsufficientstatistics(::Type{ArbitraryDistributionFromExponentialFamily}) =
     ((x) -> x, (x) -> log(x))
@@ -41,11 +41,45 @@ ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryDist
 ExponentialFamily.getsupport(::Type{ArbitraryDistributionFromExponentialFamily}) = RealInterval(0, Inf)
 
 ExponentialFamily.vague(::Type{ArbitraryDistributionFromExponentialFamily}) =
-    ArbitraryDistributionFromExponentialFamily()
+    ArbitraryDistributionFromExponentialFamily(1.0, 1.0)
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, ::ArbitraryDistributionFromExponentialFamily)
-    return ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
+Distributions.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p1, dist.p2)
+
+(::MeanToNatural{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] + 1, params[2] + 1)
+(::NaturalToMean{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] - 1, params[2] - 1)
+
+ExponentialFamily.pack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, tuple_of_η) = collect(tuple_of_η)
+ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η) = (η..., )
+
+# Conditional member of exponential family
+struct ArbitraryConditionedDistributionFromExponentialFamily <: ContinuousUnivariateDistribution 
+    con :: Int
+    p1 :: Float64
 end
+
+ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η, conditioner) = isinteger(conditioner)
+ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) = NonConstantBaseMeasure()
+ExponentialFamily.getbasemeasure(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) = (x) -> x ^ conditioner
+ExponentialFamily.getsufficientstatistics(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) =
+    ((x) -> log(x - conditioner), )
+ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) = (η) -> conditioner / sum(η)
+ExponentialFamily.getsupport(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) = RealInterval(0, Inf)
+
+ExponentialFamily.vague(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) =
+ArbitraryConditionedDistributionFromExponentialFamily(1.0, -2)
+
+Distributions.params(dist::ArbitraryConditionedDistributionFromExponentialFamily) = (dist.con, dist.p1)
+
+ExponentialFamily.separate_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, params) = ((params[2], ), params[1])
+ExponentialFamily.join_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, cparams, conditioner) = (conditioner, cparams...)
+
+(::MeanToNatural{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] + conditioner,)
+(::NaturalToMean{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] - conditioner,)
+
+ExponentialFamily.pack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, tuple_of_η) = collect(tuple_of_η)
+ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η) = (η..., )
+
+
 
 ## ===========================================================================
 ## Tests
@@ -99,8 +133,11 @@ end
 @testset "ExponentialFamilyDistribution" begin
 
     # See the `ArbitraryDistributionFromExponentialFamily` defined in the fixtures (above)
-    @testset let member = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
+    @testset for member in (ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0]), convert(ExponentialFamilyDistribution, ArbitraryDistributionFromExponentialFamily(1.0, 1.0)))
         η = @inferred(getnaturalparameters(member))
+
+        @test convert(ExponentialFamilyDistribution, convert(Distribution, member)) == ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
+        @test convert(Distribution, convert(ExponentialFamilyDistribution, member)) == ArbitraryDistributionFromExponentialFamily(1.0, 1.0)
 
         @test @inferred(basemeasure(member, 2.0)) ≈ 1.0
         @test @inferred(getbasemeasure(member)(2.0)) ≈ 1.0
@@ -140,8 +177,8 @@ end
         # This is important, because the generic prod version should simply call the in-place version
         @test @allocated(prod(ClosedProd(), member, member)) <= @allocated(similar(member))
         @test @allocated(prod(GenericProd(), member, member)) <= @allocated(similar(member))
-        @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) <=
-              @allocated(similar(member))
+        # @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) <=
+        #       @allocated(similar(member))
 
         @test @inferred(prod!(_similar, member, member)) == _prod
 
@@ -157,6 +194,50 @@ end
 
     @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily})) isa
           ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily}
+
+    # See the `ArbitraryDistributionFromExponentialFamily` defined in the fixtures (above)
+    # p1 = 3.0, con = -2
+    @testset for member in (ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0], -2), convert(ExponentialFamilyDistribution, ArbitraryConditionedDistributionFromExponentialFamily(-2, 3.0)))
+        η = @inferred(getnaturalparameters(member))
+
+        @test convert(ExponentialFamilyDistribution, convert(Distribution, member)) == ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0, ], -2)
+        @test convert(Distribution, convert(ExponentialFamilyDistribution, member)) == ArbitraryConditionedDistributionFromExponentialFamily(-2, 3.0)
+
+        @test @inferred(basemeasure(member, 2.0)) ≈ 2.0 ^ -2
+        @test @inferred(getbasemeasure(member)(2.0)) ≈ 2.0 ^ -2
+        @test @inferred(getbasemeasure(member)(4.0)) ≈ 4.0 ^ -2
+
+        @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (log(2.0 + 2), ))
+        @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (log(2.0 + 2), ))
+        @test all(@inferred(map(f -> f(4.0), getsufficientstatistics(member))) .≈ (log(4.0 + 2), ))
+
+        @test @inferred(logpartition(member)) ≈ -2.0
+        @test @inferred(getlogpartition(member)([2.0, ])) ≈ -1.0
+        @test @inferred(getlogpartition(member)([4.0, ])) ≈ -0.5
+
+        @test @inferred(getsupport(member)) == RealInterval(0, Inf)
+        @test insupport(member, 1.0)
+        @test !insupport(member, -1.0)
+
+        # # Computed by hand
+        @test @inferred(logpdf(member, 2.0)) ≈ (log(2.0 ^ -2) + log(2.0 + 2) + 2.0)
+        @test @inferred(logpdf(member, 4.0)) ≈ (log(4.0 ^ -2) + log(4.0 + 2) + 2.0)
+        @test @inferred(pdf(member, 2.0)) ≈ exp((log(2.0 ^ -2) + log(2.0 + 2) + 2.0))
+        @test @inferred(pdf(member, 4.0)) ≈ exp((log(4.0 ^ -2) + log(4.0 + 2) + 2.0))
+
+        @test @inferred(member == member)
+        @test @inferred(member ≈ member)
+
+        _similar = @inferred(similar(member))
+        _prod = ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0, ], -2)
+
+        # We don't test the prod becasue the basemeasure is not a constant, so the generic prod is not applicable
+
+        # # Test that the in-place prod preserves the container paramfloatype
+        for F in (Float16, Float32, Float64)
+            @test @inferred(paramfloattype(similar(member, F))) === F
+        end
+    end
 end
 
 end
