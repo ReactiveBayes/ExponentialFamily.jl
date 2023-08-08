@@ -67,13 +67,13 @@ isproper(::NaturalParametersSpace, ::Type{Bernoulli}, η, conditioner) = isnothi
 isproper(::MeanParametersSpace, ::Type{Bernoulli}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 1) && (0 <= first(θ) <= 1)
 
 function (::MeanToNatural{Bernoulli})(tuple_of_θ::Tuple{Any})
-    (p, ) = tuple_of_θ
-    return (logit(p), )
+    (p,) = tuple_of_θ
+    return (logit(p),)
 end
 
 function (::NaturalToMean{Bernoulli})(tuple_of_η::Tuple{Any})
-    (η₁, ) = tuple_of_η
-    return (logistic(η₁), )
+    (η₁,) = tuple_of_η
+    return (logistic(η₁),)
 end
 
 function unpack_parameters(::Type{Bernoulli}, packed)
@@ -98,12 +98,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin 
-    (p, ) = unpack_parameters(Bernoulli, θ)
+getlogpartition(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
+    (p,) = unpack_parameters(Bernoulli, θ)
     return -log(one(p) - p)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
-    (p, ) = unpack_parameters(Bernoulli, θ)
-    return SA[ inv(p * (one(p) - p));; ]
+    (p,) = unpack_parameters(Bernoulli, θ)
+    return SA[inv(p * (one(p) - p));;]
 end

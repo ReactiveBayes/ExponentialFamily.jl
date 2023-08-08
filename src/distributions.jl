@@ -1,6 +1,7 @@
 export vague
 export mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, cdf, logpdf, logdetcov
-export mean_cov, mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
+export mean_cov,
+    mean_var, mean_std, mean_invcov, mean_precision, weightedmean_cov, weightedmean_var, weightedmean_std,
     weightedmean_invcov, weightedmean_precision
 export weightedmean, probvec, isproper
 

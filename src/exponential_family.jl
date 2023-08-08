@@ -458,7 +458,7 @@ flatten_parameters(::Type{T}, params::Tuple) where {T} = flatten_parameters(para
 
 This function returns the parameters of a distribution of type `T` in a vectorized (packed) form.
 """
-function pack_parameters(::Type{T}, params::Tuple) where { T <: Distribution } 
+function pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution}
     return collect(flatten_parameters(T, params))
 end
 

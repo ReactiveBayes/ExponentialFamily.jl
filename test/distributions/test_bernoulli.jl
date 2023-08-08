@@ -51,7 +51,6 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         # Check conversions and general statistics 
         @testset for p in 0.1:0.1:0.9
             @testset let d = Bernoulli(p)
-
                 tuple_of_θ = params(d)
                 tuple_of_η = MeanToNatural(Bernoulli)(tuple_of_θ)
 
@@ -107,9 +106,9 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
                 m = NaturalToMean(Bernoulli)(getnaturalparameters(ef))
                 J = ForwardDiff.jacobian(NaturalToMean(Bernoulli), getnaturalparameters(ef))
                 Fₘ = getfisherinformation(MeanParametersSpace(), Bernoulli)(m)
-                
+
                 @test fisherinformation(ef) ≈ (J * Fₘ * J')
-                
+
                 # These tests might not be super reliable on different hardware, but it must actually pass
                 @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
                 @test @allocated(fisherinformation(ef)) === 0
@@ -124,10 +123,9 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         end
 
         # Test failing isproper cases
-        @test !isproper(MeanParametersSpace(), Bernoulli, [ -1 ])
-        @test !isproper(MeanParametersSpace(), Bernoulli, [ 0.5, 0.5 ])
-        @test !isproper(NaturalParametersSpace(), Bernoulli, [ 0.5, 0.5 ])
-
+        @test !isproper(MeanParametersSpace(), Bernoulli, [-1])
+        @test !isproper(MeanParametersSpace(), Bernoulli, [0.5, 0.5])
+        @test !isproper(NaturalParametersSpace(), Bernoulli, [0.5, 0.5])
     end
 
     @testset "prod with Distribution" begin
@@ -163,7 +161,6 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
         @test @inferred(prod(PreserveTypeProd(Bernoulli), efleft, efright)) ≈
               prod(ClosedProd(), Bernoulli(pleft), Bernoulli(pright))
     end
-
 end
 
 end

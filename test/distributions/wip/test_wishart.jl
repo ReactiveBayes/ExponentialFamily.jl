@@ -8,7 +8,8 @@ using LinearAlgebra
 using StableRNGs
 using ForwardDiff
 
-import ExponentialFamily: WishartFast, ExponentialFamilyDistribution, reconstructargument!,
+import ExponentialFamily:
+    WishartFast, ExponentialFamilyDistribution, reconstructargument!,
     getnaturalparameters, basemeasure, fisherinformation, logpartition, as_vec
 import StatsFuns: logmvgamma
 

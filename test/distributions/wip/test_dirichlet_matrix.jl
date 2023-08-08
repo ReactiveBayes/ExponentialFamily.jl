@@ -6,7 +6,8 @@ using Distributions
 using Random
 using ForwardDiff
 import SpecialFunctions: loggamma
-import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation,
+import ExponentialFamily:
+    ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation,
     as_vec, logpartition, reconstructargument!, unpack_naturalparameters
 
 function reconstructed_logpartition(::ExponentialFamilyDistribution{T}, ηvec) where {T}
