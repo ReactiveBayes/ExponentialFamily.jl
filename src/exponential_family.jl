@@ -292,11 +292,27 @@ getsupport(::Type{T}) where {T <: Distribution} = Distributions.support(T)
 
 # Convenient mappings from a vectorized form to a vectorized form for distributions
 function (transformation::NaturalToMean{T})(v::AbstractVector) where {T <: Distribution}
+    return transformation(v, nothing)
+end
+
+function (transformation::NaturalToMean{T})(v::AbstractVector, ::Nothing) where {T <: Distribution}
     return pack_parameters(T, transformation(unpack_parameters(T, v)))
 end
 
+function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner) where {T <: Distribution}
+    return pack_parameters(T, transformation(unpack_parameters(T, v), conditioner))
+end
+
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
+    return transformation(v, nothing)
+end
+
+function (transformation::MeanToNatural{T})(v::AbstractVector, ::Nothing) where {T <: Distribution}
     return pack_parameters(T, transformation(unpack_parameters(T, v)))
+end
+
+function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner) where {T <: Distribution}
+    return pack_parameters(T, transformation(unpack_parameters(T, v), conditioner))
 end
 
 """

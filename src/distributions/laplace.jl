@@ -95,12 +95,24 @@ end
 
 # Natural parametrization
 
-function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner) 
-    return !(isnan(conditioner) || isinf(conditioner)) && (length(η) === 1) && (first(η) < 0)
+function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner::Number) 
+    if isnan(conditioner) || isinf(conditioner) || length(η) !== 1
+        return false
+    end
+
+    (η₁, ) = unpack_parameters(Laplace, η)
+
+    return !isnan(η₁) && !isinf(η₁) && η₁ < 0 
 end
 
-function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner) 
-    return !(isnan(conditioner) || isinf(conditioner)) && (length(θ) === 1) && (first(θ) > 0)
+function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner::Number) 
+    if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1
+        return false
+    end
+
+    (scale, ) = unpack_parameters(Laplace, θ)
+
+    return !isnan(scale) && !isinf(scale) && scale > 0 
 end
 
 function separate_conditioner(::Type{Laplace}, params)
@@ -128,31 +140,31 @@ function unpack_parameters(::Type{Laplace}, packed)
     return (first(packed), )
 end
 
-logpartition(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
-    log(-2 / first(unpack_naturalparameters(exponentialfamily)))
+isbasemeasureconstant(::Type{Laplace}) = ConstantBaseMeasure()
 
-basemeasure(::ExponentialFamilyDistribution{Laplace}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Laplace}, x::Real) =
-    one(x)
+getbasemeasure(::Type{Laplace}, _) = (x) -> oneunit(x)
+getsufficientstatistics(::Type{Laplace}, conditioner) = (
+    (x) -> abs(x - conditioner),
+)
 
-basemeasure(::Laplace, x::Real) = one(x)
-
-fisherinformation(ef::ExponentialFamilyDistribution{Laplace}) = SA[inv(first(unpack_naturalparameters(ef))^2)]
-
-function fisherinformation(dist::Laplace)
-    # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
-    # Expectation of sign function will be zero and expectation of square of sign will be 1. 
-    b = scale(dist)
-    return SA[1/b^2 0; 0 1/b^2]
+getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin 
+    (η₁,) = unpack_parameters(Laplace, η)
+    return log(-2 / η₁)
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}) = x -> sufficientstatistics(ef, x)
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}, x)
-    μ = getconditioner(ef)
-    return SA[abs(x - μ)]
+getfisherinformation(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin 
+    (η₁,) = unpack_parameters(Laplace, η)
+    return SA[ inv(η₁^2);; ]
 end
 
-function sufficientstatistics(dist::Laplace, x)
-    μ, _ = params(dist)
-    return SA[abs(x - μ)]
+# Mean parametrization
+
+getlogpartition(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin 
+    (scale, ) = unpack_parameters(Laplace, θ)
+    return log(2scale)
+end
+
+getfisherinformation(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin 
+    (scale,) = unpack_parameters(Laplace, θ)
+    return SA[ inv(abs2(scale));; ] # 1 / scale^2
 end

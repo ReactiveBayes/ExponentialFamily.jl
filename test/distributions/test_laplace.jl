@@ -4,9 +4,13 @@ using ExponentialFamily, Distributions
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
 import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure, insupport,
+    ExponentialFamilyDistribution, getnaturalparameters, getconditioner, compute_logscale, logpartition, basemeasure, insupport,
     sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
     ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule
+
+# Fisher information can in principle be computed with the `hessian` from `ForwardDiff` with relatively high-mean_precision
+# Its fine to use it in tests, but we also check that our implementation is faster
+fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), Laplace, getconditioner(ef))(η), getnaturalparameters(ef))
 
 @testset "Laplace" begin
 
@@ -21,7 +25,7 @@ import ExponentialFamily:
         @test params(d) === (0.0, 1e12)
     end
 
-    @testset "prod with Distribution" begin 
+    @testset "prod with Distribution" begin
         @test default_prod_rule(Laplace, Laplace) === PreserveTypeProd(Laplace)
 
         @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.0, 0.5))) ≈ Laplace(0.0, 0.25)
@@ -34,12 +38,102 @@ import ExponentialFamily:
         @test @inferred(prod(GenericProd(), Laplace(2.0, 3.0), Laplace(2.0, 7.0))) ≈ Laplace(2.0, 2.1)
 
         # Different location parameters cannot be compute a closed prod with the same type
-        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.01, 0.5)) 
-        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(1.0, 0.5), Laplace(-1.0, 0.5)) 
+        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.01, 0.5))
+        @test_throws Exception prod(PreserveTypeProd(Laplace), Laplace(1.0, 0.5), Laplace(-1.0, 0.5))
     end
 
-    @testset "prod with ExponentialFamilyDistribution" begin 
-        @test default_prod_rule(ExponentialFamilyDistribution{Laplace}, ExponentialFamilyDistribution{Laplace}) === PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
+    @testset "ExponentialFamilyDistribution{Laplace}" begin
+
+        # Check conversions and general statistics 
+        @testset for location in (-1.0, 0.0, 1.0), scale in (0.25, 0.5, 2.0)
+            @testset let d = Laplace(location, scale)
+                tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(Laplace, params(d))
+
+                @test all(tuple_of_θ .=== (scale,))
+                @test conditioner === location
+
+                tuple_of_η = MeanToNatural(Laplace)(tuple_of_θ, conditioner)
+
+                @test all(NaturalToMean(Laplace)(tuple_of_η, conditioner) .≈ tuple_of_θ)
+                @test all(MeanToNatural(Laplace)(tuple_of_θ, conditioner) .≈ tuple_of_η)
+                @test all(NaturalToMean(Laplace)(pack_parameters(Laplace, tuple_of_η), conditioner) .≈ pack_parameters(Laplace, tuple_of_θ))
+                @test all(MeanToNatural(Laplace)(pack_parameters(Laplace, tuple_of_θ), conditioner) .≈ pack_parameters(Laplace, tuple_of_η))
+
+                @test all(unpack_parameters(Laplace, pack_parameters(Laplace, tuple_of_η)) .== tuple_of_η)
+
+                @test @inferred(isproper(MeanParametersSpace(), Laplace, pack_parameters(Bernoulli, tuple_of_θ), location))
+                @test @inferred(isproper(NaturalParametersSpace(), Laplace, pack_parameters(Bernoulli, tuple_of_η), location))
+
+                ef = @inferred(convert(ExponentialFamilyDistribution, d))
+                η₁ = -1 / scale
+
+                @test all(unpack_parameters(ef) .≈ (η₁,))
+                @test @allocated(unpack_parameters(ef)) === 0
+
+                @test isproper(ef)
+                @test ef isa ExponentialFamilyDistribution{Laplace}
+                @test @inferred(convert(Distribution, ef)) ≈ d
+                @test @allocated(convert(Distribution, ef)) === 0
+
+                for x in (-1.0, 0.0, 1.0)
+                    # We believe in the implementation in the `Distributions.jl`
+                    @test @inferred(logpdf(ef, x)) ≈ logpdf(d, x)
+                    @test @inferred(pdf(ef, x)) ≈ pdf(d, x)
+                    @test @inferred(mean(ef)) ≈ mean(d)
+                    @test @inferred(var(ef)) ≈ var(d)
+                    @test @inferred(std(ef)) ≈ std(d)
+                    @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), d)
+                    @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), d, 10))
+                    @test all(rand!(StableRNG(42), ef, zeros(10)) .≈ rand!(StableRNG(42), d, zeros(10)))
+
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
+                    @test @inferred(sufficientstatistics(ef, x)) === (abs(x - location),)
+                    @test @inferred(logpartition(ef)) ≈ log(-2 / η₁)
+
+                    # # Test that the selected methods do not allocate
+                    @test @allocated(logpdf(ef, x)) === 0
+                    @test @allocated(pdf(ef, x)) === 0
+                    @test @allocated(mean(ef)) === 0
+                    @test @allocated(var(ef)) === 0
+                    @test @allocated(basemeasure(ef, x)) === 0
+                    @test @allocated(sufficientstatistics(ef, x)) === 0
+                end
+
+                @test fisherinformation(ef) ≈ fisherinformation_fortests(ef)
+
+                # Jacobian based fisher information from the mean parameter space
+                m = NaturalToMean(Laplace)(getnaturalparameters(ef), getconditioner(ef))
+                J = ForwardDiff.jacobian(Base.Fix2(NaturalToMean(Laplace), getconditioner(ef)), getnaturalparameters(ef))
+                Fₘ = getfisherinformation(MeanParametersSpace(), Laplace, getconditioner(ef))(m)
+
+                @test fisherinformation(ef) ≈ (J * Fₘ * J')
+
+                @test @elapsed(fisherinformation(ef)) < (@elapsed(fisherinformation_fortests(ef)))
+                @test @allocated(fisherinformation(ef)) === 0
+            end
+        end
+
+        for space in (MeanParametersSpace(), NaturalParametersSpace())
+            @test !isproper(space, Laplace, [Inf], 1.0)
+            @test !isproper(space, Laplace, [1.0], Inf)
+            @test !isproper(space, Laplace, [NaN], 1.0)
+            @test !isproper(space, Laplace, [1.0], NaN)
+            @test !isproper(space, Laplace, [0.5, 0.5], 1.0)
+            
+
+            # Conditioner is required
+            @test_throws Exception isproper(space, Laplace, [0.5 ], [ 0.5, 0.5 ])
+            @test_throws Exception isproper(space, Laplace, [1.0], nothing)
+            @test_throws Exception isproper(space, Laplace, [1.0], nothing)
+        end
+
+        @test_throws Exception convert(ExponentialFamilyDistribution, Laplace(Inf, Inf))
+    end
+
+    @testset "prod with ExponentialFamilyDistribution" begin
+        @test default_prod_rule(ExponentialFamilyDistribution{Laplace}, ExponentialFamilyDistribution{Laplace}) ===
+              PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
 
         for location in (0.0, 1.0), sleft in 0.1:0.1:0.9, sright in 0.1:0.1:0.9
             efleft = @inferred(convert(ExponentialFamilyDistribution, Laplace(location, sleft)))
@@ -53,27 +147,27 @@ import ExponentialFamily:
             end
 
             @test @inferred(prod!(similar(efleft), efleft, efright)) ==
-              ExponentialFamilyDistribution(Laplace, ηleft + ηright, location)
+                  ExponentialFamilyDistribution(Laplace, ηleft + ηright, location)
 
             let _similar = similar(efleft)
                 @test @allocated(prod!(_similar, efleft, efright)) === 0
             end
 
             @test @inferred(prod(PreserveTypeProd(Laplace), efleft, efright)) ≈
-                prod(PreserveTypeProd(Laplace), Laplace(location, sleft), Laplace(location, sright))
+                  prod(PreserveTypeProd(Laplace), Laplace(location, sleft), Laplace(location, sright))
         end
 
         # Different location parameters cannot be compute a closed prod with the same type
         @test_throws Exception prod(
-            PreserveTypeProd(ExponentialFamilyDistribution{Laplace}), 
-            convert(ExponentialFamilyDistribution, Laplace(0.0, 0.5)), 
+            PreserveTypeProd(ExponentialFamilyDistribution{Laplace}),
+            convert(ExponentialFamilyDistribution, Laplace(0.0, 0.5)),
             convert(ExponentialFamilyDistribution, Laplace(0.01, 0.5))
-        ) 
+        )
         @test_throws Exception prod(
-            PreserveTypeProd(ExponentialFamilyDistribution{Laplace}), 
-            convert(ExponentialFamilyDistribution, Laplace(1.0, 0.5)), 
+            PreserveTypeProd(ExponentialFamilyDistribution{Laplace}),
+            convert(ExponentialFamilyDistribution, Laplace(1.0, 0.5)),
             convert(ExponentialFamilyDistribution, Laplace(-1.0, 0.5))
-        ) 
+        )
     end
 
     # @testset "prod" begin
@@ -128,67 +222,6 @@ import ExponentialFamily:
     #     end
     # end
 
-    # @testset "natural parameters related" begin
-    #     @testset "convert" begin
-    #         for i in 1:10
-    #             @test convert(Distribution, ExponentialFamilyDistribution(Laplace, [-i], 2.0)) ==
-    #                   Laplace(2.0, 1 / i)
-
-    #             @test convert(ExponentialFamilyDistribution, Laplace(sqrt(i), i)) ==
-    #                   ExponentialFamilyDistribution(Laplace, [-1 / i], sqrt(i))
-    #         end
-    #     end
-
-    #     @testset "logpartition" begin
-    #         @test logpartition(ExponentialFamilyDistribution(Laplace, [-1.0], 1.0)) ≈ log(2)
-    #         @test logpartition(ExponentialFamilyDistribution(Laplace, [-2.0], 1.0)) ≈ log(1)
-    #     end
-
-    #     @testset "logpdf" begin
-    #         for i in 1:10
-    #             @test logpdf(ExponentialFamilyDistribution(Laplace, [-i], 0.0), 0.01) ≈
-    #                   logpdf(Laplace(0.0, 1 / i), 0.01)
-    #             @test logpdf(ExponentialFamilyDistribution(Laplace, [-i], 1.0), 0.5) ≈
-    #                   logpdf(Laplace(1.0, 1 / i), 0.5)
-    #         end
-    #     end
-
-    #     @testset "isproper" begin
-    #         for i in 1:10
-    #             @test isproper(ExponentialFamilyDistribution(Laplace, [-i], 1.0)) === true
-    #             @test isproper(ExponentialFamilyDistribution(Laplace, [i], 2.0)) === false
-    #         end
-    #     end
-
-    #     @testset "basemeasure" begin
-    #         for (i) in (1:10)
-    #             @test basemeasure(ExponentialFamilyDistribution(Laplace, [-i], 1.0), i^2) == 1.0
-    #         end
-    #     end
-
-    #     @testset "fisher information" begin
-    #         for λ in 1:10, u in 1.0:0.5:5.0
-    #             dist = Laplace(u, λ)
-    #             ef = convert(ExponentialFamilyDistribution, dist)
-    #             η = getnaturalparameters(ef)
-    #             transformation(η) = [u, -inv(η[1])]
-    #             f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Laplace, η, getconditioner(ef)))
-    #             autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-    #             @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-8
-    #             J = ForwardDiff.jacobian(transformation, η)
-    #             @test first(J' * fisherinformation(dist) * J) ≈ first(fisherinformation(ef)) atol = 1e-8
-    #         end
-    #     end
-    # end
-
-    # @testset "ExponentialFamilyDistribution mean,var" begin
-    #     for λ in 1:10, u in 1.0:0.5:5.0
-    #         dist = Laplace(u, λ)
-    #         ef = convert(ExponentialFamilyDistribution, dist)
-    #         @test mean(dist) ≈ mean(ef) atol = 1e-8
-    #         @test var(dist) ≈ var(ef) atol = 1e-8
-    #     end
-    # end
 end
 
 end

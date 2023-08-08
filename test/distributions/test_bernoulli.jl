@@ -82,7 +82,7 @@ fisherinformation_fortests(ef) = ForwardDiff.hessian(η -> getlogpartition(Natur
                     @test all(rand!(StableRNG(42), ef, zeros(10)) .≈ rand!(StableRNG(42), d, zeros(10)))
 
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
-                    @test @inferred(basemeasure(ef, x)) === one(x)
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (x,)
                     @test @inferred(logpartition(ef)) ≈ log(1 + exp(η₁))
 
