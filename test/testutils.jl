@@ -183,24 +183,46 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
+    θ = NaturalToMean(T)(η, conditioner)
 
-    m = NaturalToMean(T)(η, conditioner)
-    J = ForwardDiff.jacobian(Base.Fix2(NaturalToMean(T), conditioner), η)
-    Fₘ = getfisherinformation(MeanParametersSpace(), T, conditioner)(m)
+    # Check natural to mean Jacobian based FI computation
+    # So here we check that the fisher information matrices are identical with respect to `J`, which is the jacobian of the 
+    # transformation. For example if we have a tranformation T : M -> N, the fisher information matrices computed in M and N 
+    # respectively must follow this relation `Fₘ = J * Fₙ * J'`
+    for (M, N, transformation, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), NaturalToMean(T), η), (MeanParametersSpace(), NaturalParametersSpace(), MeanToNatural(T), θ))
+        m = parameters
+        n = transformation(parameters, conditioner)
+        J = ForwardDiff.jacobian(Base.Fix2(transformation, conditioner), parameters)
 
-    @test fisherinformation(ef) ≈ (J * Fₘ * J')
+        Fₘ = getfisherinformation(M, T, conditioner)(m)
+        Fₙ = getfisherinformation(N, T, conditioner)(n)
 
-    # Double check the `conditioner` free methods
-    if isnothing(conditioner)
-        m = NaturalToMean(T)(η)
-        J = ForwardDiff.jacobian(NaturalToMean(T), η)
-        Fₘ = getfisherinformation(MeanParametersSpace(), T)(m)
+        @test Fₘ ≈ (J * Fₙ * J')
 
-        @test fisherinformation(ef) ≈ (J * Fₘ * J')
-    end
+        # Check the default space
+        if M === NaturalParametersSpace()
+            # The `fisherinformation` uses the `NaturalParametersSpace` by default
+            @test fisherinformation(ef) ≈ (J * Fₙ * J')
+        end
 
-    if assume_no_allocations
-        @test @allocated(getfisherinformation(MeanParametersSpace(), T, conditioner)(m)) === 0
+        # Double check the `conditioner` free methods
+        if isnothing(conditioner)
+            n = transformation(parameters)
+            J = ForwardDiff.jacobian(transformation, parameters)
+            Fₘ = getfisherinformation(M, T)(m)
+            Fₙ = getfisherinformation(N, T)(n)
+
+            @test Fₘ ≈ (J * Fₙ * J')
+
+            if M === NaturalParametersSpace()
+                @test fisherinformation(ef) ≈ (J * Fₙ * J')
+            end
+        end
+
+        if assume_no_allocations
+            @test @allocated(getfisherinformation(M, T, conditioner)(m)) === 0
+            @test @allocated(getfisherinformation(N, T, conditioner)(n)) === 0
+        end
     end
 end
 

@@ -9,6 +9,7 @@ export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 using LoopVectorization
 using Distributions, LinearAlgebra, StaticArrays, Random
 
+import Distributions: insupport
 import Base: map
 
 """
@@ -101,13 +102,6 @@ Returns the support of the exponential family distribution.
 function getsupport end
 
 """
-    insupport(support, value)
-
-Checks if the given `value` belongs to the `support`.
-"""
-function insupport end
-
-"""
     ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support)
 
 A structure to represent the attributes of an exponential family member.
@@ -132,7 +126,7 @@ getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = a
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
 
-insupport(attributes::ExponentialFamilyDistributionAttributes, value) = insupport(getsupport(attributes), value)
+Distributions.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
 
 value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
 
@@ -147,7 +141,7 @@ Type `T` can be either a distribution type (e.g. from the `Distributions.jl` pac
 - `getsufficientstatistics` returns an iterable of functions such as [x, x^2] or [x, logx].
 - `getnaturalparameters` returns an iterable holding the values of the natural parameters. 
 - `getlogpartition` return a function that depends on the naturalparameters and it ensures that the distribution is normalized to 1. 
-- `getsupport` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use the `insupport` to check if a values is in support.
+- `getsupport` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use ither the `∈` operator or the `insupport()` function to check if a value belongs to the support.
 
 !!! note
     The `attributes` can be `nothing`. In which case the package will try to derive the corresponding attributes from the type `T`.
@@ -285,7 +279,7 @@ getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsuppo
 getsupport(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getsupport(attributes)
 
-insupport(ef::ExponentialFamilyDistribution, value) = insupport(getsupport(ef), value)
+Distributions.insupport(ef::ExponentialFamilyDistribution, value) = Base.in(value, getsupport(ef))
 
 # For all `<:Distribution` the `support` function should be defined
 getsupport(::Type{T}) where {T <: Distribution} = Distributions.support(T)

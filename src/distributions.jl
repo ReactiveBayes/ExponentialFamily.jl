@@ -7,7 +7,7 @@ export weightedmean, probvec, isproper
 
 using Distributions, Random
 
-import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov
+import Distributions: mean, median, mode, shape, scale, rate, var, std, cov, invcov, entropy, pdf, logpdf, logdetcov, insupport
 import Distributions:
     VariateForm, ValueSupport, Distribution, Univariate, Multivariate, Matrixvariate, variate_form, value_support
 
@@ -31,8 +31,6 @@ weightedmean_var(something)       = (weightedmean(something), var(something))
 weightedmean_std(something)       = (weightedmean(something), std(something))
 weightedmean_invcov(something)    = (weightedmean(something), invcov(something))
 weightedmean_precision(something) = weightedmean_invcov(something)
-
-insupport(support, value) = value ∈ support
 
 function probvec end
 

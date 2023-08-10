@@ -25,7 +25,3 @@ function dot(x::AbstractVector, A::AbstractMatrix, y::AbstractVector{D}) where {
     end
     return s
 end
-
-import Distributions: RealInterval
-
-insupport(interval::RealInterval, value) = Distributions.in(value, interval)
