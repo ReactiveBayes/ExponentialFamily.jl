@@ -29,14 +29,14 @@ end
 
 const sigmoid = logistic
 
-dtanh(x) = 1 - tanh(x)^2
+dtanh(x) = one(x) - abs2(tanh(x))
 
 """
     mirrorlog(x)
 
 Returns `log(1 - x)`.
 """
-mirrorlog(x) = log(1 - x)
+mirrorlog(x) = log(one(x) - x)
 
 """
     xtlog(x)

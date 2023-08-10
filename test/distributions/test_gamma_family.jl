@@ -42,7 +42,7 @@ include("../testutils.jl")
 
     @testset "prod with ExponentialFamilyDistribution" for kleft in 0.51:1.0:5.0, kright in 0.51:1.0:5.0, θleft in 0.1:1.0:5.0, θright in 0.1:1.0:5.0,
         Tleft in ExponentialFamily.union_types(GammaDistributionsFamily{Float64}), Tright in ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
-        let left = convert(Tleft, Gamma(kleft, θleft)), right = convert(Tright, Gamma(kright, θright))
+        @testset let (left, right) = (convert(Tleft, Gamma(kleft, θleft)), convert(Tright, Gamma(kright, θright)))
             @test test_generic_simple_exponentialfamily_product(
                 left,
                 right,
