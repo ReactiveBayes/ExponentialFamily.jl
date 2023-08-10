@@ -94,6 +94,8 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
             ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
         η = @inferred(getnaturalparameters(member))
 
+        @test ExponentialFamily.exponential_family_typetag(member) === Univariate
+
         @test @inferred(basemeasure(member, 2.0)) ≈ 0.5
         @test @inferred(getbasemeasure(member)(2.0)) ≈ 0.5
         @test @inferred(getbasemeasure(member)(4.0)) ≈ 0.25
@@ -137,6 +139,8 @@ end
     )
         η = @inferred(getnaturalparameters(member))
 
+        @test ExponentialFamily.exponential_family_typetag(member) === ArbitraryDistributionFromExponentialFamily
+
         @test convert(ExponentialFamilyDistribution, convert(Distribution, member)) ==
               ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
         @test convert(Distribution, convert(ExponentialFamilyDistribution, member)) == ArbitraryDistributionFromExponentialFamily(1.0, 1.0)
@@ -165,8 +169,8 @@ end
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0)) === 0
-        @test @ballocated(pdf($member, 2.0)) === 0
+        @test @ballocated(logpdf($member, 2.0)) === 0 
+        @test @ballocated(pdf($member, 2.0)) === 0 
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
@@ -208,6 +212,8 @@ end
         ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0], -2),
         convert(ExponentialFamilyDistribution, ArbitraryConditionedDistributionFromExponentialFamily(-2, 3.0))
     )
+        @test ExponentialFamily.exponential_family_typetag(member) === ArbitraryConditionedDistributionFromExponentialFamily
+
         η = @inferred(getnaturalparameters(member))
 
         @test convert(ExponentialFamilyDistribution, convert(Distribution, member)) ==
@@ -238,8 +244,8 @@ end
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0)) === 0
-        @test @ballocated(pdf($member, 2.0)) === 0
+        @test @ballocated(logpdf($member, 2.0)) === 0 
+        @test @ballocated(pdf($member, 2.0)) === 0 
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)

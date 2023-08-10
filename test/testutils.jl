@@ -16,7 +16,7 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true
 )
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -35,11 +35,11 @@ function test_exponentialfamily_interface(distribution;
 end
 
 function run_test_parameters_conversion(distribution)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
-    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(distribution))
+    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
 
-    @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(distribution))
+    @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(MeanParametersSpace(), distribution))
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -69,7 +69,7 @@ function run_test_parameters_conversion(distribution)
 end
 
 function run_test_similar_creation(distribution)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -77,7 +77,7 @@ function run_test_similar_creation(distribution)
 end
 
 function run_test_distribution_conversion(distribution)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -86,9 +86,9 @@ function run_test_distribution_conversion(distribution)
 end
 
 function run_test_packing_unpacking(distribution)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
-    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(distribution))
+    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     tuple_of_η = MeanToNatural(T)(tuple_of_θ, conditioner)
@@ -98,7 +98,7 @@ function run_test_packing_unpacking(distribution)
 end
 
 function run_test_isproper(distribution)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     exponential_family_form = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -107,7 +107,7 @@ function run_test_isproper(distribution)
 end
 
 function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocations = true)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -155,7 +155,7 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
 end
 
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -178,7 +178,7 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
 end
 
 function run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = true)
-    T = ExponentialFamily.distribution_typewrapper(distribution)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -206,15 +206,15 @@ end
 
 # This generic testing works only for the same distributions `D`
 function test_generic_simple_exponentialfamily_product(
-    left::D,
-    right::D;
+    left::Distribution,
+    right::Distribution;
     strategies = (GenericProd(),),
     test_inplace_version = true,
     test_inplace_assume_zero_allocations = true,
     test_preserve_type_prod_of_distribution = true
-) where {D}
-    Tl = ExponentialFamily.distribution_typewrapper(left)
-    Tr = ExponentialFamily.distribution_typewrapper(right)
+)
+    Tl = ExponentialFamily.exponential_family_typetag(left)
+    Tr = ExponentialFamily.exponential_family_typetag(right)
 
     @test Tl === Tr
 
@@ -254,5 +254,24 @@ function test_generic_simple_exponentialfamily_product(
               prod(PreserveTypeProd(T), left, right)
     end
 
+    return true
+end
+
+function compare_basic_statistics(left, right, extra_fn = ())
+    @test mean(left) ≈ mean(right)
+    @test var(left) ≈ var(right)
+    @test cov(left) ≈ cov(right)
+    @test shape(left) ≈ shape(right)
+    @test scale(left) ≈ scale(right)
+    @test rate(left) ≈ rate(right)
+    @test entropy(left) ≈ entropy(right)
+    @test pdf(left, 1.0) ≈ pdf(right, 1.0)
+    @test pdf(left, 10.0) ≈ pdf(right, 10.0)
+    @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
+    @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
+
+    for fn in extra_fn
+        @test mean(extra_fn, left) ≈ mean(log, right)
+    end
     return true
 end

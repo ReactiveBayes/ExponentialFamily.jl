@@ -456,8 +456,6 @@ variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm
 value_support(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = value_support(D)
 value_support(::Type{<:ExponentialFamilyDistribution{D, P, C, A}}) where {D, P, C, A} = value_support(A)
 
-distributiontype(::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Distribution} = T
-
 """
     pack_parameters(::Type{T}, params::Tuple)
 
@@ -531,6 +529,13 @@ join_conditioner(::Type{T}, params, ::Nothing) where {T <: Distribution} = param
 Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} =
     Base.convert(T, Base.convert(Distribution, ef))
 
+# Assume that the type tag is the same as the `Distribution` type but without the type parameters 
+# This can be overwritten by certain distributions, which have many different parametrizations, e.g. `Gamma` or `Normal`
+exponential_family_typetag(distribution) = distribution_typewrapper(distribution)
+exponential_family_typetag(::ExponentialFamilyDistribution{D}) where { D } = D
+
+Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
+
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}
     tuple_of_η = unpack_parameters(ef)
@@ -547,9 +552,9 @@ end
 # Generic convert from a member of `Distributions` to its equivalent representation in `ExponentialFamilyDistribution`
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Distribution)
     # Get the type wrapper, e.g. `Bernoulli{Float64, ...}` becomes just `Bernoulli`
-    T = distribution_typewrapper(dist)
+    T = exponential_family_typetag(dist)
 
-    tuple_if_θ = params(dist)
+    tuple_if_θ = params(MeanParametersSpace(), dist)
     # Separate the parameters and the conditioner, the `params` function returns all together
     cparams, conditioner = separate_conditioner(T, tuple_if_θ)
 
@@ -574,6 +579,7 @@ function convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T})
     )
 end
 
+Distributions.mean(f::F, ef::ExponentialFamilyDistribution{T}) where { F, T <: Distribution } = mean(f, convert(T, ef))
 Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
 Distributions.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
 Distributions.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))

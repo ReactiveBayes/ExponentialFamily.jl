@@ -9,9 +9,7 @@ include("testutils.jl")
     include("test_exponential_family.jl")
 
     include("distributions/test_bernoulli.jl")
-
     # include("distributions/test_categorical.jl")
-
     # include("distributions/test_mv_normal_mean_covariance.jl")
     # include("distributions/test_mv_normal_mean_precision.jl")
     # include("distributions/test_mv_normal_weighted_mean_precision.jl")
@@ -19,9 +17,9 @@ include("testutils.jl")
     # include("distributions/test_normal_mean_precision.jl")
     # include("distributions/test_normal_weighted_mean_precision.jl")
     # include("distributions/test_normal.jl")
-
-    # include("distributions/test_gamma.jl")
-
+    include("distributions/test_gamma_shape_rate.jl")
+    include("distributions/test_gamma_shape_scale.jl")
+    include("distributions/test_gamma_family.jl")
     # include("distributions/test_binomial.jl")
     # include("distributions/test_beta.jl")
     # include("distributions/test_categorical.jl")
@@ -29,7 +27,6 @@ include("testutils.jl")
     # include("distributions/test_dirichlet_matrix.jl")
     # include("distributions/test_dirichlet.jl")
     # include("distributions/test_exponential.jl")
-
     # include("distributions/test_gamma_inverse.jl")
     # include("distributions/test_lognormal.jl")
     # include("distributions/test_multinomial.jl")

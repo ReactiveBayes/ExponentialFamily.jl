@@ -97,7 +97,7 @@ See also: [`ExponentialFamily.paramfloattype`](@ref), [`ExponentialFamily.promot
 """
 convert_paramfloattype(::Type{T}, distribution::Distribution) where {T} =
     automatic_convert_paramfloattype(
-        distribution_typename(distribution),
+        distribution_typewrapper(distribution),
         map(convert_paramfloattype(T), params(distribution))
     )
 convert_paramfloattype(::Type{T}, collection::NamedTuple) where {T} = map(convert_paramfloattype(T), collection)
@@ -228,7 +228,12 @@ convert_paramfloattype(::Type{T}, joint::FactorizedJoint) where {T} =
 
 ## Utils
 
-# Returns a wrapper distribution for a `<:Distribution` type
-@generated function distribution_typewrapper(distribution)
+distribution_typewrapper(distribution) = generated_distribution_typewrapper(distribution)
+
+# Returns a wrapper distribution for a `<:Distribution` type, this function uses internals of Julia 
+# It is not ideal, but is fine for now, if Julia changes it internals such that does not work 
+# We will need to write the `distribution_typewrapper` method for each support member of exponential family
+# e.g. `distribution_typewrapper(::Bernoulli) = Bernoulli`
+@generated function generated_distribution_typewrapper(distribution)
     return Base.typename(distribution).wrapper
 end
