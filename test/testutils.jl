@@ -52,6 +52,11 @@ function run_test_parameters_conversion(distribution)
     @test all(NaturalToMean(T)(pack_parameters(T, tuple_of_η), conditioner) .≈ pack_parameters(T, tuple_of_θ))
     @test all(MeanToNatural(T)(pack_parameters(T, tuple_of_θ), conditioner) .≈ pack_parameters(T, tuple_of_η))
 
+    @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner) .≈ tuple_of_θ)
+    @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ, conditioner) .≈ tuple_of_η)
+    @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(T, tuple_of_η), conditioner) .≈ pack_parameters(T, tuple_of_θ))
+    @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(T, tuple_of_θ), conditioner) .≈ pack_parameters(T, tuple_of_η))
+
     # Double check the `conditioner` free conversions
     if isnothing(conditioner)
         local _tuple_of_η = MeanToNatural(T)(tuple_of_θ)
@@ -62,6 +67,13 @@ function run_test_parameters_conversion(distribution)
         @test all(MeanToNatural(T)(tuple_of_θ) .≈ _tuple_of_η)
         @test all(NaturalToMean(T)(pack_parameters(T, _tuple_of_η)) .≈ pack_parameters(T, tuple_of_θ))
         @test all(MeanToNatural(T)(pack_parameters(T, tuple_of_θ)) .≈ pack_parameters(T, _tuple_of_η))
+
+        @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
+        @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
+        @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ) .≈ _tuple_of_η)
+        @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(T, _tuple_of_η)) .≈ pack_parameters(T, tuple_of_θ))
+        @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(T, tuple_of_θ)) .≈ pack_parameters(T, _tuple_of_η))
+
     end
 
     @test all(unpack_parameters(T, pack_parameters(T, tuple_of_η)) .== tuple_of_η)
@@ -183,16 +195,17 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
-    θ = NaturalToMean(T)(η, conditioner)
+    θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
 
     # Check natural to mean Jacobian based FI computation
     # So here we check that the fisher information matrices are identical with respect to `J`, which is the jacobian of the 
-    # transformation. For example if we have a tranformation T : M -> N, the fisher information matrices computed in M and N 
+    # transformation. For example if we have a mapping T : M -> N, the fisher information matrices computed in M and N 
     # respectively must follow this relation `Fₘ = J * Fₙ * J'`
-    for (M, N, transformation, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), NaturalToMean(T), η), (MeanParametersSpace(), NaturalParametersSpace(), MeanToNatural(T), θ))
+    for (M, N, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), η), (MeanParametersSpace(), NaturalParametersSpace(), θ))
+        mapping = getmapping(M => N, T)
         m = parameters
-        n = transformation(parameters, conditioner)
-        J = ForwardDiff.jacobian(Base.Fix2(transformation, conditioner), parameters)
+        n = mapping(m, conditioner)
+        J = ForwardDiff.jacobian(Base.Fix2(mapping, conditioner), m)
 
         Fₘ = getfisherinformation(M, T, conditioner)(m)
         Fₙ = getfisherinformation(N, T, conditioner)(n)
@@ -207,8 +220,8 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
 
         # Double check the `conditioner` free methods
         if isnothing(conditioner)
-            n = transformation(parameters)
-            J = ForwardDiff.jacobian(transformation, parameters)
+            n = mapping(m)
+            J = ForwardDiff.jacobian(mapping, m)
             Fₘ = getfisherinformation(M, T)(m)
             Fₙ = getfisherinformation(N, T)(n)
 

@@ -79,6 +79,13 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
 
 @testset "ExponentialFamilyDistributionAttributes" begin
 
+    @testset "getmapping" begin 
+        @test @inferred(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === MeanToNatural{ArbitraryDistributionFromExponentialFamily}()
+        @test @inferred(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === NaturalToMean{ArbitraryDistributionFromExponentialFamily}()
+        @test @allocated(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
+        @test @allocated(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
+    end
+
     # See the `ArbitraryExponentialFamilyAttributes` defined in the fixtures (above)
     @testset let attributes = ArbitraryExponentialFamilyAttributes
         @test @inferred(getbasemeasure(attributes)(2.0)) ≈ 0.5
