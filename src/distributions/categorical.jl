@@ -110,6 +110,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner)
 
 # Mean parametrization
 
+# TODO: This function is AD unfriendly and gives wrong gradients and hessians
 getlogpartition(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
     (θ) -> begin
         if (conditioner !== length(θ))
