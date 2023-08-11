@@ -141,7 +141,7 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
         @test @inferred(std(ef)) ≈ std(distribution)
         @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
-        @test all(rand!(StableRNG(42), ef, zeros(10)) .≈ rand!(StableRNG(42), distribution, zeros(10)))
+        @test all(rand!(StableRNG(42), ef, [ copy(x) for _ in 1:10 ]) .≈ rand!(StableRNG(42), distribution, [ copy(x) for _ in 1:10 ]))
 
         @test @inferred(isbasemeasureconstant(ef)) === isbasemeasureconstant(T)
         @test @inferred(basemeasure(ef, x)) == getbasemeasure(T, conditioner)(x)

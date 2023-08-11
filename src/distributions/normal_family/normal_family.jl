@@ -518,9 +518,112 @@ getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -
     return SA[inv(σ²) 0; 0 inv(2*(σ²^2))]
 end
 
-# function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-#     weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-#     return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) * HALF
+### Multivariate case
+
+# Assume a single exponential family type tag both for all members of `UnivariateNormalDistributionsFamily`
+# Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
+exponential_family_typetag(::MultivariateGaussianDistributionsFamily) = MvNormalMeanCovariance
+
+Distributions.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
+
+function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner) 
+    (μ, Σ) = unpack_parameters(MvNormalMeanCovariance, θ)
+    return isnothing(conditioner) && length(μ) === size(Σ, 1) && (size(Σ, 1) === size(Σ, 2)) # do we need to check `isposdef` here?, perhaps not
+end
+
+function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, conditioner) 
+    (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) # do we need to check `isposdef` here?, perhaps not
+end
+
+function (::MeanToNatural{MvNormalMeanCovariance})(tuple_of_θ::Tuple{Any, Any})
+    (μ, Σ) = tuple_of_θ
+    Σ⁻¹ = cholinv(Σ)
+    return (Σ⁻¹ * μ, Σ⁻¹/-2)
+end
+
+function (::NaturalToMean{MvNormalMeanCovariance})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    Σ = cholinv(-2η₂)
+    return (Σ * η₁, Σ)
+end
+
+function unpack_parameters(::Type{MvNormalMeanCovariance}, packed)
+    len = length(packed)
+    n = div(-1 + isqrt(1 + 4 * len), 2)
+
+    p₁ = view(packed, 1:n)
+    p₂ = reshape(view(packed, n + 1:len), n, n)
+
+    return (p₁, p₂)
+end
+
+getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = RealNumbers() ^ div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2)
+
+isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
+
+# It is a constant base measure with respect to `x`, only depends on its length, but we consider the length fixed
+getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(-length(x) / 2) 
+getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * x')
+
+getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+    k = length(η₁)
+    C = cholesky(-η₂)
+    # C = -η₂
+    return (dot(η₁, inv(C), η₁) / 2 - (k*log(2) + logdet(C))) / 2
+    # return (dot(η₁, inv(-η₂), η₁) / 2 - (k*log(2) + logdet(-η₂))) / 2
+    # return (dot(η₁, inv(C), η₁) / 2 - logdet(-2η₂)) / 2
+end
+
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+    invη2 = -cholinv(-η₂)
+    n = size(η₁, 1)
+    ident = diageye(n)
+    Iₙ = PermutationMatrix(1, 1)
+    offdiag =
+        1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
+        kron(ident, kron(Iₙ, ident))
+    G =
+        -1 / 4 *
+        (
+            kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
+            kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
+        ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+    [-1/2*invη2 offdiag; offdiag' G]
+end
+
+function PermutationMatrix(m, n)
+    P = Matrix{Int}(undef, m * n, m * n)
+    for i in 1:m*n
+        for j in 1:m*n
+            if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
+                P[i, j] = 1
+            else
+                P[i, j] = 0
+            end
+        end
+    end
+    P
+end
+
+# function fisherinformation(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
+#     η1, η2 = unpack_naturalparameters(ef)
+#     invη2 = inv(η2)
+#     n = size(η1, 1)
+#     ident = diageye(n)
+#     Iₙ = PermutationMatrix(1, 1)
+#     offdiag =
+#         1 / 4 * (invη2 * kron(ident, transpose(invη2 * η1)) + invη2 * kron(η1' * invη2, ident)) *
+#         kron(ident, kron(Iₙ, ident))
+#     G =
+#         -1 / 4 *
+#         (
+#             kron(invη2, invη2) * kron(ident, η1) * kron(ident, transpose(invη2 * η1)) +
+#             kron(invη2, invη2) * kron(η1, ident) * kron(η1' * invη2, ident)
+#         ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+#     [-1/2*invη2 offdiag; offdiag' G]
 # end
 
 # function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
@@ -547,38 +650,6 @@ end
 #         -1/(2*minushalfprecision) weightedmean/(2*minushalfprecision^2)
 #         weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
 #     ]
-# end
-
-# function PermutationMatrix(m, n)
-#     P = Matrix{Int}(undef, m * n, m * n)
-#     for i in 1:m*n
-#         for j in 1:m*n
-#             if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
-#                 P[i, j] = 1
-#             else
-#                 P[i, j] = 0
-#             end
-#         end
-#     end
-#     P
-# end
-
-# function fisherinformation(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-#     η1, η2 = unpack_naturalparameters(ef)
-#     invη2 = inv(η2)
-#     n = size(η1, 1)
-#     ident = diageye(n)
-#     Iₙ = PermutationMatrix(1, 1)
-#     offdiag =
-#         1 / 4 * (invη2 * kron(ident, transpose(invη2 * η1)) + invη2 * kron(η1' * invη2, ident)) *
-#         kron(ident, kron(Iₙ, ident))
-#     G =
-#         -1 / 4 *
-#         (
-#             kron(invη2, invη2) * kron(ident, η1) * kron(ident, transpose(invη2 * η1)) +
-#             kron(invη2, invη2) * kron(η1, ident) * kron(η1' * invη2, ident)
-#         ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
-#     [-1/2*invη2 offdiag; offdiag' G]
 # end
 
 # sufficientstatistics(
