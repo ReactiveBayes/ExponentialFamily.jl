@@ -82,8 +82,10 @@ function getmapping end
 getmapping(::Pair{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}) where {T} = NaturalToMean{T}()
 getmapping(::Pair{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}) where {T} = MeanToNatural{T}()
 
-Base.map(::Pair{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} = NaturalToMean{T}()(something, conditioner)
-Base.map(::Pair{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} = MeanToNatural{T}()(something, conditioner)
+Base.map(::Pair{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
+    NaturalToMean{T}()(something, conditioner)
+Base.map(::Pair{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
+    MeanToNatural{T}()(something, conditioner)
 
 """
     getbasemeasure(::ExponentialFamilyDistribution)
@@ -546,7 +548,7 @@ Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribut
 # This can be overwritten by certain distributions, which have many different parametrizations, e.g. `Gamma` or `Normal`
 # The package also makes the assumption that the `MeanParametersSpace` **is** the of same type as `exponential_family_typetag`
 exponential_family_typetag(distribution) = distribution_typewrapper(distribution)
-exponential_family_typetag(::ExponentialFamilyDistribution{D}) where { D } = D
+exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
 Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
 
@@ -593,7 +595,7 @@ function convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T})
     )
 end
 
-Distributions.mean(f::F, ef::ExponentialFamilyDistribution{T}) where { F, T <: Distribution } = mean(f, convert(T, ef))
+Distributions.mean(f::F, ef::ExponentialFamilyDistribution{T}) where {F, T <: Distribution} = mean(f, convert(T, ef))
 Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
 Distributions.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
 Distributions.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
@@ -675,7 +677,8 @@ function prod(
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocated more than `similar(left)`)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
        isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
-        if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
+       # Check that both conditioners are either nothing or all are approximately equal
+        if (isnothing(getconditioner(left)) && isnothing(getconditioner(right))) || (isapprox(getconditioner(left), getconditioner(right)))
             # Find the promoted float type of both natural parameters
             F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
             # Create a suitable container for the in-place `prod!` operation, we use the `left` as a suitable candidate
@@ -695,7 +698,9 @@ function Base.prod!(
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocate in this simple case)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
        isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
-        if isnothing(getconditioner(left)) && isnothing(getconditioner(right))
+        # Check that all three conditioners are either nothing or all are approximately equal
+        if (isnothing(getconditioner(container)) && isnothing(getconditioner(left)) && isnothing(getconditioner(right))) ||
+           (isapprox(getconditioner(left), getconditioner(right)) && isapprox(getconditioner(container), getconditioner(left)))
             LoopVectorization.vmap!(
                 +,
                 getnaturalparameters(container),
