@@ -488,6 +488,8 @@ function unpack_parameters(::Type{NormalMeanVariance}, packed)
     return (packed[fi], packed[si])
 end
 
+getsupport(::ExponentialFamilyDistribution{NormalMeanVariance}) = RealNumbers()
+
 isbasemeasureconstant(::Type{NormalMeanVariance}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{NormalMeanVariance}) = (x) -> convert(typeof(x), invsqrt2π)
@@ -569,9 +571,9 @@ getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
     k = length(η₁)
-    C = cholesky(-η₂)
+    C = -η₂
     # C = -η₂
-    return (dot(η₁, inv(C), η₁) / 2 - (k*log(2) + logdet(C))) / 2
+    return (dot(η₁, inv(C) * η₁) / 2 - (k*log(2) + logdet(C))) / 2
     # return (dot(η₁, inv(-η₂), η₁) / 2 - (k*log(2) + logdet(-η₂))) / 2
     # return (dot(η₁, inv(C), η₁) / 2 - logdet(-2η₂)) / 2
 end
@@ -606,6 +608,15 @@ function PermutationMatrix(m, n)
         end
     end
     P
+end
+
+fisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+    μ, Σ = unpack_parameters(MvNormalMeanCovariance, θ)
+    invΣ = cholinv(Σ)
+    n = size(μ, 1)
+    offdiag = zeros(n, n^2)
+    G = (1 / 2) * kron(invΣ, invΣ)
+    [invΣ offdiag; offdiag' G]
 end
 
 # function fisherinformation(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
@@ -669,16 +680,6 @@ end
 #     ::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
 #     x::T
 # ) where {T} = [x, x^2]
-
-
-# function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
-#     μ, Σ = mean(dist), cov(dist)
-#     invΣ = inv(Σ)
-#     n = size(μ, 1)
-#     offdiag = zeros(n, n^2)
-#     G = (1 / 2) * kron(invΣ, invΣ)
-#     [invΣ offdiag; offdiag' G]
-# end
 
 # function fisherinformation(dist::NormalMeanVariance)
 #     _, v = params(dist)
