@@ -95,11 +95,15 @@ Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
-convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} =
-    convert_eltype(JointNormal, T, joint, joint.dist)
+paramfloattype(joint::JointNormal) = paramfloattype(joint, joint.dist)
+convert_paramfloattype(::Type{T}, joint::JointNormal) where {T} = convert_paramfloattype(T, joint, joint.dist)
 
-function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
-    μ, Σ  = map(e -> convert_eltype(T, e), mean_cov(dist))
+function paramfloattype(joint::JointNormal, dist::NormalDistributionsFamily)
+    return paramfloattype(dist)
+end
+
+function convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
+    μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
     cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
 end
@@ -178,6 +182,11 @@ Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) =
 
 """An alias for the [`JointNormal`](@ref)."""
 const JointGaussian = JointNormal
+
+# Half-Normal related
+function convert_paramfloattype(::Type{T}, distribution::Truncated{<:Normal}) where {T}
+    return Truncated(convert_paramfloattype(T, distribution.untruncated), convert(T, distribution.lower), convert(T, distribution.upper))
+end
 
 # Variate forms promotion
 
@@ -437,155 +446,170 @@ function Random.rand!(
     container
 end
 
-## Natural parameters for the Normal distribution
-function check_valid_natural(::Type{<:NormalDistributionsFamily}, params)
-    len = length(params)
-    return (len + len^2) % 2 == 0
+## Natural parameters for the Normal family distribution
+
+### Univariate case
+
+# Assume a single exponential family type tag both for all members of `UnivariateNormalDistributionsFamily`
+# Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
+exponential_family_typetag(::UnivariateNormalDistributionsFamily) = NormalMeanVariance
+
+Distributions.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
+
+function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner) 
+    if length(θ) !== 2
+        return false
+    end
+    (θ₁, θ₂) = unpack_parameters(NormalMeanVariance, θ)
+    return isnothing(conditioner) && (!isinf(θ₁) && !isnan(θ₁)) && (θ₂ > 0)
 end
 
-function pack_naturalparameters(dist::UnivariateGaussianDistributionsFamily)
-    weightedmean, precision = weightedmean_precision(dist)
-    return [weightedmean, precision * MINUSHALF]
+function isproper(::NaturalParametersSpace, ::Type{NormalMeanVariance}, η, conditioner) 
+    if length(η) !== 2
+        return false
+    end
+    (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+    return isnothing(conditioner) && (!isinf(η₁) && !isnan(η₁)) && (η₂ < 0)
 end
 
-function pack_naturalparameters(dist::MultivariateGaussianDistributionsFamily)
-    weightedmean, precision = weightedmean_precision(dist)
-    return vcat(weightedmean, vec(precision * MINUSHALF))
+function (::MeanToNatural{NormalMeanVariance})(tuple_of_θ::Tuple{Any, Any})
+    (μ, σ²) = tuple_of_θ
+    return (μ / σ², -inv(2σ²))
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-    η = getnaturalparameters(ef)
-    @inbounds weightedmean = η[1]
-    @inbounds minushalfprecision = η[2]
-
-    return weightedmean, minushalfprecision
+function (::NaturalToMean{NormalMeanVariance})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    return (-η₁ / 2η₂, -inv(2η₂))
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-    η = getnaturalparameters(ef)
-    len = length(η)
-    n = Int64((-1 + isqrt(1 + 4 * len)) / 2)
-
-    @inbounds η1 = view(η, 1:n)
-    @inbounds η2 = reshape(view(η, n+1:len), n, n)
-
-    return η1, η2
+function unpack_parameters(::Type{NormalMeanVariance}, packed)
+    fi = firstindex(packed)
+    si = firstindex(packed) + 1
+    return (packed[fi], packed[si])
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::UnivariateGaussianDistributionsFamily)
-    return ExponentialFamilyDistribution(NormalWeightedMeanPrecision, pack_naturalparameters(dist))
+isbasemeasureconstant(::Type{NormalMeanVariance}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{NormalMeanVariance}) = (x) -> convert(typeof(x), invsqrt2π)
+getsufficientstatistics(::Type{NormalMeanVariance}) = (identity, abs2)
+
+getlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+    return -abs2(η₁) / 4η₂ - log(-2η₂) / 2
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MultivariateGaussianDistributionsFamily)
-    return ExponentialFamilyDistribution(MvNormalWeightedMeanPrecision, pack_naturalparameters(dist))
-end
-
-function Base.convert(
-    ::Type{Distribution},
-    exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily}
-)
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-
-    return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
-end
-
-function Base.convert(
-    ::Type{Distribution},
-    exponentialfamily::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily}
-)
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    return NormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
-end
-
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) * HALF
-end
-
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
-    # return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*LOG2)* HALF
-    # return (dot(weightedmean,inv(-minushalfprecision),weightedmean)*HALF - (logdet(minushalfprecision) + length(weightedmean)*LOG2))* HALF
-    return (dot(weightedmean, inv(-minushalfprecision), weightedmean) * HALF - logdet(-2 * minushalfprecision)) * HALF
-end
-
-isproper(exponentialfamily::ExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
-    isposdef(-getindex(unpack_naturalparameters(exponentialfamily), 2))
-basemeasure(
-    ef::ExponentialFamilyDistribution{<:NormalDistributionsFamily}
-) = TWOPI^(-length(unpack_naturalparameters(ef)[1]) * HALF)
-
-basemeasure(
-    ::Union{<:ExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
-    x
-) =
-    (TWOPI)^(-length(x) * HALF)
-
-function fisherinformation(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(ef)
-    return [
-        -1/(2*minushalfprecision) weightedmean/(2*minushalfprecision^2)
-        weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
+getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+    return SA[
+        -inv(2η₂) η₁ / (2abs2(η₂))
+        η₁/(2abs2(η₂)) inv(2abs2(η₂))-abs2(η₁)/(2(η₂^3))
     ]
 end
 
-function PermutationMatrix(m, n)
-    P = Matrix{Int}(undef, m * n, m * n)
-    for i in 1:m*n
-        for j in 1:m*n
-            if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
-                P[i, j] = 1
-            else
-                P[i, j] = 0
-            end
-        end
-    end
-    P
+### Univariate / mean parameters space
+
+getlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+    (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
+    return μ / 2σ² + log(sqrt(σ²))
 end
 
-function fisherinformation(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-    η1, η2 = unpack_naturalparameters(ef)
-    invη2 = inv(η2)
-    n = size(η1, 1)
-    ident = diageye(n)
-    Iₙ = PermutationMatrix(1, 1)
-    offdiag =
-        1 / 4 * (invη2 * kron(ident, transpose(invη2 * η1)) + invη2 * kron(η1' * invη2, ident)) *
-        kron(ident, kron(Iₙ, ident))
-    G =
-        -1 / 4 *
-        (
-            kron(invη2, invη2) * kron(ident, η1) * kron(ident, transpose(invη2 * η1)) +
-            kron(invη2, invη2) * kron(η1, ident) * kron(η1' * invη2, ident)
-        ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
-    [-1/2*invη2 offdiag; offdiag' G]
+getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+    (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
+    return SA[inv(σ²) 0; 0 inv(2*(σ²^2))]
 end
 
-function mean(ef::ExponentialFamilyDistribution{MultivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(ef)
-    return (-2 * minushalfprecision) \ weightedmean
-end
+# function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
+#     weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
+#     return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) * HALF
+# end
 
-function cov(ef::ExponentialFamilyDistribution{MultivariateGaussianDistributionsFamily})
-    _, minushalfprecision = unpack_naturalparameters(ef)
-    return inv(-2 * minushalfprecision)
-end
+# function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
+#     weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
+#     # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
+#     # return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*LOG2)* HALF
+#     # return (dot(weightedmean,inv(-minushalfprecision),weightedmean)*HALF - (logdet(minushalfprecision) + length(weightedmean)*LOG2))* HALF
+#     return (dot(weightedmean, inv(-minushalfprecision), weightedmean) * HALF - logdet(-2 * minushalfprecision)) * HALF
+# end
 
-sufficientstatistics(
-    ef::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily}
-) = x -> sufficientstatistics(ef, x)
+# basemeasure(
+#     ef::ExponentialFamilyDistribution{<:NormalDistributionsFamily}
+# ) = TWOPI^(-length(unpack_naturalparameters(ef)[1]) * HALF)
 
-sufficientstatistics(
-    ef::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily}
-) = x -> sufficientstatistics(ef, x)
+# basemeasure(
+#     ::Union{<:ExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
+#     x
+# ) =
+#     (TWOPI)^(-length(x) * HALF)
 
-sufficientstatistics(
-    ::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
-    x::Vector{T}
-) where {T} = vcat(x, kron(x, x))
+# function fisherinformation(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
+#     weightedmean, minushalfprecision = unpack_naturalparameters(ef)
+#     return [
+#         -1/(2*minushalfprecision) weightedmean/(2*minushalfprecision^2)
+#         weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
+#     ]
+# end
 
-sufficientstatistics(
-    ::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
-    x::T
-) where {T} = [x, x^2]
+# function PermutationMatrix(m, n)
+#     P = Matrix{Int}(undef, m * n, m * n)
+#     for i in 1:m*n
+#         for j in 1:m*n
+#             if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
+#                 P[i, j] = 1
+#             else
+#                 P[i, j] = 0
+#             end
+#         end
+#     end
+#     P
+# end
+
+# function fisherinformation(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
+#     η1, η2 = unpack_naturalparameters(ef)
+#     invη2 = inv(η2)
+#     n = size(η1, 1)
+#     ident = diageye(n)
+#     Iₙ = PermutationMatrix(1, 1)
+#     offdiag =
+#         1 / 4 * (invη2 * kron(ident, transpose(invη2 * η1)) + invη2 * kron(η1' * invη2, ident)) *
+#         kron(ident, kron(Iₙ, ident))
+#     G =
+#         -1 / 4 *
+#         (
+#             kron(invη2, invη2) * kron(ident, η1) * kron(ident, transpose(invη2 * η1)) +
+#             kron(invη2, invη2) * kron(η1, ident) * kron(η1' * invη2, ident)
+#         ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+#     [-1/2*invη2 offdiag; offdiag' G]
+# end
+
+# sufficientstatistics(
+#     ef::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily}
+# ) = x -> sufficientstatistics(ef, x)
+
+# sufficientstatistics(
+#     ef::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily}
+# ) = x -> sufficientstatistics(ef, x)
+
+# sufficientstatistics(
+#     ::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
+#     x::Vector{T}
+# ) where {T} = vcat(x, kron(x, x))
+
+# sufficientstatistics(
+#     ::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
+#     x::T
+# ) where {T} = [x, x^2]
+
+
+# function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
+#     μ, Σ = mean(dist), cov(dist)
+#     invΣ = inv(Σ)
+#     n = size(μ, 1)
+#     offdiag = zeros(n, n^2)
+#     G = (1 / 2) * kron(invΣ, invΣ)
+#     [invΣ offdiag; offdiag' G]
+# end
+
+# function fisherinformation(dist::NormalMeanVariance)
+#     _, v = params(dist)
+#     return [1/v 0; 0 1/(2*v^2)]
+# end

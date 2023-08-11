@@ -3,8 +3,6 @@ module GammaShapeScaleTest
 using ExponentialFamily, Distributions
 using Test, Random, ForwardDiff, StableRNGs
 
-include("../testutils.jl")
-
 import SpecialFunctions: loggamma
 import ExponentialFamily: paramfloattype, xtlog
 
@@ -27,6 +25,16 @@ import ExponentialFamily: paramfloattype, xtlog
 
         @test paramfloattype(GammaShapeScale(1.0, 2.0)) === Float64
         @test paramfloattype(GammaShapeScale(1.0f0, 2.0f0)) === Float32
+
+        @test convert(GammaShapeScale{Float32}, GammaShapeScale()) == GammaShapeScale{Float32}(1.0f0, 1.0f0)
+        @test convert(GammaShapeScale{Float64}, GammaShapeScale(1.0, 10.0)) == GammaShapeScale{Float64}(1.0, 10.0)
+        @test convert(GammaShapeScale{Float64}, GammaShapeScale(1.0, 0.1)) == GammaShapeScale{Float64}(1.0, 0.1)
+        @test convert(GammaShapeScale{Float64}, 1, 1) == GammaShapeScale{Float64}(1.0, 1.0)
+        @test convert(GammaShapeScale{Float64}, 1, 10) == GammaShapeScale{Float64}(1.0, 10.0)
+        @test convert(GammaShapeScale{Float64}, 1.0, 0.1) == GammaShapeScale{Float64}(1.0, 0.1)
+
+        @test convert(GammaShapeRate, GammaShapeScale(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 1.0 / 2.0)
+        @test convert(GammaShapeScale, GammaShapeScale(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 2.0)
     end
 
     @testset "vague" begin
@@ -63,47 +71,6 @@ import ExponentialFamily: paramfloattype, xtlog
         @test scale(dist3) === 2.0
         @test rate(dist3) === inv(2.0)
         @test entropy(dist3) ≈ 2.2703628454614764
-    end
-    
-    @testset "Base methods" begin
-        @test convert(GammaShapeScale{Float32}, GammaShapeScale()) == GammaShapeScale{Float32}(1.0f0, 1.0f0)
-        @test convert(GammaShapeScale{Float64}, GammaShapeScale(1.0, 10.0)) == GammaShapeScale{Float64}(1.0, 10.0)
-        @test convert(GammaShapeScale{Float64}, GammaShapeScale(1.0, 0.1)) == GammaShapeScale{Float64}(1.0, 0.1)
-        @test convert(GammaShapeScale{Float64}, 1, 1) == GammaShapeScale{Float64}(1.0, 1.0)
-        @test convert(GammaShapeScale{Float64}, 1, 10) == GammaShapeScale{Float64}(1.0, 10.0)
-        @test convert(GammaShapeScale{Float64}, 1.0, 0.1) == GammaShapeScale{Float64}(1.0, 0.1)
-
-        @test convert(GammaShapeRate, GammaShapeScale(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 1.0 / 2.0)
-        @test convert(GammaShapeScale, GammaShapeScale(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 2.0)
-
-        check_basic_statistics = (left, right) -> begin
-            @test mean(left) ≈ mean(right)
-            @test var(left) ≈ var(right)
-            @test cov(left) ≈ cov(right)
-            @test shape(left) ≈ shape(right)
-            @test scale(left) ≈ scale(right)
-            @test rate(left) ≈ rate(right)
-            @test entropy(left) ≈ entropy(right)
-            @test pdf(left, 1.0) ≈ pdf(right, 1.0)
-            @test pdf(left, 10.0) ≈ pdf(right, 10.0)
-            @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
-            @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
-            @test mean(log, left) ≈ mean(log, right)
-            @test mean(loggamma, left) ≈ mean(loggamma, right)
-            @test mean(xtlog, left) ≈ mean(xtlog, right)
-        end
-
-        types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
-        rng   = MersenneTwister(1234)
-        for _ in 1:10
-            for type in types
-                left = GammaShapeScale(100 * rand(rng, Float64), 100 * rand(rng, Float64))
-                for type in types
-                    right = convert(type, left)
-                    @test compare_basic_statistics(left, right)
-                end
-            end
-        end
     end
 
     @testset "prod" begin

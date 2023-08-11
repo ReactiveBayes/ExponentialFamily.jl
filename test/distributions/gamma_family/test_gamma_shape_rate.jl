@@ -3,8 +3,6 @@ module GammaShapeRateTest
 using ExponentialFamily, Distributions
 using Test, Random, ForwardDiff, StableRNGs
 
-include("../testutils.jl")
-
 import SpecialFunctions: loggamma
 import ExponentialFamily: paramfloattype, xtlog
 
@@ -27,6 +25,19 @@ import ExponentialFamily: paramfloattype, xtlog
 
         @test paramfloattype(GammaShapeRate(1.0, 2.0)) === Float64
         @test paramfloattype(GammaShapeRate(1.0f0, 2.0f0)) === Float32
+
+        @test convert(GammaShapeRate{Float32}, GammaShapeRate()) == GammaShapeRate{Float32}(1.0f0, 1.0f0)
+        @test convert(GammaShapeRate{Float64}, GammaShapeRate(1.0, 10.0)) == GammaShapeRate{Float64}(1.0, 10.0)
+        @test convert(GammaShapeRate{Float64}, GammaShapeRate(1.0, 0.1)) == GammaShapeRate{Float64}(1.0, 0.1)
+        @test convert(GammaShapeRate{Float64}, 1, 1) == GammaShapeRate{Float64}(1.0, 1.0)
+        @test convert(GammaShapeRate{Float64}, 1, 10) == GammaShapeRate{Float64}(1.0, 10.0)
+        @test convert(GammaShapeRate{Float64}, 1.0, 0.1) == GammaShapeRate{Float64}(1.0, 0.1)
+
+        @test convert(GammaShapeRate, GammaShapeRate(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 2.0)
+        @test convert(GammaShapeScale, GammaShapeRate(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 1.0 / 2.0)
+
+        @test convert(GammaShapeRate, GammaShapeScale(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 1.0 / 2.0)
+        @test convert(GammaShapeScale, GammaShapeScale(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 2.0)
     end
 
     @testset "vague" begin
@@ -69,39 +80,10 @@ import ExponentialFamily: paramfloattype, xtlog
         @test entropy(dist3) ≈ 0.8840684843415857
         @test pdf(dist3, 1.0) ≈ 0.5413411329464508
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
-    end
 
-    
-
-    @testset "Base methods" begin
-
-        @test convert(GammaShapeRate{Float32}, GammaShapeRate()) == GammaShapeRate{Float32}(1.0f0, 1.0f0)
-        @test convert(GammaShapeRate{Float64}, GammaShapeRate(1.0, 10.0)) == GammaShapeRate{Float64}(1.0, 10.0)
-        @test convert(GammaShapeRate{Float64}, GammaShapeRate(1.0, 0.1)) == GammaShapeRate{Float64}(1.0, 0.1)
-        @test convert(GammaShapeRate{Float64}, 1, 1) == GammaShapeRate{Float64}(1.0, 1.0)
-        @test convert(GammaShapeRate{Float64}, 1, 10) == GammaShapeRate{Float64}(1.0, 10.0)
-        @test convert(GammaShapeRate{Float64}, 1.0, 0.1) == GammaShapeRate{Float64}(1.0, 0.1)
-
-        @test convert(GammaShapeRate, GammaShapeRate(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 2.0)
-        @test convert(GammaShapeScale, GammaShapeRate(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 1.0 / 2.0)
-
-        @test convert(GammaShapeRate, GammaShapeScale(2.0, 2.0)) == GammaShapeRate{Float64}(2.0, 1.0 / 2.0)
-        @test convert(GammaShapeScale, GammaShapeScale(2.0, 2.0)) == GammaShapeScale{Float64}(2.0, 2.0)
-
-        types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
-        rng   = MersenneTwister(1234)
-        for _ in 1:10
-            for type in types
-                left = GammaShapeRate(100 * rand(rng, Float64), 100 * rand(rng, Float64))
-                for type in types
-                    right = convert(type, left)
-                    @test compare_basic_statistics(left, right)
-                end
-            end
-        end
-        # see https://github.com/biaslab/ReactiveMP.jl/issues/314
-        dist = GammaShapeRate(257.37489915581654, 3.0)
-        @test pdf(dist, 86.2027941354432) == 0.07400338986721687
+         # see https://github.com/biaslab/ReactiveMP.jl/issues/314
+         dist = GammaShapeRate(257.37489915581654, 3.0)
+         @test pdf(dist, 86.2027941354432) == 0.07400338986721687
     end
 
     @testset "prod" begin

@@ -59,7 +59,7 @@ end
 # Thus both convert to `ExponentialFamilyDistribution{Gamma}`
 exponential_family_typetag(::GammaDistributionsFamily) = Gamma
 
-Distributions.params(::MeanParametersSpace, dist::GammaDistributionsFamily) = params(convert(Gamma, dist))
+Distributions.params(::MeanParametersSpace, dist::GammaDistributionsFamily) = (shape(dist), scale(dist))
 
 isproper(::MeanParametersSpace, ::Type{Gamma}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (all(>(0), θ))
 

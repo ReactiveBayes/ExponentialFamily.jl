@@ -63,11 +63,3 @@ function Base.prod(::ClosedProd, left::NormalWeightedMeanPrecision, right::Norma
     w  = precision(left) + precision(right)
     return NormalWeightedMeanPrecision(xi, w)
 end
-
-function fisherinformation(dist::NormalWeightedMeanPrecision)
-    xi, w = params(dist)
-    return [
-        1/w -xi/(w^2)
-        -xi/(w^2) (xi^2+0.5*w)/w^3
-    ]
-end

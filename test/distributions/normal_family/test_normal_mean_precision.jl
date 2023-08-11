@@ -126,14 +126,6 @@ import ExponentialFamily: fisherinformation
               NormalWeightedMeanPrecision(1, 3 / 5)
     end
 
-    @testset "fisherinformation" begin
-        for (m, w) in Iterators.product(1:10, 1:10)
-            dist = NormalMeanPrecision(m, w)
-            normal_weighted_mean_precision = convert(NormalWeightedMeanPrecision, dist)
-            J = [1/w -m/w; 0 1]
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(normal_weighted_mean_precision)
-        end
-    end
 end
 
 end

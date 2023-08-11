@@ -210,12 +210,12 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
         Fₘ = getfisherinformation(M, T, conditioner)(m)
         Fₙ = getfisherinformation(N, T, conditioner)(n)
 
-        @test Fₘ ≈ (J * Fₙ * J')
+        @test Fₘ ≈ (J' * Fₙ * J)
 
         # Check the default space
         if M === NaturalParametersSpace()
             # The `fisherinformation` uses the `NaturalParametersSpace` by default
-            @test fisherinformation(ef) ≈ (J * Fₙ * J')
+            @test fisherinformation(ef) ≈ (J' * Fₙ * J)
         end
 
         # Double check the `conditioner` free methods
@@ -225,10 +225,10 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
             Fₘ = getfisherinformation(M, T)(m)
             Fₙ = getfisherinformation(N, T)(n)
 
-            @test Fₘ ≈ (J * Fₙ * J')
+            @test Fₘ ≈ (J' * Fₙ * J)
 
             if M === NaturalParametersSpace()
-                @test fisherinformation(ef) ≈ (J * Fₙ * J')
+                @test fisherinformation(ef) ≈ (J' * Fₙ * J)
             end
         end
 
@@ -289,24 +289,5 @@ function test_generic_simple_exponentialfamily_product(
               prod(PreserveTypeProd(T), left, right)
     end
 
-    return true
-end
-
-function compare_basic_statistics(left, right, extra_fn = ())
-    @test mean(left) ≈ mean(right)
-    @test var(left) ≈ var(right)
-    @test cov(left) ≈ cov(right)
-    @test shape(left) ≈ shape(right)
-    @test scale(left) ≈ scale(right)
-    @test rate(left) ≈ rate(right)
-    @test entropy(left) ≈ entropy(right)
-    @test pdf(left, 1.0) ≈ pdf(right, 1.0)
-    @test pdf(left, 10.0) ≈ pdf(right, 10.0)
-    @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
-    @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
-
-    for fn in extra_fn
-        @test mean(extra_fn, left) ≈ mean(log, right)
-    end
     return true
 end
