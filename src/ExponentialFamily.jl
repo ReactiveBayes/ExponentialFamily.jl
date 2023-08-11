@@ -19,7 +19,7 @@ include("helpers/algebra/combinatorics.jl")
 include("helpers/algebra/correction.jl")
 
 include("distributions/bernoulli.jl")
-# include("distributions/categorical.jl")
+include("distributions/categorical.jl")
 include("distributions/gamma_family/gamma_shape_rate.jl")
 include("distributions/gamma_family/gamma_shape_scale.jl")
 include("distributions/gamma_family/gamma_family.jl")

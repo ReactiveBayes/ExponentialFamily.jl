@@ -47,6 +47,7 @@ function run_test_parameters_conversion(distribution)
 
     # Check the `conditioned` conversions, should work for un-conditioned members as well
     tuple_of_η = MeanToNatural(T)(tuple_of_θ, conditioner)
+
     @test all(NaturalToMean(T)(tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(MeanToNatural(T)(tuple_of_θ, conditioner) .≈ tuple_of_η)
     @test all(NaturalToMean(T)(pack_parameters(T, tuple_of_η), conditioner) .≈ pack_parameters(T, tuple_of_θ))
@@ -73,7 +74,6 @@ function run_test_parameters_conversion(distribution)
         @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ) .≈ _tuple_of_η)
         @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(T, _tuple_of_η)) .≈ pack_parameters(T, tuple_of_θ))
         @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(T, tuple_of_θ)) .≈ pack_parameters(T, _tuple_of_η))
-
     end
 
     @test all(unpack_parameters(T, pack_parameters(T, tuple_of_η)) .== tuple_of_η)
@@ -88,13 +88,16 @@ function run_test_similar_creation(distribution)
     @test similar(ef) isa ExponentialFamilyDistribution{T}
 end
 
-function run_test_distribution_conversion(distribution)
+function run_test_distribution_conversion(distribution; assume_no_allocations = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test @inferred(convert(Distribution, ef)) ≈ distribution
-    @test @allocated(convert(Distribution, ef)) === 0
+
+    if assume_no_allocations
+        @test @allocated(convert(Distribution, ef)) === 0
+    end
 end
 
 function run_test_packing_unpacking(distribution)
@@ -189,7 +192,14 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
     end
 end
 
-function run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = true)
+function run_test_fisherinformation_against_jacobian(
+    distribution;
+    assume_no_allocations = true,
+    mappings = (
+        NaturalParametersSpace() => MeanParametersSpace(),
+        MeanParametersSpace() => NaturalParametersSpace()
+    )
+)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
@@ -202,39 +212,42 @@ function run_test_fisherinformation_against_jacobian(distribution; assume_no_all
     # transformation. For example if we have a mapping T : M -> N, the fisher information matrices computed in M and N 
     # respectively must follow this relation `Fₘ = J * Fₙ * J'`
     for (M, N, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), η), (MeanParametersSpace(), NaturalParametersSpace(), θ))
-        mapping = getmapping(M => N, T)
-        m = parameters
-        n = mapping(m, conditioner)
-        J = ForwardDiff.jacobian(Base.Fix2(mapping, conditioner), m)
+        if (M => N) ∈ mappings
+            
+            mapping = getmapping(M => N, T)
+            m = parameters
+            n = mapping(m, conditioner)
+            J = ForwardDiff.jacobian(Base.Fix2(mapping, conditioner), m)
 
-        Fₘ = getfisherinformation(M, T, conditioner)(m)
-        Fₙ = getfisherinformation(N, T, conditioner)(n)
-
-        @test Fₘ ≈ (J' * Fₙ * J)
-
-        # Check the default space
-        if M === NaturalParametersSpace()
-            # The `fisherinformation` uses the `NaturalParametersSpace` by default
-            @test fisherinformation(ef) ≈ (J' * Fₙ * J)
-        end
-
-        # Double check the `conditioner` free methods
-        if isnothing(conditioner)
-            n = mapping(m)
-            J = ForwardDiff.jacobian(mapping, m)
-            Fₘ = getfisherinformation(M, T)(m)
-            Fₙ = getfisherinformation(N, T)(n)
+            Fₘ = getfisherinformation(M, T, conditioner)(m)
+            Fₙ = getfisherinformation(N, T, conditioner)(n)
 
             @test Fₘ ≈ (J' * Fₙ * J)
 
+            # Check the default space
             if M === NaturalParametersSpace()
+                # The `fisherinformation` uses the `NaturalParametersSpace` by default
                 @test fisherinformation(ef) ≈ (J' * Fₙ * J)
             end
-        end
 
-        if assume_no_allocations
-            @test @allocated(getfisherinformation(M, T, conditioner)(m)) === 0
-            @test @allocated(getfisherinformation(N, T, conditioner)(n)) === 0
+            # Double check the `conditioner` free methods
+            if isnothing(conditioner)
+                n = mapping(m)
+                J = ForwardDiff.jacobian(mapping, m)
+                Fₘ = getfisherinformation(M, T)(m)
+                Fₙ = getfisherinformation(N, T)(n)
+
+                @test Fₘ ≈ (J' * Fₙ * J)
+
+                if M === NaturalParametersSpace()
+                    @test fisherinformation(ef) ≈ (J' * Fₙ * J)
+                end
+            end
+
+            if assume_no_allocations
+                @test @allocated(getfisherinformation(M, T, conditioner)(m)) === 0
+                @test @allocated(getfisherinformation(N, T, conditioner)(n)) === 0
+            end
         end
     end
 end

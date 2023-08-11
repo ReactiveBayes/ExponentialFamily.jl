@@ -25,65 +25,111 @@ function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_d
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 
-function pack_naturalparameters(dist::Categorical)
-    p = probvec(dist)
-    return LoopVectorization.vmap(d -> log(d / p[end]), p)
+# Natural parametrization
+
+# The default implementation via `@generated` function fails to infer this
+exponential_family_typetag(::Categorical) = Categorical
+
+isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (length(η) >= 2)
+isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) = isinteger(conditioner) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
+
+function separate_conditioner(::Type{Categorical}, params)
+    # For `Categorical` we assume that the length of the vector it the `conditioner`
+    # This is needed for sufficientstatistics statistics for example, it needs to know the length based on the type
+    (p, ) = params
+    return (params, length(p))
 end
 
-unpack_naturalparameters(ef::ExponentialFamilyDistribution{Categorical}) = (getnaturalparameters(ef),)
-
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Categorical) =
-    ExponentialFamilyDistribution(Categorical, pack_naturalparameters(dist))
-
-Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Categorical}) =
-    Categorical(softmax(getnaturalparameters(exponentialfamily)))
-
-check_valid_natural(::Type{<:Categorical}, params) = first(size(params)) >= 2
-
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{Categorical})
-    logsumexp(getnaturalparameters(exponentialfamily))
+function join_conditioner(::Type{Categorical}, cparams, conditioner)
+    # For `Categorical` we assume that the length of the vector it the `conditioner`
+    # But we don't really need to store it in the parameters
+    return cparams
 end
-isproper(::ExponentialFamilyDistribution{Categorical}) = true
 
-function fisherinformation(expfamily::ExponentialFamilyDistribution{Categorical})
-    η = getnaturalparameters(expfamily)
-    I = Matrix{Float64}(undef, length(η), length(η))
-    @inbounds for i in 1:length(η)
-        I[i, i] = exp(η[i]) * (sum(exp.(η)) - exp(η[i])) / (sum(exp.(η)))^2
-        for j in 1:i-1
-            I[i, j] = -exp(η[i]) * exp(η[j]) / (sum(exp.(η)))^2
-            I[j, i] = I[i, j]
+function (::MeanToNatural{Categorical})(tuple_of_θ::Tuple{Any}, _)
+    (p,) = tuple_of_θ
+    pₖ = p[end]
+    return (LoopVectorization.vmap(pᵢ -> log(pᵢ / pₖ), p),)
+end
+
+function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{Any}, _)
+    (η,) = tuple_of_η
+    return (softmax(η),)
+end
+
+function pack_parameters(::Type{Categorical}, tuple_of_η::Tuple{Any})
+    return first(tuple_of_η)
+end
+
+function unpack_parameters(::Type{Categorical}, packed)
+    return (packed,)
+end
+
+getsupport(ef::ExponentialFamilyDistribution{Categorical}) = ClosedInterval{Int}(1, getconditioner(ef))
+
+isbasemeasureconstant(::Type{Categorical}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{Categorical}, _) = (x) -> oneunit(x)
+getsufficientstatistics(::Type{Categorical}, conditioner) = ((x) -> OneElement(x, conditioner),)
+
+getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
+    (η) -> begin
+        if (conditioner !== length(η))
+            throw(
+                DimensionMismatch(
+                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                )
+            )
         end
+        return logsumexp(η)
     end
-    return I
-end
 
-function fisherinformation(dist::Categorical)
-    p = probvec(dist)
-    I = Matrix{Float64}(undef, length(p), length(p))
-    @inbounds for i in 1:length(p)
-        I[i, i] = 1 / p[i]
-        for j in 1:i-1
-            I[i, j] = 0
-            I[j, i] = I[i, j]
+getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
+    (η) -> begin
+        if (conditioner !== length(η))
+            throw(
+                DimensionMismatch(
+                    "Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                )
+            )
         end
+        I = Matrix{eltype(η)}(undef, length(η), length(η))
+        ∑expη = sum(exp, η)
+        ∑expη² = abs2(∑expη)
+        @inbounds for i in 1:length(η)
+            expηᵢ = exp(η[i])
+            I[i, i] = expηᵢ * (∑expη - expηᵢ) / ∑expη²
+            for j in 1:i-1
+                offv = -expηᵢ * exp(η[j]) / ∑expη²
+                I[i, j] = offv
+                I[j, i] = offv
+            end
+        end
+        return I
     end
-    return I
-end
 
-function support(ef::ExponentialFamilyDistribution{Categorical})
-    return ClosedInterval{Int}(1, length(getnaturalparameters(ef)))
-end
+# Mean parametrization
 
-basemeasureconstant(::ExponentialFamilyDistribution{Categorical}) = ConstantBaseMeasure()
-basemeasureconstant(::Type{<:Categorical}) = ConstantBaseMeasure()
+getlogpartition(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
+    (θ) -> begin
+        if (conditioner !== length(θ))
+            throw(
+                DimensionMismatch(
+                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                )
+            )
+        end
+        return -log(θ[end])
+    end
 
-basemeasure(::Type{<:Categorical}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Categorical}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Real) = one(x)
-basemeasure(::ExponentialFamilyDistribution{Categorical}, x::Vector) = one(eltype(x))
-
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}) = x -> sufficientstatistics(ef, x)
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Categorical}, x::Real) =
-    OneElement(x, length(getnaturalparameters(ef)))
-sufficientstatistics(::ExponentialFamilyDistribution{<:Categorical}, x::Vector) = x
+getfisherinformation(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
+    (θ) -> begin
+        if (conditioner !== length(θ))
+            throw(
+                DimensionMismatch(
+                    "Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                )
+            )
+        end
+        return Diagonal(map(inv, θ))
+    end
