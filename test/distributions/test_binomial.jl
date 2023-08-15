@@ -6,6 +6,10 @@ using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 include("../testutils.jl")
 
 @testset "Binomial" begin
+
+    # Binomial comes from Distributions.jl and most of the things should be covered there
+    # Here we test some extra ExponentialFamily.jl specific functionality
+
     @testset "probvec" begin
         @test all(probvec(Binomial(2, 0.8)) .≈ (0.2, 0.8))
         @test probvec(Binomial(2, 0.2)) == (0.8, 0.2)
