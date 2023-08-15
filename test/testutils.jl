@@ -1,4 +1,4 @@
-using ExponentialFamily, Distributions
+using ExponentialFamily, Distributions, LinearAlgebra
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
 import ExponentialFamily:
@@ -175,20 +175,34 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
     end
 end
 
-function run_test_fisherinformation_properties(distribution; spaces = (NaturalParametersSpace(), MeanParametersSpace()))
+function run_test_fisherinformation_properties(distribution; test_properties_in_natural_space = true, test_properties_in_mean_space = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
-    for space in spaces
-        p = pack_parameters(T, params(space, distribution))
-        F = getfisherinformation(space, T, getconditioner(ef))(p)
+    (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
+
+    if test_properties_in_natural_space
+        F = getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
+        
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
         @test size(F, 1) === size(F, 2)
         @test size(F, 1) === isqrt(length(F))
         @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
     end
+
+    if test_properties_in_mean_space
+        θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
+        F = getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
+
+        @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
+        @test isposdef(F) || all(>(0), eigvals(F))
+        @test size(F, 1) === size(F, 2)
+        @test size(F, 1) === isqrt(length(F))
+        @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
+    end
+
 end
 
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)

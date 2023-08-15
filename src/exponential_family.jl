@@ -551,12 +551,6 @@ exponential_family_typetag(distribution) = distribution_typewrapper(distribution
 exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
 Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
-Distributions.params(::NaturalParametersSpace, distribution::Distribution) =
-    map(MeanParametersSpace() => NaturalParametersSpace(), exponential_family_typetag(distribution), params(MeanParametersSpace(), distribution))
-
-Distributions.params(::NaturalParametersSpace, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = unpack_parameters(T, getnaturalparameters(ef))
-Distributions.params(::MeanParametersSpace, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
-    map(NaturalParametersSpace() => MeanParametersSpace(), T, params(NaturalParametersSpace(), ef))
 
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}
