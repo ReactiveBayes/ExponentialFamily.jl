@@ -37,7 +37,7 @@ include("../testutils.jl")
     @testset "ExponentialFamilyDistribution{Bernoulli}" begin
         @testset for p in 0.1:0.1:0.9
             @testset let d = Bernoulli(p)
-                ef = test_exponentialfamily_interface(d)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
                 η₁ = logit(p)
 
                 for x in (0, 1)

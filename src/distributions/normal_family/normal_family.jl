@@ -456,7 +456,7 @@ exponential_family_typetag(::UnivariateNormalDistributionsFamily) = NormalMeanVa
 
 Distributions.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
 
-function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner) 
+function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
     if length(θ) !== 2
         return false
     end
@@ -464,7 +464,7 @@ function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditi
     return isnothing(conditioner) && (!isinf(θ₁) && !isnan(θ₁)) && (θ₂ > 0)
 end
 
-function isproper(::NaturalParametersSpace, ::Type{NormalMeanVariance}, η, conditioner) 
+function isproper(::NaturalParametersSpace, ::Type{NormalMeanVariance}, η, conditioner)
     if length(η) !== 2
         return false
     end
@@ -500,13 +500,14 @@ getlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> 
     return -abs2(η₁) / 4η₂ - log(-2η₂) / 2
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> begin
-    (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
-    return SA[
-        -inv(2η₂) η₁ / (2abs2(η₂))
-        η₁/(2abs2(η₂)) inv(2abs2(η₂))-abs2(η₁)/(2(η₂^3))
-    ]
-end
+getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+        return SA[
+            -inv(2η₂) η₁/(2abs2(η₂))
+            η₁/(2abs2(η₂)) inv(2abs2(η₂))-abs2(η₁)/(2(η₂^3))
+        ]
+    end
 
 ### Univariate / mean parameters space
 
@@ -517,7 +518,7 @@ end
 
 getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
-    return SA[inv(σ²) 0; 0 inv(2*(σ²^2))]
+    return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
 end
 
 ### Multivariate case
@@ -528,20 +529,28 @@ exponential_family_typetag(::MultivariateGaussianDistributionsFamily) = MvNormal
 
 Distributions.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
 
-function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner) 
+function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
+    k = div(-1 + isqrt(1 + 4 * length(θ)), 2)
+    if length(θ) < 2 || (length(θ) !== (k + k ^ 2))
+        return false 
+    end
     (μ, Σ) = unpack_parameters(MvNormalMeanCovariance, θ)
-    return isnothing(conditioner) && length(μ) === size(Σ, 1) && (size(Σ, 1) === size(Σ, 2)) # do we need to check `isposdef` here?, perhaps not
+    return isnothing(conditioner) && length(μ) === size(Σ, 1) && (size(Σ, 1) === size(Σ, 2)) && isposdef(Σ)
 end
 
-function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, conditioner) 
+function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, conditioner)
+    k = div(-1 + isqrt(1 + 4 * length(η)), 2)
+    if length(η) < 2 || (length(η) !== (k + k ^ 2))
+        return false 
+    end
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
-    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) # do we need to check `isposdef` here?, perhaps not
+    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
 end
 
 function (::MeanToNatural{MvNormalMeanCovariance})(tuple_of_θ::Tuple{Any, Any})
     (μ, Σ) = tuple_of_θ
     Σ⁻¹ = cholinv(Σ)
-    return (Σ⁻¹ * μ, Σ⁻¹/-2)
+    return (Σ⁻¹ * μ, Σ⁻¹ / -2)
 end
 
 function (::NaturalToMean{MvNormalMeanCovariance})(tuple_of_η::Tuple{Any, Any})
@@ -555,46 +564,55 @@ function unpack_parameters(::Type{MvNormalMeanCovariance}, packed)
     n = div(-1 + isqrt(1 + 4 * len), 2)
 
     p₁ = view(packed, 1:n)
-    p₂ = reshape(view(packed, n + 1:len), n, n)
+    p₂ = reshape(view(packed, n+1:len), n, n)
 
     return (p₁, p₂)
 end
 
-getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = RealNumbers() ^ div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2)
+# getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = RealNumbers()^div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2)
+# The function above is not type-stable, the function below is type-stable, but does not uses an arbitrary `IndicatorFunction`
+struct MvNormalDomainIndicator
+    dims :: Int
+end
+
+(indicator::MvNormalDomainIndicator)(v) = false
+(indicator::MvNormalDomainIndicator)(v::AbstractVector) = length(v) === indicator.dims && isreal(v)
+
+getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2))))
 
 isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
 
 # It is a constant base measure with respect to `x`, only depends on its length, but we consider the length fixed
-getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(-length(x) / 2) 
+getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(length(x) / -2)
 getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * x')
 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
     k = length(η₁)
-    C = -η₂
-    # C = -η₂
-    return (dot(η₁, inv(C) * η₁) / 2 - (k*log(2) + logdet(C))) / 2
-    # return (dot(η₁, inv(-η₂), η₁) / 2 - (k*log(2) + logdet(-η₂))) / 2
-    # return (dot(η₁, inv(C), η₁) / 2 - logdet(-2η₂)) / 2
+    C = fastcholesky(-η₂)
+    l = logdet(C)
+    Cinv = LinearAlgebra.inv!(C)
+    return (dot(η₁, Cinv, η₁) / 2 - (k * log(2) + l)) / 2
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
-    (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
-    invη2 = -cholinv(-η₂)
-    n = size(η₁, 1)
-    ident = diageye(n)
-    Iₙ = PermutationMatrix(1, 1)
-    offdiag =
-        1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
-        kron(ident, kron(Iₙ, ident))
-    G =
-        -1 / 4 *
-        (
-            kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
-            kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
-        ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
-    [-1/2*invη2 offdiag; offdiag' G]
-end
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+        invη2 = -cholinv(-η₂)
+        n = size(η₁, 1)
+        ident = diageye(n)
+        Iₙ = PermutationMatrix(1, 1)
+        offdiag =
+            1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
+            kron(ident, kron(Iₙ, ident))
+        G =
+            -1 / 4 *
+            (
+                kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
+                kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
+            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+        [-1/2*invη2 offdiag; offdiag' G]
+    end
 
 function PermutationMatrix(m, n)
     P = Matrix{Int}(undef, m * n, m * n)
@@ -610,7 +628,7 @@ function PermutationMatrix(m, n)
     P
 end
 
-fisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
     μ, Σ = unpack_parameters(MvNormalMeanCovariance, θ)
     invΣ = cholinv(Σ)
     n = size(μ, 1)

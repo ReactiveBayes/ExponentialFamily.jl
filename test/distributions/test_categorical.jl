@@ -44,15 +44,10 @@ include("../testutils.jl")
             @testset let d = Categorical(normalize!(rand(s), 1))
                 ef = test_exponentialfamily_interface(
                     d;
-                    test_distribution_conversion = false,
-                    test_basic_functions = false,
-                    test_fisherinformation_against_hessian = false,
+                    test_fisherinformation_properties = false, # The fisher information is not-posdef, to discuss
                     test_fisherinformation_against_jacobian = false
                 )
 
-                run_test_distribution_conversion(d; assume_no_allocations = false)
-                run_test_basic_functions(d; assume_no_allocations = false)
-                run_test_fisherinformation_against_hessian(d; assume_no_allocations = false)
                 run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false, mappings = (
                     NaturalParametersSpace() => MeanParametersSpace(),
                     # MeanParametersSpace() => NaturalParametersSpace(), # here is the problem for discussion, the test is broken
@@ -62,11 +57,12 @@ include("../testutils.jl")
                 η = map(p -> log(p / θ[end]), θ)
 
                 for x in 1:s
-                    v = zeros(s); v[x] = 1;
+                    v = zeros(s)
+                    v[x] = 1
 
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === oneunit(x)
-                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (v, ))
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (v,))
                     @test @inferred(logpartition(ef)) ≈ logsumexp(η)
                 end
 
@@ -102,7 +98,6 @@ include("../testutils.jl")
             )
         end
     end
-
 end
 
 end

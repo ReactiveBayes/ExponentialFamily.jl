@@ -4,7 +4,7 @@ using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, getconditioner, compute_logscale, logpartition, basemeasure, insupport,
     sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
-    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule
+    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule, fastcholesky
 
 function test_exponentialfamily_interface(distribution;
     test_parameters_conversion = true,
@@ -13,8 +13,10 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking = true,
     test_isproper = true,
     test_basic_functions = true,
+    test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
-    test_fisherinformation_against_jacobian = true
+    test_fisherinformation_against_jacobian = true,
+    option_assume_no_allocations = false
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -24,12 +26,13 @@ function test_exponentialfamily_interface(distribution;
 
     test_parameters_conversion && run_test_parameters_conversion(distribution)
     test_similar_creation && run_test_similar_creation(distribution)
-    test_distribution_conversion && run_test_distribution_conversion(distribution)
+    test_distribution_conversion && run_test_distribution_conversion(distribution; assume_no_allocations = option_assume_no_allocations)
     test_packing_unpacking && run_test_packing_unpacking(distribution)
-    test_isproper && run_test_isproper(distribution)
-    test_basic_functions && run_test_basic_functions(distribution)
-    test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution)
-    test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution)
+    test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
+    test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
 
     return ef
 end
@@ -112,13 +115,16 @@ function run_test_packing_unpacking(distribution)
     @test @allocated(unpack_parameters(ef)) === 0
 end
 
-function run_test_isproper(distribution)
+function run_test_isproper(distribution; assume_no_allocations = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     exponential_family_form = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test @inferred(isproper(exponential_family_form))
-    @test @allocated(isproper(exponential_family_form)) === 0
+
+    if assume_no_allocations
+        @test @allocated(isproper(exponential_family_form)) === 0
+    end
 end
 
 function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocations = true)
@@ -166,6 +172,22 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
             @test @allocated(basemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
+    end
+end
+
+function run_test_fisherinformation_properties(distribution; spaces = (NaturalParametersSpace(), MeanParametersSpace()))
+    T = ExponentialFamily.exponential_family_typetag(distribution)
+
+    ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
+
+    for space in spaces
+        p = pack_parameters(T, params(space, distribution))
+        F = getfisherinformation(space, T, getconditioner(ef))(p)
+        @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
+        @test isposdef(F) || all(>(0), eigvals(F))
+        @test size(F, 1) === size(F, 2)
+        @test size(F, 1) === isqrt(length(F))
+        @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
     end
 end
 
@@ -258,7 +280,7 @@ function test_generic_simple_exponentialfamily_product(
     right::Distribution;
     strategies = (GenericProd(),),
     test_inplace_version = true,
-    test_inplace_assume_zero_allocations = true,
+    test_inplace_assume_no_allocations = true,
     test_preserve_type_prod_of_distribution = true
 )
     Tl = ExponentialFamily.exponential_family_typetag(left)
@@ -290,7 +312,7 @@ function test_generic_simple_exponentialfamily_product(
         @test @inferred(prod!(similar(efleft), efleft, efright)) ==
               ExponentialFamilyDistribution(T, ηleft + ηright, getconditioner(efleft))
 
-        if test_inplace_assume_zero_allocations
+        if test_inplace_assume_no_allocations
             let _similar = similar(efleft)
                 @test @allocated(prod!(_similar, efleft, efright)) === 0
             end

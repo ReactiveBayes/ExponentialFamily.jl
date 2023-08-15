@@ -2,8 +2,8 @@ export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
-export getbasemeasure, getsufficientstatistics, getlogpartition, getfisherinformation, getsupport, getmapping
-export basemeasure, sufficientstatistics, logpartition, fisherinformation, insupport
+export getbasemeasure, getsufficientstatistics, getlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+export basemeasure, sufficientstatistics, logpartition, fisherinformation, insupport, params
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
@@ -551,6 +551,12 @@ exponential_family_typetag(distribution) = distribution_typewrapper(distribution
 exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
 Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
+Distributions.params(::NaturalParametersSpace, distribution::Distribution) =
+    map(MeanParametersSpace() => NaturalParametersSpace(), exponential_family_typetag(distribution), params(MeanParametersSpace(), distribution))
+
+Distributions.params(::NaturalParametersSpace, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = unpack_parameters(T, getnaturalparameters(ef))
+Distributions.params(::MeanParametersSpace, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
+    map(NaturalParametersSpace() => MeanParametersSpace(), T, params(NaturalParametersSpace(), ef))
 
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}
@@ -677,7 +683,7 @@ function prod(
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocated more than `similar(left)`)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
        isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
-       # Check that both conditioners are either nothing or all are approximately equal
+        # Check that both conditioners are either nothing or all are approximately equal
         if (isnothing(getconditioner(left)) && isnothing(getconditioner(right))) || (isapprox(getconditioner(left), getconditioner(right)))
             # Find the promoted float type of both natural parameters
             F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))

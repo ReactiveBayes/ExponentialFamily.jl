@@ -46,6 +46,15 @@ end
 cholinv_logdet(x::Diagonal) = Diagonal(inv.(diag(x))), mapreduce(z -> log(z), +, diag(x))
 cholinv_logdet(x::Real)     = inv(x), log(abs(x))
 
+function fastcholesky(mat::StaticMatrix)
+    C = cholesky(mat; check = false)
+    if !isposdef(C)
+        return cholesky(PositiveFactorizations.Positive, Hermitian(mat))
+    else
+        return C
+    end
+end
+
 function fastcholesky(mat::AbstractMatrix)
     A = copy(mat)
     C = fastcholesky!(A)

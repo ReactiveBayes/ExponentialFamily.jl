@@ -52,7 +52,7 @@ include("../../testutils.jl")
     @testset "ExponentialFamilyDistribution{Gamma}" begin
         @testset for k in (0.1, 2.0, 5.0), θ in (0.1, 2.0, 5.0), T in ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
             @testset let d = convert(T, GammaShapeScale(k, θ))
-                ef = test_exponentialfamily_interface(d)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
                 (η₁, η₂) = (shape(d) - 1, -inv(scale(d)))
 

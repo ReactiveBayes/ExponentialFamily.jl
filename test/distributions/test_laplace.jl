@@ -21,7 +21,7 @@ include("../testutils.jl")
     @testset "ExponentialFamilyDistribution{Laplace}" begin
         @testset for location in (-1.0, 0.0, 1.0), scale in (0.25, 0.5, 2.0)
             @testset let d = Laplace(location, scale)
-                ef = test_exponentialfamily_interface(d)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
                 η₁ = -1 / scale
 
                 for x in (-1.0, 0.0, 1.0)

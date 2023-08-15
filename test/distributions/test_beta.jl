@@ -36,7 +36,7 @@ import SpecialFunctions: loggamma, logbeta
     @testset "ExponentialFamilyDistribution{Beta}" begin
         @testset for a in 0.1:0.2:0.9, b in 0.1:0.2:0.9
             @testset let d = Beta(a, b)
-                ef = test_exponentialfamily_interface(d)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
                 (η₁, η₂) = (a - 1, b - 1)
 

@@ -5,7 +5,7 @@ using Test, LinearAlgebra, ForwardDiff, Random, StableRNGs, SparseArrays
 
 include("../../testutils.jl")
 
-import ExponentialFamily: promote_variate_type
+import ExponentialFamily: promote_variate_type, fastcholesky
 
 # We need this extra function to ensure better derivatives with AD, it is slower than our implementation
 # but is more AD friendly
@@ -342,36 +342,36 @@ end
             @testset let d = convert(T, MvNormalMeanCovariance(μ, Σ))
                 ef = test_exponentialfamily_interface(
                     d;
-                    test_distribution_conversion = false,
-                    test_basic_functions = false,
+                    # These are handled differently below
                     test_fisherinformation_against_hessian = false,
                     test_fisherinformation_against_jacobian = false
                 )
 
-                run_test_distribution_conversion(d; assume_no_allocations = false)
-                run_test_basic_functions(d; assume_no_allocations = false)
+                (η₁, η₂) = (cholinv(Σ) * mean(d), -cholinv(Σ)/2)
 
-                # TODO: finish these tests
-                # (η₁, η₂) = (mean(d) / var(d), -1/2var(d))
-
-                # for x in [ 10randn(s) in 1:4 ]
-                #     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
-                #     @test @inferred(basemeasure(ef, x)) ≈ 1 / sqrt(2π)
-                #     @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x, abs2(x)))
-                #     @test @inferred(logpartition(ef)) ≈ (-η₁^2/4η₂ - 1/2*log(-2η₂))
-                #     @test @inferred(insupport(ef, x))
-                # end
+                for x in [ 10randn(s) for _ in 1:4 ]
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) ≈ (2π)^(-s/2)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x, x * x'))
+                    @test @inferred(logpartition(ef)) ≈ -1/4*(η₁'*inv(η₂)*η₁) - 1/2*logdet(-2η₂) 
+                    @test @inferred(insupport(ef, x))
+                end
 
             end
         end
 
-        # Test failing isproper cases
-        # @test !isproper(MeanParametersSpace(), NormalMeanVariance, [-1])
-        # @test !isproper(MeanParametersSpace(), NormalMeanVariance, [1, -0.1])
-        # @test !isproper(MeanParametersSpace(), NormalMeanVariance, [-0.1, -1])
-        # @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [-1.1])
-        # @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [1, 1])
-        # @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [-1.1, 1])
+        # Test failing isproper cases (naive)
+        @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [-1])
+        @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [1, -0.1])
+        @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [-0.1, -1])
+        @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [-1, 2, 3, 4]) # shapes are incompatible
+        @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [1, -0.1, -1, 0, 0, -1]) # covariance is not posdef
+
+        @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [-1.1])
+        @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [1, 1])
+        @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [-1.1, 1])
+        @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [-1, 2, 3, 4]) # shapes are incompatible
+        @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [1, -0.1, 1, 0, 0, 1]) # -η₂ is not posdef
 
     end
 
@@ -384,7 +384,13 @@ end
 
         fi_ef = fisherinformation(ef)
         # @test_broken isposdef(fi_ef)
-        @test_broken false
+        # The `isposdef` check is not really reliable in Julia, here, instead
+        # we compute eigen values and additionally check that our `fastcholesky` inverse actually produces the correct inverse
+        @test issymmetric(fi_ef)
+        @test isposdef(fi_ef) || all(>(0), eigvals(fi_ef))
+
+        fi_ef_inv = inv(fastcholesky(fi_ef))
+        @test (fi_ef_inv * fi_ef) ≈ Diagonal(ones(d + d^2)) rtol = 1e-2
 
         # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
         # The matrices are identical up to permutations, resulting in eigenvalues that are the same up to a sign.
@@ -412,131 +418,14 @@ end
         approxFisherInformation = approxHessian /= n_samples
 
         # The error will be higher for sampling tests, tolerance adjusted accordingly.
-        fi_dist = fisherinformation(MeanParametersSpace(), MvNormalMeanCovariance)(θ)
+        fi_dist = getfisherinformation(MeanParametersSpace(), MvNormalMeanCovariance)(θ)
         @test isposdef(fi_dist)
+        @test issymmetric(fi_dist)
+        @test all(>(0), eigvals(fi_dist))
         @test sort(eigvals(fi_dist)) ≈ sort(abs.(eigvals(approxFisherInformation))) rtol = 1e-1
         @test sort(svd(fi_dist).S) ≈ sort(svd(approxFisherInformation).S) rtol = 1e-1
     end
 
-    # @testset "univariate natural parameters related" begin
-    #     @testset "Constructor" begin
-    #         for i in 1:10
-    #             @test convert(Distribution, ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) ==
-    #                   NormalWeightedMeanPrecision(i, 2 * i)
-    #             @test convert(ExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-    #                   ExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
-    #             @test convert(ExponentialFamilyDistribution, NormalWeightedMeanPrecision(i, 2 * i)) ≈
-    #                   ExponentialFamilyDistribution(NormalWeightedMeanPrecision, float([i, -i]))
-    #         end
-    #     end
-
-    #     @testset "logpdf" begin
-    #         for i in 1:10
-    #             @test logpdf(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i]), 0) ≈
-    #                   logpdf(NormalWeightedMeanPrecision(i, 2 * i), 0)
-    #         end
-    #     end
-
-    #     @testset "isproper" begin
-    #         for i in 1:10
-    #             @test isproper(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, -i])) === true
-    #             @test isproper(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [i, i])) === false
-    #         end
-    #     end
-
-    #     @testset "fisherinformation" begin
-    #         for (η1, η2) in Iterators.product(1:10, -10:1:-1)
-    #             ef = ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [η1, η2])
-    #             f_logpartion = (η) -> logpartition(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, η))
-    #             autograd_inforamation_matrix = (η) -> ForwardDiff.hessian(f_logpartion, η)
-    #             @test fisherinformation(ef) ≈ autograd_inforamation_matrix([η1, η2])
-    #         end
-    #     end
-    # end
-
-    # @testset "multivariate natural parameters related" begin
-    #     @testset "Constructor" begin
-    #         for i in 1:10
-    #             @test convert(
-    #                 Distribution,
-    #                 ExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
-    #             ) ==
-    #                   MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
-
-    #             @test convert(
-    #                 ExponentialFamilyDistribution,
-    #                 MvGaussianWeightedMeanPrecision([i, 0], [2*i 0; 0 2*i])
-    #             ) ≈
-    #                   ExponentialFamilyDistribution(
-    #                 MvGaussianWeightedMeanPrecision,
-    #                 vcat(float([i, 0]), float(vec([-i 0; 0 -i])))
-    #             )
-    #         end
-    #     end
-
-    #     @testset "logpdf" begin
-    #         for i in 1:10
-    #             mv_np = ExponentialFamilyDistribution(MvGaussianWeightedMeanPrecision, vcat([i, 0], vec([-i 0; 0 -i])))
-    #             distribution = MvGaussianWeightedMeanPrecision([i, 0.0], [2*i -0.0; -0.0 2*i])
-    #             @test logpdf(distribution, [0.0, 0.0]) ≈ logpdf(mv_np, [0.0, 0.0])
-    #             @test logpdf(distribution, [1.0, 0.0]) ≈ logpdf(mv_np, [1.0, 0.0])
-    #             @test logpdf(distribution, [1.0, 1.0]) ≈ logpdf(mv_np, [1.0, 1.0])
-    #         end
-    #     end
-
-    #     @testset "logpartition" begin
-    #         @test logpartition(ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1, -2])) ≈
-    #               -(log(2) - 1 / 8)
-    #     end
-
-    #     @testset "isproper" begin
-    #         for i in 1:10
-    #             efproper = ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i])))
-    #             efimproper = ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([i 0; 0 i])))
-    #             @test isproper(efproper) === true
-    #             @test isproper(efimproper) === false
-    #         end
-    #     end
-
-    #     @testset "basemeasure" begin
-    #         for i in 1:10
-    #             @test basemeasure(
-    #                 ExponentialFamilyDistribution(MvNormalMeanCovariance, vcat([i, 0], vec([-i 0; 0 -i]))),
-    #                 rand(2)) == (2pi)^(-1)
-    #         end
-    #     end
-    # end
-
-    # @testset "fisherinformation" begin
-    #     for (m, w) in Iterators.product(1:10, 1:10)
-    #         dist = NormalMeanPrecision(m, w)
-    #         normal_weighted_mean_precision = convert(NormalWeightedMeanPrecision, dist)
-    #         J = [1/w -m/w; 0 1]
-    #         @test J' * fisherinformation(dist) * J ≈ fisherinformation(normal_weighted_mean_precision)
-    #     end
-    # end
-
-    # @testset "fisherinformation" begin
-    #     rng = StableRNG(42)
-    #     n_samples = 1000
-    #     for (μ, var) in Iterators.product(-10:10, 0.5:0.5:10)
-    #         samples = rand(rng, NormalMeanVariance(μ, var), n_samples)
-    #         hessian_at_sample =
-    #             (sample) ->
-    #                 ForwardDiff.hessian((params) -> logpdf(NormalMeanVariance(params[1], params[2]), sample), [μ, var])
-    #         expected_hessian = -mean(hessian_at_sample, samples)
-    #         @test expected_hessian ≈ fisherinformation(NormalMeanVariance(μ, var)) atol = 0.5
-    #     end
-    # end
-
-    # @testset "fisherinformation" begin
-    #     for (xi, w) in Iterators.product(1:10, 1:10)
-    #         dist = NormalWeightedMeanPrecision(xi, w)
-    #         ef = convert(ExponentialFamilyDistribution, dist)
-    #         J = [1 0; 0 -2]
-    #         @test J * fisherinformation(dist) * J ≈ fisherinformation(ef)
-    #     end
-    # end
 end
 
 end
