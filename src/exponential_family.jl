@@ -508,7 +508,7 @@ By default returns `(params, nothing)` but can be overwritten for certain distri
 
 ```jldoctest
 julia> (cparams, conditioner) = ExponentialFamily.separate_conditioner(Laplace, (0.0, 1.0))
-((1.0, ), 0.0)
+((1.0,), 0.0)
 
 julia> params = ExponentialFamily.join_conditioner(Laplace, cparams, conditioner)
 (0.0, 1.0)
@@ -528,7 +528,7 @@ Joins the conditioner argument with the `params` and returns a tuple of joined p
 
 ```jldoctest
 julia> (cparams, conditioner) = ExponentialFamily.separate_conditioner(Laplace, (0.0, 1.0))
-((1.0, ), 0.0)
+((1.0,), 0.0)
 
 julia> params = ExponentialFamily.join_conditioner(Laplace, cparams, conditioner)
 (0.0, 1.0)

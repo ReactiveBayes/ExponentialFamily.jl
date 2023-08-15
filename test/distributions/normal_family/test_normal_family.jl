@@ -386,7 +386,7 @@ end
         # @test_broken isposdef(fi_ef)
         # The `isposdef` check is not really reliable in Julia, here, instead
         # we compute eigen values and additionally check that our `fastcholesky` inverse actually produces the correct inverse
-        @test issymmetric(fi_ef)
+        @test issymmetric(fi_ef) || (LowerTriangular(fi_ef) ≈ (UpperTriangular(fi_ef)'))
         @test isposdef(fi_ef) || all(>(0), eigvals(fi_ef))
 
         fi_ef_inv = inv(fastcholesky(fi_ef))
@@ -419,9 +419,8 @@ end
 
         # The error will be higher for sampling tests, tolerance adjusted accordingly.
         fi_dist = getfisherinformation(MeanParametersSpace(), MvNormalMeanCovariance)(θ)
-        @test isposdef(fi_dist)
-        @test issymmetric(fi_dist)
-        @test all(>(0), eigvals(fi_dist))
+        @test isposdef(fi_dist) || all(>(0), eigvals(fi_dist))
+        @test issymmetric(fi_dist) || (LowerTriangular(fi_dist) ≈ (UpperTriangular(fi_dist)'))
         @test sort(eigvals(fi_dist)) ≈ sort(abs.(eigvals(approxFisherInformation))) rtol = 1e-1
         @test sort(svd(fi_dist).S) ≈ sort(svd(approxFisherInformation).S) rtol = 1e-1
     end

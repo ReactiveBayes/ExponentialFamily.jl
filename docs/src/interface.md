@@ -80,12 +80,56 @@ And to convert back:
 tuple_of_θ = NaturalToMean(Bernoulli)(tuple_of_η)
 ```
 
-While the `ExponentialFamily` package employs the respective `map(::MeanToNatural{<:Distribution}, params)` and `map(::NaturalToMean{<:Distribution}, params)` where needed, it's also possible to call these functions manually. For instance, the generic implementation of the `convert` function between `ExponentialFamilyDistribution` and `Distribution` is built in terms of `MeanToNatural` and `NaturalToMean`. Moreover, the `convert` function performs checks to ensure that the provided parameters and conditioner are suitable for a specific distribution type.
+Alternatuvely, the following API is supported 
+
+```@example dist-interfacing
+map(MeanParametersSpace() => NaturalParametersSpace(), Bernoulli, tuple_of_θ)
+```
+
+```@example dist-interfacing
+map(NaturalParametersSpace() => MeanParametersSpace(), Bernoulli, tuple_of_η)
+```
+
+While the `ExponentialFamily` package employs the respective mappings where needed, it's also possible to call these functions manually. For instance, the generic implementation of the `convert` function between `ExponentialFamilyDistribution` and `Distribution` is built in terms of `MeanToNatural` and `NaturalToMean`. Moreover, the `convert` function performs checks to ensure that the provided parameters and conditioner are suitable for a specific distribution type.
 
 ```@docs
 isproper(::Type{T}, parameters, conditioner = nothing) where { T <: Distribution }
-separate_conditioner
-join_conditioner
+```
+
+### Note on the conditioned distributions
+
+For the conditioned distributions, two additional functions `separate_conditioner` and `join_conditioner` are used to separate the conditioner and actual parameters returned from the `Distributions.params` function.
+
+```@docs 
+ExponentialFamily.separate_conditioner
+ExponentialFamily.join_conditioner
+```
+
+For example, `Laplace` distribution defines the functions in the following way
+
+```julia
+# `params` are coming from the `Distribution.params(::Laplace)` and return (location, scale)
+# The `location`, however is a fixed parameter in the exponential distribution representation of Laplace
+# Hence, we return a tuple of tuple of actual parameter and the conditioner
+function separate_conditioner(::Type{Laplace}, params)
+    location, scale = params
+    return ((scale, ), location)
+end
+
+# The `join_conditioner` must join the actual parameters and the conditioner in such a way, that it is compatible 
+# with the `Laplace` structure from the `Distributions.jl`. In Laplace, the location parameter goes first.
+function join_conditioner(::Type{Laplace}, cparams, conditioner) 
+    (scale, ) = cparams
+    location = conditioner
+    return (location, scale)
+end
+```
+
+In general, all functions defined for the `ExponentialFamilyDistribution`, such as `getlogpartition` or `getbasemeasure` accept an optional `conditioner` parameter, which is assumed to be `nothing`. 
+Conditioned distribution implement the "conditioned" versions of such functions by explicitly requiring the `conditioner` parameter, e.g.
+
+```@example dist-interfacing
+getsufficientstatistics(Laplace, 1.0) # explicit `conditioner = 1.0`
 ```
 
 ### Efficient packing of the natural parameters into a vectorized form
@@ -98,7 +142,7 @@ ExponentialFamily.pack_parameters
 ExponentialFamily.unpack_parameters
 ```
 
-These functions are not exported by default, but it's important to note that the `ExponentialFamilyDistributions` type doesn't actually store the parameter tuple internally. Instead, the `getnaturalparameters` function returns the corresponding vectorized (packed) form of the natural parameters.
+These functions are not exported by default, but it's important to note that the `ExponentialFamilyDistributions` type doesn't actually store the parameter tuple internally. Instead, the `getnaturalparameters` function returns the corresponding vectorized (packed) form of the natural parameters. In general, only the `ExponentialFamily.unpack_parameters` function must be implemented, as others could be implemented in a generic way.
 
 ### Attributes of the exponential family distribution based on `Distribution`
 
@@ -112,11 +156,11 @@ basemeasure_of_bernoilli(0)
 ```
 
 ```@docs
-isproper(::Type{T}, η) where { T <: Distribution }
-getbasemeasure(::Type{T}, conditioner) where { T <: Distribution }
-getsufficientstatistics(::Type{<:Distribution}
-getlogpartition(::Type{T}) where { T <: Distribution }
-getfisherinformation(::Type{T}) where { T <: Distribution }
+isproper(::Type{T}, parameters, conditioner) where {T <: Distribution}
+getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution}
+getsufficientstatistics(::Type{T}, ::Nothing) where { T <: Distribution }
+getlogpartition(::Type{T}, _) where { T <: Distribution }
+getfisherinformation(::Type{T}, _) where { T <: Distribution }
 ```
 
 Certain functions require knowledge about which parameter space is being used. By default, the `NaturalParametersSpace` is assumed.
