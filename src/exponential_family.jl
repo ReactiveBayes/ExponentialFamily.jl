@@ -570,9 +570,9 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Distribution)
     # Get the type wrapper, e.g. `Bernoulli{Float64, ...}` becomes just `Bernoulli`
     T = exponential_family_typetag(dist)
 
-    tuple_if_θ = params(MeanParametersSpace(), dist)
+    tuple_of_θ = params(MeanParametersSpace(), dist)
     # Separate the parameters and the conditioner, the `params` function returns all together
-    cparams, conditioner = separate_conditioner(T, tuple_if_θ)
+    cparams, conditioner = separate_conditioner(T, tuple_of_θ)
 
     # Map the conditioned `cparams` into the natural parameters space
     tuple_of_η = map(MeanParametersSpace() => NaturalParametersSpace(), T, cparams, conditioner)
