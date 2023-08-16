@@ -71,5 +71,5 @@ function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{VonMises},
     return SA[cos(x), sin(x)]
 end
 
-basemeasure(::ExponentialFamilyDistribution{VonMises}) = inv(TWOPI)
-basemeasure(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real) = inv(TWOPI)
+basemeasure(::ExponentialFamilyDistribution{VonMises}) = inv(twoπ)
+basemeasure(::Union{<:ExponentialFamilyDistribution{VonMises}, <:VonMises}, x::Real) = inv(twoπ)

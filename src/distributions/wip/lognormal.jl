@@ -63,11 +63,11 @@ basemeasureconstant(::ExponentialFamilyDistribution{LogNormal}) = NonConstantBas
 basemeasureconstant(::Type{<:LogNormal}) = NonConstantBaseMeasure()
 basemeasure(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> basemeasure(ef, x)
 function basemeasure(::ExponentialFamilyDistribution{LogNormal}, x::Real)
-    return inv(sqrt(TWOPI) * x)
+    return inv(sqrt(twoπ) * x)
 end
 
 function basemeasure(::LogNormal, x::Real)
-    return inv(sqrt(TWOPI) * x)
+    return inv(sqrt(twoπ) * x)
 end
 
 function fisherinformation(d::LogNormal)

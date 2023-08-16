@@ -74,12 +74,12 @@ end
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
-    (a, b) = unpack_parameters(Gamma, θ)
+    (a, b) = unpack_parameters(Beta, θ)
     return logbeta(a, b)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
-    (a, b) = unpack_parameters(Gamma, θ)
+    (a, b) = unpack_parameters(Beta, θ)
     psia = trigamma(a)
     psib = trigamma(b)
     psiab = trigamma(a + b)

@@ -91,7 +91,7 @@ function insupport(ef::ExponentialFamilyDistribution{VonMisesFisher, P, C, Safe}
     return length(getnaturalparameters(ef)) == length(x) && dot(x, x) ≈ 1.0
 end
 
-basemeasure(ef::ExponentialFamilyDistribution{VonMisesFisher}) = (1 / TWOPI)^(length(getnaturalparameters(ef)) * HALF)
+basemeasure(ef::ExponentialFamilyDistribution{VonMisesFisher}) = (1 / twoπ)^(length(getnaturalparameters(ef)) * HALF)
 function basemeasure(::Union{<:ExponentialFamilyDistribution{VonMisesFisher}, <:VonMisesFisher}, x::Vector)
     return (1 / 2pi)^(length(x) * HALF)
 end

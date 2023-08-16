@@ -101,7 +101,7 @@ function logpartition(exponentialfamily::ExponentialFamilyDistribution{MvNormalW
 
     term1 = -(d * HALF) * log(-2 * (η3))
     term2 = -((d + 2 * η4) * HALF) * logdet(-2 * η2 + HALF * η1 * η1' / (η3))
-    term3 = LOG2 * d * (d + 2 * η4) * HALF
+    term3 = logtwo * d * (d + 2 * η4) * HALF
     term4 = logmvgamma(d, (d + 2 * η4) * HALF)
 
     return (term1 + term2 + term3 + term4)
