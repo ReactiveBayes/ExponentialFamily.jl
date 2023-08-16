@@ -54,7 +54,7 @@ function Base.prod(::PreserveTypeProd{ExponentialFamilyDistribution{Laplace}}, l
 end
 
 # function Base.prod(
-#     ::ClosedProd,
+#     ::PreserveTypeProd{ExponentialFamilyDistribution},
 #     ef_left::ExponentialFamilyDistribution{T},
 #     ef_right::ExponentialFamilyDistribution{T}
 # ) where {T <: Laplace}

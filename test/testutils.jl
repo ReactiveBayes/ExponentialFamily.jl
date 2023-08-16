@@ -246,7 +246,7 @@ function run_test_fisherinformation_against_jacobian(
     # Check natural to mean Jacobian based FI computation
     # So here we check that the fisher information matrices are identical with respect to `J`, which is the jacobian of the 
     # transformation. For example if we have a mapping T : M -> N, the fisher information matrices computed in M and N 
-    # respectively must follow this relation `Fₘ = J * Fₙ * J'`
+    # respectively must follow this relation `Fₘ = J' * Fₙ * J`
     for (M, N, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), η), (MeanParametersSpace(), NaturalParametersSpace(), θ))
         if (M => N) ∈ mappings
             
