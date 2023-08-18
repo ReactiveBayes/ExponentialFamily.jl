@@ -77,5 +77,5 @@ end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin
     (k, β) = unpack_parameters(Erlang, θ)
-    return SA[trigamma(k) β; β k*β^2]
+    return SA[trigamma(k) 1/β; 1/β k/β^2]
 end
