@@ -34,7 +34,15 @@ function (::NaturalToMean{Erlang})(tuple_of_η::Tuple{Any, Any})
     return (η1 + one(η1), -inv(η2))
 end
 
-unpack_parameters(::Type{Erlang}, packed) = (first(packed), getindex(packed,2))
+function pack_parameters(::Type{Erlang}, params::Tuple{Any, Any})
+    return collect(promote(params...))
+end
+
+function unpack_parameters(::Type{Erlang}, packed) 
+    fi = firstindex(packed)
+    si = firstindex(packed) + 1
+    return (Integer(packed[fi]), packed[si])
+end
 
 isbasemeasureconstant(::Type{Erlang}) = ConstantBaseMeasure()
 
