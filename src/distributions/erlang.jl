@@ -40,8 +40,14 @@ end
 
 function unpack_parameters(::Type{Erlang}, packed) 
     fi = firstindex(packed)
-    si = firstindex(packed) + 1
-    return (Integer(packed[fi]), packed[si])
+    si = fi + 1
+    return (packed[fi], packed[si])
+end
+
+function convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Erlang}) 
+    tuple_of_η = unpack_parameters(ef)
+    params = map(NaturalParametersSpace() => MeanParametersSpace(), Erlang, tuple_of_η)
+    return Erlang(Integer(params[1]), params[2])
 end
 
 isbasemeasureconstant(::Type{Erlang}) = ConstantBaseMeasure()
@@ -66,86 +72,10 @@ end
 
 getlogpartition(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin
     (k, β) = unpack_parameters(Erlang, θ)
-    return k*log(β) + loggamma(k)
+    return k*log(β) + logfactorial(k - 1)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin
-    (k, β ) = unpack_parameters(Erlang, θ)
-    return SA[trigamma(k) -β; -β k*β^2]
+    (k, β) = unpack_parameters(Erlang, θ)
+    return SA[trigamma(k) β; β k*β^2]
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# check_valid_natural(::Type{<:Erlang}, params) = length(params) === 2
-
-# pack_naturalparameters(dist::Erlang) = [(shape(dist) - 1), -rate(dist)]
-# function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Erlang})
-#     η = getnaturalparameters(ef)
-#     @inbounds η1 = η[1]
-#     @inbounds η2 = η[2]
-
-#     return η1, η2
-# end
-
-# Base.convert(::Type{ExponentialFamilyDistribution}, dist::Erlang) =
-#     ExponentialFamilyDistribution(Erlang, pack_naturalparameters(dist))
-
-# function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Erlang})
-#     a, b = unpack_naturalparameters(exponentialfamily)
-#     return Erlang(Int64(a + one(a)), -inv(b))
-# end
-
-# function logpartition(exponentialfamily::ExponentialFamilyDistribution{Erlang})
-#     a, b = unpack_naturalparameters(exponentialfamily)
-#     inta = Int64(a)
-#     return logfactorial(inta) - (inta + one(inta)) * log(-b)
-# end
-
-# function isproper(exponentialfamily::ExponentialFamilyDistribution{Erlang})
-#     a, b = unpack_naturalparameters(exponentialfamily)
-#     return (a >= tiny - 1) && (-b >= tiny)
-# end
-
-# support(::ExponentialFamilyDistribution{Erlang}) = ClosedInterval{Real}(0, Inf)
-
-# basemeasure(::ExponentialFamilyDistribution{Erlang}) = one(Float64)
-# basemeasure(::ExponentialFamilyDistribution{Erlang}, x::Real) = one(x)
-
-# function fisherinformation(ef::ExponentialFamilyDistribution)
-#     η1, η2 = unpack_naturalparameters(ef)
-#     miη2 = -inv(η2)
-
-#     return SA[trigamma(η1) miη2; miη2 (η1+1)/(η2^2)]
-# end
-
-# function fisherinformation(dist::Erlang)
-#     k = shape(dist)
-#     λ = rate(dist)
-
-#     return SA[trigamma(k - 1) -inv(λ); -inv(λ) k/λ^2]
-# end
-
-# sufficientstatistics(ef::ExponentialFamilyDistribution{Erlang}) = (x) -> sufficientstatistics(ef, x)
-# sufficientstatistics(::ExponentialFamilyDistribution{Erlang}, x::Real) = SA[log(x), x]

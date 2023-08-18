@@ -23,36 +23,36 @@ include("../testutils.jl")
         @test mean(log, Erlang(3, 0.3)) ≈ digamma(3) + log(0.3)
     end
 
-    # @testset "ExponentialFamilyDistribution{Erlang}" begin
-    #     @testset for a in 1, b in 1.0
-    #         @testset let d = Erlang(a, b)
-    #             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+    @testset "ExponentialFamilyDistribution{Erlang}" begin
+        @testset for a in 1:3, b in 1.0:1.0:3.0
+            @testset let d = Erlang(a, b)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
-    #             (η1, η2) = (a - 1, -inv(b) )
-    #             for x in 0.1
-    #                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
-    #                 @test @inferred(basemeasure(ef, x)) === oneunit(x)
-    #                 @test all(@inferred(sufficientstatistics(ef, x)) .≈ (log(x), x))
-    #                 @test @inferred(logpartition(ef)) ≈ (logfactorial(η1) - (η1 + one(η1)) * log(-η2))
-    #             end
+                (η1, η2) = (a - 1, -inv(b) )
+                for x in 10rand(4)
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (log(x), x))
+                    @test @inferred(logpartition(ef)) ≈ (logfactorial(η1) - (η1 + one(η1)) * log(-η2))
+                end
 
-    #             @test !@inferred(insupport(ef, -0.5))
-    #             @test @inferred(insupport(ef, 0.5))
+                @test !@inferred(insupport(ef, -0.5))
+                @test @inferred(insupport(ef, 0.5))
 
-    #             # Not in the support
-    #             @test_throws Exception logpdf(ef, -0.5)
-    #         end
-    #     end
+                # Not in the support
+                @test_throws Exception logpdf(ef, -0.5)
+            end
+        end
 
-    #     # Test failing isproper cases
-    #     @test !isproper(MeanParametersSpace(), Erlang, [-1])
-    #     @test !isproper(MeanParametersSpace(), Erlang, [1, -0.1])
-    #     @test !isproper(MeanParametersSpace(), Erlang, [-0.1, 1])
-    #     @test !isproper(NaturalParametersSpace(), Erlang, [-1.1])
-    #     @test isproper(NaturalParametersSpace(), Erlang, [1, -1.1])
-    #     @test !isproper(NaturalParametersSpace(), Erlang, [-1.1, 1])
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), Erlang, [-1])
+        @test !isproper(MeanParametersSpace(), Erlang, [1, -0.1])
+        @test !isproper(MeanParametersSpace(), Erlang, [-0.1, 1])
+        @test !isproper(NaturalParametersSpace(), Erlang, [-1.1])
+        @test isproper(NaturalParametersSpace(), Erlang, [1, -1.1])
+        @test !isproper(NaturalParametersSpace(), Erlang, [-1.1, 1])
 
-    # end
+    end
 
 
     @testset "prod with Distributions" begin
