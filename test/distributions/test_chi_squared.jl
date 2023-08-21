@@ -58,13 +58,13 @@ include("../testutils.jl")
 
             @test prod_dist.naturalparameters == naturalparameters
             @test getbasemeasure(prod_dist)(i) ≈ exp(-i)
-            @test getsufficientstatistics(prod_dist)(i) ≈ [log(i)]
+            @test sufficientstatistics(prod_dist, i) === (log(i), )
             @test getlogpartition(prod_dist)(η_left + η_right) ≈ loggamma(η_left[1] + η_right[1] + 1)
             @test getsupport(prod_dist) === support(left)
 
             @test prod_ef.naturalparameters == naturalparameters
             @test getbasemeasure(prod_ef)(i) ≈ exp(-i)
-            @test getsufficientstatistics(prod_ef)(i) ≈ [log(i)]
+            @test sufficientstatistics(prod_ef, i) === (log(i), )
             @test getlogpartition(prod_ef)(η_left + η_right) ≈ loggamma(η_left[1] + η_right[1] + 1)
             @test getsupport(prod_ef) === support(left)
         end
