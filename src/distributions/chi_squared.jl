@@ -25,7 +25,7 @@ function Base.prod(
 
     naturalparameters = η_left + η_right
     basemeasure = (x) -> exp(-x)
-    sufficientstatistics = (x) -> SA[log(x)]
+    sufficientstatistics = (log, )
     logpartition = (η) -> loggamma(η[1] + 1)
     supp = Distributions.support(T)
 
