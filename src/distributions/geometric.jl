@@ -12,6 +12,23 @@ closed_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
 Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
 pack_naturalparameters(dist::Geometric) = [log(one(Float64) - succprob(dist))]
 function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Geometric})
     η = getnaturalparameters(ef)
