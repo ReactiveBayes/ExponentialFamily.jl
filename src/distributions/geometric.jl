@@ -1,77 +1,63 @@
 export Geometric
 
 import Distributions: Geometric, succprob, failprob
+using DomainSets
 using StaticArrays
 
+## We use the variant of Geometric distribution that models k failures before the first success
 vague(::Type{<:Geometric}) = Geometric(Float64(tiny))
 
 probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
-closed_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
+default_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
 
 Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-pack_naturalparameters(dist::Geometric) = [log(one(Float64) - succprob(dist))]
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Geometric})
-    η = getnaturalparameters(ef)
-    @inbounds η1 = η[1]
-    return (η1,)
+function support(::Type{Geometric})
+    return DomainSets.NaturalNumbers()
 end
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Geometric) =
-    ExponentialFamilyDistribution(Geometric, pack_naturalparameters(dist))
+# Natural parametrization
 
-Base.convert(::Type{Distribution}, η::ExponentialFamilyDistribution{Geometric}) =
-    Geometric(one(Float64) - exp(first(unpack_naturalparameters(η))))
+isproper(::NaturalParametersSpace, ::Type{Geometric}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(!isinf, η) && all(!isnan, η) && all(<=(0), η) 
+isproper(::MeanParametersSpace, ::Type{Geometric}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) &&  all(<=(1), θ) && all(!isinf, θ)&& all(!isnan, θ)
 
-logpartition(η::ExponentialFamilyDistribution{Geometric}) =
-    -log(one(Float64) - exp(first(unpack_naturalparameters(η))))
-
-check_valid_natural(::Type{<:Geometric}, params) = length(params) == 1
-
-function isproper(exponentialfamily::ExponentialFamilyDistribution{Geometric})
-    (η,) = unpack_naturalparameters(exponentialfamily)
-    return (η <= zero(η)) && (η >= log(convert(typeof(η), tiny)))
+function (::MeanToNatural{Geometric})(tuple_of_θ::Tuple{Any})
+    (p, ) = tuple_of_θ
+    return (log(one(p)-p), )
 end
 
-function insupport(::ExponentialFamilyDistribution{Geometric, P, C, Safe}, x::Real) where {P, C}
-    return zero(Float64) < x && x < Inf && typeof(x) <: Int
+function (::NaturalToMean{Geometric})(tuple_of_η::Tuple{Any})
+    (η,) = tuple_of_η
+    return (one(η) - exp(η), )
 end
 
-basemeasure(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}) = one(Float64)
-function basemeasure(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
-    return one(x)
-end
-function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Geometric})
-    (η,) = unpack_naturalparameters(exponentialfamily)
-    SA[exp(η) / (one(Float64) - exp(η))^2;;]
+unpack_parameters(::Type{Geometric}, packed) = (first(packed), )
+
+isbasemeasureconstant(::Type{Geometric}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{Geometric}) = (x) -> one(x) 
+getsufficientstatistics(::Type{Geometric}) = (identity, )
+
+getlogpartition(::NaturalParametersSpace, ::Type{Geometric}) = (η) -> begin
+    (η1, ) = unpack_parameters(Geometric, η)
+    return -log(one(η1) - exp(η1))
 end
 
-function fisherinformation(dist::Geometric)
-    p = succprob(dist)
-    SA[one(Float64) / (p * (one(Float64) - p)) + one(Float64) / p^2;;]
+getfisherinformation(::NaturalParametersSpace, ::Type{Geometric}) = (η) -> begin
+    (η1, ) = unpack_parameters(Geometric, η)
+    return SA[exp(η1) / (one(η1) - exp(η1))^2;;]
 end
 
-sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}) =
-    x -> sufficientstatistics(ef, x)
-function sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Geometric}, <:Geometric}, x::Real)
-    return SA[x]
+# Mean parametrization
+
+getlogpartition(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
+    (p, ) = unpack_parameters(Geometric, θ)
+    return -log(p)
+end
+
+getfisherinformation(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
+    (p,  ) = unpack_parameters(Geometric, θ)
+    return SA[one(p) / (p^2 * (one(p) - p));;]
 end
