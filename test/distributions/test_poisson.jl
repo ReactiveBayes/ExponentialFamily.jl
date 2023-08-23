@@ -16,12 +16,12 @@ include("../testutils.jl")
 
 @testset "Poisson" begin
     @testset "ExponentialFamilyDistribution{Poisson}" begin
-        @testset for i in 3:4
+        @testset for i in 3:5
             @testset let d = Poisson(2 * (i + 1))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
                 η1 = first(getnaturalparameters(ef))
 
-                for x in (1,3, 5)
+                for x in 1:5
                     @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1/factorial(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (x,)

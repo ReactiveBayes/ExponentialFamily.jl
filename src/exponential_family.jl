@@ -668,6 +668,12 @@ function prod(::ClosedProd, left::ExponentialFamilyDistribution, right::Exponent
     return prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
 end
 
+function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Distribution, right::Distribution)
+    ef_left = convert(ExponentialFamilyDistribution, left)
+    ef_right = convert(ExponentialFamilyDistribution, right)
+    return prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
+end
+
 function prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},

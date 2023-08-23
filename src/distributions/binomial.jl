@@ -17,14 +17,6 @@ function convert_paramfloatype(::Type{Binomial}, ::Type{T}, distribution::Binomi
     return Binomial(n, convert(T, p))
 end
 
-default_prod_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = PreserveTypeProd(ExponentialFamilyDistribution)
-
-function Base.prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Binomial, right::Binomial)
-    efleft = convert(ExponentialFamilyDistribution, left)
-    efright = convert(ExponentialFamilyDistribution, right)
-    return prod(PreserveTypeProd(ExponentialFamilyDistribution), efleft, efright)
-end
-
 # NOTE: The product of two Binomial distributions is NOT a Binomial distribution.
 function Base.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
@@ -64,7 +56,6 @@ end
 Distributions.insupport(ef::ExponentialFamilyDistribution{Binomial}, x) = insupport(convert(Distribution, ef), x)
 
 isproper(::NaturalParametersSpace, ::Type{Binomial}, η, conditioner) = length(η) === 1 && isinteger(conditioner) && conditioner >= 0
-
 isproper(::MeanParametersSpace, ::Type{Binomial}, θ, conditioner::Number) = length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0
 
 function separate_conditioner(::Type{Binomial}, params)

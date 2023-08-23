@@ -6,8 +6,6 @@ using StaticArrays
 
 vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
-default_prod_rule(::Type{<:Rayleigh}, ::Type{<:Rayleigh}) = PreserveTypeProd(ExponentialFamilyDistribution)
-
 # NOTE: The product of two Rayleigh distributions is NOT a Rayleigh distribution.
 function Base.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
@@ -29,12 +27,6 @@ function Base.prod(
         nothing,
         attributes
     )
-end
-
-function Base.prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::T, right::T) where {T <: Rayleigh}
-    ef_left = convert(ExponentialFamilyDistribution, left)
-    ef_right = convert(ExponentialFamilyDistribution, right)
-    return prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
 end
 
 # Natural parametrization
