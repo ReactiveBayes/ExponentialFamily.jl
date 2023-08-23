@@ -23,12 +23,6 @@ std(dist::Dirichlet) = vmap(sqrt, var(dist))
 mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
 mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
 
-# promote_variate_type(::Type{Multivariate}, ::Type{<:Dirichlet})  = Dirichlet
-# promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichlet
-
-# promote_variate_type(::Type{Multivariate}, ::Type{<:MatrixDirichlet})  = Dirichlet
-# promote_variate_type(::Type{Matrixvariate}, ::Type{<:MatrixDirichlet}) = MatrixDirichlet
-
 function compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist::Dirichlet)
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
 end
@@ -56,7 +50,7 @@ unpack_parameters(::Type{Dirichlet}, packed) = (packed, )
 
 isbasemeasureconstant(::Type{Dirichlet}) = ConstantBaseMeasure()
 
-getbasemeasure(::Type{Dirichlet}) = (x) -> 1.0
+getbasemeasure(::Type{Dirichlet}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{Dirichlet}) = (x -> vmap(log,x), )
 
 getlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin

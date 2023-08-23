@@ -86,5 +86,5 @@ end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Chisq}) = (θ) -> begin
     (ν,  ) = unpack_parameters(Chisq, θ)
-    return SA[trigamma(ν /2) * QUARTER;;]
+    return SA[trigamma(ν /2) * (1/4);;]
 end

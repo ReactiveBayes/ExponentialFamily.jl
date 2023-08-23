@@ -1,10 +1,4 @@
-const MINUSHALF = -1 / 2
-const HALF = 1 / 2
-const QUARTER = 1/4 
-const TWO = 2.0
-using Reexport
-
-@reexport using IrrationalConstants:
+using IrrationalConstants:
     twoπ,       # 2π
     fourπ,      # 4π
     halfπ,      # π / 2

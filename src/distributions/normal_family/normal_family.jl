@@ -657,21 +657,21 @@ end
 
 # function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
 #     weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-#     # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
-#     # return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*logtwo)* HALF
-#     # return (dot(weightedmean,inv(-minushalfprecision),weightedmean)*HALF - (logdet(minushalfprecision) + length(weightedmean)*logtwo))* HALF
-#     return (dot(weightedmean, inv(-minushalfprecision), weightedmean) * HALF - logdet(-2 * minushalfprecision)) * HALF
+#     # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * (1/2)
+#     # return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*logtwo)* (1/2)
+#     # return (dot(weightedmean,inv(-minushalfprecision),weightedmean)*(1/2) - (logdet(minushalfprecision) + length(weightedmean)*logtwo))* (1/2)
+#     return (dot(weightedmean, inv(-minushalfprecision), weightedmean) * (1/2) - logdet(-2 * minushalfprecision)) * (1/2)
 # end
 
 # basemeasure(
 #     ef::ExponentialFamilyDistribution{<:NormalDistributionsFamily}
-# ) = twoπ^(-length(unpack_naturalparameters(ef)[1]) * HALF)
+# ) = twoπ^(-length(unpack_naturalparameters(ef)[1]) * (1/2))
 
 # basemeasure(
 #     ::Union{<:ExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
 #     x
 # ) =
-#     (twoπ)^(-length(x) * HALF)
+#     (twoπ)^(-length(x) * (1/2))
 
 # function fisherinformation(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
 #     weightedmean, minushalfprecision = unpack_naturalparameters(ef)

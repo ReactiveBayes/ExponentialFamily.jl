@@ -113,7 +113,7 @@ end
 
 
 
-# pack_naturalparameters(dist::Rayleigh) = [MINUSHALF / first(params(dist))^2]
+# pack_naturalparameters(dist::Rayleigh) = [(-1/2) / first(params(dist))^2]
 # function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Rayleigh})
 #     η = getnaturalparameters(ef)
 #     @inbounds η1 = η[1]
