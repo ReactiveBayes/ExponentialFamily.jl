@@ -15,13 +15,14 @@ import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, logpartition
 include("../testutils.jl")
 
 @testset "Rayleigh" begin
+
     @testset "ExponentialFamilyDistribution{Rayleigh}" begin
-        @testset for σ in 3
+        @testset for σ in 10rand(4)
             @testset let d = Rayleigh(σ)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
                 η1 = first(getnaturalparameters(ef))
 
-                for x in (0.1,0.5, 1.0)
+                for x in 10rand(4)
                     @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === x
                     @test @inferred(sufficientstatistics(ef, x)) === (x^2,)

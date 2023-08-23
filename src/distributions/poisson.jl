@@ -7,10 +7,8 @@ using StaticArrays
 
 Distributions.cov(dist::Poisson) = var(dist)
 
-default_prod_rule(::Type{<:Poisson}, ::Type{<:Poisson}) = PreserveTypeProd(ExponentialFamilyDistribution)
-function support(::Type{Poisson})
-    return DomainSets.NaturalNumbers()
-end
+getsupport(::Type{Poisson}) = DomainSets.NaturalNumbers()
+
 # NOTE: The product of two Poisson distributions is NOT a Poisson distribution.
 function Base.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
@@ -33,19 +31,6 @@ function Base.prod(
         nothing,
         attributes
     )
-end
-
-function Base.prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Poisson, right::Poisson)
-    ef_left = convert(ExponentialFamilyDistribution, left)
-    ef_right = convert(ExponentialFamilyDistribution, right)
-
-    return prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
-end
-
-function logpdf_sample_friendly(dist::Poisson)
-    λ = params(dist)
-    friendly = Poisson(λ)
-    return (friendly, friendly)
 end
 
 # Natural parametrization

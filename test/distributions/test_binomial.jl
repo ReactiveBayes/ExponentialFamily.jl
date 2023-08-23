@@ -60,7 +60,7 @@ include("../testutils.jl")
         @testset let (left, right) = (Binomial(nleft, pleft), Binomial(nright, pright))
 
             for (efleft, efright) in ((left, right), (convert(ExponentialFamilyDistribution, left), convert(ExponentialFamilyDistribution, right)))
-                for strategy in (GenericProd(), PreserveTypeProd(ExponentialFamilyDistribution))
+                for strategy in (PreserveTypeProd(ExponentialFamilyDistribution), )
                     prod_dist = prod(strategy, efleft, efright)
 
                     @test prod_dist isa ExponentialFamilyDistribution

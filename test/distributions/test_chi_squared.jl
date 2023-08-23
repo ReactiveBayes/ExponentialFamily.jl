@@ -44,7 +44,6 @@ include("../testutils.jl")
     end
 
     @testset "prod with Distribution and ExponentialFamilyDistribution" begin
-        @test default_prod_rule(Chisq, Chisq) === PreserveTypeProd(ExponentialFamilyDistribution)
         @testset for i=3:6
             left = Chisq(i+1)
             right = Chisq(i)

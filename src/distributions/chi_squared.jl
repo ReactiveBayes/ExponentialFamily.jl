@@ -5,15 +5,6 @@ import Distributions: Chisq, params, dof
 using StaticArrays
 using DomainSets
 
-default_prod_rule(::Type{<:Chisq}, ::Type{<:Chisq}) = PreserveTypeProd(ExponentialFamilyDistribution)
-
-function Base.prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Chisq, right::Chisq)
-    ef_left = convert(ExponentialFamilyDistribution, left)
-    ef_right = convert(ExponentialFamilyDistribution, right)
-
-    return prod(PreserveTypeProd(ExponentialFamilyDistribution),ef_left, ef_right)
-end
-
 # # NOTE: The product of two Chisq distributions is NOT a Chisq distribution.
 function Base.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},

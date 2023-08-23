@@ -14,9 +14,7 @@ default_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = ClosedProd()
 Base.prod(::ClosedProd, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-function support(::Type{Geometric})
-    return DomainSets.NaturalNumbers()
-end
+getsupport(::Type{Geometric}) = DomainSets.NaturalNumbers()
 
 # Natural parametrization
 
