@@ -295,7 +295,8 @@ function test_generic_simple_exponentialfamily_product(
     strategies = (GenericProd(),),
     test_inplace_version = true,
     test_inplace_assume_no_allocations = true,
-    test_preserve_type_prod_of_distribution = true
+    test_preserve_type_prod_of_distribution = true,
+    test_against_distributions_prod_if_possible = true
 )
     Tl = ExponentialFamily.exponential_family_typetag(left)
     Tr = ExponentialFamily.exponential_family_typetag(right)
@@ -313,12 +314,24 @@ function test_generic_simple_exponentialfamily_product(
         @test isapprox(getconditioner(efleft), getconditioner(efright))
     end
 
+    prod_dist = prod(GenericProd(), left, right)
+
+    # We check against the `prod_dist` only if we have the proper solution, and skip if the result is of type `ProductOf`
+    if test_against_distributions_prod_if_possible && (prod_dist isa ProductOf || !(typeof(prod_dist) <: T))
+        prod_dist = nothing
+    end
+
     for strategy in strategies
         @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(T, ηleft + ηright, getconditioner(efleft))
 
         # Double check the `conditioner` free methods
         if isnothing(getconditioner(efleft)) && isnothing(getconditioner(efright))
             @test @inferred(prod(strategy, efleft, efright)) == ExponentialFamilyDistribution(T, ηleft + ηright)
+        end
+
+        # Check that the result is consistent with the `prod_dist`
+        if !isnothing(prod_dist)
+            @test convert(T, prod(strategy, efleft, efright)) ≈ prod_dist
         end
     end
 
