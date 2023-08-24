@@ -67,15 +67,20 @@ end
 function Random.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::Int64) where {T}
     container = Vector{Matrix{T}}(undef, nsamples)
     @inbounds for i in eachindex(container)
-        container[i] = similar(dist.a)
+        container[i] = Matrix{T}(undef, size(dist))
         rand!(rng, dist, container[i])
     end
     return container
 end
 
 function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
-    container = reshape(collect(Iterators.flatten(map(d -> rand(rng, Dirichlet(convert(Vector,d))), eachcol(dist.a)))),size(dist))
-    return container
+    samples = vmap(d -> rand(rng, Dirichlet(convert(Vector,d))), eachcol(dist.a))
+    @views for row in 1:isqrt(length(container))
+        b = container[:, row]
+        b[:] .= samples[row]
+    end
+
+    return container 
 end
 
 function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractVector{T}) where {T <: AbstractMatrix}
@@ -85,14 +90,8 @@ function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::Abstra
     return container
 end
 
-
-# function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
-#     ef = Base.convert(ExponentialFamilyDistribution, dist)
-#     return -logpartition(ef) + tr(first(unpack_naturalparameters(ef))' * log.(x))
-# end
-
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
-    return mapreduce(
+    return vmapreduce(
         d -> logpdf(Dirichlet(convert(Vector,d[1])),convert(Vector,d[2])),
         +,
         zip(eachcol(dist.a),eachcol(x))
@@ -159,9 +158,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MatrixDirichlet}) = (η) -
     matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * ones),
         Iterators.zip(map(d -> trigamma(d), sum(ηp1, dims = 1)), map(d -> trigamma.(d), eachcol(ηp1))))
 
-    # return blockdiag(Tuple(matrices)...)
-    # blockdiag(matrices...)
-    vmapreduce(identity ,blockdiag, matrices)
+    return vmapreduce(identity ,blockdiag, matrices)
 end
 
 # Mean parametrization
@@ -180,9 +177,7 @@ getfisherinformation(::MeanParametersSpace, ::Type{MatrixDirichlet}) = (θ) -> b
     matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * Ones{Float64}(size(α))),
         Iterators.zip(map(d -> trigamma(d), sum(α, dims = 1)), map(d -> trigamma.(d), eachcol(α))))
 
-    # return blockdiag(Tuple(matrices)...)
-    # blockdiag(matrices...)
-    vmapreduce(identity ,blockdiag, matrices)
+    return vmapreduce(identity ,blockdiag, matrices)
 end
 
 

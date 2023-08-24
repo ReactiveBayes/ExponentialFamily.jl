@@ -7,7 +7,7 @@ using Random
 using ForwardDiff
 using LoopVectorization 
 import SpecialFunctions: loggamma
-import ExponentialFamily: ExponentialFamilyDistribution, variate_form, value_support
+import ExponentialFamily: ExponentialFamilyDistribution, variate_form, value_support, promote_variate_type
 
 include("../testutils.jl")
 
@@ -71,7 +71,7 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{MatrixDirichlet}" begin
-        for len = 3
+        for len = 3:5
             α = rand(len,len)
             @testset let d = MatrixDirichlet(α)
                 ef = test_exponentialfamily_interface(d; test_basic_functions = true, option_assume_no_allocations = false)
@@ -104,76 +104,50 @@ include("../testutils.jl")
         @test_throws Exception convert(ExponentialFamilyDistribution, MatrixDirichlet([Inf Inf; 2 3]))
     end
 
+    @testset "prod with Distribution" begin
+        @test default_prod_rule(MatrixDirichlet, MatrixDirichlet) === ClosedProd()
+        d1 = MatrixDirichlet([0.2 3.4; 5.0 11.0; 0.2 0.6])
+        d2 = MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])
+        d3 = MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])
+        @test @inferred(prod(ClosedProd(), d1, d2)) ≈ MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+        @test @inferred(prod(ClosedProd(), d1, d3)) ≈ MatrixDirichlet(
+            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
+        )
+        @test @inferred(prod(ClosedProd(),d2, d3)) ≈ MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
 
+        # GenericProd should always check the default strategy and fallback if available
+        @test @inferred(prod(GenericProd(), d1, d2)) ≈ MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+        @test @inferred(prod(GenericProd(), d1, d3)) ≈  MatrixDirichlet(
+            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
+        )
+        @test @inferred(prod(GenericProd(), d2, d3)) ≈ MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+    end
 
-    # @testset "prod" begin
-    #     d1 = MatrixDirichlet([0.2 3.4; 5.0 11.0; 0.2 0.6])
-    #     d2 = MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])
-    #     d3 = MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])
+    @testset "prod with ExponentialFamilyDistribution" for len=3:6
+        αleft = rand(len,len) .+ 1
+        αright = rand(len,len) .+ 1
+        let left = MatrixDirichlet(αleft), right = MatrixDirichlet(αright)
+            @test test_generic_simple_exponentialfamily_product(
+                left,
+                right,
+                strategies = (
+                    ClosedProd(),
+                    GenericProd()
+                )
+            )
+        end
+    end
 
-    #     @test prod(ClosedProd(), d1, d2) ==
-    #           MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-    #     @test prod(ClosedProd(), d1, d3) == MatrixDirichlet(
-    #         [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
-    #     )
-    #     @test prod(ClosedProd(), d2, d3) == MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
-    # end
+    @testset "promote_variate_type" begin
+        @test_throws MethodError promote_variate_type(Univariate, MatrixDirichlet)
 
-    # @testset "promote_variate_type" begin
-    #     @test_throws MethodError promote_variate_type(Univariate, MatrixDirichlet)
+        @test promote_variate_type(Multivariate, Dirichlet) === Dirichlet
+        @test promote_variate_type(Matrixvariate, Dirichlet) === MatrixDirichlet
 
-    #     @test promote_variate_type(Multivariate, Dirichlet) === Dirichlet
-    #     @test promote_variate_type(Matrixvariate, Dirichlet) === MatrixDirichlet
+        @test promote_variate_type(Multivariate, MatrixDirichlet) === Dirichlet
+        @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
+    end
 
-    #     @test promote_variate_type(Multivariate, MatrixDirichlet) === Dirichlet
-    #     @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
-    # end
-
-    # @testset "natural parameters related" begin
-    #     @test convert(ExponentialFamilyDistribution, MatrixDirichlet([0.6 0.7; 1.0 2.0])) ==
-    #           ExponentialFamilyDistribution(MatrixDirichlet, view([0.6 0.7; 1.0 2.0], :) .- 1)
-    #     b_01 = MatrixDirichlet([1.0 10.0; 2.0 10.0])
-    #     nb_01 = convert(ExponentialFamilyDistribution, b_01)
-    #     @test logpartition(nb_01) ==
-    #           mapreduce(
-    #         d -> logpartition(ExponentialFamilyDistribution(Dirichlet, convert(Vector, d))),
-    #         +,
-    #         eachcol(first(unpack_naturalparameters(nb_01)))
-    #     )
-    #     for i in 1:9
-    #         b = MatrixDirichlet([i/10.0 i/20; i/5 i])
-    #         bnp = convert(ExponentialFamilyDistribution, b)
-    #         @test convert(Distribution, bnp) ≈ b
-    #         @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
-    #         @test logpdf(bnp, [0.5 0.4; 0.2 0.3]) ≈ logpdf(b, [0.5 0.4; 0.2 0.3])
-
-    #         @test convert(ExponentialFamilyDistribution, b) == bnp
-
-    #         @test prod(nb_01, bnp) ≈ convert(ExponentialFamilyDistribution, prod(ClosedProd(), b_01, b))
-    #         @test logpartition(bnp) ≈ test_partition(bnp)
-    #     end
-    #     @test isproper(ExponentialFamilyDistribution(MatrixDirichlet, vec([10 2; 3 2]))) === true
-    # end
-
-    # @testset "ExponentialFamilyDistribution mean" begin
-    #     for i in 1:9
-    #         dist = MatrixDirichlet([i/10.0 i/20; i/5 i])
-    #         ef = convert(ExponentialFamilyDistribution, dist)
-    #         @test mean(dist) ≈ mean(ef) atol = 1e-8
-    #     end
-    # end
-
-    # @testset "fisher information" begin
-    #     for i in 1:9
-    #         dist = MatrixDirichlet([i/10.0 i/20; i/5 i])
-    #         ef = convert(ExponentialFamilyDistribution, dist)
-    #         η = vcat(as_vec(getnaturalparameters(ef)))
-    #         f_logpartition = (η_vec) -> reconstructed_logpartition(ef, η_vec)
-
-    #         @test fisherinformation(ef) ≈ ForwardDiff.hessian(f_logpartition, η) rtol = 1e-8
-    #         @test fisherinformation(dist) ≈ fisherinformation(ef) atol = 1e-8 ##Jacobian is omitted because it is identity
-    #     end
-    # end
 end
 
 end
