@@ -15,11 +15,11 @@ function convert_eltype(::Type{Multinomial}, ::Type{T}, distribution::Multinomia
     return Multinomial(n, convert(AbstractVector{T}, p))
 end
 
-closed_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = ClosedProd()
+default_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = PreserveTypeProd(ExponentialFamilyDistribution)
 
 # NOTE: The product of two Multinomial distributions is NOT a Multinomial distribution.
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
 ) where {T <: Multinomial}
