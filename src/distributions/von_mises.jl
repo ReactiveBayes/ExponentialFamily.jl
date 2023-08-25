@@ -46,18 +46,16 @@ function prod(
     return Base.prod!(container, left, right)
 end
 
-function Distributions.insupport(ef::ExponentialFamilyDistribution{T}, value) where {T <: VonMises}
-    return insupport(convert(Distribution, ef), value)
-end
-
+Distributions.insupport(ef::ExponentialFamilyDistribution{T}, value) where {T <: VonMises} = insupport(convert(Distribution, ef), value)
+   
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{VonMises}, η, conditioner) = !isnothing(conditioner) && length(η) === 2 && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{VonMises}, θ, conditioner) = !isnothing(conditioner) && length(θ) === 2 && getindex(θ,2) > 0 && all(!isinf, θ) && all(!isnan, θ)
 
+## We record the conditioner otherwise it is not possible to uniquely map back to mean paramaters space
 function separate_conditioner(::Type{VonMises}, params)
     μ, κ = params
-
     return ((μ, κ), (μ - asin(sin(μ))) / pi)
 end
 
