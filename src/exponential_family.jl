@@ -9,7 +9,7 @@ export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 using LoopVectorization
 using Distributions, LinearAlgebra, StaticArrays, Random
 
-import Distributions: insupport
+import Distributions: insupport, params
 import Base: map
 
 """
