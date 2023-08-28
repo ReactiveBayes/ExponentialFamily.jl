@@ -311,11 +311,11 @@ function (transformation::NaturalToMean{T})(v::AbstractVector) where {T <: Distr
 end
 
 function (transformation::NaturalToMean{T})(v::AbstractVector, ::Nothing) where {T <: Distribution}
-    return pack_parameters(T, transformation(unpack_parameters(T, v)))
+    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v)))
 end
 
 function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(T, transformation(unpack_parameters(T, v), conditioner))
+    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v), conditioner))
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
@@ -323,11 +323,11 @@ function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distr
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, ::Nothing) where {T <: Distribution}
-    return pack_parameters(T, transformation(unpack_parameters(T, v)))
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v)))
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(T, transformation(unpack_parameters(T, v), conditioner))
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v), conditioner))
 end
 
 """
@@ -472,7 +472,7 @@ value_support(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distributi
 value_support(::Type{<:ExponentialFamilyDistribution{D, P, C, A}}) where {D, P, C, A} = value_support(A)
 
 """
-    pack_parameters(::Type{T}, params::Tuple)
+    flatten_parameters(::Type{T}, params::Tuple)
 
 This function returns the parameters of a distribution of type `T` in a flattened form without actually allocating the container.
 """
@@ -483,22 +483,30 @@ flatten_parameters(params::Tuple) = Iterators.flatten(params)
 flatten_parameters(::Type{T}, params::Tuple) where {T} = flatten_parameters(params)
 
 """
-    pack_parameters(::Type{T}, params::Tuple)
+    pack_parameters([ space ],  ::Type{T}, params::Tuple)
 
-This function returns the parameters of a distribution of type `T` in a vectorized (packed) form.
+This function returns the parameters of a distribution of type `T` in a vectorized (packed) form. For most of the distributions the packed versions are of the 
+same structure in any parameters space. For some distributions, however, it is necessary to indicate the `space` of the packaged parameters.
 """
-function pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution}
-    return collect(flatten_parameters(T, params))
-end
+function pack_parameters end
+
+# Assume that for the most distributions the `pack_parameters` does not depend on the `space` parameter
+pack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, params::Tuple) where {T} = pack_parameters(T, params)
+pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution} = collect(flatten_parameters(T, params))
 
 """
-    unpack_parameters(::Type{T}, parameters)
+    unpack_parameters([ space ], ::Type{T}, parameters)
 
-This function "unpack" the vectorized form of the parameters in a tuple.
+This function "unpack" the vectorized form of the parameters in a tuple. For most of the distributions the packed `parameters` are of the 
+same structure in any parameters space. For some distributions, however, it is necessary to indicate the `space` of the packaged parameters.
+
+See also: [`MeanParametersSpace`](@ref), [`NaturalParametersSpace`](@ref)
 """
 function unpack_parameters end
 
 unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef))
+
+# Assume that for the most distributions the `unpack_parameters` does not depend on the `space` parameter
 unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)
 
 """
@@ -578,7 +586,7 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Distribution)
     # Map the conditioned `cparams` into the natural parameters space
     tuple_of_η = map(MeanParametersSpace() => NaturalParametersSpace(), T, cparams, conditioner)
     # Pack the parameters for efficiency
-    η = pack_parameters(T, tuple_of_η)
+    η = pack_parameters(NaturalParametersSpace(), T, tuple_of_η)
 
     return ExponentialFamilyDistribution(T, η, conditioner)
 end

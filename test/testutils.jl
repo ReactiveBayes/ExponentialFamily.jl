@@ -53,13 +53,19 @@ function run_test_parameters_conversion(distribution)
 
     @test all(NaturalToMean(T)(tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(MeanToNatural(T)(tuple_of_θ, conditioner) .≈ tuple_of_η)
-    @test all(NaturalToMean(T)(pack_parameters(T, tuple_of_η), conditioner) .≈ pack_parameters(T, tuple_of_θ))
-    @test all(MeanToNatural(T)(pack_parameters(T, tuple_of_θ), conditioner) .≈ pack_parameters(T, tuple_of_η))
+    @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
+    @test all(MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
 
     @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ, conditioner) .≈ tuple_of_η)
-    @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(T, tuple_of_η), conditioner) .≈ pack_parameters(T, tuple_of_θ))
-    @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(T, tuple_of_θ), conditioner) .≈ pack_parameters(T, tuple_of_η))
+    @test all(
+        map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈
+        pack_parameters(MeanParametersSpace(), T, tuple_of_θ)
+    )
+    @test all(
+        map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .≈
+        pack_parameters(NaturalParametersSpace(), T, tuple_of_η)
+    )
 
     # Double check the `conditioner` free conversions
     if isnothing(conditioner)
@@ -69,18 +75,24 @@ function run_test_parameters_conversion(distribution)
         @test all(NaturalToMean(T)(_tuple_of_η) .≈ tuple_of_θ)
         @test all(NaturalToMean(T)(_tuple_of_η) .≈ tuple_of_θ)
         @test all(MeanToNatural(T)(tuple_of_θ) .≈ _tuple_of_η)
-        @test all(NaturalToMean(T)(pack_parameters(T, _tuple_of_η)) .≈ pack_parameters(T, tuple_of_θ))
-        @test all(MeanToNatural(T)(pack_parameters(T, tuple_of_θ)) .≈ pack_parameters(T, _tuple_of_η))
+        @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)) .≈ pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
+        @test all(MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .≈ pack_parameters(NaturalParametersSpace(), T, _tuple_of_η))
 
         @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
         @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
         @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ) .≈ _tuple_of_η)
-        @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(T, _tuple_of_η)) .≈ pack_parameters(T, tuple_of_θ))
-        @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(T, tuple_of_θ)) .≈ pack_parameters(T, _tuple_of_η))
+        @test all(
+            map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)) .≈
+            pack_parameters(MeanParametersSpace(), T, tuple_of_θ)
+        )
+        @test all(
+            map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .≈
+            pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)
+        )
     end
 
-    @test all(unpack_parameters(T, pack_parameters(T, tuple_of_η)) .== tuple_of_η)
-    @test all(unpack_parameters(T, pack_parameters(T, tuple_of_θ)) .== tuple_of_θ)
+    @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η)) .== tuple_of_η)
+    @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .== tuple_of_θ)
 end
 
 function run_test_similar_creation(distribution)
@@ -147,7 +159,7 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
         @test @inferred(std(ef)) ≈ std(distribution)
         @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
-        @test all(rand!(StableRNG(42), ef, [ copy(x) for _ in 1:10 ]) .≈ rand!(StableRNG(42), distribution, [ copy(x) for _ in 1:10 ]))
+        @test all(rand!(StableRNG(42), ef, [copy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [copy(x) for _ in 1:10]))
 
         @test @inferred(isbasemeasureconstant(ef)) === isbasemeasureconstant(T)
         @test @inferred(basemeasure(ef, x)) == getbasemeasure(T, conditioner)(x)
@@ -184,7 +196,7 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
 
     if test_properties_in_natural_space
         F = getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
-        
+
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
         @test size(F, 1) === size(F, 2)
@@ -202,7 +214,6 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
         @test size(F, 1) === isqrt(length(F))
         @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
     end
-
 end
 
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)
@@ -249,7 +260,6 @@ function run_test_fisherinformation_against_jacobian(
     # respectively must follow this relation `Fₘ = J' * Fₙ * J`
     for (M, N, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), η), (MeanParametersSpace(), NaturalParametersSpace(), θ))
         if (M => N) ∈ mappings
-            
             mapping = getmapping(M => N, T)
             m = parameters
             n = mapping(m, conditioner)

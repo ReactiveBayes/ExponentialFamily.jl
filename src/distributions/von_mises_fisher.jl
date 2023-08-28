@@ -6,8 +6,6 @@ import LinearAlgebra: norm
 
 vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
-default_prod_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = ClosedProd()
-
 function Distributions.mean(dist::VonMisesFisher)
     (μ, κ) = Distributions.params(dist)
 
@@ -57,7 +55,7 @@ end
 
 isbasemeasureconstant(::Type{VonMisesFisher}) = ConstantBaseMeasure()
 
-getbasemeasure(::Type{VonMisesFisher}) = (x) -> (1 / twoπ)^(length(x) * (1/2))
+getbasemeasure(::Type{VonMisesFisher}) = (x) -> (inv2π)^(length(x)/2)
 getsufficientstatistics(::Type{VonMisesFisher}) = (identity, )
 
 getlogpartition(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
