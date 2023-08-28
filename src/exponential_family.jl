@@ -498,7 +498,8 @@ This function "unpack" the vectorized form of the parameters in a tuple.
 """
 function unpack_parameters end
 
-unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = unpack_parameters(T, getnaturalparameters(ef))
+unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef))
+unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)
 
 """
     separate_conditioner(::Type{T}, params) where {T <: Distribution}

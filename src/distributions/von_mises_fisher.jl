@@ -45,11 +45,13 @@ function (::NaturalToMean{VonMisesFisher})(tuple_of_η::Tuple{Any})
     return (μ, κ)
 end
 
-# function unpack_parameters(::MeanParametersSpace, ::Type{VonMisesFisher}, packed)
-#     return (view(packed, 1:length(packed)-1), packed[end])
-# end
+function unpack_parameters(::MeanParametersSpace, ::Type{VonMisesFisher}, packed)
+    (μ, κ) = (view(packed, 1:length(packed)-1), packed[end])
 
-function unpack_parameters(::Type{VonMisesFisher}, packed)
+    return (μ, κ)
+end
+
+function unpack_parameters(::NaturalParametersSpace, ::Type{VonMisesFisher}, packed)
     return (packed, )
 end
 
@@ -91,13 +93,13 @@ end
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{VonMisesFisher}) = (θ) -> begin
-    (μ, κ) = (view(θ, 1:length(θ)-1), θ[end])
+    (μ, κ) = unpack_parameters(MeanParametersSpace(), VonMisesFisher,θ )
     p = length(μ)
     return log(besseli((p / 2) - 1, κ)) - ((p / 2) - 1) * log(κ)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{VonMisesFisher}) = (θ) -> begin
-    (μ, k) = (view(θ, 1:length(θ)-1), θ[end])
+    (μ, k) = unpack_parameters(MeanParametersSpace(), VonMisesFisher,θ )
     p = length(μ)
 
     bessel3 = besseli(p / 2 - 3, k)
