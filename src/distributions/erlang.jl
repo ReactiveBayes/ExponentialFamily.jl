@@ -21,16 +21,17 @@ end
 
 # Natural parameterization
 
-isproper(::NaturalParametersSpace, ::Type{Erlang}, η, conditioner) = isnothing(conditioner) && length(η) === 2 && isinteger(η[1]) && (η[1] >= 0) && (-η[2] >= tiny) && all(!isinf, η)
+isproper(::NaturalParametersSpace, ::Type{Erlang}, η, conditioner) =
+    isnothing(conditioner) && length(η) === 2 && isinteger(η[1]) && (η[1] >= 0) && (-η[2] >= tiny) && all(!isinf, η)
 isproper(::MeanParametersSpace, ::Type{Erlang}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ) && isinteger(θ[1]) && all(!isinf, θ)
 
-function (::MeanToNatural{Erlang})(tuple_of_θ::Tuple{Any,Any})
-    (shape, scale ) = tuple_of_θ
-    return (shape - one(shape), -inv(scale) )
+function (::MeanToNatural{Erlang})(tuple_of_θ::Tuple{Any, Any})
+    (shape, scale) = tuple_of_θ
+    return (shape - one(shape), -inv(scale))
 end
 
 function (::NaturalToMean{Erlang})(tuple_of_η::Tuple{Any, Any})
-    (η1,η2) = tuple_of_η
+    (η1, η2) = tuple_of_η
     return (η1 + one(η1), -inv(η2))
 end
 
@@ -38,13 +39,13 @@ function pack_parameters(::Type{Erlang}, params::Tuple{Any, Any})
     return collect(promote(params...))
 end
 
-function unpack_parameters(::Type{Erlang}, packed) 
+function unpack_parameters(::Type{Erlang}, packed)
     fi = firstindex(packed)
     si = fi + 1
     return (packed[fi], packed[si])
 end
 
-function convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Erlang}) 
+function convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Erlang})
     tuple_of_η = unpack_parameters(ef)
     params = map(NaturalParametersSpace() => MeanParametersSpace(), Erlang, tuple_of_η)
     return Erlang(Integer(params[1]), params[2])
@@ -58,21 +59,21 @@ getsufficientstatistics(::Type{Erlang}) = (log, identity)
 getlogpartition(::NaturalParametersSpace, ::Type{Erlang}) = (η) -> begin
     (η1, η2) = unpack_parameters(Erlang, η)
 
-    return loggamma(η1+1) - (η1 + one(η1)) * log(-η2)
+    return loggamma(η1 + 1) - (η1 + one(η1)) * log(-η2)
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Erlang}) = (η) -> begin
-    (η1, η2)= unpack_parameters(Erlang, η)
+    (η1, η2) = unpack_parameters(Erlang, η)
     miη2 = -inv(η2)
 
-    return SA[trigamma(η1+1) miη2; miη2 (η1+1)/(η2^2)]
+    return SA[trigamma(η1 + 1) miη2; miη2 (η1+1)/(η2^2)]
 end
 
 # Mean parameterization
 
 getlogpartition(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin
     (k, β) = unpack_parameters(Erlang, θ)
-    return k*log(β) + logfactorial(k - 1)
+    return k * log(β) + logfactorial(k - 1)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin

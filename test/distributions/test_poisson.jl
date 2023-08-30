@@ -23,7 +23,7 @@ include("../testutils.jl")
 
                 for x in 1:5
                     @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
-                    @test @inferred(basemeasure(ef, x)) === 1/factorial(x)
+                    @test @inferred(basemeasure(ef, x)) === 1 / factorial(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (x,)
                     @test @inferred(logpartition(ef)) ≈ exp(η1)
                 end
@@ -41,7 +41,6 @@ include("../testutils.jl")
         @test_throws Exception convert(ExponentialFamilyDistribution, Poisson(Inf))
     end
 
-
     @testset "Poisson prod" begin
         @testset for λleft in 2:3, λright in 3:4
             left = Poisson(λleft)
@@ -49,8 +48,8 @@ include("../testutils.jl")
             prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
             sample_points = collect(1:5)
             for x in sample_points
-                @test basemeasure(prod_dist,x) == (1 / factorial(x)^2)
-                @test sufficientstatistics(prod_dist, x) == (x, )
+                @test basemeasure(prod_dist, x) == (1 / factorial(x)^2)
+                @test sufficientstatistics(prod_dist, x) == (x,)
             end
             sample_points = [-5, -2, 0, 2, 5]
             for η in sample_points
@@ -59,11 +58,9 @@ include("../testutils.jl")
             @test getnaturalparameters(prod_dist) == [log(λleft) + log(λright)]
             @test getsupport(prod_dist) == NaturalNumbers()
 
-        
-            @test sum(pdf(prod_dist,x) for x in 0:15) ≈ 1.0
+            @test sum(pdf(prod_dist, x) for x in 0:15) ≈ 1.0
         end
     end
-
 end
 
 end

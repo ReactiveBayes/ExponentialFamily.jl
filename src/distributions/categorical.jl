@@ -31,12 +31,13 @@ end
 exponential_family_typetag(::Categorical) = Categorical
 
 isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2)
-isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) = isinteger(conditioner) && (conditioner === length(θ)) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
+isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) =
+    isinteger(conditioner) && (conditioner === length(θ)) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
 
 function separate_conditioner(::Type{Categorical}, params)
     # For `Categorical` we assume that the length of the vector it the `conditioner`
     # This is needed for sufficientstatistics statistics for example, it needs to know the length based on the type
-    (p, ) = params
+    (p,) = params
     return (params, length(p))
 end
 

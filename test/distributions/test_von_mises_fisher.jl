@@ -7,7 +7,7 @@ using Random
 using ForwardDiff
 
 import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure, sufficientstatistics,params
+    ExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure, sufficientstatistics, params
 import SpecialFunctions: besseli
 import StatsFuns: softmax
 import LinearAlgebra: norm
@@ -28,7 +28,7 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{VonMises}" begin
-        @testset for len=2, b in 0.1
+        @testset for len in 2, b in 0.1
             a_unnormalized = rand(len)
             a = a_unnormalized ./ norm(a_unnormalized)
             @testset let d = VonMisesFisher(a, b)
@@ -36,8 +36,8 @@ include("../testutils.jl")
 
                 for x in rand(d)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
-                    @test @inferred(basemeasure(ef, x)) ===  (1 / twoπ)^(length(x) * (1/2))
-                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x, ))
+                    @test @inferred(basemeasure(ef, x)) === (1 / twoπ)^(length(x) * (1 / 2))
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x,))
                     @test @inferred(logpartition(ef)) ≈ log(besseli((len / 2) - 1, b)) - ((len / 2) - 1) * log(b)
                 end
 

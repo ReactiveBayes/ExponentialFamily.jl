@@ -64,7 +64,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
-    (η₁, η₂)= unpack_parameters(Beta, η)
+    (η₁, η₂) = unpack_parameters(Beta, η)
     psia = trigamma(η₁ + one(η₁))
     psib = trigamma(η₂ + one(η₂))
     psiab = trigamma(η₁ + η₂ + 2)

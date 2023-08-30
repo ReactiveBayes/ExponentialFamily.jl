@@ -7,7 +7,6 @@ import SpecialFunctions: loggamma
 import ExponentialFamily: paramfloattype, xtlog
 
 @testset "GammaShapeRate" begin
-
     @testset "Constructor" begin
         @test GammaShapeScale <: GammaDistributionsFamily
 
@@ -81,9 +80,9 @@ import ExponentialFamily: paramfloattype, xtlog
         @test pdf(dist3, 1.0) ≈ 0.5413411329464508
         @test logpdf(dist3, 1.0) ≈ -0.6137056388801094
 
-         # see https://github.com/biaslab/ReactiveMP.jl/issues/314
-         dist = GammaShapeRate(257.37489915581654, 3.0)
-         @test pdf(dist, 86.2027941354432) == 0.07400338986721687
+        # see https://github.com/biaslab/ReactiveMP.jl/issues/314
+        dist = GammaShapeRate(257.37489915581654, 3.0)
+        @test pdf(dist, 86.2027941354432) == 0.07400338986721687
     end
 
     @testset "prod" begin
@@ -100,7 +99,6 @@ import ExponentialFamily: paramfloattype, xtlog
             @test prod(strategy, GammaShapeScale(2, 2), GammaShapeRate(2, 2)) == GammaShapeScale(3, 2 / 5)
         end
     end
-
 end
 
 end

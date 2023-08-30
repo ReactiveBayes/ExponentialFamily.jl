@@ -561,7 +561,8 @@ exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
 Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
 
-Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} = error("Cannot convert an arbitrary `ExponentialFamily{$T}` object to a `Distribution`. An explicit approximation method is required.")
+Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} =
+    error("Cannot convert an arbitrary `ExponentialFamily{$T}` object to a `Distribution`. An explicit approximation method is required.")
 
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}

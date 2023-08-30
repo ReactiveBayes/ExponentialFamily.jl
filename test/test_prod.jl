@@ -68,18 +68,17 @@ end
         @test prod(ClosedProd(), missing, missing) === missing
     end
 
-    @testset "`ClosedProd` for distribution objects should assume `ProdPreserveType(Distribution)`" begin 
+    @testset "`ClosedProd` for distribution objects should assume `ProdPreserveType(Distribution)`" begin
         @test prod(ClosedProd(), ADistributionObject(), ADistributionObject()) isa ADistributionObject
     end
 
-    @testset "`ClosedProd` for EF objects should assume `ProdPreserveType(ExponentialFamilyDistribution)`" begin 
+    @testset "`ClosedProd` for EF objects should assume `ProdPreserveType(ExponentialFamilyDistribution)`" begin
         ef = convert(ExponentialFamilyDistribution, Beta(2.0, 3.0))
         @test prod(ClosedProd(), ef, ef) isa ExponentialFamilyDistribution
     end
 end
 
 @testset "PreserveTypeProd" begin
-
     @testset "`missing` should be ignored with the `PreserveTypeProd`" begin
         # Can convert the result of the prod to the desired type
         @test prod(PreserveTypeProd(SomeUnknownObject), missing, SomeUnknownObject()) isa SomeUnknownObject

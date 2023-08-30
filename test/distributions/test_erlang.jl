@@ -5,7 +5,7 @@ using ExponentialFamily
 using Random
 using Distributions
 using ForwardDiff
-import SpecialFunctions: logfactorial, loggamma,digamma
+import SpecialFunctions: logfactorial, loggamma, digamma
 import ExponentialFamily:
     xtlog, ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
 
@@ -28,7 +28,7 @@ include("../testutils.jl")
             @testset let d = Erlang(a, b)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
-                (η1, η2) = (a - 1, -inv(b) )
+                (η1, η2) = (a - 1, -inv(b))
                 for x in 10rand(4)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === oneunit(x)
@@ -51,9 +51,7 @@ include("../testutils.jl")
         @test !isproper(NaturalParametersSpace(), Erlang, [-1.1])
         @test isproper(NaturalParametersSpace(), Erlang, [1, -1.1])
         @test !isproper(NaturalParametersSpace(), Erlang, [-1.1, 1])
-
     end
-
 
     @testset "prod with Distributions" begin
         for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
@@ -81,7 +79,6 @@ include("../testutils.jl")
             )
         end
     end
-    
 end
 
 end

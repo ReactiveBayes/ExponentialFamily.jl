@@ -78,10 +78,11 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
 ## Tests
 
 @testset "ExponentialFamilyDistributionAttributes" begin
-
-    @testset "getmapping" begin 
-        @test @inferred(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === MeanToNatural{ArbitraryDistributionFromExponentialFamily}()
-        @test @inferred(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === NaturalToMean{ArbitraryDistributionFromExponentialFamily}()
+    @testset "getmapping" begin
+        @test @inferred(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
+              MeanToNatural{ArbitraryDistributionFromExponentialFamily}()
+        @test @inferred(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
+              NaturalToMean{ArbitraryDistributionFromExponentialFamily}()
         @test @allocated(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
         @test @allocated(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
     end
@@ -176,8 +177,8 @@ end
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0)) === 0 
-        @test @ballocated(pdf($member, 2.0)) === 0 
+        @test @ballocated(logpdf($member, 2.0)) === 0
+        @test @ballocated(pdf($member, 2.0)) === 0
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
@@ -251,8 +252,8 @@ end
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0)) === 0 
-        @test @ballocated(pdf($member, 2.0)) === 0 
+        @test @ballocated(logpdf($member, 2.0)) === 0
+        @test @ballocated(pdf($member, 2.0)) === 0
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)

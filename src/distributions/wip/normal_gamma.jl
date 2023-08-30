@@ -60,9 +60,9 @@ sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{NormalGamma}, 
 function pack_naturalparameters(dist::NormalGamma)
     μ, λ, α, β = params(dist)
     η1 = λ * μ
-    η2 = -λ * (1/2)
-    η3 = α - (1/2)
-    η4 = -β - λ * μ^2 * (1/2)
+    η2 = -λ * (1 / 2)
+    η3 = α - (1 / 2)
+    η4 = -β - λ * μ^2 * (1 / 2)
 
     return [η1, η2, η3, η4]
 end
@@ -82,13 +82,13 @@ Base.convert(::Type{ExponentialFamilyDistribution}, dist::NormalGamma) =
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
-    return NormalGamma(η1 * (-1/2) / (η2), -2η2, η3 + (1/2), -η4 + (η1^2 / 4η2))
+    return NormalGamma(η1 * (-1 / 2) / (η2), -2η2, η3 + (1 / 2), -η4 + (η1^2 / 4η2))
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
-    η3half = η3 + (1/2)
-    return loggamma(η3half) - log(-2η2) * (1/2) - (η3half) * log(-η4 + η1^2 / (4η2))
+    η3half = η3 + (1 / 2)
+    return loggamma(η3half) - log(-2η2) * (1 / 2) - (η3half) * log(-η4 + η1^2 / (4η2))
 end
 
 function isproper(exponentialfamily::ExponentialFamilyDistribution{NormalGamma})
@@ -137,29 +137,29 @@ function fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Norm
     tmp2 = ((η1^2) / (4η2) - η4)^-2
     # Assign each value to the corresponding cell in the matrix
     info_matrix[1, 1] =
-        ((tmp1) * ((-1/2) - η3) + (-(η1^2) * (tmp2) * ((-1/2) - η3)) / (2η2)) /
+        ((tmp1) * ((-1 / 2) - η3) + (-(η1^2) * (tmp2) * ((-1 / 2) - η3)) / (2η2)) /
         (2η2)
     info_matrix[2, 1] =
-        (-η1 * (tmp1) * ((-1/2) - η3)) / (2 * (η2^2)) +
-        (2η1 * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1/2) - η3)) / η2
+        (-η1 * (tmp1) * ((-1 / 2) - η3)) / (2 * (η2^2)) +
+        (2η1 * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1 / 2) - η3)) / η2
     info_matrix[3, 1] = (-η1 * (tmp1)) / (2η2)
-    info_matrix[4, 1] = (η1 * (tmp2) * ((-1/2) - η3)) / (2η2)
+    info_matrix[4, 1] = (η1 * (tmp2) * ((-1 / 2) - η3)) / (2η2)
     info_matrix[1, 2] =
-        ((η1^3) * (tmp2) * ((-1/2) - η3)) / (8 * (η2^3)) +
-        (-η1 * (tmp1) * ((-1/2) - η3)) / (2 * (η2^2))
+        ((η1^3) * (tmp2) * ((-1 / 2) - η3)) / (8 * (η2^3)) +
+        (-η1 * (tmp1) * ((-1 / 2) - η3)) / (2 * (η2^2))
     info_matrix[2, 2] =
-        (1 // 2) * (η2^-2) + (-(η1^2) * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1/2) - η3)) / (η2^2) +
-        128η2 * ((η1^2) / (256 * (η2^4))) * (tmp1) * ((-1/2) - η3)
+        (1 // 2) * (η2^-2) + (-(η1^2) * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1 / 2) - η3)) / (η2^2) +
+        128η2 * ((η1^2) / (256 * (η2^4))) * (tmp1) * ((-1 / 2) - η3)
     info_matrix[3, 2] = ((η1^2) * (tmp1)) / (4 * (η2^2))
-    info_matrix[4, 2] = (-(η1^2) * (tmp2) * ((-1/2) - η3)) / (4 * (η2^2))
+    info_matrix[4, 2] = (-(η1^2) * (tmp2) * ((-1 / 2) - η3)) / (4 * (η2^2))
     info_matrix[1, 3] = (-η1 * (tmp1)) / (2η2)
     info_matrix[2, 3] = 4 * ((η1^2) / (16 * (η2^2))) * (tmp1)
-    info_matrix[3, 3] = SpecialFunctions.trigamma((1/2) + η3)
+    info_matrix[3, 3] = SpecialFunctions.trigamma((1 / 2) + η3)
     info_matrix[4, 3] = tmp1
-    info_matrix[1, 4] = (-η1 * ((1/2) + η3) * (tmp2)) / (2η2)
-    info_matrix[2, 4] = 4 * ((1/2) + η3) * ((η1^2) / (16 * (η2^2))) * (tmp2)
+    info_matrix[1, 4] = (-η1 * ((1 / 2) + η3) * (tmp2)) / (2η2)
+    info_matrix[2, 4] = 4 * ((1 / 2) + η3) * ((η1^2) / (16 * (η2^2))) * (tmp2)
     info_matrix[3, 4] = tmp1
-    info_matrix[4, 4] = ((1/2) + η3) * (tmp2)
+    info_matrix[4, 4] = ((1 / 2) + η3) * (tmp2)
 
     return info_matrix
 end
@@ -177,7 +177,7 @@ function fisherinformation(dist::NormalGamma)
     info_matrix[3, 1] = 0
     info_matrix[4, 1] = 0
     info_matrix[1, 2] = 0
-    info_matrix[2, 2] = (-1/2) * (λ^-2)
+    info_matrix[2, 2] = (-1 / 2) * (λ^-2)
     info_matrix[3, 2] = 0
     info_matrix[4, 2] = 0
     info_matrix[1, 3] = 0

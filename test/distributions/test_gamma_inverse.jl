@@ -44,8 +44,8 @@ import SpecialFunctions: loggamma
     @testset "ExponentialFamilyDistribution{InverseGamma}" begin
         @testset for α in 10rand(4), θ in 10rand(4)
             @testset let d = InverseGamma(α, θ)
-                ef = test_exponentialfamily_interface(d; 
-                    option_assume_no_allocations = true, 
+                ef = test_exponentialfamily_interface(d;
+                    option_assume_no_allocations = true,
                     test_fisherinformation_against_hessian = false,
                     test_fisherinformation_against_jacobian = false
                 )
@@ -61,7 +61,7 @@ import SpecialFunctions: loggamma
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === oneunit(x)
                     @test all(@inferred(sufficientstatistics(ef, x)) .≈ (log(x), inv(x)))
-                    @test @inferred(logpartition(ef)) ≈ (loggamma(-η₁ - 1) - (-η₁ - 1)*log(-η₂))
+                    @test @inferred(logpartition(ef)) ≈ (loggamma(-η₁ - 1) - (-η₁ - 1) * log(-η₂))
                 end
 
                 @test !@inferred(insupport(ef, -0.5))
@@ -79,7 +79,6 @@ import SpecialFunctions: loggamma
         @test !isproper(NaturalParametersSpace(), InverseGamma, [-0.5])
         @test !isproper(NaturalParametersSpace(), InverseGamma, [1, -1.1])
         @test !isproper(NaturalParametersSpace(), InverseGamma, [-0.5, 1])
-
     end
 
     @testset "prod with ExponentialFamilyDistribution" for aleft in 10rand(4), aright in 10rand(4), bleft in 10rand(4), bright in 10rand(4)

@@ -62,7 +62,6 @@ import SpecialFunctions: loggamma, logbeta
         @test !isproper(NaturalParametersSpace(), Beta, [-1.1])
         @test !isproper(NaturalParametersSpace(), Beta, [1, -1.1])
         @test !isproper(NaturalParametersSpace(), Beta, [-1.1, 1])
-
     end
 
     @testset "prod with Distributions" begin
@@ -100,7 +99,6 @@ import SpecialFunctions: loggamma, logbeta
     let ef = convert(ExponentialFamilyDistribution, Beta(1.0, 0.1))
         @test !isproper(prod(PreserveTypeProd(ExponentialFamilyDistribution), ef, ef))
     end
-
 end
 
 end

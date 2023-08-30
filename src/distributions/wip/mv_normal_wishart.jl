@@ -92,17 +92,17 @@ Base.convert(::Type{ExponentialFamilyDistribution}, dist::MvNormalWishart) =
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MvNormalWishart})
     d = dim(exponentialfamily)
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
-    return MvNormalWishart(-(1/2) * η1 / η3, cholinv(-2 * η2 + (1/2) * η1 * η1' / (η3)), -2 * η3, d + 2 * η4)
+    return MvNormalWishart(-(1 / 2) * η1 / η3, cholinv(-2 * η2 + (1 / 2) * η1 * η1' / (η3)), -2 * η3, d + 2 * η4)
 end
 
 function logpartition(exponentialfamily::ExponentialFamilyDistribution{MvNormalWishart})
     d = dim(exponentialfamily)
     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
 
-    term1 = -(d * (1/2)) * log(-2 * (η3))
-    term2 = -((d + 2 * η4) * (1/2)) * logdet(-2 * η2 + (1/2) * η1 * η1' / (η3))
-    term3 = logtwo * d * (d + 2 * η4) * (1/2)
-    term4 = logmvgamma(d, (d + 2 * η4) * (1/2))
+    term1 = -(d * (1 / 2)) * log(-2 * (η3))
+    term2 = -((d + 2 * η4) * (1 / 2)) * logdet(-2 * η2 + (1 / 2) * η1 * η1' / (η3))
+    term3 = logtwo * d * (d + 2 * η4) * (1 / 2)
+    term4 = logmvgamma(d, (d + 2 * η4) * (1 / 2))
 
     return (term1 + term2 + term3 + term4)
 end

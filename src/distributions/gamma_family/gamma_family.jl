@@ -63,7 +63,7 @@ Distributions.params(::MeanParametersSpace, dist::GammaDistributionsFamily) = (s
 
 isproper(::MeanParametersSpace, ::Type{Gamma}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (all(>(0), θ))
 
-function isproper(::NaturalParametersSpace, ::Type{Gamma}, η, conditioner) 
+function isproper(::NaturalParametersSpace, ::Type{Gamma}, η, conditioner)
     if length(η) !== 2
         return false
     end

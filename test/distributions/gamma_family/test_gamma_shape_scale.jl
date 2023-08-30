@@ -7,7 +7,6 @@ import SpecialFunctions: loggamma
 import ExponentialFamily: paramfloattype, xtlog
 
 @testset "GammaShapeScale" begin
-
     @testset "Constructor" begin
         @test GammaShapeScale <: GammaDistributionsFamily
 
@@ -87,7 +86,6 @@ import ExponentialFamily: paramfloattype, xtlog
             @test prod(strategy, GammaShapeRate(2, 2), GammaShapeScale(2, 2)) == GammaShapeRate(3, 5 / 2)
         end
     end
-
 end
 
 end

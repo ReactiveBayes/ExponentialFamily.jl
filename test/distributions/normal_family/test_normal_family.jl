@@ -25,7 +25,6 @@ function gaussianlpdffortest(params, x)
 end
 
 @testset "Normal family" begin
-
     @testset "Univariate conversions" begin
         check_basic_statistics =
             (left, right; include_extended_methods = true) -> begin
@@ -293,19 +292,17 @@ end
     @testset "ExponentialFamilyDistribution{NormalMeanVariance}" begin
         @testset for μ in -10.0:5.0:10.0, σ² in 0.1:1.0:5.0, T in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
             @testset let d = convert(T, NormalMeanVariance(μ, σ²))
-
                 ef = test_exponentialfamily_interface(d)
 
-                (η₁, η₂) = (mean(d) / var(d), -1/2var(d))
+                (η₁, η₂) = (mean(d) / var(d), -1 / 2var(d))
 
                 for x in 10randn(4)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) ≈ 1 / sqrt(2π)
                     @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x, abs2(x)))
-                    @test @inferred(logpartition(ef)) ≈ (-η₁^2/4η₂ - 1/2*log(-2η₂))
+                    @test @inferred(logpartition(ef)) ≈ (-η₁^2 / 4η₂ - 1 / 2 * log(-2η₂))
                     @test @inferred(insupport(ef, x))
                 end
-
             end
         end
 
@@ -316,10 +313,11 @@ end
         @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [-1.1])
         @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [1, 1])
         @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [-1.1, 1])
-
     end
 
-    @testset "prod with ExponentialFamilyDistribution{NormalMeanVariance}" for μleft in 10randn(4), σ²left in 10rand(4), μright in 10randn(4), σ²right in 10rand(4), Tleft in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily), Tright in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
+    @testset "prod with ExponentialFamilyDistribution{NormalMeanVariance}" for μleft in 10randn(4), σ²left in 10rand(4), μright in 10randn(4),
+        σ²right in 10rand(4), Tleft in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily),
+        Tright in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
         @testset let (left, right) = (convert(Tleft, NormalMeanVariance(μleft, σ²left)), convert(Tright, NormalMeanVariance(μright, σ²right)))
             @test test_generic_simple_exponentialfamily_product(
                 left,
@@ -347,16 +345,15 @@ end
                     test_fisherinformation_against_jacobian = false
                 )
 
-                (η₁, η₂) = (cholinv(Σ) * mean(d), -cholinv(Σ)/2)
+                (η₁, η₂) = (cholinv(Σ) * mean(d), -cholinv(Σ) / 2)
 
-                for x in [ 10randn(s) for _ in 1:4 ]
+                for x in [10randn(s) for _ in 1:4]
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
-                    @test @inferred(basemeasure(ef, x)) ≈ (2π)^(-s/2)
+                    @test @inferred(basemeasure(ef, x)) ≈ (2π)^(-s / 2)
                     @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x, x * x'))
-                    @test @inferred(logpartition(ef)) ≈ -1/4*(η₁'*inv(η₂)*η₁) - 1/2*logdet(-2η₂) 
+                    @test @inferred(logpartition(ef)) ≈ -1 / 4 * (η₁' * inv(η₂) * η₁) - 1 / 2 * logdet(-2η₂)
                     @test @inferred(insupport(ef, x))
                 end
-
             end
         end
 
@@ -372,7 +369,6 @@ end
         @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [-1.1, 1])
         @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [-1, 2, 3, 4]) # shapes are incompatible
         @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [1, -0.1, 1, 0, 0, 1]) # -η₂ is not posdef
-
     end
 
     @testset "Fisher information matrix in natural parameters space" for i in 1:5, d in 2:10
@@ -424,7 +420,6 @@ end
         @test sort(eigvals(fi_dist)) ≈ sort(abs.(eigvals(approxFisherInformation))) rtol = 1e-1
         @test sort(svd(fi_dist).S) ≈ sort(svd(approxFisherInformation).S) rtol = 1e-1
     end
-
 end
 
 end

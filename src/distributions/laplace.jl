@@ -31,7 +31,11 @@ end
 default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Laplace} =
     PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
 
-function Base.prod!(container::ExponentialFamilyDistribution{Laplace}, left::ExponentialFamilyDistribution{Laplace}, right::ExponentialFamilyDistribution{Laplace})
+function Base.prod!(
+    container::ExponentialFamilyDistribution{Laplace},
+    left::ExponentialFamilyDistribution{Laplace},
+    right::ExponentialFamilyDistribution{Laplace}
+)
     (η_container, conditioner_container) = (getnaturalparameters(container), getconditioner(container))
     (η_left, conditioner_left) = (getnaturalparameters(left), getconditioner(left))
     (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))
@@ -49,7 +53,11 @@ function Base.prod!(container::ExponentialFamilyDistribution{Laplace}, left::Exp
     """)
 end
 
-function Base.prod(::PreserveTypeProd{ExponentialFamilyDistribution{Laplace}}, left::ExponentialFamilyDistribution{Laplace}, right::ExponentialFamilyDistribution{Laplace})
+function Base.prod(
+    ::PreserveTypeProd{ExponentialFamilyDistribution{Laplace}},
+    left::ExponentialFamilyDistribution{Laplace},
+    right::ExponentialFamilyDistribution{Laplace}
+)
     return prod!(similar(left), left, right)
 end
 
@@ -95,49 +103,49 @@ end
 
 # Natural parametrization
 
-function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner::Number) 
+function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(η) !== 1
         return false
     end
 
-    (η₁, ) = unpack_parameters(Laplace, η)
+    (η₁,) = unpack_parameters(Laplace, η)
 
-    return !isnan(η₁) && !isinf(η₁) && η₁ < 0 
+    return !isnan(η₁) && !isinf(η₁) && η₁ < 0
 end
 
-function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner::Number) 
+function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1
         return false
     end
 
-    (scale, ) = unpack_parameters(Laplace, θ)
+    (scale,) = unpack_parameters(Laplace, θ)
 
-    return !isnan(scale) && !isinf(scale) && scale > 0 
+    return !isnan(scale) && !isinf(scale) && scale > 0
 end
 
 function separate_conditioner(::Type{Laplace}, params)
     location, scale = params
-    return ((scale, ), location)
+    return ((scale,), location)
 end
 
-function join_conditioner(::Type{Laplace}, cparams, conditioner) 
-    (scale, ) = cparams
+function join_conditioner(::Type{Laplace}, cparams, conditioner)
+    (scale,) = cparams
     location = conditioner
     return (location, scale)
 end
 
 function (::MeanToNatural{Laplace})(tuple_of_θ::Tuple{Any}, _)
     (scale,) = tuple_of_θ
-    return (-inv(scale), )
+    return (-inv(scale),)
 end
 
 function (::NaturalToMean{Laplace})(tuple_of_η::Tuple{Any}, _)
     (η₁,) = tuple_of_η
-    return (-inv(η₁), )
+    return (-inv(η₁),)
 end
 
-function unpack_parameters(::Type{Laplace}, packed) 
-    return (first(packed), )
+function unpack_parameters(::Type{Laplace}, packed)
+    return (first(packed),)
 end
 
 isbasemeasureconstant(::Type{Laplace}) = ConstantBaseMeasure()
@@ -147,24 +155,24 @@ getsufficientstatistics(::Type{Laplace}, conditioner) = (
     (x) -> abs(x - conditioner),
 )
 
-getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin 
+getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
     (η₁,) = unpack_parameters(Laplace, η)
     return log(-2 / η₁)
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin 
+getfisherinformation(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
     (η₁,) = unpack_parameters(Laplace, η)
-    return SA[ inv(η₁^2);; ]
+    return SA[inv(η₁^2);;]
 end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin 
-    (scale, ) = unpack_parameters(Laplace, θ)
+getlogpartition(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+    (scale,) = unpack_parameters(Laplace, θ)
     return log(2scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin 
+getfisherinformation(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
     (scale,) = unpack_parameters(Laplace, θ)
-    return SA[ inv(abs2(scale));; ] # 1 / scale^2
+    return SA[inv(abs2(scale));;] # 1 / scale^2
 end

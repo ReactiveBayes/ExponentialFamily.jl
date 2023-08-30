@@ -10,9 +10,7 @@ import ExponentialFamily: xtlog
 include("../../testutils.jl")
 
 @testset "Gamma family" begin
-
-    @testset "Base statistical methods" begin 
-
+    @testset "Base statistical methods" begin
         compare_basic_statistics = (left, right) -> begin
             @test mean(left) ≈ mean(right)
             @test var(left) ≈ var(right)
@@ -25,7 +23,7 @@ include("../../testutils.jl")
             @test pdf(left, 10.0) ≈ pdf(right, 10.0)
             @test logpdf(left, 1.0) ≈ logpdf(right, 1.0)
             @test logpdf(left, 10.0) ≈ logpdf(right, 10.0)
-        
+
             @test mean(log, left) ≈ mean(log, right)
             @test mean(loggamma, left) ≈ mean(loggamma, right)
             @test mean(xtlog, left) ≈ mean(xtlog, right)
@@ -82,6 +80,7 @@ include("../../testutils.jl")
 
     @testset "prod with ExponentialFamilyDistribution" for kleft in 0.51:1.0:5.0, kright in 0.51:1.0:5.0, θleft in 0.1:1.0:5.0, θright in 0.1:1.0:5.0,
         Tleft in ExponentialFamily.union_types(GammaDistributionsFamily{Float64}), Tright in ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
+
         @testset let (left, right) = (convert(Tleft, Gamma(kleft, θleft)), convert(Tright, Gamma(kright, θright)))
             @test test_generic_simple_exponentialfamily_product(
                 left,
@@ -94,7 +93,6 @@ include("../../testutils.jl")
                 )
             )
         end
-
     end
 
     # shapes must add up to something more than 1, otherwise is not proper

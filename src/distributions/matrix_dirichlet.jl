@@ -24,9 +24,8 @@ end
 
 Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a; dims = 1)
 function Distributions.cov(dist::MatrixDirichlet)
-
     matrices = vmap(
-        d -> sparse(cov(Dirichlet(convert(Vector,d)))),
+        d -> sparse(cov(Dirichlet(convert(Vector, d)))),
         eachcol(dist.a)
     )
 
@@ -36,7 +35,7 @@ end
 Distributions.var(dist::MatrixDirichlet) = diag(cov(dist))
 Distributions.std(dist::MatrixDirichlet) = vmap(sqrt, var(dist))
 
-params(dist::MatrixDirichlet) = (dist.a, )
+params(dist::MatrixDirichlet) = (dist.a,)
 size(dist::MatrixDirichlet)   = size(dist.a)
 
 Base.eltype(::MatrixDirichlet{T}) where {T} = T
@@ -74,13 +73,13 @@ function Random.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::Int64
 end
 
 function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
-    samples = vmap(d -> rand(rng, Dirichlet(convert(Vector,d))), eachcol(dist.a))
+    samples = vmap(d -> rand(rng, Dirichlet(convert(Vector, d))), eachcol(dist.a))
     @views for row in 1:isqrt(length(container))
         b = container[:, row]
         b[:] .= samples[row]
     end
 
-    return container 
+    return container
 end
 
 function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractVector{T}) where {T <: AbstractMatrix}
@@ -92,9 +91,9 @@ end
 
 function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
     return vmapreduce(
-        d -> logpdf(Dirichlet(convert(Vector,d[1])),convert(Vector,d[2])),
+        d -> logpdf(Dirichlet(convert(Vector, d[1])), convert(Vector, d[2])),
         +,
-        zip(eachcol(dist.a),eachcol(x))
+        zip(eachcol(dist.a), eachcol(x))
     )
 end
 
@@ -109,7 +108,7 @@ function Base.prod(::PreserveTypeProd{Distribution}, left::MatrixDirichlet, righ
     return MatrixDirichlet(left.a + right.a - Ones{T}(size(left.a)))
 end
 
-function insupport(ef::ExponentialFamilyDistribution{MatrixDirichlet}, x) 
+function insupport(ef::ExponentialFamilyDistribution{MatrixDirichlet}, x)
     l = length(getnaturalparameters(ef))
     ## The columns of x should be normalized. all(≈(1), sum(eachrow(x))) is a convenient way of doing that
     ## because eachrow(x) will return row slices and sum will take the sum of the row slices along the first dimension
@@ -118,101 +117,73 @@ end
 
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{MatrixDirichlet}, η, conditioner) = isnothing(conditioner) && length(η) > 1  && typeof(isqrt(length(η))) <: Integer && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{MatrixDirichlet}, θ, conditioner) = isnothing(conditioner) && length(θ) > 1&& typeof(isqrt(length(θ))) <: Integer && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
+isproper(::NaturalParametersSpace, ::Type{MatrixDirichlet}, η, conditioner) =
+    isnothing(conditioner) && length(η) > 1 && typeof(isqrt(length(η))) <: Integer && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
+isproper(::MeanParametersSpace, ::Type{MatrixDirichlet}, θ, conditioner) =
+    isnothing(conditioner) && length(θ) > 1 && typeof(isqrt(length(θ))) <: Integer && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{MatrixDirichlet})(tuple_of_θ::Tuple{Any})
-    (α, ) = tuple_of_θ
-    return (α - Ones{Float64}(size(α)) , )
+    (α,) = tuple_of_θ
+    return (α - Ones{Float64}(size(α)),)
 end
 
 function (::NaturalToMean{MatrixDirichlet})(tuple_of_η::Tuple{Any})
-    (η, ) = tuple_of_η
-    return (η + Ones{Float64}(size(η)), )
+    (η,) = tuple_of_η
+    return (η + Ones{Float64}(size(η)),)
 end
 
-function unpack_parameters(::Type{MatrixDirichlet}, packed) 
+function unpack_parameters(::Type{MatrixDirichlet}, packed)
     n = length(packed)
-    return (reshape(view(packed, 1:n), isqrt(n), isqrt(n)), )
+    return (reshape(view(packed, 1:n), isqrt(n), isqrt(n)),)
 end
 
 isbasemeasureconstant(::Type{MatrixDirichlet}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{MatrixDirichlet}) = (x) -> one(Float64)
-getsufficientstatistics(::Type{MatrixDirichlet}) = (x -> vmap(log,x), )
+getsufficientstatistics(::Type{MatrixDirichlet}) = (x -> vmap(log, x),)
 
-getlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) = (η) -> begin
-    (η1, ) = unpack_parameters(MatrixDirichlet, η)
-    return   vmapreduce(
-        d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector,d)),
-        +,
-        eachcol(η1)
-    )
-end
+getlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
+    (η) -> begin
+        (η1,) = unpack_parameters(MatrixDirichlet, η)
+        return vmapreduce(
+            d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),
+            +,
+            eachcol(η1)
+        )
+    end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{MatrixDirichlet}) = (η) -> begin
-    (η1, ) = unpack_parameters(MatrixDirichlet, η)
-    ones = Ones{Float64}(size(η1))
-    ηp1 = η1 + ones
+getfisherinformation(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
+    (η) -> begin
+        (η1,) = unpack_parameters(MatrixDirichlet, η)
+        ones = Ones{Float64}(size(η1))
+        ηp1 = η1 + ones
 
-    matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * ones),
-        Iterators.zip(map(d -> trigamma(d), sum(ηp1, dims = 1)), map(d -> trigamma.(d), eachcol(ηp1))))
+        matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * ones),
+            Iterators.zip(map(d -> trigamma(d), sum(ηp1, dims = 1)), map(d -> trigamma.(d), eachcol(ηp1))))
 
-    return vmapreduce(identity ,blockdiag, matrices)
-end
+        return vmapreduce(identity, blockdiag, matrices)
+    end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) = (θ) -> begin
-    (α, ) = unpack_parameters(MatrixDirichlet, θ)
-    return   vmapreduce(
-        d -> getlogpartition(MeanParametersSpace(), Dirichlet)(convert(Vector,d)),
-        +,
-        eachcol(α)
-    )
-end
+getlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) =
+    (θ) -> begin
+        (α,) = unpack_parameters(MatrixDirichlet, θ)
+        return vmapreduce(
+            d -> getlogpartition(MeanParametersSpace(), Dirichlet)(convert(Vector, d)),
+            +,
+            eachcol(α)
+        )
+    end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MatrixDirichlet}) = (θ) -> begin
-    (α,  ) = unpack_parameters(MatrixDirichlet, θ)
-    matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * Ones{Float64}(size(α))),
-        Iterators.zip(map(d -> trigamma(d), sum(α, dims = 1)), map(d -> trigamma.(d), eachcol(α))))
+getfisherinformation(::MeanParametersSpace, ::Type{MatrixDirichlet}) =
+    (θ) -> begin
+        (α,) = unpack_parameters(MatrixDirichlet, θ)
+        matrices = map(d -> sparse(Diagonal(d[2]) - d[1] * Ones{Float64}(size(α))),
+            Iterators.zip(map(d -> trigamma(d), sum(α, dims = 1)), map(d -> trigamma.(d), eachcol(α))))
 
-    return vmapreduce(identity ,blockdiag, matrices)
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return vmapreduce(identity, blockdiag, matrices)
+    end
 
 # function pack_naturalparameters(distribution::MatrixDirichlet)
 #     return vec(distribution.a) - Ones{Float64}(vectorized_length(distribution))

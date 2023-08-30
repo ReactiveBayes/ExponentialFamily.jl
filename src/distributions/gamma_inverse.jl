@@ -30,7 +30,7 @@ end
 
 isproper(::MeanParametersSpace, ::Type{GammaInverse}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ)
 
-function isproper(::NaturalParametersSpace, ::Type{GammaInverse}, η, conditioner) 
+function isproper(::NaturalParametersSpace, ::Type{GammaInverse}, η, conditioner)
     if length(η) !== 2
         return false
     end
@@ -64,10 +64,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{GammaInverse}) = (η) -> begin
     return loggamma(-η₁ - one(η₁)) - (-η₁ - one(η₁)) * log(-η₂)
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{GammaInverse}) = (η) -> begin
-    # TODO, replace with hand written version
-    return ForwardDiff.hessian(getlogpartition(NaturalParametersSpace(), GammaInverse), η)::Matrix{eltype(η)}
-end
+getfisherinformation(::NaturalParametersSpace, ::Type{GammaInverse}) =
+    (η) -> begin
+        # TODO, replace with hand written version
+        return ForwardDiff.hessian(getlogpartition(NaturalParametersSpace(), GammaInverse), η)::Matrix{eltype(η)}
+    end
 
 # Mean parametrization
 
@@ -76,7 +77,8 @@ getlogpartition(::MeanParametersSpace, ::Type{GammaInverse}) = (θ) -> begin
     return loggamma(shape) - shape * log(scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{GammaInverse}) = (θ) -> begin
-    # TODO, replace with hand written version
-    return ForwardDiff.hessian(getlogpartition(MeanParametersSpace(), GammaInverse), θ)::Matrix{eltype(θ)}
-end
+getfisherinformation(::MeanParametersSpace, ::Type{GammaInverse}) =
+    (θ) -> begin
+        # TODO, replace with hand written version
+        return ForwardDiff.hessian(getlogpartition(MeanParametersSpace(), GammaInverse), θ)::Matrix{eltype(θ)}
+    end

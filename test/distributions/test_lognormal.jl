@@ -44,13 +44,13 @@ include("../testutils.jl")
             @testset let d = LogNormal(μ, σ)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
-                (η₁, η₂) = (μ / abs2(σ) - 1, -1/(2abs2(σ)))
+                (η₁, η₂) = (μ / abs2(σ) - 1, -1 / (2abs2(σ)))
 
                 for x in 10rand(4)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) ≈ invsqrt2π
-                    @test @inferred(sufficientstatistics(ef, x)) === (log(x),abs2(log(x)))
-                    @test @inferred(logpartition(ef)) ≈ (-(η₁ + 1)^2/(4η₂) - 1/2*log(-2η₂))
+                    @test @inferred(sufficientstatistics(ef, x)) === (log(x), abs2(log(x)))
+                    @test @inferred(logpartition(ef)) ≈ (-(η₁ + 1)^2 / (4η₂) - 1 / 2 * log(-2η₂))
                 end
             end
         end
@@ -62,6 +62,5 @@ include("../testutils.jl")
         @test !isproper(NaturalParametersSpace(), LogNormal, [-1.0, 0.0])
         @test !isproper(NaturalParametersSpace(), LogNormal, [1.0, 1.0])
     end
-
 end
 end

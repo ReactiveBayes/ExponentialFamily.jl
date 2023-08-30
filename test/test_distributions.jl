@@ -13,7 +13,6 @@ import ExponentialFamily: deep_eltype, sampletype, samplefloattype, promote_samp
 import ExponentialFamily: FactorizedJoint
 
 @testset "Distributions" begin
-
     function fixture_various_distributions(::Type{V} = Any; seed = abs(rand(Int)), Types = (Float32, Float64)) where {V}
         rng = StableRNG(seed)
         distributions = []

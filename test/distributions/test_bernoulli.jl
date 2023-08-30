@@ -74,8 +74,8 @@ include("../testutils.jl")
 
         for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
             # Test symmetric case
-            @test @inferred(prod(strategy, Bernoulli(0.5), Categorical([ 0.5, 0.5 ]))) ≈ Categorical([ 0.5, 0.5 ])
-            @test @inferred(prod(strategy, Categorical([ 0.5, 0.5 ]), Bernoulli(0.5))) ≈ Categorical([ 0.5, 0.5 ])
+            @test @inferred(prod(strategy, Bernoulli(0.5), Categorical([0.5, 0.5]))) ≈ Categorical([0.5, 0.5])
+            @test @inferred(prod(strategy, Categorical([0.5, 0.5]), Bernoulli(0.5))) ≈ Categorical([0.5, 0.5])
         end
 
         @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0

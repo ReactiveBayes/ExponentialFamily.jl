@@ -24,18 +24,18 @@ end
 
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{LogNormal}, η, conditioner) = isnothing(conditioner) && (length(η) === 2) && (η[firstindex(η) + 1] < 0)
-isproper(::MeanParametersSpace, ::Type{LogNormal}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (θ[firstindex(θ) + 1] > 0)
+isproper(::NaturalParametersSpace, ::Type{LogNormal}, η, conditioner) = isnothing(conditioner) && (length(η) === 2) && (η[firstindex(η)+1] < 0)
+isproper(::MeanParametersSpace, ::Type{LogNormal}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (θ[firstindex(θ)+1] > 0)
 
 function (::MeanToNatural{LogNormal})(tuple_of_θ::Tuple{Any, Any})
     (μ, σ) = tuple_of_θ
     σ² = abs2(σ)
-    return (μ / σ² - 1, -1/(2σ²))
+    return (μ / σ² - 1, -1 / (2σ²))
 end
 
 function (::NaturalToMean{LogNormal})(tuple_of_η::Tuple{Any, Any})
     (η₁, η₂) = tuple_of_η
-    return (-(η₁ + 1) / (2η₂), sqrt(-1/(2η₂)))
+    return (-(η₁ + 1) / (2η₂), sqrt(-1 / (2η₂)))
 end
 
 function unpack_parameters(::Type{LogNormal}, packed)
@@ -54,20 +54,21 @@ getlogpartition(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
     return -(η₁ + 1)^2 / (4η₂) - log(-2η₂) / 2
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
-    (η₁, η₂) = unpack_parameters(LogNormal, η)
-    return SA[-1/(2η₂) (η₁ + 1)/(2η₂^2); (η₁ + 1)/(2η₂^2) -(η₁+1)^2/(2*(η₂^3))+1/(2*η₂^2)]
-end
+getfisherinformation(::NaturalParametersSpace, ::Type{LogNormal}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(LogNormal, η)
+        return SA[-1/(2η₂) (η₁+1)/(2η₂^2); (η₁+1)/(2η₂^2) -(η₁ + 1)^2/(2*(η₂^3))+1/(2*η₂^2)]
+    end
 
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
-    return abs2(μ)/(2abs2(σ)) + log(σ)
+    return abs2(μ) / (2abs2(σ)) + log(σ)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
     invσ² = inv(abs2(σ))
-    return SA[ invσ² 0.0; 0.0 2invσ² ]
+    return SA[invσ² 0.0; 0.0 2invσ²]
 end

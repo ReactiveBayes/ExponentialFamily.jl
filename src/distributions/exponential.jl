@@ -28,40 +28,40 @@ isproper(::NaturalParametersSpace, ::Type{Exponential}, η, conditioner) = isnot
 isproper(::MeanParametersSpace, ::Type{Exponential}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && first(θ) > 0
 
 function (::MeanToNatural{Exponential})(tuple_of_θ::Tuple{Any})
-    (scale, ) = tuple_of_θ
-    return (-inv(scale), )
+    (scale,) = tuple_of_θ
+    return (-inv(scale),)
 end
 
 function (::NaturalToMean{Exponential})(tuple_of_η::Tuple{Any})
-    (η₁, ) = tuple_of_η
-    return (-inv(η₁), )
+    (η₁,) = tuple_of_η
+    return (-inv(η₁),)
 end
 
-unpack_parameters(::Type{Exponential}, packed) = (first(packed), )
+unpack_parameters(::Type{Exponential}, packed) = (first(packed),)
 
 isbasemeasureconstant(::Type{Exponential}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Exponential}) = (x) -> oneunit(x)
-getsufficientstatistics(::Type{Exponential}) = (identity, )
+getsufficientstatistics(::Type{Exponential}) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
-    (η₁, ) = unpack_parameters(Exponential, η)
+    (η₁,) = unpack_parameters(Exponential, η)
     return -log(-η₁)
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
-    (η₁, ) = unpack_parameters(Exponential, η)
+    (η₁,) = unpack_parameters(Exponential, η)
     SA[inv(η₁^2);;]
 end
 
 ## Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{Exponential}) = (θ) -> begin
-    (scale, ) = unpack_parameters(Exponential, θ)
+    (scale,) = unpack_parameters(Exponential, θ)
     return log(scale)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Exponential}) = (θ) -> begin
-    (scale, ) = unpack_parameters(Exponential, θ)
-    SA[ inv(scale^2);; ]
+    (scale,) = unpack_parameters(Exponential, θ)
+    SA[inv(scale^2);;]
 end

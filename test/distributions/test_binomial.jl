@@ -58,16 +58,16 @@ include("../testutils.jl")
 
     @testset "prod ExponentialFamilyDistribution" for nleft in 1:1, pleft in 0.1:0.1:0.1, nright in 1:1, pright in 0.1:0.1:0.1
         @testset let (left, right) = (Binomial(nleft, pleft), Binomial(nright, pright))
-
             for (efleft, efright) in ((left, right), (convert(ExponentialFamilyDistribution, left), convert(ExponentialFamilyDistribution, right)))
-                for strategy in (PreserveTypeProd(ExponentialFamilyDistribution), )
+                for strategy in (PreserveTypeProd(ExponentialFamilyDistribution),)
                     prod_dist = prod(strategy, efleft, efright)
 
                     @test prod_dist isa ExponentialFamilyDistribution
-                    
+
                     hist_sum(x) =
                         basemeasure(prod_dist, x) * exp(
-                            dot(ExponentialFamily.flatten_parameters(sufficientstatistics(prod_dist, x)), getnaturalparameters(prod_dist)) - logpartition(prod_dist)
+                            dot(ExponentialFamily.flatten_parameters(sufficientstatistics(prod_dist, x)), getnaturalparameters(prod_dist)) -
+                            logpartition(prod_dist)
                         )
 
                     support = 0:1:max(nleft, nright)
@@ -76,12 +76,11 @@ include("../testutils.jl")
 
                     for x in support
                         @test basemeasure(prod_dist, x) ≈ (binomial(nleft, x) * binomial(nright, x))
-                        @test all(sufficientstatistics(prod_dist, x) .≈ (x, ))
+                        @test all(sufficientstatistics(prod_dist, x) .≈ (x,))
                     end
                 end
             end
         end
     end
-
 end
 end

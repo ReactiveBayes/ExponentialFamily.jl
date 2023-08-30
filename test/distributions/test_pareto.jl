@@ -6,7 +6,7 @@ using Distributions
 using ExponentialFamily
 using ForwardDiff
 using StableRNGs
-using HCubature 
+using HCubature
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, getconditioner
 
@@ -17,8 +17,8 @@ include("../testutils.jl")
         @testset for shape in (1.0, 2.0, 3.0), scale in (0.25, 0.5, 2.0)
             @testset let d = Pareto(shape, scale)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
-                η1 = -shape - 1 
-                for x in scale:1.0:scale + 3.0
+                η1 = -shape - 1
+                for x in scale:1.0:scale+3.0
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === oneunit(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (log(x),)
@@ -52,7 +52,7 @@ include("../testutils.jl")
 
     @testset "prod with ExponentialFamilyDistribution{Pareto}" begin
         for conditioner in (0.01, 1.0), alphaleft in 0.1:0.1:0.9, alpharight in 0.1:0.1:0.9
-            let left = Pareto(alphaleft,conditioner), right = Pareto(alpharight,conditioner)
+            let left = Pareto(alphaleft, conditioner), right = Pareto(alpharight, conditioner)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
                     right,
@@ -75,15 +75,17 @@ include("../testutils.jl")
     end
 
     @testset "prod with different conditioner" begin
-        for conditioner_left in (2,3), conditioner_right in (4, 5), alphaleft in 0.1:0.1:0.3, alpharight in 0.1:0.1:0.3
-            let left = Pareto(alphaleft,conditioner_left), right = Pareto(alpharight,conditioner_right)
+        for conditioner_left in (2, 3), conditioner_right in (4, 5), alphaleft in 0.1:0.1:0.3, alpharight in 0.1:0.1:0.3
+            let left = Pareto(alphaleft, conditioner_left), right = Pareto(alpharight, conditioner_right)
                 ef_left = convert(ExponentialFamilyDistribution, left)
                 ef_right = convert(ExponentialFamilyDistribution, right)
-                prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left,ef_right)
+                prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
                 @test getnaturalparameters(prod_dist) ≈ getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
-                @test getsupport(prod_dist).lb == max(conditioner_left,conditioner_right)
-                @test sufficientstatistics(prod_dist, (max(conditioner_left,conditioner_right)+1)) === (log(max(conditioner_left,conditioner_right)+1), )
-                @test first(hquadrature(x -> pdf(prod_dist,tan(x* pi /2))*(pi/2)*(1 / cos(x * pi / 2)^2),(2/pi)*atan(getsupport(prod_dist).lb), 1.0)) ≈ 1.0               
+                @test getsupport(prod_dist).lb == max(conditioner_left, conditioner_right)
+                @test sufficientstatistics(prod_dist, (max(conditioner_left, conditioner_right) + 1)) === (log(max(conditioner_left, conditioner_right) + 1),)
+                @test first(
+                    hquadrature(x -> pdf(prod_dist, tan(x * pi / 2)) * (pi / 2) * (1 / cos(x * pi / 2)^2), (2 / pi) * atan(getsupport(prod_dist).lb), 1.0)
+                ) ≈ 1.0
             end
         end
     end
