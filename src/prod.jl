@@ -8,10 +8,8 @@ import Base: prod, prod!, show, showerror
 """
     ClosedProd
 
-`ClosedProd` is one of the strategies for `prod` function. This strategy uses analytical prod methods but does not constraint a prod to be in any specific form.
-It throws a `MethodError` if no analytical rule is available, use `GenericProd` prod strategy to fallback to approximation methods.
-
-Note: `ClosedProd` ignores `missing` values and simply returns the non-`missing` argument. Returns `missing` in case if both arguments are `missing`.
+`ClosedProd` is one of the strategies for `prod` function. This strategy uses either `PreserveTypeProd(Distribution)` or `PreserveTypeProd(ExponentialFamilyDistribution)`, 
+    depending on the types of the input arguments. For example, if both inputs are of type `Distribution`, then `ClosedProd` would fallback to `PreserveTypeProd(Distribution)`.
 
 See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`GenericProd`](@ref)
 """
@@ -35,12 +33,12 @@ mean(product), var(product)
 (0.0, 0.5)
 ```
 
-See also: [`default_prod_rule`](@ref), [`ClosedProd`](@ref), [`GenericProd`](@ref), [`PreserveTypeProd`](@ref)
+See also: [`default_prod_rule`](@ref), [`ClosedProd`](@ref), [`PreserveTypeProd`](@ref), [`GenericProd`](@ref)
 """
-prod(::ClosedProd, left, right) = throw(MethodError(prod, (ClosedProd(), left, right)))
+prod(strategy::ClosedProd, left, right) = throw(MethodError(prod, (strategy, left, right)))
 
-prod(::ClosedProd, ::Missing, right)     = right
-prod(::ClosedProd, left, ::Missing)      = left
+prod(::ClosedProd, ::Missing, right) = right
+prod(::ClosedProd, left, ::Missing) = left
 prod(::ClosedProd, ::Missing, ::Missing) = missing
 
 """
@@ -50,20 +48,24 @@ prod(::ClosedProd, ::Missing, ::Missing) = missing
 By default it uses the strategy from `default_prod_rule` and converts the output to the prespecified type but can be overwritten 
 for some distributions for better performance.
 
-See also: [`prod`](@ref), [`ClosedProd`](@ref), [`PreserveTypeLeftProd`](@ref), [`PreserveTypeRightProd`](@ref)
+See also: [`prod`](@ref), [`ClosedProd`](@ref), [`PreserveTypeLeftProd`](@ref), [`PreserveTypeRightProd`](@ref), [`GenericProd`](@ref)
 """
 struct PreserveTypeProd{T} end
 
 PreserveTypeProd(::Type{T}) where {T} = PreserveTypeProd{T}()
 
-prod(::PreserveTypeProd{T}, left, right) where {T} = convert(T, prod(default_prod_rule(left, right), left, right))
+prod(::PreserveTypeProd{T}, left, right) where {T} = convert(T, prod(symmetric_default_prod_rule(left, right), left, right))
+
+prod(::PreserveTypeProd, ::Missing, right) = right
+prod(::PreserveTypeProd, left, ::Missing) = left
+prod(::PreserveTypeProd, ::Missing, ::Missing) = missing
 
 """
     PreserveTypeLeftProd
 
 An alias for the `PreserveTypeProd(L)` where `L` is the type of the `left` argument of the `prod` function.
 
-See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeRightProd`](@ref)
+See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeRightProd`](@ref), [`GenericProd`](@ref)
 """
 struct PreserveTypeLeftProd end
 
@@ -74,7 +76,7 @@ prod(::PreserveTypeLeftProd, left::L, right) where {L} = prod(PreserveTypeProd(L
 
 An alias for the `PreserveTypeProd(R)` where `R` is the type of the `right` argument of the `prod` function.    
 
-See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeLeftProd`](@ref)
+See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeLeftProd`](@ref), [`GenericProd`](@ref)
 """
 struct PreserveTypeRightProd end
 
@@ -89,8 +91,8 @@ See also: [`prod`](@ref), [`ClosedProd`](@ref), [`GenericProd`](@ref)
 """
 struct UnspecifiedProd end
 
-prod(::UnspecifiedProd, ::Missing, right)     = right
-prod(::UnspecifiedProd, left, ::Missing)      = left
+prod(::UnspecifiedProd, ::Missing, right) = right
+prod(::UnspecifiedProd, left, ::Missing) = left
 prod(::UnspecifiedProd, ::Missing, ::Missing) = missing
 
 """
@@ -107,6 +109,22 @@ default_prod_rule(not_a_type, ::Type{R}) where {R} = default_prod_rule(typeof(no
 default_prod_rule(::Type{L}, not_a_type) where {L} = default_prod_rule(L, typeof(not_a_type))
 default_prod_rule(not_a_type_left, not_a_type_right) =
     default_prod_rule(typeof(not_a_type_left), typeof(not_a_type_right))
+
+# This is a hidden prod strategy to ensure symmetricity in the `default_prod_rule`.
+# Most of the automatic prod rule resolution relies on the `symmetric_default_prod_rule` instead of just `default_prod_rule`
+# The `symmetric_default_prod_rule` will adjust the prod rule in case if there is an available prod rule with swapped arguments
+struct SwapArgumentsProd{S}
+    strategy::S
+end
+
+prod(swap::SwapArgumentsProd, left, right) = prod(swap.strategy, right, left)
+
+symmetric_default_prod_rule(left, right) = symmetric_default_prod_rule(default_prod_rule(left, right), default_prod_rule(right, left), left, right)
+
+symmetric_default_prod_rule(strategy1, strategy2, left, right) = strategy1
+symmetric_default_prod_rule(strategy1, ::UnspecifiedProd, left, right) = strategy1
+symmetric_default_prod_rule(::UnspecifiedProd, strategy2, left, right) = SwapArgumentsProd(strategy2)
+symmetric_default_prod_rule(::UnspecifiedProd, ::UnspecifiedProd, left, right) = UnspecifiedProd()
 
 """
     fuse_supports(left, right)
@@ -191,7 +209,7 @@ prod(::GenericProd, ::Missing, right)     = right
 prod(::GenericProd, left, ::Missing)      = left
 prod(::GenericProd, ::Missing, ::Missing) = missing
 
-prod(::GenericProd, left::L, right::R) where {L, R} = prod(GenericProd(), default_prod_rule(L, R), left, right)
+prod(::GenericProd, left::L, right::R) where {L, R} = prod(GenericProd(), symmetric_default_prod_rule(L, R), left, right)
 
 prod(::GenericProd, specified_prod, left, right) = prod(specified_prod, left, right)
 prod(::GenericProd, ::UnspecifiedProd, left, right) = ProductOf(left, right)
@@ -199,7 +217,7 @@ prod(::GenericProd, ::UnspecifiedProd, left, right) = ProductOf(left, right)
 # Try to fuse the tree with analytical solutions (if possible)
 # Case (L × R) × T
 prod(::GenericProd, left::ProductOf{L, R}, right::T) where {L, R, T} =
-    prod(GenericProd(), default_prod_rule(L, T), default_prod_rule(R, T), left, right)
+    prod(GenericProd(), symmetric_default_prod_rule(L, T), symmetric_default_prod_rule(R, T), left, right)
 
 # (L × R) × T cannot be fused, simply return the `ProductOf`
 prod(::GenericProd, ::UnspecifiedProd, ::UnspecifiedProd, left::ProductOf, right) = ProductOf(left, right)
@@ -218,7 +236,7 @@ prod(::GenericProd, _, something, left::ProductOf, right) =
 
 # Case T × (L × R)
 prod(::GenericProd, left::T, right::ProductOf{L, R}) where {L, R, T} =
-    prod(GenericProd(), default_prod_rule(T, L), default_prod_rule(T, R), left, right)
+    prod(GenericProd(), symmetric_default_prod_rule(T, L), symmetric_default_prod_rule(T, R), left, right)
 
 # T × (L × R) cannot be fused, simply return the `ProductOf`
 prod(::GenericProd, ::UnspecifiedProd, ::UnspecifiedProd, left, right::ProductOf) = ProductOf(left, right)

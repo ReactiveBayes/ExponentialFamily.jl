@@ -56,7 +56,7 @@ include("../testutils.jl")
     end
 
     @testset "prod with Distributiond" begin
-        for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Exponential), PreserveTypeLeftProd(), PreserveTypeRightProd())
+        for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd())
             @test prod(strategy, Exponential(5), Exponential(4)) ≈ Exponential(1 / 0.45)
             @test prod(strategy, Exponential(1), Exponential(1)) ≈ Exponential(1 / 2)
             @test prod(strategy, Exponential(0.1), Exponential(0.1)) ≈ Exponential(0.05)

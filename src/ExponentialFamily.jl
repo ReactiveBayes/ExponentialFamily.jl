@@ -4,13 +4,11 @@ using TinyHugeNumbers
 # Reexport `tiny` and `huge` from the `TinyHugeNumbers`
 export tiny, huge
 
-include("distributions.jl")
-include("prod.jl")
-
-# include("cached.jl")
 include("constants.jl")
-
+include("prod.jl")
+include("distributions.jl")
 include("exponential_family.jl")
+# include("cached.jl")
 
 include("helpers/fixes.jl")
 include("helpers/algebra/cholesky.jl")

@@ -323,10 +323,10 @@ end
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
 default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
-    ClosedProd()
+    PreserveTypeProd(Distribution)
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::L,
     right::R
 ) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
@@ -350,10 +350,10 @@ function compute_logscale(
 end
 
 default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
-    ClosedProd()
+    PreserveTypeProd(Distribution)
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::L,
     right::R
 ) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
@@ -531,8 +531,8 @@ Distributions.params(::MeanParametersSpace, dist::MultivariateGaussianDistributi
 
 function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
     k = div(-1 + isqrt(1 + 4 * length(θ)), 2)
-    if length(θ) < 2 || (length(θ) !== (k + k ^ 2))
-        return false 
+    if length(θ) < 2 || (length(θ) !== (k + k^2))
+        return false
     end
     (μ, Σ) = unpack_parameters(MvNormalMeanCovariance, θ)
     return isnothing(conditioner) && length(μ) === size(Σ, 1) && (size(Σ, 1) === size(Σ, 2)) && isposdef(Σ)
@@ -540,8 +540,8 @@ end
 
 function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, conditioner)
     k = div(-1 + isqrt(1 + 4 * length(η)), 2)
-    if length(η) < 2 || (length(η) !== (k + k ^ 2))
-        return false 
+    if length(η) < 2 || (length(η) !== (k + k^2))
+        return false
     end
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
     return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
@@ -572,13 +572,14 @@ end
 # getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = RealNumbers()^div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2)
 # The function above is not type-stable, the function below is type-stable, but does not uses an arbitrary `IndicatorFunction`
 struct MvNormalDomainIndicator
-    dims :: Int
+    dims::Int
 end
 
 (indicator::MvNormalDomainIndicator)(v) = false
 (indicator::MvNormalDomainIndicator)(v::AbstractVector) = length(v) === indicator.dims && isreal(v)
 
-getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2))))
+getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) =
+    Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2))))
 
 isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
 

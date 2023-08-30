@@ -13,6 +13,9 @@ import Distributions:
 
 import Base: convert
 
+# We assume that we want to preserve the `Distribution` when working with two `Distribution`s
+prod(::ClosedProd, left::Distribution, right::Distribution) = prod(PreserveTypeProd(Distribution), left, right)
+
 """
     vague(distribution_type, [ dims... ])
 

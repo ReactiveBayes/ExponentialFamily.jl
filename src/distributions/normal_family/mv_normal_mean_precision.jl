@@ -73,16 +73,16 @@ end
 vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
     MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-default_prod_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
+default_prod_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
+function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     W = precision(left) + precision(right)
     xi = precision(left) * mean(left) + precision(right) * mean(right)
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::MvNormalMeanPrecision{T1},
     right::MvNormalMeanPrecision{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}

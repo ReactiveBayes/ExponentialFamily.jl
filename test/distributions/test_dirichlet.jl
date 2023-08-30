@@ -43,11 +43,11 @@ include("../testutils.jl")
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
                 η1 = getnaturalparameters(ef)
 
-                for x in [ rand(len) for _ in 1:3 ]
+                for x in [rand(len) for _ in 1:3]
                     x = x ./ sum(x)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
-                    @test @inferred(sufficientstatistics(ef, x)) == (vmap(log,x),)
+                    @test @inferred(sufficientstatistics(ef, x)) == (vmap(log, x),)
                     firstterm = mapreduce(x -> loggamma(x + 1), +, η1)
                     secondterm = loggamma(sum(η1) + length(η1))
                     @test @inferred(logpartition(ef)) ≈ firstterm - secondterm
@@ -62,26 +62,21 @@ include("../testutils.jl")
             @test !isproper(space, Dirichlet, [1.0], NaN)
             @test !isproper(space, Dirichlet, [0.5, 0.5], 1.0)
             @test isproper(space, Dirichlet, [2.0, 3.0])
-            @test !isproper(space, Dirichlet, [-1.0 ,-1.2])
+            @test !isproper(space, Dirichlet, [-1.0, -1.2])
         end
 
         @test_throws Exception convert(ExponentialFamilyDistribution, Dirichlet([Inf, Inf]))
     end
 
     @testset "prod with Distribution" begin
-        @test default_prod_rule(Dirichlet, Dirichlet) === ClosedProd()
-
-        @test @inferred(prod(ClosedProd(), Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0]))) ≈ Dirichlet([1.0, 1.0, 1.0])
-        @test @inferred(prod(ClosedProd(), Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0]))) ≈ Dirichlet([1.1, 1.2000000000000002, 2.0])
-        @test @inferred(prod(ClosedProd(), Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0]))) ≈ Dirichlet([3.0999999999999996, 2.2, 6.0])
-
-        # GenericProd should always check the default strategy and fallback if available
-        @test @inferred(prod(GenericProd(), Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0]))) ≈ Dirichlet([1.0, 1.0, 1.0])
-        @test @inferred(prod(GenericProd(), Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0]))) ≈ Dirichlet([1.1, 1.2000000000000002, 2.0])
-        @test @inferred(prod(GenericProd(), Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0]))) ≈ Dirichlet([3.0999999999999996, 2.2, 6.0])
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test @inferred(prod(strategy, Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0]))) ≈ Dirichlet([1.0, 1.0, 1.0])
+            @test @inferred(prod(strategy, Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0]))) ≈ Dirichlet([1.1, 1.2000000000000002, 2.0])
+            @test @inferred(prod(strategy, Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0]))) ≈ Dirichlet([3.0999999999999996, 2.2, 6.0])
+        end
     end
 
-    @testset "prod with ExponentialFamilyDistribution" for len=3:6
+    @testset "prod with ExponentialFamilyDistribution" for len in 3:6
         αleft = rand(len) .+ 1
         αright = rand(len) .+ 1
         let left = Dirichlet(αleft), right = Dirichlet(αright)

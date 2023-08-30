@@ -550,7 +550,7 @@ See also: [`ExponentialFamily.separate_conditioner`](@ref)
 """
 join_conditioner(::Type{T}, params, ::Nothing) where {T <: Distribution} = params
 
-Base.convert(::Type{T}, ef::ExponentialFamilyDistribution) where {T <: Distribution} =
+Base.convert(::Type{T}, ef::ExponentialFamilyDistribution{E}) where {T <: Distribution, E <: Distribution} =
     Base.convert(T, Base.convert(Distribution, ef))
 
 # Assume that the type tag is the same as the `Distribution` type but without the type parameters 
@@ -560,6 +560,8 @@ exponential_family_typetag(distribution) = distribution_typewrapper(distribution
 exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
 Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
+
+Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} = error("Cannot convert an arbitrary `ExponentialFamily{$T}` object to a `Distribution`. An explicit approximation method is required.")
 
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}

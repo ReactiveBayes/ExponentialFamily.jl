@@ -17,8 +17,6 @@ function convert_paramfloatype(::Type{Binomial}, ::Type{T}, distribution::Binomi
     return Binomial(n, convert(T, p))
 end
 
-default_prod_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = PreserveTypeProd(ExponentialFamilyDistribution)
-
 # NOTE: The product of two Binomial distributions is NOT a Binomial distribution.
 function Base.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},

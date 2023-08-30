@@ -74,7 +74,7 @@ import ExponentialFamily: paramfloattype, xtlog
     end
 
     @testset "prod" begin
-        for strategy in (ClosedProd(), GenericProd(), PreserveTypeLeftProd())
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
             @test prod(strategy, GammaShapeRate(1, 1), GammaShapeRate(1, 1)) == GammaShapeRate(1, 2)
             @test prod(strategy, GammaShapeRate(1, 2), GammaShapeRate(1, 1)) == GammaShapeRate(1, 3)
             @test prod(strategy, GammaShapeRate(1, 2), GammaShapeRate(1, 2)) == GammaShapeRate(1, 4)

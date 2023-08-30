@@ -6,9 +6,9 @@ import StatsFuns: logistic, logit
 vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
-default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = ClosedProd()
+default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
     right_p = succprob(right)
 
@@ -18,9 +18,9 @@ function Base.prod(::ClosedProd, left::Bernoulli, right::Bernoulli)
     return Bernoulli(pprod / norm)
 end
 
-default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = ClosedProd()
+default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::Bernoulli, right::Categorical)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Categorical)
     p_left = probvec(left)
     p_right = probvec(right)
 

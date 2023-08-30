@@ -56,11 +56,13 @@ include("../testutils.jl")
 
 
     @testset "prod with Distributions" begin
-        @test prod(ClosedProd(), Erlang(1, 1), Erlang(1, 1)) == Erlang(1, 1 / 2)
-        @test prod(ClosedProd(), Erlang(1, 2), Erlang(1, 1)) == Erlang(1, 2 / 3)
-        @test prod(ClosedProd(), Erlang(1, 2), Erlang(1, 2)) == Erlang(1, 1)
-        @test prod(ClosedProd(), Erlang(2, 2), Erlang(1, 2)) == Erlang(2, 1)
-        @test prod(ClosedProd(), Erlang(2, 2), Erlang(2, 2)) == Erlang(3, 1)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, Erlang(1, 1), Erlang(1, 1)) == Erlang(1, 1 / 2)
+            @test prod(strategy, Erlang(1, 2), Erlang(1, 1)) == Erlang(1, 2 / 3)
+            @test prod(strategy, Erlang(1, 2), Erlang(1, 2)) == Erlang(1, 1)
+            @test prod(strategy, Erlang(2, 2), Erlang(1, 2)) == Erlang(2, 1)
+            @test prod(strategy, Erlang(2, 2), Erlang(2, 2)) == Erlang(3, 1)
+        end
 
         @test @allocated(prod(ClosedProd(), Erlang(1, 1), Erlang(1, 1))) == 0
     end

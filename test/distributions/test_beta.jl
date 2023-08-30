@@ -66,13 +66,11 @@ import SpecialFunctions: loggamma, logbeta
     end
 
     @testset "prod with Distributions" begin
-        @test prod(ClosedProd(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
-        @test prod(ClosedProd(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
-        @test prod(ClosedProd(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
-
-        @test prod(GenericProd(), Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
-        @test prod(GenericProd(), Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
-        @test prod(GenericProd(), Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, Beta(3.0, 2.0), Beta(2.0, 1.0)) ≈ Beta(4.0, 2.0)
+            @test prod(strategy, Beta(7.0, 1.0), Beta(0.1, 4.5)) ≈ Beta(6.1, 4.5)
+            @test prod(strategy, Beta(1.0, 3.0), Beta(0.2, 0.4)) ≈ Beta(0.19999999999999996, 2.4)
+        end
 
         @test @allocated(prod(ClosedProd(), Beta(3.0, 2.0), Beta(2.0, 1.0))) === 0
         @test @allocated(prod(GenericProd(), Beta(3.0, 2.0), Beta(2.0, 1.0))) === 0

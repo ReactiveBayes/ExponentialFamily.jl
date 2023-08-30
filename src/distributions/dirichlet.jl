@@ -10,9 +10,9 @@ using LogExpFunctions
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
-default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = ClosedProd()
+default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::Dirichlet, right::Dirichlet)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
     mvec = mvec .- one(eltype(mvec))
     return Dirichlet(mvec)

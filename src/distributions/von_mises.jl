@@ -6,9 +6,9 @@ import SpecialFunctions: besselj0
 
 vague(::Type{<:VonMises}) = VonMises(0.0, tiny)
 
-default_prod_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = ClosedProd()
+default_prod_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = PreserveTypeProd(Distribution)
 
-function prod(::ClosedProd, left::VonMises, right::VonMises)
+function prod(::PreserveTypeProd{Distribution}, left::VonMises, right::VonMises)
     μleft,κleft = params(left)
     μright,κright = params(right)
 
@@ -19,7 +19,6 @@ function prod(::ClosedProd, left::VonMises, right::VonMises)
     α = atan(b/a)
 
     return VonMises(α, R)
-
 end
 
 function Base.prod!(

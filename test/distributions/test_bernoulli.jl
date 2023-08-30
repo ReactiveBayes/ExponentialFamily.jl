@@ -66,18 +66,20 @@ include("../testutils.jl")
     end
 
     @testset "prod with Distribution" begin
-        @test default_prod_rule(Bernoulli, Bernoulli) === ClosedProd()
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test @inferred(prod(strategy, Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
+            @test @inferred(prod(strategy, Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
+            @test @inferred(prod(strategy, Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
+        end
 
-        @test @inferred(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
-        @test @inferred(prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
-        @test @inferred(prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
-
-        # GenericProd should always check the default strategy and fallback if available
-        @test @inferred(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
-        @test @inferred(prod(GenericProd(), Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
-        @test @inferred(prod(GenericProd(), Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            # Test symmetric case
+            @test @inferred(prod(strategy, Bernoulli(0.5), Categorical([ 0.5, 0.5 ]))) ≈ Categorical([ 0.5, 0.5 ])
+            @test @inferred(prod(strategy, Categorical([ 0.5, 0.5 ]), Bernoulli(0.5))) ≈ Categorical([ 0.5, 0.5 ])
+        end
 
         @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(PreserveTypeProd(Distribution), Bernoulli(0.5), Bernoulli(0.5))) === 0
         @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
     end
 

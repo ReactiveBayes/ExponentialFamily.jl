@@ -18,15 +18,15 @@ function Base.convert(::Type{GammaShapeRate}, dist::GammaDistributionsFamily{T})
     return convert(GammaShapeRate{T}, dist)
 end
 
-default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = ClosedProd()
-default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = ClosedProd()
+default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = PreserveTypeProd(Distribution)
+default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeScale)
+function Base.prod(::PreserveTypeProd{Distribution}, left::GammaShapeRate, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)
     return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
 end
 
-function Base.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeRate)
+function Base.prod(::PreserveTypeProd{Distribution}, left::GammaShapeScale, right::GammaShapeRate)
     T = promote_samplefloattype(left, right)
     return GammaShapeScale(
         shape(left) + shape(right) - one(T),

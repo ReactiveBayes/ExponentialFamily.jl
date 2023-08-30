@@ -83,16 +83,16 @@ end
 vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
-default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
+default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
+function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     xi_left, W_left = weightedmean_precision(left)
     xi_right, W_right = weightedmean_precision(right)
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::MvNormalMeanCovariance{T1},
     right::MvNormalMeanCovariance{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}

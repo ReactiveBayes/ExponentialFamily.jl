@@ -2,6 +2,7 @@ module NormalMeanVarianceTest
 
 using Test
 using ExponentialFamily
+using Distributions
 using StableRNGs
 using ForwardDiff
 
@@ -118,14 +119,15 @@ import ExponentialFamily: fisherinformation
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), NormalMeanVariance(-1, 1), NormalMeanVariance(1, 1)) ≈
-              NormalWeightedMeanPrecision(0.0, 2.0)
-        @test prod(ClosedProd(), NormalMeanVariance(-1, 2), NormalMeanVariance(1, 4)) ≈
-              NormalWeightedMeanPrecision(-1 / 4, 3 / 4)
-        @test prod(ClosedProd(), NormalMeanVariance(2, 2), NormalMeanVariance(0, 10)) ≈
-              NormalWeightedMeanPrecision(1.0, 3 / 5)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            @test prod(strategy, NormalMeanVariance(-1, 1), NormalMeanVariance(1, 1)) ≈
+                  NormalWeightedMeanPrecision(0.0, 2.0)
+            @test prod(strategy, NormalMeanVariance(-1, 2), NormalMeanVariance(1, 4)) ≈
+                  NormalWeightedMeanPrecision(-1 / 4, 3 / 4)
+            @test prod(strategy, NormalMeanVariance(2, 2), NormalMeanVariance(0, 10)) ≈
+                  NormalWeightedMeanPrecision(1.0, 3 / 5)
+        end
     end
-
 end
 
 end

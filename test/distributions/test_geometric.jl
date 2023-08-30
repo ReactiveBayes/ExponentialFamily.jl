@@ -17,11 +17,11 @@ include("../testutils.jl")
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
                 η1 = first(getnaturalparameters(ef))
 
-                for x in (1,3, 5)
+                for x in (1, 3, 5)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === one(x)
                     @test @inferred(sufficientstatistics(ef, x)) === (x,)
-                    @test @inferred(logpartition(ef)) ≈  -log(one(η1) - exp(η1))
+                    @test @inferred(logpartition(ef)) ≈ -log(one(η1) - exp(η1))
                 end
             end
         end
@@ -39,9 +39,11 @@ include("../testutils.jl")
     end
 
     @testset "prod with Distributions" begin
-        @test prod(ClosedProd(), Geometric(0.5), Geometric(0.6)) == Geometric(0.8)
-        @test prod(ClosedProd(), Geometric(0.3), Geometric(0.8)) == Geometric(0.8600000000000001)
-        @test prod(ClosedProd(), Geometric(0.5), Geometric(0.5)) == Geometric(0.75)
+        for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd())
+            @test prod(strategy, Geometric(0.5), Geometric(0.6)) == Geometric(0.8)
+            @test prod(strategy, Geometric(0.3), Geometric(0.8)) == Geometric(0.8600000000000001)
+            @test prod(strategy, Geometric(0.5), Geometric(0.5)) == Geometric(0.75)
+        end
 
         @test @allocated(prod(ClosedProd(), Geometric(0.5), Geometric(0.6))) == 0
     end
@@ -60,6 +62,5 @@ include("../testutils.jl")
             )
         end
     end
-
 end
 end

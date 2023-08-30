@@ -5,12 +5,11 @@ using ExponentialFamily
 using Distributions
 using Random
 using ForwardDiff
-using LoopVectorization 
+using LoopVectorization
 import SpecialFunctions: loggamma
 import ExponentialFamily: ExponentialFamilyDistribution, variate_form, value_support, promote_variate_type
 
 include("../testutils.jl")
-
 
 @testset "MatrixDirichlet" begin
     @testset "common" begin
@@ -71,19 +70,19 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{MatrixDirichlet}" begin
-        for len = 3:5
-            α = rand(len,len)
+        for len in 3:5
+            α = rand(len, len)
             @testset let d = MatrixDirichlet(α)
                 ef = test_exponentialfamily_interface(d; test_basic_functions = true, option_assume_no_allocations = false)
                 η1 = getnaturalparameters(ef)
 
-                for x in [ rand(len,len) for _ in 1:3 ]
+                for x in [rand(len, len) for _ in 1:3]
                     x = x ./ sum(x)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
-                    @test @inferred(sufficientstatistics(ef, x)) == (vmap(log,x),)
-                    @test @inferred(logpartition(ef)) ≈  vmapreduce(
-                        d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector,d)),
+                    @test @inferred(sufficientstatistics(ef, x)) == (vmap(log, x),)
+                    @test @inferred(logpartition(ef)) ≈ vmapreduce(
+                        d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),
                         +,
                         eachcol(first(unpack_parameters(MatrixDirichlet, η1)))
                     )
@@ -98,34 +97,29 @@ include("../testutils.jl")
             @test !isproper(space, MatrixDirichlet, [1.0], NaN)
             @test !isproper(space, MatrixDirichlet, [0.5, 0.5], 1.0)
             @test isproper(space, MatrixDirichlet, [2.0, 3.0])
-            @test !isproper(space, MatrixDirichlet, [-1.0 ,-1.2])
+            @test !isproper(space, MatrixDirichlet, [-1.0, -1.2])
         end
 
         @test_throws Exception convert(ExponentialFamilyDistribution, MatrixDirichlet([Inf Inf; 2 3]))
     end
 
     @testset "prod with Distribution" begin
-        @test default_prod_rule(MatrixDirichlet, MatrixDirichlet) === ClosedProd()
         d1 = MatrixDirichlet([0.2 3.4; 5.0 11.0; 0.2 0.6])
         d2 = MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])
         d3 = MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])
-        @test @inferred(prod(ClosedProd(), d1, d2)) ≈ MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test @inferred(prod(ClosedProd(), d1, d3)) ≈ MatrixDirichlet(
-            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
-        )
-        @test @inferred(prod(ClosedProd(),d2, d3)) ≈ MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
-
-        # GenericProd should always check the default strategy and fallback if available
-        @test @inferred(prod(GenericProd(), d1, d2)) ≈ MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test @inferred(prod(GenericProd(), d1, d3)) ≈  MatrixDirichlet(
-            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
-        )
-        @test @inferred(prod(GenericProd(), d2, d3)) ≈ MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+        for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd())
+            @test @inferred(prod(strategy, d1, d2)) ≈
+                  MatrixDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+            @test @inferred(prod(strategy, d1, d3)) ≈ MatrixDirichlet(
+                [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
+            )
+            @test @inferred(prod(strategy, d2, d3)) ≈ MatrixDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+        end
     end
 
-    @testset "prod with ExponentialFamilyDistribution" for len=3:6
-        αleft = rand(len,len) .+ 1
-        αright = rand(len,len) .+ 1
+    @testset "prod with ExponentialFamilyDistribution" for len in 3:6
+        αleft = rand(len, len) .+ 1
+        αright = rand(len, len) .+ 1
         let left = MatrixDirichlet(αleft), right = MatrixDirichlet(αright)
             @test test_generic_simple_exponentialfamily_product(
                 left,
@@ -147,7 +141,6 @@ include("../testutils.jl")
         @test promote_variate_type(Multivariate, MatrixDirichlet) === Dirichlet
         @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
     end
-
 end
 
 end

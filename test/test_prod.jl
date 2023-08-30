@@ -25,21 +25,25 @@ struct SomeUnknownObject end
 struct ObjectWithClosedProd1 end
 struct ObjectWithClosedProd2 end
 
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd1}) = ClosedProd()
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd2}) = ClosedProd()
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd2}) = ClosedProd()
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd1}) = ClosedProd()
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd1}) = PreserveTypeProd(ObjectWithClosedProd1)
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd2}) = PreserveTypeProd(ObjectWithClosedProd2)
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd2}) = PreserveTypeProd(ObjectWithClosedProd1)
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd1}) = PreserveTypeProd(ObjectWithClosedProd2)
 
-prod(::ClosedProd, ::ObjectWithClosedProd1, ::ObjectWithClosedProd1) = ObjectWithClosedProd1()
-prod(::ClosedProd, ::ObjectWithClosedProd2, ::ObjectWithClosedProd2) = ObjectWithClosedProd2()
-prod(::ClosedProd, ::ObjectWithClosedProd1, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
-prod(::ClosedProd, ::ObjectWithClosedProd2, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
+prod(::PreserveTypeProd{ObjectWithClosedProd1}, ::ObjectWithClosedProd1, ::ObjectWithClosedProd1) = ObjectWithClosedProd1()
+prod(::PreserveTypeProd{ObjectWithClosedProd2}, ::ObjectWithClosedProd2, ::ObjectWithClosedProd2) = ObjectWithClosedProd2()
+prod(::PreserveTypeProd{ObjectWithClosedProd1}, ::ObjectWithClosedProd1, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
+prod(::PreserveTypeProd{ObjectWithClosedProd2}, ::ObjectWithClosedProd2, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
 
 Base.convert(::Type{ObjectWithClosedProd1}, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
 Base.convert(::Type{ObjectWithClosedProd2}, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
 
 Base.convert(::Type{Int}, ::ObjectWithClosedProd1) = 1
 Base.convert(::Type{Int}, ::ObjectWithClosedProd2) = 2
+
+struct ADistributionObject <: ContinuousUnivariateDistribution end
+
+prod(::PreserveTypeProd{Distribution}, ::ADistributionObject, ::ADistributionObject) = ADistributionObject()
 
 ## ===========================================================================
 ## Tests
@@ -63,17 +67,25 @@ end
         @test prod(ClosedProd(), SomeUnknownObject(), missing) === SomeUnknownObject()
         @test prod(ClosedProd(), missing, missing) === missing
     end
+
+    @testset "`ClosedProd` for distribution objects should assume `ProdPreserveType(Distribution)`" begin 
+        @test prod(ClosedProd(), ADistributionObject(), ADistributionObject()) isa ADistributionObject
+    end
+
+    @testset "`ClosedProd` for EF objects should assume `ProdPreserveType(ExponentialFamilyDistribution)`" begin 
+        ef = convert(ExponentialFamilyDistribution, Beta(2.0, 3.0))
+        @test prod(ClosedProd(), ef, ef) isa ExponentialFamilyDistribution
+    end
 end
 
 @testset "PreserveTypeProd" begin
+
     @testset "`missing` should be ignored with the `PreserveTypeProd`" begin
         # Can convert the result of the prod to the desired type
         @test prod(PreserveTypeProd(SomeUnknownObject), missing, SomeUnknownObject()) isa SomeUnknownObject
         @test prod(PreserveTypeProd(SomeUnknownObject), SomeUnknownObject(), missing) isa SomeUnknownObject
         @test prod(PreserveTypeProd(Missing), missing, missing) isa Missing
-
-        # Cannot convert the result of the prod to the desired type
-        @test_throws MethodError prod(PreserveTypeProd(SomeUnknownObject), missing, missing)
+        @test prod(PreserveTypeProd(SomeUnknownObject), missing, missing) isa Missing
     end
 
     @testset "`PreserveTypeLeftProd` should preserve the type of the left argument" begin

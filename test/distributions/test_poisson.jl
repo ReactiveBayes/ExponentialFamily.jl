@@ -16,7 +16,7 @@ include("../testutils.jl")
 
 @testset "Poisson" begin
     @testset "ExponentialFamilyDistribution{Poisson}" begin
-        @testset for i in 3:5
+        @testset for i in 2:4
             @testset let d = Poisson(2 * (i + 1))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
                 η1 = first(getnaturalparameters(ef))

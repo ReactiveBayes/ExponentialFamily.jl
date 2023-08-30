@@ -31,7 +31,7 @@ include("../testutils.jl")
                 for x in a-1:0.5:a+1
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === inv(twoπ)
-                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (cos(x), sin(x))) 
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (cos(x), sin(x)))
                     @test @inferred(logpartition(ef)) ≈ (log(besseli(0, b)))
                 end
 
@@ -46,33 +46,34 @@ include("../testutils.jl")
         # Test failing isproper cases
         @test !isproper(MeanParametersSpace(), VonMises, [-1])
         @test !isproper(MeanParametersSpace(), VonMises, [1], 3.0)
-        @test !isproper(MeanParametersSpace(), VonMises, [1,-2])
+        @test !isproper(MeanParametersSpace(), VonMises, [1, -2])
     end
 
     @testset "prod with Distributions" begin
         function prod_result_parameters(paramsleft, paramsright)
-            (μleft,κleft) = paramsleft
+            (μleft, κleft) = paramsleft
             (μright, κright) = paramsright
-            a = κleft*cos(μleft) + κright*cos(μright)
-            b = κleft*sin(μleft) + κright*sin(μright)
+            a = κleft * cos(μleft) + κright * cos(μright)
+            b = κleft * sin(μleft) + κright * sin(μright)
 
             R = sqrt(a^2 + b^2)
-            α = atan(b/a)
+            α = atan(b / a)
 
             return α, R
         end
-        (μ1,κ1) = prod_result_parameters((3.0,2.0),(2.0,1.0))
-        (μ2,κ2) = prod_result_parameters((7.0,1.0),(0.1,4.5))
-        (μ3,κ3) = prod_result_parameters((1.0,3.0),(0.2,0.4))
-        @test prod(ClosedProd(), VonMises(3.0, 2.0), VonMises(2.0, 1.0)) ≈ VonMises(μ1,κ1)
-        @test prod(ClosedProd(), VonMises(7.0, 1.0), VonMises(0.1, 4.5)) ≈ VonMises(μ2,κ2)
-        @test prod(ClosedProd(), VonMises(1.0, 3.0), VonMises(0.2, 0.4)) ≈ VonMises(μ3,κ3)
+        (μ1, κ1) = prod_result_parameters((3.0, 2.0), (2.0, 1.0))
+        (μ2, κ2) = prod_result_parameters((7.0, 1.0), (0.1, 4.5))
+        (μ3, κ3) = prod_result_parameters((1.0, 3.0), (0.2, 0.4))
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, VonMises(3.0, 2.0), VonMises(2.0, 1.0)) ≈ VonMises(μ1, κ1)
+            @test prod(strategy, VonMises(7.0, 1.0), VonMises(0.1, 4.5)) ≈ VonMises(μ2, κ2)
+            @test prod(strategy, VonMises(1.0, 3.0), VonMises(0.2, 0.4)) ≈ VonMises(μ3, κ3)
+        end
     end
 
-
     @testset "prod with ExponentialFamilyDistribution{VonMises}" begin
-        for kleft in (0.01, 1.0), kright in (0.01, 1.0),alphaleft in 0.1:0.1:0.9, alpharight in 0.1:0.1:0.9
-            let left = VonMises(alphaleft,kleft), right = VonMises(alpharight,kright)
+        for kleft in (0.01, 1.0), kright in (0.01, 1.0), alphaleft in 0.1:0.1:0.9, alpharight in 0.1:0.1:0.9
+            let left = VonMises(alphaleft, kleft), right = VonMises(alpharight, kright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
                     right,
@@ -81,7 +82,6 @@ include("../testutils.jl")
             end
         end
     end
-
 end
 
 end

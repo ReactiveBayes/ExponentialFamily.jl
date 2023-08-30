@@ -31,12 +31,14 @@ include("../testutils.jl")
     end
 
     @testset "prod Distribution" begin
-        @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
-              Categorical([0.1, 0.4, 0.5])
-        @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
-              Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ≈
-              Categorical([2 / 3, 1 / 4, 1 / 12])
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
+                  Categorical([0.1, 0.4, 0.5])
+            @test prod(strategy, Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
+                  Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
+            @test prod(strategy, Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ≈
+                  Categorical([2 / 3, 1 / 4, 1 / 12])
+        end
     end
 
     @testset "ExponentialFamilyDistribution{Categorical}" begin
