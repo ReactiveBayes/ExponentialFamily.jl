@@ -1,26 +1,30 @@
 export VonMisesFisher
 using Distributions
 import Distributions: VonMisesFisher
-import SpecialFunctions: besseli
+import SpecialFunctions: besseli, gamma
 import LinearAlgebra: norm
+import FillArrays: Eye 
+import HCubature: hquadrature
+using HypergeometricFunctions
 
 vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
 function Distributions.mean(dist::VonMisesFisher)
     (μ, κ) = Distributions.params(dist)
-
     p = length(μ)
     factor = besseli(0.5p, κ) / besseli(0.5p - 1, κ)
     return factor * μ
 end
 
-#### Write these functions
 function Distributions.cov(dist::VonMisesFisher)
-    return 1.0
+    (μ, κ) = Distributions.params(dist)
+    ν = length(μ)
+    rb =  besseli(ν/2, κ)*inv(besseli((ν/2) - 1, κ))
+    return (rb*inv(κ))*Eye{Float64}(ν) + (besseli((ν/2) + 1, κ)/besseli((ν/2) - 1, κ) - rb^2)*μ*μ' 
 end
 
-Distributions.var(dist::VonMisesFisher) = 1.0
-Distributions.std(dist::VonMisesFisher) = 1.0
+Distributions.var(dist::VonMisesFisher) = diag(cov(dist))
+Distributions.std(dist::VonMisesFisher) = sqrt.(var(dist))
 
 function insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
     return length(getnaturalparameters(ef)) == length(x) && Distributions.isunitvec(x)
