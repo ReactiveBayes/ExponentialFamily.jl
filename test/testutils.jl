@@ -264,7 +264,6 @@ function run_test_fisherinformation_against_jacobian(
             m = parameters
             n = mapping(m, conditioner)
             J = ForwardDiff.jacobian(Base.Fix2(mapping, conditioner), m)
-
             Fₘ = getfisherinformation(M, T, conditioner)(m)
             Fₙ = getfisherinformation(N, T, conditioner)(n)
 

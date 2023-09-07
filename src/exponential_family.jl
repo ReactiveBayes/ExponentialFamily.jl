@@ -570,10 +570,8 @@ function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}
     conditioner = getconditioner(ef)
     # Map the conditioned natural parameters space into its corresponding mean parameters space
     cparams = map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner)
-
     # `Distributions.jl` stores the params in a single tuple, so we need to join the parameters and the conditioner
     params = join_conditioner(T, cparams, conditioner)
-
     return T(params...)
 end
 
