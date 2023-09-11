@@ -245,13 +245,8 @@ end
 
 Returns the computed values of `sufficientstatistics` of the exponential family distribution at the point `x`.
 """
-# function sufficientstatistics(ef::ExponentialFamilyDistribution, x)
-#     return map(f -> f(x), getsufficientstatistics(ef))
-# end
-
-@inline ss(fs::Tuple{Function, Vararg{Function}}, x) = map(f -> f(x),fs)
-function sufficientstatistics(ef::ExponentialFamilyDistribution, x) 
-    return ss(getsufficientstatistics(ef),x)
+function sufficientstatistics(ef::ExponentialFamilyDistribution, x)
+    return map(f -> f(x), getsufficientstatistics(ef))
 end
 
 """

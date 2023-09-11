@@ -81,6 +81,7 @@ end
 Distributions.pdf(dist::NormalGamma, x::AbstractVector{<:Real}) = exp(logpdf(dist, x))
 
 default_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = PreserveTypeProd(Distribution)
+
 function Base.prod(::PreserveTypeProd{Distribution}, left::NormalGamma, right::NormalGamma)
     (μleft, λleft, αleft, βleft) = params(left)
     (μright, λright, αright, βright) = params(right)
@@ -94,7 +95,12 @@ function Base.prod(::PreserveTypeProd{Distribution}, left::NormalGamma, right::N
     return NormalGamma(μ,λ,α,β)
 end
 
-Distributions.support(::Type{NormalGamma}) = ProductDomain(RealLine(), HalfLine{Real,:open}()) 
+struct NormalGammaDomain <: Domain{AbstractVector} end
+
+Base.eltype(::NormalGammaDomain) = AbstractVector
+Base.in(v, ::NormalGammaDomain) = length(v) === 2 && isreal(v[1]) && isreal(v[2]) && v[2] > 0
+
+Distributions.support(::Type{NormalGamma}) = NormalGammaDomain()
 
 # Natural parametrization
 isproper(::NaturalParametersSpace, ::Type{NormalGamma}, η, conditioner) = isnothing(conditioner) && length(η) === 4 && getindex(η,2) < 0 && getindex(η, 3) > -1/2 && getindex(η,4) < 0 && all(!isinf, η) && all(!isnan, η)
