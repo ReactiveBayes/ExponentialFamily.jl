@@ -144,37 +144,53 @@ end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{NormalGamma}) = (η) -> begin
     (η1, η2, η3, η4) = unpack_parameters(NormalGamma, η)
-    # Define a 4x4 matrix
-    info_matrix = Matrix{Float64}(undef, 4, 4)
+    
+    info_matrix = MMatrix{4, 4, eltype(η), 16}(undef)
+    
     tmp1 = ((η1^2) / (4η2) - η4)^-1
     tmp2 = ((η1^2) / (4η2) - η4)^-2
     # Assign each value to the corresponding cell in the matrix
-    info_matrix[1, 1] =
-        ((tmp1) * ((-1 / 2) - η3) + (-(η1^2) * (tmp2) * ((-1 / 2) - η3)) / (2η2)) /
-        (2η2)
-    info_matrix[2, 1] =
-        (-η1 * (tmp1) * ((-1 / 2) - η3)) / (2 * (η2^2)) +
-        (2η1 * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1 / 2) - η3)) / η2
-    info_matrix[3, 1] = (-η1 * (tmp1)) / (2η2)
-    info_matrix[4, 1] = (η1 * (tmp2) * ((-1 / 2) - η3)) / (2η2)
-    info_matrix[1, 2] =
-        ((η1^3) * (tmp2) * ((-1 / 2) - η3)) / (8 * (η2^3)) +
-        (-η1 * (tmp1) * ((-1 / 2) - η3)) / (2 * (η2^2))
-    info_matrix[2, 2] =
-        (1 // 2) * (η2^-2) + (-(η1^2) * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1 / 2) - η3)) / (η2^2) +
-        128η2 * ((η1^2) / (256 * (η2^4))) * (tmp1) * ((-1 / 2) - η3)
-    info_matrix[3, 2] = ((η1^2) * (tmp1)) / (4 * (η2^2))
-    info_matrix[4, 2] = (-(η1^2) * (tmp2) * ((-1 / 2) - η3)) / (4 * (η2^2))
-    info_matrix[1, 3] = (-η1 * (tmp1)) / (2η2)
-    info_matrix[2, 3] = 4 * ((η1^2) / (16 * (η2^2))) * (tmp1)
-    info_matrix[3, 3] = SpecialFunctions.trigamma((1 / 2) + η3)
-    info_matrix[4, 3] = tmp1
-    info_matrix[1, 4] = (-η1 * ((1 / 2) + η3) * (tmp2)) / (2η2)
-    info_matrix[2, 4] = 4 * ((1 / 2) + η3) * ((η1^2) / (16 * (η2^2))) * (tmp2)
-    info_matrix[3, 4] = tmp1
-    info_matrix[4, 4] = ((1 / 2) + η3) * (tmp2)
+    @inbounds begin
 
-    return info_matrix
+        info_matrix[1, 1] =
+            ((tmp1) * ((-1 / 2) - η3) + (-(η1^2) * (tmp2) * ((-1 / 2) - η3)) / (2η2)) /
+            (2η2)
+        info_matrix[2, 1] =
+            (-η1 * (tmp1) * ((-1 / 2) - η3)) / (2 * (η2^2)) +
+            (2η1 * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1 / 2) - η3)) / η2
+        info_matrix[3, 1] = (-η1 * (tmp1)) / (2η2)
+        info_matrix[4, 1] = (η1 * (tmp2) * ((-1 / 2) - η3)) / (2η2)
+
+        # info_matrix[1, 2] =
+        #     ((η1^3) * (tmp2) * ((-1 / 2) - η3)) / (8 * (η2^3)) +
+        #     (-η1 * (tmp1) * ((-1 / 2) - η3)) / (2 * (η2^2))
+        info_matrix[2, 2] =
+            (1 // 2) * (η2^-2) + (-(η1^2) * ((η1^2) / (16 * (η2^2))) * (tmp2) * ((-1 / 2) - η3)) / (η2^2) +
+            128η2 * ((η1^2) / (256 * (η2^4))) * (tmp1) * ((-1 / 2) - η3)
+        info_matrix[3, 2] = ((η1^2) * (tmp1)) / (4 * (η2^2))
+        info_matrix[4, 2] = (-(η1^2) * (tmp2) * ((-1 / 2) - η3)) / (4 * (η2^2))
+
+        # info_matrix[1, 3] = (-η1 * (tmp1)) / (2η2)
+        # info_matrix[2, 3] = 4 * ((η1^2) / (16 * (η2^2))) * (tmp1)
+        info_matrix[3, 3] = SpecialFunctions.trigamma((1 / 2) + η3)
+        info_matrix[4, 3] = tmp1
+
+        # info_matrix[1, 4] = (-η1 * ((1 / 2) + η3) * (tmp2)) / (2η2)
+        # info_matrix[2, 4] = 4 * ((1 / 2) + η3) * ((η1^2) / (16 * (η2^2))) * (tmp2)
+        # info_matrix[3, 4] = tmp1
+        info_matrix[4, 4] = ((1 / 2) + η3) * (tmp2)
+
+        info_matrix[1, 2] = info_matrix[2, 1]
+
+        info_matrix[1, 3] = info_matrix[3, 1]
+        info_matrix[2, 3] = info_matrix[3, 2]
+
+        info_matrix[1, 4] = info_matrix[4, 1]
+        info_matrix[2, 4] = info_matrix[4, 2]
+        info_matrix[3, 4] = info_matrix[4, 3] 
+    end
+
+    return SMatrix(info_matrix)
 end
 
 # Mean parametrization
@@ -186,28 +202,31 @@ end
 
 getfisherinformation(::MeanParametersSpace, ::Type{NormalGamma}) = (θ) -> begin
     (_, λ, α, β) = unpack_parameters(NormalGamma, θ)
-    info_matrix = Matrix{Float64}(undef, 4, 4)
+
+    info_matrix = MMatrix{4, 4, eltype(θ), 16}(undef)
 
     # Assign each value to the corresponding cell in the matrix
-    info_matrix[1, 1] = -λ * α / β
-    info_matrix[2, 1] = 0
-    info_matrix[3, 1] = 0
-    info_matrix[4, 1] = 0
-    info_matrix[1, 2] = 0
-    info_matrix[2, 2] = (-1 / 2) * (λ^-2)
-    info_matrix[3, 2] = 0
-    info_matrix[4, 2] = 0
-    info_matrix[1, 3] = 0
-    info_matrix[2, 3] = 0
-    info_matrix[3, 3] = -SpecialFunctions.trigamma(α)
-    info_matrix[4, 3] = β^-1
-    info_matrix[1, 4] = 0
-    info_matrix[2, 4] = 0
-    info_matrix[3, 4] = β^-1
-    info_matrix[4, 4] = -α * (β^-2)
+    @inbounds begin
+        info_matrix[1, 1] = λ * α / β
+        info_matrix[2, 1] = 0
+        info_matrix[3, 1] = 0
+        info_matrix[4, 1] = 0
+        info_matrix[1, 2] = 0
+        info_matrix[2, 2] = (1 / 2) * (λ^-2)
+        info_matrix[3, 2] = 0
+        info_matrix[4, 2] = 0
+        info_matrix[1, 3] = 0
+        info_matrix[2, 3] = 0
+        info_matrix[3, 3] = SpecialFunctions.trigamma(α)
+        info_matrix[4, 3] = -β^-1
+        info_matrix[1, 4] = 0
+        info_matrix[2, 4] = 0
+        info_matrix[3, 4] = -β^-1
+        info_matrix[4, 4] = α * (β^-2)
+    end
 
     # Return the resulting information matrix
-    return -info_matrix
+    return SMatrix(info_matrix)
 end
 
 
