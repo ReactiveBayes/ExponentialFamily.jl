@@ -1,6 +1,6 @@
 # [Examples](@id examples)
 
-## Product of two probability distributions over the same variable
+## [Product of two probability distributions over the same variable](@id examples-product)
 
 In this example, we'll show you how to use the ExponentialFamily package to calculate the product of probability distributions that both relate to the same variable "X". 
 This operation results in another probability distribution, also centered around the variable "X". 
