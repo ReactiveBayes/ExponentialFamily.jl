@@ -11,8 +11,8 @@ const MvGaussianMeanCovariance        = MvNormalMeanCovariance
 const MvGaussianMeanPrecision         = MvNormalMeanPrecision
 const MvGaussianWeightedMeanPrecision = MvNormalWeightedMeanPrecision
 
-const UnivariateNormalDistributionsFamily{T}   = Union{NormalMeanPrecision{T}, NormalMeanVariance{T}, NormalWeightedMeanPrecision{T}}
-const MultivariateNormalDistributionsFamily{T} = Union{MvNormalMeanPrecision{T}, MvNormalMeanCovariance{T}, MvNormalWeightedMeanPrecision{T}}
+const UnivariateNormalDistributionsFamily{T}   = Union{NormalMeanPrecision{T}, NormalMeanVariance{T}, NormalWeightedMeanPrecision{T}, Normal{T}}
+const MultivariateNormalDistributionsFamily{T} = Union{MvNormalMeanPrecision{T}, MvNormalMeanCovariance{T}, MvNormalWeightedMeanPrecision{T}, MvNormal{T}}
 const NormalDistributionsFamily{T}             = Union{UnivariateNormalDistributionsFamily{T}, MultivariateNormalDistributionsFamily{T}}
 
 const UnivariateGaussianDistributionsFamily   = UnivariateNormalDistributionsFamily
@@ -28,6 +28,19 @@ using LoopVectorization
 using StatsFuns: log2π
 using LinearAlgebra
 using SpecialFunctions
+
+# Extra methods for the `Normal` from `Distributions.jl`
+
+weightedmean(d::Union{Normal, MvNormal}) = invcov(d) * mean(d)
+
+cov(d::Normal) = var(d)
+invcov(d::Normal) = inv(var(d))
+invcov(d::FullNormal) = inv(cov(d))
+
+Base.precision(d::Normal) = invcov(d)
+Base.precision(d::FullNormal) = invcov(d)
+
+Base.ndims(d::FullNormal) = length(mean(d))
 
 # Joint over multiple Gaussians
 
@@ -203,8 +216,34 @@ promote_variate_type(::Type{Multivariate}, ::Type{<:NormalWeightedMeanPrecision}
 
 # Conversion to gaussian distributions from `Distributions.jl`
 
-Base.convert(::Type{Normal}, dist::UnivariateNormalDistributionsFamily)     = Normal(mean_std(dist)...)
-Base.convert(::Type{MvNormal}, dist::MultivariateNormalDistributionsFamily) = MvNormal(mean_cov(dist)...)
+function Base.convert(::Type{Normal{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
+    mean, std = mean_std(dist)
+    return Normal(convert(T, mean), convert(T, std))
+end
+
+function Base.convert(::Type{Normal}, dist::UnivariateNormalDistributionsFamily{T}) where {T <: Real}
+    return convert(Normal{T}, dist)
+end
+
+function Base.convert(
+    ::Type{MvNormal{T, C, M}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
+    mean, cov = mean_cov(dist)
+    return MvNormal(convert(M, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
+end
+
+function Base.convert(::Type{MvNormal{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
+    return convert(MvNormal{T, Distributions.PDMats.PDMat{T, Matrix{T}}, Vector{T}}, dist)
+end
+
+function Base.convert(::Type{MvNormal}, dist::MultivariateNormalDistributionsFamily{T}) where {T <: Real}
+    return convert(MvNormal{T}, dist)
+end
+
+function Base.convert(::Type{MvNormal{T}}, mean::AbstractVector, cov::AbstractMatrix) where {T <: Real}
+    return MvNormal(convert(AbstractVector{T}, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
+end
 
 # Conversion to mean - variance parametrisation
 
@@ -520,6 +559,15 @@ getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -
     (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
     return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
 end
+
+### Fallback for the entire family 
+
+getbasemeasure(::Type{<:UnivariateNormalDistributionsFamily}) = getbasemeasure(NormalMeanVariance)
+getsufficientstatistics(::Type{<:UnivariateNormalDistributionsFamily}) = getsufficientstatistics(NormalMeanVariance)
+getlogpartition(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    getlogpartition(space, NormalMeanVariance)
+getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    getfisherinformation(space, NormalMeanVariance)
 
 ### Multivariate case
 

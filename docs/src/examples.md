@@ -53,6 +53,19 @@ This approach ensures consistency and compatibility, especially when dealing wit
 
 ## Computing various useful attributes of an exponential family member
 
+The package implements attributes of many well known exponential family members, which are defined in [this table](https://en.wikipedia.org/wiki/Exponential_family#Table_of_distributions).
+The attributes include [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getfisherinformation`](@ref), and others. 
+Generally the interface to this functions assumes a family member "tag", for example `Normal` or `Bernoulli`, e.g.
+
+```@example attributes-example
+using ExponentialFamily, Distributions
+
+basemeasure_of_normal = getbasemeasure(Normal)
+
+basemeasure_of_normal(0.0)
+```
+
+
 Section TODO: write about
 - getter functions, like `getlogpartition`, note conditioned distributions
 - actual functions, like `logpartition`

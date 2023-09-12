@@ -27,7 +27,7 @@ end
 @testset "Normal family" begin
     @testset "Univariate conversions" begin
         check_basic_statistics =
-            (left, right; include_extended_methods = true) -> begin
+            (left, right) -> begin
                 @test mean(left) ≈ mean(right)
                 @test median(left) ≈ median(right)
                 @test mode(left) ≈ mode(right)
@@ -48,19 +48,16 @@ end
                     )
                 end
 
-                # These methods are not defined for distributions from `Distributions.jl
-                if include_extended_methods
-                    @test cov(left) ≈ cov(right)
-                    @test invcov(left) ≈ invcov(right)
-                    @test weightedmean(left) ≈ weightedmean(right)
-                    @test precision(left) ≈ precision(right)
-                    @test all(mean_cov(left) .≈ mean_cov(right))
-                    @test all(mean_invcov(left) .≈ mean_invcov(right))
-                    @test all(mean_precision(left) .≈ mean_precision(right))
-                    @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
-                    @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
-                    @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
-                end
+                @test cov(left) ≈ cov(right)
+                @test invcov(left) ≈ invcov(right)
+                @test weightedmean(left) ≈ weightedmean(right)
+                @test precision(left) ≈ precision(right)
+                @test all(mean_cov(left) .≈ mean_cov(right))
+                @test all(mean_invcov(left) .≈ mean_invcov(right))
+                @test all(mean_precision(left) .≈ mean_precision(right))
+                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
             end
 
         types  = ExponentialFamily.union_types(UnivariateNormalDistributionsFamily{Float64})
@@ -70,7 +67,7 @@ end
 
         for type in types
             left = convert(type, rand(rng, Float64), rand(rng, Float64))
-            check_basic_statistics(left, convert(Normal, left); include_extended_methods = false)
+
             for type in [types..., etypes...]
                 right = convert(type, left)
                 check_basic_statistics(left, right)
@@ -116,31 +113,28 @@ end
                         isapprox.(
                             ForwardDiff.gradient((x) -> logpdf(left, x), value),
                             ForwardDiff.gradient((x) -> logpdf(right, x), value),
-                            atol = 1e-14
+                            atol = 1e-12
                         )
                     )
                     @test all(
                         isapprox.(
                             ForwardDiff.hessian((x) -> logpdf(left, x), value),
                             ForwardDiff.hessian((x) -> logpdf(right, x), value),
-                            atol = 1e-14
+                            atol = 1e-12
                         )
                     )
                 end
 
-                # These methods are not defined for distributions from `Distributions.jl
-                if include_extended_methods
-                    @test ndims(left) === ndims(right)
-                    @test invcov(left) ≈ invcov(right)
-                    @test weightedmean(left) ≈ weightedmean(right)
-                    @test precision(left) ≈ precision(right)
-                    @test all(mean_cov(left) .≈ mean_cov(right))
-                    @test all(mean_invcov(left) .≈ mean_invcov(right))
-                    @test all(mean_precision(left) .≈ mean_precision(right))
-                    @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
-                    @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
-                    @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
-                end
+                @test ndims(left) === ndims(right)
+                @test invcov(left) ≈ invcov(right)
+                @test weightedmean(left) ≈ weightedmean(right)
+                @test precision(left) ≈ precision(right)
+                @test all(mean_cov(left) .≈ mean_cov(right))
+                @test all(mean_invcov(left) .≈ mean_invcov(right))
+                @test all(mean_precision(left) .≈ mean_precision(right))
+                @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
+                @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
+                @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
             end
 
         types  = ExponentialFamily.union_types(MultivariateNormalDistributionsFamily{Float64})
@@ -152,7 +146,7 @@ end
         for dim in dims
             for type in types
                 left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(abs.(rand(rng, Float64, dim)))))
-                check_basic_statistics(left, convert(MvNormal, left), dim; include_extended_methods = false)
+
                 for type in [types..., etypes...]
                     right = convert(type, left)
                     check_basic_statistics(left, right, dim)
@@ -318,6 +312,7 @@ end
     @testset "prod with ExponentialFamilyDistribution{NormalMeanVariance}" for μleft in 10randn(4), σ²left in 10rand(4), μright in 10randn(4),
         σ²right in 10rand(4), Tleft in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily),
         Tright in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
+
         @testset let (left, right) = (convert(Tleft, NormalMeanVariance(μleft, σ²left)), convert(Tright, NormalMeanVariance(μright, σ²right)))
             @test test_generic_simple_exponentialfamily_product(
                 left,
