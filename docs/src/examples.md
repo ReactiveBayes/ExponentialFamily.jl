@@ -1,27 +1,42 @@
 # [Examples](@id examples)
-In these examples, we demonstrate how to use ExponentialFamily.jl to compute the product of probability distributions.
 
-## Examples of distributions' product 
-### Bernoulli distribution
+## Product of two probability distributions over the same variable
 
-```julia
-using ExponentialFamily, Distributions
-import ExponentialFamily: ExponentialFamilyDistribution
+In this example, we demonstrate how to use `ExponentialFamily`` to compute the product of probability distributions over the same variable "X", which yields another probability distribution also over the same variable "X". Note that, this operation is different from the product of probability distributions over two different variables "X" and "Y", which yields a joint probability distribution. Computing the product of two probability distributions over the same variable is important for the Bayes rule
 
-dist_left = Bernoulli(0.5)
-dist_right = Bernoulli(0.6)
-@show dist_prod = prod(ClosedProd(), dist_left, dist_right)
-
-ef_left = convert(ExponentialFamilyDistribution, dist_left)
-ef_right = convert(ExponentialFamilyDistribution, dist_right)
-ef_prod = prod(ef_left, ef_right)
-
-@show convert(Bernoulli, ef_prod)
+```math 
+p(X\vert D) \propto \underbrace{p(X)p(D|X)}_{\mathrm{product~of~two~distributions}}
 ```
 
-We created two Bernoulli distributions and compute their product using the `ClosedProd` trait. We also show how to convert the `Bernoulli` distributions to `ExponentialFamilyDistribution`, compute the product of the exponential family distributions, and convert the product back to a `Bernoulli` distribution.
+In order to compute the product of two distributions, the `ExponentialFamily` library uses the `Base.prod` function, which accepts a product strategy as its first argument, for example
+
+```@example prod-bernoulli
+using ExponentialFamily, Distributions
+
+prior = Bernoulli(0.5)
+likelihood = Bernoulli(0.6)
+
+posterior = prod(PreserveTypeProd(Distribution), prior, likelihood)
+```
+
+We can perform the same operation in the generic exponential family form, which operates in the natural parameter space, for example
+
+```@example prod-bernoulli
+
+ef_prior = convert(ExponentialFamilyDistribution, prior)
+ef_likelihood = convert(ExponentialFamilyDistribution, likelihood)
+
+ef_posterior = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_prior, ef_likelihood)
+```
+
+or simply
+
+```@example prod-bernoulli
+prod(PreserveTypeProd(ExponentialFamilyDistribution), prior, likelihood)
+```
 
 ### Laplace distribution
+
 ```julia
 using ExponentialFamily
 import ExponentialFamily: ExponentialFamilyDistribution
