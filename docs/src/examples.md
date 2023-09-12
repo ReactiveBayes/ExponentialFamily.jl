@@ -2,15 +2,18 @@
 
 ## Product of two probability distributions over the same variable
 
-In this example, we demonstrate how to use `ExponentialFamily`` to compute the product of probability distributions over the same variable "X", which yields another probability distribution also over the same variable "X". Note that, this operation is different from the product of probability distributions over two different variables "X" and "Y", which yields a joint probability distribution. Computing the product of two probability distributions over the same variable is important for the Bayes rule
+In this example, we'll show you how to use the ExponentialFamily package to calculate the product of probability distributions that both relate to the same variable "X". 
+This operation results in another probability distribution, also centered around the variable "X". 
+It's essential to note that this is distinct from multiplying probability distributions for two different variables, such as "X" and "Y", 
+which yields a joint probability distribution. Calculating the product of two probability distributions over the same variable is a crucial step in applying Bayes' rule.
 
 ```math 
 p(X\vert D) \propto \underbrace{p(X)p(D|X)}_{\mathrm{product~of~two~distributions}}
 ```
 
-In order to compute the product of two distributions, the `ExponentialFamily` library uses the `Base.prod` function, which accepts a product strategy as its first argument, for example
+To perform this operation, the ExponentialFamily library employs the `prod` function. This function takes a product [strategy](@ref api-todo-replace-strategies) as its first argument. For instance:
 
-```@example prod-bernoulli
+```@example prod-example
 using ExponentialFamily, Distributions
 
 prior = Bernoulli(0.5)
@@ -19,9 +22,9 @@ likelihood = Bernoulli(0.6)
 posterior = prod(PreserveTypeProd(Distribution), prior, likelihood)
 ```
 
-We can perform the same operation in the generic exponential family form, which operates in the natural parameter space, for example
+You can achieve the same result in the general exponential family form, which operates within the natural parameter space:
 
-```@example prod-bernoulli
+```@example prod-example
 
 ef_prior = convert(ExponentialFamilyDistribution, prior)
 ef_likelihood = convert(ExponentialFamilyDistribution, likelihood)
@@ -29,54 +32,32 @@ ef_likelihood = convert(ExponentialFamilyDistribution, likelihood)
 ef_posterior = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_prior, ef_likelihood)
 ```
 
-or simply
+Or even more concisely:
 
-```@example prod-bernoulli
+```@example prod-example
 prod(PreserveTypeProd(ExponentialFamilyDistribution), prior, likelihood)
 ```
 
-### Laplace distribution
+In this example, multiplying two `Bernoulli` distributions will always result in another `Bernoulli` distribution. However, this is not the case for all distributions. For instance, the product of two `Laplace` distributions may not yield another `Laplace` distribution, and representing the result in the same form might not be possible. In such cases, it's advisable to calculate the result within the exponential family domain. This is because the product of two exponential family distributions can always be represented as another exponential family distribution, as shown here:
 
-```julia
-using ExponentialFamily
-import ExponentialFamily: ExponentialFamilyDistribution
+```@example prod-example
 
-dist_left = Laplace(1.0, 3.0)
-dist_right = Laplace(1.0, 4.0)
-prod(ClosedProd(), dist_left, dist_right)
+prior = Laplace(2.0, 3.0)
+likelihood = Laplace(1.0, 4.0)
 
-
-# Note that the product of Laplace distributions with different location parameters is not a Laplace distribution
-# However, it is still a member of the exponential family
-dist_left = Laplace(1.0, 3.0)
-dist_right = Laplace(3.0, 4.0)
-prod(ClosedProd(), dist_left, dist_right)
+prod(PreserveTypeProd(ExponentialFamilyDistribution), prior, likelihood)
 ```
 
-We create two `Laplace` distributions and compute their product using the `ClosedProd` function. We also note that the product of `Laplace` distributions with different location parameters is not a `Laplace` distribution but still a member of the exponential family.
+Note that the result does not correspond to the `Laplace` distribution and returns a generic univariate `ExponentialFamilyDistribution`.
+This approach ensures consistency and compatibility, especially when dealing with a wide range of probability distributions.
 
+## Computing various useful attributes of an exponential family member
 
-## Other examples
+Section TODO: write about
+- getter functions, like `getlogpartition`, note conditioned distributions
+- actual functions, like `logpartition`
+- different parameters spaces
 
-```julia
-using ExponentialFamily
-import ExponentialFamily: ExponentialFamilyDistribution, fisherinformation
+## Approximating attributes 
 
-## Multivariate Normal example
-dist = MvNormalMeanCovariance([1.0, 1.0], [1.0 0.0; 0.0 1.0])
-@show fisherinformation(ef)
-@show pdf(dist, [1.0, 1.0])
-
-## LogNormal example
-dist = LogNormal(0.0, 1.0)
-ef = convert(ExponentialFamilyDistribution, dist)
-@show fisherinformation(ef)
-@show fisherinformation(dist)
-@show pdf(ef, 2)
-
-## Poisson example
-ef = ExponentialFamilyDistribution(Poisson, [1.0])
-@show fisherinformation(ef)
-@show pdf(ef, 2)
-
-```
+Section TODO: refer to the `ExpectationApproximations.jl` instead.
