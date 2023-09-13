@@ -29,18 +29,29 @@ using StatsFuns: log2π
 using LinearAlgebra
 using SpecialFunctions
 
-# Extra methods for the `Normal` from `Distributions.jl`
+# special functions for `Normal` and `FullNormal`
 
-weightedmean(d::Union{Normal, MvNormal}) = invcov(d) * mean(d)
+function weightedmean_invcov(dist::Normal)
+    mean, var = mean_var(dist)
+    invcov = inv(var)
+    return invcov * mean, invcov
+end
 
-cov(d::Normal) = var(d)
-invcov(d::Normal) = inv(var(d))
-invcov(d::FullNormal) = inv(cov(d))
+function mean_invcov(dist::Normal)
+    mean, var = mean_var(dist)
+    return mean, inv(var)
+end
 
-Base.precision(d::Normal) = invcov(d)
-Base.precision(d::FullNormal) = invcov(d)
+function weightedmean_invcov(dist::FullNormal)
+    mean, var = mean_cov(dist)
+    invcov = cholinv(var)
+    return invcov * mean, invcov
+end
 
-Base.ndims(d::FullNormal) = length(mean(d))
+function mean_invcov(dist::FullNormal)
+    mean, cov = mean_cov(dist)
+    return mean, cholinv(cov)
+end
 
 # Joint over multiple Gaussians
 
@@ -359,6 +370,22 @@ function Base.convert(
     return convert(MvNormalWeightedMeanPrecision{T}, dist)
 end
 
+# Special case for `Normal` to `NormalWeightedMeanPrecision` from `Distributions`
+
+function Base.convert(::Type{NormalWeightedMeanPrecision}, dist::Normal)
+    mean, var = mean_var(dist)
+    precision = inv(var)
+    return NormalWeightedMeanPrecision(precision * mean, precision)
+end
+
+# Special case for `FullNormal` to `NormalWeightedMeanPrecision` from `Distributions`
+
+function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::FullNormal)
+    mean, cov = mean_cov(dist)
+    precision = cholinv(cov)
+    return MvNormalWeightedMeanPrecision(precision * mean, precision)
+end
+
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
 default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
@@ -371,7 +398,7 @@ function Base.prod(
 ) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
-    return prod(ClosedProd(), wleft, wright)
+    return prod(default_prod_rule(wleft, wright), wleft, wright)
 end
 
 function compute_logscale(
@@ -398,7 +425,7 @@ function Base.prod(
 ) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(ClosedProd(), wleft, wright)
+    return prod(default_prod_rule(wleft, wright), wleft, wright)
 end
 
 function compute_logscale(
