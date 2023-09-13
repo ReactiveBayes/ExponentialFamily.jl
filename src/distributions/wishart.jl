@@ -139,9 +139,9 @@ end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartFast` messages as they are significantly faster in creation
-closed_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = ClosedProd()
+default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::WishartFast, right::WishartFast)
+function Base.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
 
     d = size(left, 1)
@@ -158,102 +158,228 @@ function Base.prod(::ClosedProd, left::WishartFast, right::WishartFast)
     return WishartFast(df, invV)
 end
 
-function pack_naturalparameters(dist::WishartFast)
-    dof = dist.ν
-    invscale = dist.invS
-    p = first(size(invscale))
+# Natural parametrization
 
-    return vcat((dof - p - 1) / 2, vec(-invscale / 2))
+function insupport(ef::ExponentialFamilyDistribution{WishartFast}, x::Matrix)
+    return size(getindex(unpack_parameters(ef), 2)) == size(x) && isposdef(x)
 end
 
-function pack_naturalparameters(dist::Wishart)
-    dof = dist.df
-    invscale = cholinv(dist.S)
-    p = first(size(invscale))
+function isproper(::NaturalParametersSpace, ::Type{WishartFast}, η, conditioner) 
+    if !isnothing(conditioner) || length(η) < 5 || any(isnan, η) || any(isinf, η)
+        return false
+    end
 
-    return vcat((dof - p - 1) / 2, vec(-invscale / 2))
+    (η1,η2) = unpack_parameters(WishartFast, η)
+
+    return  η1 > 0 && isposdef(-η2)
+end
+function isproper(::MeanParametersSpace, ::Type{WishartFast}, θ, conditioner) 
+    if !isnothing(conditioner) || length(θ) < 5 || any(isnan, θ) || any(isinf, θ)
+        return false
+    end
+
+    (θ1,θ2) = unpack_parameters(WishartFast, θ)
+
+    return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:WishartFast})
-    η = getnaturalparameters(ef)
-    len = length(η)
+function (::MeanToNatural{WishartFast})(tuple_of_θ::Tuple{Any, Any})
+    (ν, invS) = tuple_of_θ
+    return ((ν - size(invS,2)-one(ν))/2, vec(-invS/2))
+end
+
+function (::NaturalToMean{WishartFast})(tuple_of_η::Tuple{Any, Any})
+    (η1, η2) = tuple_of_η
+    return (2 * η1 + first(size(η2))+ 1, -2η2)
+end
+
+function unpack_parameters(::Type{WishartFast}, packed)
+    len = length(packed)
     n = Int64(isqrt(len - 1))
-    @inbounds η1 = η[1]
-    @inbounds η2 = reshape(view(η, 2:len), n, n)
+    @inbounds η1 = packed[1]
+    @inbounds η2 = reshape(view(packed, 2:len), n, n)
 
-    return η1, η2
+    return (η1, η2)
 end
 
-check_valid_natural(::Type{<:Union{WishartFast, Wishart}}, params) = length(params) >= 5
+isbasemeasureconstant(::Type{WishartFast}) = ConstantBaseMeasure()
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartFast) =
-    ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+getbasemeasure(::Type{WishartFast}) = (x) -> one(Float64)
+getsufficientstatistics(::Type{WishartFast}) = (chollogdet, identity)
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart) =
-    ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
 
-function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:WishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
-    p = first(size(η2))
-    return WishartFast(2 * η1 + p + 1, -2η2)
-end
-
-function logpartition(ef::ExponentialFamilyDistribution{<:WishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
+getlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
+    η1, η2 = unpack_parameters(WishartFast,η)
     p = first(size(η2))
     term1 = -(η1 + (p + 1) / 2) * logdet(-η2)
     term2 = logmvgamma(p, η1 + (p + 1) / 2)
     return term1 + term2
 end
 
-function isproper(ef::ExponentialFamilyDistribution{<:WishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
-    isposdef(-η2) && (0 < η1)
-end
-
-mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
-
-function fisherinformation(dist::Wishart)
-    df, S = dist.df, dist.S
-    p = first(size(S))
-    invS = inv(S)
-    return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
-end
-
-function fisherinformation(dist::WishartFast)
-    df, invS = dist.ν, dist.invS
-    p = first(size(invS))
-    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
-end
-
-function fisherinformation(ef::ExponentialFamilyDistribution{<:WishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
+getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
+    η1, η2 = unpack_parameters(WishartFast,η)
     p = first(size(η2))
     invη2 = inv(η2)
     return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
 end
 
-function insupport(ef::ExponentialFamilyDistribution{WishartFast, P, C, Safe}, x::Matrix) where {P, C}
-    return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
+# Mean parametrization
+
+getlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+    (ν, invS) = unpack_parameters(WishartFast, θ)
+    p = first(size(invS))
+    return (ν/2)*(p*log(2.0) - logdet(invS)) + mvtrigamma(p,ν/2) 
 end
 
-function insupport(dist::WishartFast, x::Matrix)
-    return (size(dist.invS) == size(x)) && isposdef(x)
+getfisherinformation(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+    (df, invS ) = unpack_parameters(WishartFast, θ)
+    p = first(size(invS))
+    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
 end
 
-basemeasure(::ExponentialFamilyDistribution{<:WishartFast}) = one(Float64)
-function basemeasure(
-    ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
-    x::Matrix
-)
-    return one(eltype(x))
-end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:WishartFast}) = (x) -> sufficientstatistics(ef, x)
 
-function sufficientstatistics(
-    ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
-    x::Matrix
-)
-    return vcat(chollogdet(x), vec(x))
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# function pack_naturalparameters(dist::WishartFast)
+#     dof = dist.ν
+#     invscale = dist.invS
+#     p = first(size(invscale))
+
+#     return vcat((dof - p - 1) / 2, vec(-invscale / 2))
+# end
+
+# function pack_naturalparameters(dist::Wishart)
+#     dof = dist.df
+#     invscale = cholinv(dist.S)
+#     p = first(size(invscale))
+
+#     return vcat((dof - p - 1) / 2, vec(-invscale / 2))
+# end
+
+# function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:WishartFast})
+#     η = getnaturalparameters(ef)
+#     len = length(η)
+#     n = Int64(isqrt(len - 1))
+#     @inbounds η1 = η[1]
+#     @inbounds η2 = reshape(view(η, 2:len), n, n)
+
+#     return η1, η2
+# end
+
+# check_valid_natural(::Type{<:Union{WishartFast, Wishart}}, params) = length(params) >= 5
+
+# Base.convert(::Type{ExponentialFamilyDistribution}, dist::WishartFast) =
+#     ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+
+# Base.convert(::Type{ExponentialFamilyDistribution}, dist::Wishart) =
+#     ExponentialFamilyDistribution(WishartFast, pack_naturalparameters(dist))
+
+# function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:WishartFast})
+#     η1, η2 = unpack_naturalparameters(ef)
+#     p = first(size(η2))
+#     return WishartFast(2 * η1 + p + 1, -2η2)
+# end
+
+# function logpartition(ef::ExponentialFamilyDistribution{<:WishartFast})
+#     η1, η2 = unpack_naturalparameters(ef)
+#     p = first(size(η2))
+#     term1 = -(η1 + (p + 1) / 2) * logdet(-η2)
+#     term2 = logmvgamma(p, η1 + (p + 1) / 2)
+#     return term1 + term2
+# end
+
+# function isproper(ef::ExponentialFamilyDistribution{<:WishartFast})
+#     η1, η2 = unpack_naturalparameters(ef)
+#     isposdef(-η2) && (0 < η1)
+# end
+
+# mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
+
+# function fisherinformation(dist::Wishart)
+#     df, S = dist.df, dist.S
+#     p = first(size(S))
+#     invS = inv(S)
+#     return [mvtrigamma(p, df / 2)/4 1/2*as_vec(invS)'; 1/2*as_vec(invS) df/2*kron(invS, invS)]
+# end
+
+# function fisherinformation(dist::WishartFast)
+#     df, invS = dist.ν, dist.invS
+#     p = first(size(invS))
+#     return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
+# end
+
+# function fisherinformation(ef::ExponentialFamilyDistribution{<:WishartFast})
+#     η1, η2 = unpack_naturalparameters(ef)
+#     p = first(size(η2))
+#     invη2 = inv(η2)
+#     return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+# end
+
+# function insupport(ef::ExponentialFamilyDistribution{WishartFast, P, C, Safe}, x::Matrix) where {P, C}
+#     return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
+# end
+
+# function insupport(dist::WishartFast, x::Matrix)
+#     return (size(dist.invS) == size(x)) && isposdef(x)
+# end
+
+# basemeasure(::ExponentialFamilyDistribution{<:WishartFast}) = one(Float64)
+# function basemeasure(
+#     ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
+#     x::Matrix
+# )
+#     return one(eltype(x))
+# end
+
+# sufficientstatistics(ef::ExponentialFamilyDistribution{<:WishartFast}) = (x) -> sufficientstatistics(ef, x)
+
+# function sufficientstatistics(
+#     ::Union{<:ExponentialFamilyDistribution{<:WishartFast}, <:Union{WishartFast, Wishart}},
+#     x::Matrix
+# )
+#     return vcat(chollogdet(x), vec(x))
+# end
