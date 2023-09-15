@@ -11,20 +11,9 @@ using ForwardDiff
 include("../testutils.jl")
 
 import ExponentialFamily:
-    WishartFast, ExponentialFamilyDistribution, reconstructargument!,
-    getnaturalparameters, basemeasure, fisherinformation, logpartition, as_vec
+    WishartFast, ExponentialFamilyDistribution,
+    getnaturalparameters, basemeasure, fisherinformation, logpartition
 import StatsFuns: logmvgamma
-
-function logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-    return logpartition(ExponentialFamilyDistribution(T, ηvec))
-end
-
-function transformation(params)
-    η1, η2 = params[1], params[2:end]
-    p = Int(sqrt(length(η2)))
-    η2 = reshape(η2, (p, p))
-    return [2 * η1 + p + 1; as_vec(0.5inv(-η2))]
-end
 
 @testset "Wishart" begin
 
@@ -89,16 +78,17 @@ end
     # end
 
     @testset "ExponentialFamilyDistribution{WishartFast}" begin
-        @testset for ν in (3.0,4.0), dim in (3,4,5), invS in rand(WishartFast(10,0,diageye(dim)))
-            @testset let d = WishartFast(ν, invS)
+        @testset for dim in (3), invS in rand(Wishart(10,diageye(dim)),2)
+            ν = dim + 2
+            @testset let (d = WishartFast(ν, invS))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
-                η1 = first(getnaturalparameters(ef))
+                (η1,η2) = unpack_parameters(WishartFast,getnaturalparameters(ef))
           
                 for x in diageye(dim)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
-                    @test @inferred(sufficientstatistics(ef, x)) === (logdet(x),x)
-                    @test @inferred(logpartition(ef)) ≈ -(η1 + (p + 1) / 2) * logdet(-η2) + logmvgamma(p, η1 + (p + 1) / 2)
+                    @test @inferred(sufficientstatistics(ef, x)) === (logdet(x), x)
+                    @test @inferred(logpartition(ef)) ≈ -(η1 + (dim + 1) / 2) * logdet(-η2) + logmvgamma(dim, η1 + (dim + 1) / 2)
                 end
             end
         end
@@ -160,6 +150,8 @@ end
     #     end
     # end
     
+
+end
 
 end
 

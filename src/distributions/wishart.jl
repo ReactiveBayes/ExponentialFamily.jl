@@ -4,6 +4,8 @@ import Distributions: Wishart
 import Base: ndims, size, convert
 import LinearAlgebra
 import SpecialFunctions: digamma
+import StatsFuns: logmvgamma
+using LoopVectorization
 
 """
     WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
@@ -36,6 +38,7 @@ Distributions.params(dist::WishartFast)  = (dist.ν, cholinv(dist.invS))
 Distributions.mean(dist::WishartFast)    = mean(convert(Wishart, dist))
 Distributions.var(dist::WishartFast)     = var(convert(Wishart, dist))
 Distributions.cov(dist::WishartFast)     = cov(convert(Wishart, dist))
+Distributions.std(dist::WishartFast)     = vmap(sqrt, var(dist))
 Distributions.mode(dist::WishartFast)    = mode(convert(Wishart, dist))
 Distributions.entropy(dist::WishartFast) = entropy(convert(Wishart, dist))
 
@@ -95,6 +98,44 @@ function Base.convert(::Type{WishartFast}, dist::Wishart)
     return WishartFast(ν, cholinv(S))
 end
 
+function Distributions.rand(rng::AbstractRNG,  sampleable::WishartFast{T}) where {T}
+    container = Matrix{Float64}(undef, size(sampleable))
+    rand!(rng, sampleable, container)
+end
+
+function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T},x::AbstractMatrix) where {T}
+    
+    (df, S) = Distributions.params(sampleable)
+    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+
+    p = size(S, 1)
+    singular = df <= p - 1
+    if singular
+        isinteger(df) || throw(ArgumentError("df of a singular Wishart distribution must be an integer (got $df)"))
+    end
+
+    A     = similar(S)
+    l     = length(S)
+    axes2 = axes(A, 2)
+    r     = rank(S)
+
+    
+    if singular
+        randn!(rng, view(A, :, view(axes2, 1:r)))
+        fill!(view(A, :, view(axes2, (r+1):lastindex(axes2))), zero(eltype(A)))
+    else
+        Distributions._wishart_genA!(rng, A, df)
+    end
+    # Distributions.unwhiten!(S, A)
+    lmul!(L, A)
+
+    mul!(x, A, A', 1, 0)
+    
+
+    return x
+
+end
+
 function Distributions.rand(rng::AbstractRNG, sampleable::WishartFast{T}, n::Int) where {T}
     container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
     return rand!(rng, sampleable, container)
@@ -137,8 +178,14 @@ function logpdf_sample_optimized(dist::Wishart)
     return (optimized_dist, optimized_dist)
 end
 
+function Distributions._logpdf(d::WishartFast, X::AbstractMatrix{<:Real}) 
+    dist = convert(Wishart,d)
+    return Distributions.logkernel(dist, X) + dist.logc0
+end
+
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartFast` messages as they are significantly faster in creation
+params(::MeanParametersSpace, dist::WishartFast) = (dist.ν, dist.invS)
 default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
 
 function Base.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
@@ -165,32 +212,33 @@ function insupport(ef::ExponentialFamilyDistribution{WishartFast}, x::Matrix)
 end
 
 function isproper(::NaturalParametersSpace, ::Type{WishartFast}, η, conditioner) 
-    if !isnothing(conditioner) || length(η) < 5 || any(isnan, η) || any(isinf, η)
+    if !isnothing(conditioner) || length(η) <= 4 || any(isnan, η) || any(isinf, η)
         return false
     end
 
     (η1,η2) = unpack_parameters(WishartFast, η)
-
-    return  η1 > 0 && isposdef(-η2)
+    # return  η1 > 0 && isposdef(-η2)
+    return  η1 > 0
 end
 function isproper(::MeanParametersSpace, ::Type{WishartFast}, θ, conditioner) 
-    if !isnothing(conditioner) || length(θ) < 5 || any(isnan, θ) || any(isinf, θ)
+    if !isnothing(conditioner) || length(θ) <= 4 || any(isnan, θ) || any(isinf, θ)
         return false
     end
 
     (θ1,θ2) = unpack_parameters(WishartFast, θ)
 
-    return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
+    return  θ1 > size(θ2,1) - one(θ1) 
+    # return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
 end
 
 function (::MeanToNatural{WishartFast})(tuple_of_θ::Tuple{Any, Any})
     (ν, invS) = tuple_of_θ
-    return ((ν - size(invS,2)-one(ν))/2, vec(-invS/2))
+    return ((ν - size(invS,2)- one(ν))/2, -invS/2)
 end
 
 function (::NaturalToMean{WishartFast})(tuple_of_η::Tuple{Any, Any})
     (η1, η2) = tuple_of_η
-    return (2 * η1 + first(size(η2))+ 1, -2η2)
+    return (2 * η1 + first(size(η2)) + 1,  -2*η2)
 end
 
 function unpack_parameters(::Type{WishartFast}, packed)
@@ -207,21 +255,27 @@ isbasemeasureconstant(::Type{WishartFast}) = ConstantBaseMeasure()
 getbasemeasure(::Type{WishartFast}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{WishartFast}) = (chollogdet, identity)
 
-mvtrigamma(p, x) = sum(trigamma(x + (1 - i) / 2) for i in 1:p)
+mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)
 
 getlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(WishartFast,η)
     p = first(size(η2))
-    term1 = -(η1 + (p + 1) / 2) * logdet(-η2)
-    term2 = logmvgamma(p, η1 + (p + 1) / 2)
+    term1 = -(η1 + (p + one(η1)) / 2) * (logdet(-η2))
+    term2 = logmvgamma(p, η1 + (p + one(η1)) / 2)
     return term1 + term2
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(WishartFast,η)
     p = first(size(η2))
-    invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
+    invη2 = cholinv(η2)
+    vinvη2 = -view(invη2, :)
+    fimatrix = Matrix{Float64}(undef,p^2+1,p^2+1)
+    @inbounds fimatrix[1,1] = mvtrigamma(p, (η1 + (p + one(η1)) / 2))
+    @inbounds fimatrix[1,2:end] = vinvη2
+    @inbounds fimatrix[2:end,1 ] = vinvη2
+    @inbounds fimatrix[2:end,2:end] = (η1+(p+one(η1))/2)*kron(invη2, invη2)
+    return fimatrix
 end
 
 # Mean parametrization
@@ -234,8 +288,17 @@ end
 
 getfisherinformation(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     (df, invS ) = unpack_parameters(WishartFast, θ)
-    p = first(size(invS))
-    return [mvtrigamma(p, df / 2)/4 1/2*vec(invS)'; 1/2*vec(invS) df/2*kron(invS, invS)]
+    S = cholinv(invS)
+    p = first(size(S))
+    vinvS = 1/2*vec(S)'
+    fimatrix = Matrix{Float64}(undef,p^2+1,p^2+1)
+
+    @inbounds fimatrix[1,1] = mvtrigamma(p, df / 2)/4
+    @inbounds fimatrix[1,2:end] = vinvS
+    @inbounds fimatrix[2:end,1 ] = vinvS
+    @inbounds fimatrix[2:end,2:end] = (df/2)*kron(S, S)
+
+    return fimatrix
 end
 
 
