@@ -55,22 +55,78 @@ This approach ensures consistency and compatibility, especially when dealing wit
 
 The package implements attributes of many well known exponential family members, which are defined in [this table](https://en.wikipedia.org/wiki/Exponential_family#Table_of_distributions).
 The attributes include [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getfisherinformation`](@ref), and others. 
-Generally the interface to this functions assumes a family member "tag", for example `Normal` or `Bernoulli`, e.g.
+In general, the interface for these functions assumes a family member "tag," such as `Normal` or `Bernoulli`. Here are some examples of how to use these attributes:
 
 ```@example attributes-example
 using ExponentialFamily, Distributions
 
+# Returns a function
 basemeasure_of_normal = getbasemeasure(Normal)
 
 basemeasure_of_normal(0.0)
 ```
 
+```@example attributes-example
 
-Section TODO: write about
-- getter functions, like `getlogpartition`, note conditioned distributions
-- actual functions, like `logpartition`
-- different parameters spaces
+# Returns an iterable of functions
+sufficientstatistics_of_gamma = getsufficientstatistics(Gamma)
+
+map(f -> f(1.0), sufficientstatistics_of_gamma)
+```
+
+Some distributions, like the `Laplace` distribution, qualify as exponential family members only under certain conditions or when specific information is known in advance. In such cases, the ExponentialFamily package introduces the concept of a __conditioner__. For instance, the `Laplace` distribution becomes a member of the exponential family only when the `location` parameter is known and fixed. Consequently, we __condition__ on the `location` parameter:
+
+```@example attributes-example
+laplace = Laplace(2.0, 1.0)
+
+canonical = convert(ExponentialFamilyDistribution, laplace)
+
+getconditioner(canonical)
+```
+
+```@example attributes-example
+# For conditioned distributions, the `conditioner` must be present as a second argument
+basemeasure_of_laplace = getbasemeasure(Laplace, 2.0)
+
+basemeasure_of_laplace(1.0)
+```
+
+The [`getlogpartition`](@ref) and [`getfisherinformation`](@ref) functions optionally accept a `space` parameter as the first argument. This `space` parameter specifies the parameterization `space`, such as [`MeanParametersSpace`](@ref) or [`NaturalParametersSpace`]. The result obtained from these functions (in general) depends on the chosen parameter space:
+
+```@example attributes-example
+logpartition_of_gamma_in_mean_space = getlogpartition(MeanParametersSpace(), Gamma)
+
+gamma_parameters_in_mean_space = [ 1.0, 2.0 ]
+
+logpartition_of_gamma_in_mean_space(gamma_parameters_in_mean_space)
+```
+
+```@example attributes-example
+logparition_of_gamma_in_natural_space = getlogpartition(NaturalParametersSpace(), Gamma)
+
+gamma_parameters_in_natural_space = map(
+    MeanParametersSpace() => NaturalParametersSpace(), 
+    Gamma,
+    gamma_parameters_in_mean_space
+)
+
+logparition_of_gamma_in_natural_space(gamma_parameters_in_natural_space)
+```
+
+The same principle applies to the Fisher information matrix:
+
+```@example attributes-example
+fisherinformation_of_gamma_in_mean_space = getfisherinformation(MeanParametersSpace(), Gamma)
+
+fisherinformation_of_gamma_in_mean_space(gamma_parameters_in_mean_space)
+```
+
+```@example attributes-example
+fisherinformation_of_gamma_in_natural_space = getfisherinformation(NaturalParametersSpace(), Gamma)
+
+fisherinformation_of_gamma_in_natural_space(gamma_parameters_in_natural_space)
+```
 
 ## Approximating attributes 
 
-Section TODO: refer to the `ExpectationApproximations.jl` instead.
+Refer to the `ExpectationApproximations.jl` package for approximating various attributes of the members of the exponential family.

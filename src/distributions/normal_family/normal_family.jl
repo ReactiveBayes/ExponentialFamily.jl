@@ -61,6 +61,8 @@ end
 `JointNormal` is an auxilary structure used for the joint marginal over Normally distributed variables.
 `JointNormal` stores a vector with the original dimensionalities (ds), so statistics can later be re-separated.
 
+Use `ExponentialFamily.getcomponent(joint, index)` to get a specific component of the joint distribution.
+
 # Fields
 - `dist`: joint distribution (typically just a big `MvNormal` distribution, but maybe a tuple of individual means and covariance matrices)
 - `ds`: a tuple with the original dimensionalities of individual `Normal` distributions
@@ -145,25 +147,25 @@ function Base.convert(::Type{JointNormal}, means::Tuple, covs::Tuple)
     return JointNormal((means, covs), size.(means))
 end
 
-"""Return the marginalized statistics of the Gaussian corresponding to an index `index`"""
-getmarginal(joint::JointNormal, index) = getmarginal(joint, joint.dist, joint.ds, joint.ds[index], index)
+# Return the marginalized statistics of the Gaussian corresponding to an index `index`
+getcomponent(joint::JointNormal, index) = getcomponent(joint, joint.dist, joint.ds, joint.ds[index], index)
 
 # `JointNormal` holds a single univariate gaussian and the dimensionalities indicate only a single Univariate element
-function getmarginal(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert size(dist) === sz "Broken `JointNormal` state"
     return dist
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Multivariate element
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert size(dist) === sz "Broken `JointNormal` state"
     return dist
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Univariate element
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert length(dist) === 1 "Broken `JointNormal` state"
     m, V = mean_cov(dist)
@@ -171,7 +173,7 @@ function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tupl
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     len   = first(sz)
@@ -182,7 +184,7 @@ function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz:
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     μ, Σ = mean_cov(dist)
@@ -191,12 +193,12 @@ function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz:
 end
 
 # `JointNormal` holds gaussians individually, simply returns a Multivariate gaussian at index `index`
-function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
+function getcomponent(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
     return MvNormalMeanCovariance(first(dist)[index], last(dist)[index])
 end
 
 # `JointNormal` holds gaussians individually, simply returns a Univariate gaussian at index `index`
-function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
     return NormalMeanVariance(first(dist)[index], last(dist)[index])
 end
 

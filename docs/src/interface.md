@@ -28,8 +28,12 @@ In the following discussion we also use the following convention
 ```@docs 
 ExponentialFamilyDistribution
 ExponentialFamilyDistributionAttributes
+logpdf(ef::ExponentialFamilyDistribution, x)
+pdf(ef::ExponentialFamilyDistribution, x)
+cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution}
 getnaturalparameters
 getattributes
+getconditioner
 isproper
 getbasemeasure
 getsufficientstatistics
@@ -66,6 +70,7 @@ These parameters are typically defined in what's known as the __mean parameters 
 ```@docs
 MeanToNatural
 NaturalToMean
+ExponentialFamily.getmapping
 ```
 
 To convert from the mean parameters space to the corresponding natural parameters space, you can use the following code:

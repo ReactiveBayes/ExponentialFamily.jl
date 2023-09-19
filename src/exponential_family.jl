@@ -89,6 +89,7 @@ Base.map(::Pair{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, somethi
 
 """
     getbasemeasure(::ExponentialFamilyDistribution)
+    getbasemeasure(::Type{ <: Distribution }, [ conditioner ])
 
 Returns the base measure function of the exponential family distribution.
 """
@@ -96,6 +97,7 @@ function getbasemeasure end
 
 """
     getsufficientstatistics(::ExponentialFamilyDistribution)
+    getsufficientstatistics(::Type{ <: Distribution }, [ conditioner ])
 
 Returns the list of sufficient statistics of the exponential family distribution.
 """
@@ -103,6 +105,7 @@ function getsufficientstatistics end
 
 """
     getlogpartition(::ExponentialFamilyDistribution)
+    getlogpartition([ space ], ::Type{ <: Distribution }, [ conditioner ])
 
 Returns the log partition function of the exponential family distribution.
 """
@@ -110,6 +113,7 @@ function getlogpartition end
 
 """
     getfisherinformation(::ExponentialFamilyDistribution)
+    getfisherinformation([ space ], ::Type{ <: Distribution }, [ conditioner ])
 
 Returns the function that computes the fisher information matrix of the exponential family distribution.
 """
@@ -458,7 +462,7 @@ Evaluates and returns the probability density function of the exponential family
 Distributions.pdf(ef::ExponentialFamilyDistribution, x) = exp(logpdf(ef, x))
 
 """
-    cdf(ef::ExponentialFamilyDistribution, x)
+    cdf(ef::ExponentialFamilyDistribution{D}, x) where { D <: Distribution }
 
 Evaluates and returns the cumulative distribution function of the exponential family distribution for the input `x`.
 """

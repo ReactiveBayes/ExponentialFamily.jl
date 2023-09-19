@@ -1,6 +1,6 @@
 # [Library API](@id library)
 
-## Product API
+## [Product API](@id library-prod)
 
 One of the central functions in this package is the ability to calculate the product of two distributions over the same variable. 
 You can also refer to the corresponding [example](@ref examples-product) for practical usage.
@@ -19,6 +19,8 @@ Various strategies ensure consistent behavior in these situations.
 These strategies can either guarantee a fast and closed-form solution or, when necessary, fall back to a slower but more generic method.
 
 ```@docs
+ExponentialFamily.UnspecifiedProd
+ExponentialFamily.ClosedProd
 ExponentialFamily.PreserveTypeProd
 ExponentialFamily.PreserveTypeLeftProd
 ExponentialFamily.PreserveTypeRightProd
@@ -48,4 +50,27 @@ ExponentialFamily.MvNormalWeightedMeanPrecision
 ExponentialFamily.JointNormal
 ExponentialFamily.WishartFast
 ExponentialFamily.InverseWishartFast
+ExponentialFamily.JointGaussian
+ExponentialFamily.NormalGamma
+```
+
+## [Promotion type utilities](@id library-promotion-utilities)
+
+```@docs
+ExponentialFamily.paramfloattype
+ExponentialFamily.sampletype
+ExponentialFamily.samplefloattype
+ExponentialFamily.promote_variate_type
+ExponentialFamily.promote_paramfloattype
+ExponentialFamily.promote_sampletype
+ExponentialFamily.promote_samplefloattype
+ExponentialFamily.convert_paramfloattype
+```
+
+## [Helper utilities](@id library-helpers)
+
+```@docs
+ExponentialFamily.vague
+ExponentialFamily.logpdf_sample_optimized
+ExponentialFamily.fuse_supports
 ```
