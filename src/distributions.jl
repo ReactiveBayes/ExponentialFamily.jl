@@ -19,7 +19,7 @@ prod(::ClosedProd, left::Distribution, right::Distribution) = prod(PreserveTypeP
 """
     vague(distribution_type, [ dims... ])
 
-`vague` function returns uninformative probability distribution of a given type and can be used to set an uninformative priors in a model.
+`vague` function returns uninformative probability distribution of a given type.
 """
 function vague end
 
