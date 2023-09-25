@@ -255,8 +255,6 @@ isbasemeasureconstant(::Type{WishartFast}) = ConstantBaseMeasure()
 getbasemeasure(::Type{WishartFast}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{WishartFast}) = (chollogdet, identity)
 
-mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)
-
 getlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(WishartFast,η)
     p = first(size(η2))

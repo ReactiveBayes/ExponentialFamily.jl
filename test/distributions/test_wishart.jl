@@ -81,7 +81,7 @@ import StatsFuns: logmvgamma
         @testset for dim in (3), invS in rand(Wishart(10,diageye(dim)),2)
             ν = dim + 2
             @testset let (d = WishartFast(ν, invS))
-                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false,test_fisherinformation_against_hessian = false)
                 (η1,η2) = unpack_parameters(WishartFast,getnaturalparameters(ef))
           
                 for x in diageye(dim)

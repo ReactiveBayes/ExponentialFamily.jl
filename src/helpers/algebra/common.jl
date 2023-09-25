@@ -214,3 +214,10 @@ union_types(x::Type)  = (x,)
 
 as_vec(d::Real) = [d]
 as_vec(d) = vec(d)
+
+"""
+    mvtrigamma(p, x)
+
+Computes multivariate trigamma function .
+"""
+mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)

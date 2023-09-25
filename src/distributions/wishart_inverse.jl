@@ -283,7 +283,6 @@ isbasemeasureconstant(::Type{InverseWishartFast}) = ConstantBaseMeasure()
 getbasemeasure(::Type{InverseWishartFast}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{InverseWishartFast}) = (chollogdet, cholinv)
 
-mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)
 
 getlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(InverseWishartFast,η)
@@ -296,13 +295,13 @@ end
 getfisherinformation(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(InverseWishartFast,η)
     p = first(size(η2))
-    invη2 = cholinv(η2)
-    vinvη2 = -view(invη2, :)
+    invη2 = inv(η2)
+    vinvη2 = view(invη2, :)
     fimatrix = Matrix{Float64}(undef,p^2+1,p^2+1)
-    @inbounds fimatrix[1,1] = mvtrigamma(p, (η1 + (p + one(η1)) / 2))
-    @inbounds fimatrix[1,2:end] = vinvη2
-    @inbounds fimatrix[2:end,1 ] = vinvη2
-    @inbounds fimatrix[2:end,2:end] = (η1+(p+one(η1))/2)*kron(invη2, invη2)
+    @inbounds fimatrix[1,1] = mvtrigamma(p, -(η1 + (p + one(η1)) / 2))
+    @inbounds fimatrix[1,2:end] = -vinvη2
+    @inbounds fimatrix[2:end,1] = -vinvη2
+    @inbounds fimatrix[2:end,2:end] = -(η1+(p+one(η1))/2)*kron(invη2, invη2)
     return fimatrix
 end
 
@@ -315,16 +314,15 @@ getlogpartition(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> beg
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
-    (ν, S ) = unpack_parameters(InverseWishartFast, θ)
+    (ν, S) = unpack_parameters(InverseWishartFast, θ)
     p = first(size(S))
     invscale = cholinv(S)
 
     hessian = ones(eltype(S), p^2 + 1, p^2 + 1)
-    @inbounds hessian[1, 1] = mvtrigamma(p, -ν / 2) / 4
+    @inbounds hessian[1, 1] = mvtrigamma(p, ν / 2) / 4
     @inbounds hessian[1, 2:p^2+1] = view(invscale,:) / 2
     @inbounds hessian[2:p^2+1, 1] = view(invscale,:) / 2
-    @inbounds hessian[2:p^2+1, 2:p^2+1] = ν / 2 * kron(invscale, invscale)
-    @inbounds hessian[2:p^2+1, 2:p^2+1] = -hessian[2:p^2+1, 2:p^2+1]
+    @inbounds hessian[2:p^2+1, 2:p^2+1] = (ν / 2) * kron(invscale, invscale)
     return hessian
 end
 

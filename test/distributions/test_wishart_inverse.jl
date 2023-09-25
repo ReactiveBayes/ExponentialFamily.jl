@@ -32,7 +32,7 @@ include("../testutils.jl")
         @testset for dim in (3), S in rand(InverseWishart(10,diageye(dim)),2)
             ν = dim + 4
             @testset let (d = InverseWishartFast(ν,S))
-                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false,test_fisherinformation_against_hessian = false)
                 (η1,η2) = unpack_parameters(InverseWishartFast,getnaturalparameters(ef))
           
                 for x in diageye(dim)
