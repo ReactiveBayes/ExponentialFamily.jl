@@ -1,0 +1,309 @@
+export MvNormalWishart
+using Distributions
+import StatsFuns: logmvgamma
+using Random
+
+"""
+    MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real} <: ContinuousMatrixDistribution
+
+A multivariate normal-Wishart distribution, where `T` is the element type of the arrays `M` and matrices `V`, and `K` and `N` are real numbers. This distribution is a joint distribution of a multivariate normal random variable with mean `μ` and a Wishart-distributed random matrix with scale matrix `Ψ`, degrees of freedom `ν`, and the scalar `κ` as a scaling parameter.
+
+# Fields
+- `μ::M`: The mean vector of the multivariate normal distribution.
+- `Ψ::V`: The scale matrix of the Wishart distribution.
+- `κ::K`: The scaling parameter of the Wishart distribution.
+- `ν::N`: The degrees of freedom of the Wishart distribution
+"""
+struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real} <:
+       ContinuousMatrixDistribution
+    μ::M
+    Ψ::V
+    κ::K
+    ν::N
+
+    function MvNormalWishart(
+        μ::M,
+        Ψ::V,
+        κ::K,
+        ν::N
+    ) where {T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real}
+        new{T, M, V, K, N}(μ, Ψ, κ, ν)
+    end
+end
+
+params(d::MvNormalWishart) = (d.μ, d.Ψ, d.κ, d.ν)
+location(d::MvNormalWishart) = first(params(d))
+scatter(d::MvNormalWishart) = getindex(params(d), 2)
+invscatter(d::MvNormalWishart) = cholinv(getindex(params(d), 2))
+scale(d::MvNormalWishart) = getindex(params(d), 3)
+dof(d::MvNormalWishart) = getindex(params(d), 4)
+dim(d::MvNormalWishart) = length(d.μ)
+function dim(ef::ExponentialFamilyDistribution{MvNormalWishart})
+    len = length(getnaturalparameters(ef))
+
+    return Int64((-1 + isqrt(1 - 4 * (2 - len))) / 2)
+end
+
+function Distributions.pdf(dist::MvNormalWishart, x::Tuple)
+    μ,Ψ,κ,ν = params(dist)
+
+    x1 = first(x)
+    x2 = getindex(x,2)
+
+    return pdf(MvNormalMeanPrecision(μ, κ * x2), x1) * pdf(Wishart(ν, Ψ), x2)
+end
+
+Distributions.logpdf(dist::MvNormalWishart, x::Tuple) = log(pdf(dist, x))
+
+function Random.rand!(rng::AbstractRNG, dist::MvNormalWishart, container::Tuple{AbstractVector, AbstractMatrix})
+    μ, Ψ, κ, ν = params(dist)
+    rand!(rng, Wishart(ν, Ψ), container[2])
+    rand!(rng, MvNormalMeanPrecision(μ, κ * container[2]), container[1])
+    return container
+end
+
+function Random.rand!(rng::AbstractRNG, dist::MvNormalWishart, container::AbstractVector{T}) where {T <: Tuple}
+    for i in eachindex(container)
+        rand!(rng, dist, container[i])
+    end
+    return container
+end
+
+function Random.rand(rng::AbstractRNG, dist::MvNormalWishart{T}) where {T}
+    container = (Vector{T}(undef, dim(dist)), Matrix{T}(undef, (dim(dist), dim(dist))))
+    return rand!(rng, dist, container)
+end
+
+function Random.rand(rng::AbstractRNG, dist::MvNormalWishart{T}, nsamples::Int64) where {T}
+    container = Vector{Tuple{Vector{T}, Matrix{T}}}(undef, nsamples)
+    for i in eachindex(container)
+        container[i] = (Vector{T}(undef, dim(dist)), Matrix{T}(undef, (dim(dist), dim(dist))))
+        rand!(rng, dist, container[i])
+    end
+    return container
+end
+
+default_prod_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = PreserveTypeProd(Distribution)
+
+function insupport(::ExponentialFamilyDistribution{MvNormalWishart},x)
+    return isposdef(getindex(x,2))
+end
+
+function isproper(::NaturalParametersSpace, ::Type{MvNormalWishart}, η, conditioner) 
+    if !isnothing(conditioner) || length(η) < 8 || any(isnan, η) || any(isinf, η)
+        return false
+    end
+
+    (η1,η2,η3,η4) = unpack_parameters(MvNormalWishart, η)
+    # return  η1 > 0 && isposdef(-η2)
+    return  η3 < 0 && η4 > -1/2 
+end
+function isproper(::MeanParametersSpace, ::Type{MvNormalWishart}, θ, conditioner) 
+    if !isnothing(conditioner) || length(θ) <= 8 || any(isnan, θ) || any(isinf, θ) 
+        return false
+    end
+
+    (θ1,θ2,θ3,θ4) = unpack_parameters(MvNormalWishart, θ)
+
+    return  θ4 > length(θ1) - one(θ4) && θ3 > 0 
+    # return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
+end
+
+function (::MeanToNatural{MvNormalWishart})(tuple_of_θ::Tuple{Any, Any, Any, Any})
+    (μ, S, λ, ν) = tuple_of_θ
+    return (λ*μ, (-1 / 2) * (cholinv(S) + λ*μ*μ'), -λ/2, (ν - length(μ)) / 2)
+end
+
+function (::NaturalToMean{MvNormalWishart})(tuple_of_η::Tuple{Any,Any,Any,Any})
+    (η1,η2,η3,η4) = tuple_of_η
+    
+    return (-(1 / 2) * η1 / η3, cholinv(-2 * η2 + (1 / 2) * η1 * η1' / (η3)), -2 * η3, length(η1) + 2 * η4 )
+end
+
+function unpack_parameters(::Type{MvNormalWishart}, η)
+    len = length(η)
+    d = Int64((-1 + isqrt(1 - 4 * (2 - len))) / 2)
+
+    @inbounds η1 = view(η, 1:d)
+    @inbounds η2 = reshape(view(η, d+1:d^2+d), d, d)
+    @inbounds η3 = η[d^2+d+1]
+    @inbounds η4 = η[d^2+d+2]
+
+    return η1, η2, η3, η4
+end
+
+isbasemeasureconstant(::Type{MvNormalWishart}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{MvNormalWishart}) = (x) -> 1 / (2 * pi)^(Int64((-1 + isqrt(1 - 4 * (2-length(x)))) / 2)/ 2)
+function getsufficientstatistics(::Type{MvNormalWishart}) 
+   return ( 
+    (x) -> begin
+        p = Int64((-1 + isqrt(1 - 4 * (2-length(x)))) / 2)
+        return x[1:p]*reshape(view(x, p+1:p^2+p), p, p)
+    end ,
+   
+    (x) -> begin
+        p = Int64((-1 + isqrt(1 - 4 * (2-length(x)))) / 2)
+        return reshape(view(x, p+1:p^2+p), p, p)
+    end ,
+
+    (x) -> begin
+        p = Int64((-1 + isqrt(1 - 4 * (2-length(x)))) / 2)
+        return dot(x[1:p] , reshape(view(x, p+1:p^2+p), p, p), x[1:p])
+    end ,
+
+    (x) -> begin
+        p = Int64((-1 + isqrt(1 - 4 * (2-length(x)))) / 2)
+        return logdet(reshape(view(x, p+1:p^2+p), p, p))
+    end ,
+   )
+       
+end
+
+getlogpartition(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> begin
+    η1, η2, η3, η4 = unpack_parameters(MvNormalWishart,η)
+    d = length(η1)
+    term1 = -(d * (1 / 2)) * log(-2 * (η3))
+    term2 = -((d + 2 * η4) * (1 / 2)) * logdet(-2 * η2 + (1 / 2) * η1 * η1' / (η3))
+    term3 = log(2.0) * d * (d + 2 * η4) * (1 / 2)
+    term4 = logmvgamma(d, (d + 2 * η4) * (1 / 2))
+
+    return (term1 + term2 + term3 + term4)
+end
+
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> begin
+    η1, η2, η3, η4 = unpack_parameters(MvNormalWishart,η)
+    d = length(η1)
+
+    ϕ = -2η2 + kron(η1,η1')/(2η3)
+    invϕ = cholinv(ϕ)
+    kroninv = kron(invϕ, invϕ)
+    kronright = kron(diageye(d), η1)/(2η3)
+    kronleft = kron(η1, diageye(d))/(2η3)
+    vinvϕ = vec(cholinv(ϕ))
+    constant = -(d+2η4)/2
+    kronη1 = vec(kron(η1,η1'))
+
+    fimatrix = zeros(d^2+d+2, d^2+d+2)
+    ##diagonals
+    @inbounds begin
+        fimatrix[1:d,1:d] = -constant*((kroninv*(kronright+kronleft))'*(kronleft + kronright)) + constant*invϕ/η3
+        fimatrix[d+1:d^2+d, d+1:d^2+d] = -4*constant*kroninv
+        fimatrix[d^2+d+1, d^2+d+1]= constant*vinvϕ'*(kronη1)/η3^3 - (constant/(4*η3^4))*(kroninv*kronη1)'*kronη1 + d/(2η3^2)
+        fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, -constant)
+
+    ##offdiagonals
+        fimatrix[1:d,d+1:d^2+d] = 2constant*(kroninv*(kronright+kronleft))'
+        fimatrix[d+1:d^2+d, 1:d] = fimatrix[1:d,d+1:d^2+d]'
+        fimatrix[1:d,d^2+d+1] = (constant) * ((kroninv*(kronleft + kronright))'*kronη1 /(2*η3^2) - (kronleft+kronright)'*vinvϕ/η3)
+        fimatrix[d^2+d+1, 1:d] = fimatrix[1:d,d^2+d+1]'
+        fimatrix[1:d, end] = -vinvϕ'*(kronleft + kronright)
+        fimatrix[end, 1:d] = fimatrix[1:d, end]'
+        fimatrix[d+1:d^2+d,d^2+d+1] = -constant/(η3^2)*kroninv*kronη1
+        fimatrix[d^2+d+1, d+1:d^2+d] = fimatrix[d+1:d^2+d,d^2+d+1]'
+        fimatrix[d+1:d^2+d, d^2+d+2] = 2vinvϕ
+        fimatrix[d^2+d+2, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+2]'
+        fimatrix[d^2+d+1,d^2+d+2] = vinvϕ'*kronη1/(2η3^2)
+        fimatrix[d^2+d+2,d^2+d+1] = fimatrix[d^2+d+1,d^2+d+2]
+    end
+    return fimatrix 
+end
+
+# Mean parametrization
+
+getlogpartition(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
+    (μ, S, λ, ν) = unpack_parameters(MvNormalWishart, θ)
+    d = length(μ)
+
+    term1 = -(d * (1 / 2)) * log(λ)
+    term2 = (ν* (1 / 2)) * logdet(S)
+    term3 = log(2.0)*d*ν/2
+    term4 = logmvgamma(d, ν * (1 / 2))
+
+    return term1+term2+term3+term4
+
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# function check_valid_natural(::Type{<:MvNormalWishart}, params)
+#     return length(params) >= 4 && length(params) % 2 == 0
+# end
+
+
+# sufficientstatistics(::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}) =
+#     (x, Λ) -> vcat(Λ * x, vec(Λ), dot(x, Λ, x), logdet(Λ))
+
+# sufficientstatistics(union::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}, x) =
+#     sufficientstatistics(union)(x[1], x[2])
+
+# function pack_naturalparameters(dist::MvNormalWishart)
+#     μ, Ψ, κ, ν = params(dist)
+#     η1 = κ * μ
+#     η2 = (-1 / 2) * (vec(cholinv(Ψ)) + κ * kron(μ, μ))
+#     η3 = -κ / 2
+#     η4 = (ν - dim(dist)) / 2
+#     return vcat(η1, η2, η3, η4)
+# end
+
+# function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MvNormalWishart})
+#     η = getnaturalparameters(ef)
+#     d = dim(ef)
+
+#     @inbounds η1 = view(η, 1:d)
+#     @inbounds η2 = reshape(view(η, d+1:d^2+d), d, d)
+#     @inbounds η3 = η[d^2+d+1]
+#     @inbounds η4 = η[d^2+d+2]
+
+#     return η1, η2, η3, η4
+# end
+
+# Base.convert(::Type{ExponentialFamilyDistribution}, dist::MvNormalWishart) =
+#     ExponentialFamilyDistribution(MvNormalWishart, pack_naturalparameters(dist))
+
+# function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{MvNormalWishart})
+#     d = dim(exponentialfamily)
+#     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
+#     return MvNormalWishart(-(1 / 2) * η1 / η3, cholinv(-2 * η2 + (1 / 2) * η1 * η1' / (η3)), -2 * η3, d + 2 * η4)
+# end
+
+# function logpartition(exponentialfamily::ExponentialFamilyDistribution{MvNormalWishart})
+#     d = dim(exponentialfamily)
+#     η1, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
+
+#     term1 = -(d * (1 / 2)) * log(-2 * (η3))
+#     term2 = -((d + 2 * η4) * (1 / 2)) * logdet(-2 * η2 + (1 / 2) * η1 * η1' / (η3))
+#     term3 = logtwo * d * (d + 2 * η4) * (1 / 2)
+#     term4 = logmvgamma(d, (d + 2 * η4) * (1 / 2))
+
+#     return (term1 + term2 + term3 + term4)
+# end
+
+# function isproper(exponentialfamily::ExponentialFamilyDistribution{MvNormalWishart})
+#     _, η2, η3, η4 = unpack_naturalparameters(exponentialfamily)
+#     return isposdef(-η2) && η3 > 0 && η4 < 0
+# end
+
+# basemeasure(d::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}) =
+#     1 / (2 * pi)^(dim(d) / 2)
+# basemeasure(d::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}, x) =
+#     1 / (2 * pi)^(dim(d) / 2)
+

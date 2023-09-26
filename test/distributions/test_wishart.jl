@@ -92,6 +92,7 @@ import StatsFuns: logmvgamma
                 end
             end
         end
+    end
 
     @testset "prod" begin
         inv_v1 = cholinv([9.0 -3.4; -3.4 11.0])
@@ -124,8 +125,6 @@ import StatsFuns: logmvgamma
         end
     end
 
-
-end
 
 end
 
