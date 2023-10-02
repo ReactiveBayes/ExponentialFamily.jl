@@ -1,4 +1,3 @@
-export binomial_prod
 
 function binomial_prod(n, p, x)
     try

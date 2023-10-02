@@ -1,4 +1,4 @@
-using ExponentialFamily, Distributions, LinearAlgebra
+using ExponentialFamily, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs
 
 import ExponentialFamily:
