@@ -31,7 +31,7 @@ include("../../testutils.jl")
             return true
         end
 
-        types = ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
+        types = union_types(GammaDistributionsFamily{Float64})
         rng   = MersenneTwister(1234)
         for _ in 1:10
             for type in types
@@ -48,7 +48,7 @@ include("../../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{Gamma}" begin
-        @testset for k in (0.1, 2.0, 5.0), θ in (0.1, 2.0, 5.0), T in ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
+        @testset for k in (0.1, 2.0, 5.0), θ in (0.1, 2.0, 5.0), T in union_types(GammaDistributionsFamily{Float64})
             @testset let d = convert(T, GammaShapeScale(k, θ))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
@@ -79,7 +79,7 @@ include("../../testutils.jl")
     end
 
     @testset "prod with ExponentialFamilyDistribution" for kleft in 0.51:1.0:5.0, kright in 0.51:1.0:5.0, θleft in 0.1:1.0:5.0, θright in 0.1:1.0:5.0,
-        Tleft in ExponentialFamily.union_types(GammaDistributionsFamily{Float64}), Tright in ExponentialFamily.union_types(GammaDistributionsFamily{Float64})
+        Tleft in union_types(GammaDistributionsFamily{Float64}), Tright in union_types(GammaDistributionsFamily{Float64})
 
         @testset let (left, right) = (convert(Tleft, Gamma(kleft, θleft)), convert(Tright, Gamma(kright, θright)))
             @test test_generic_simple_exponentialfamily_product(

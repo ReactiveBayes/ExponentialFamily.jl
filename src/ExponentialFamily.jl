@@ -26,12 +26,19 @@ using IrrationalConstants:
     log2π,      # log(2π)
     log4π       # log(4π)
 
+using FastCholesky:
+    cholinv,
+    cholinv_logdet,
+    chollogdet,
+    cholsqrt,
+    fastcholesky,
+    fastcholesky!
+
 include("prod.jl")
 include("distributions.jl")
 include("exponential_family.jl")
 
 include("helpers/fixes.jl")
-include("helpers/algebra/cholesky.jl")
 include("helpers/algebra/common.jl")
 include("helpers/algebra/combinatorics.jl")
 

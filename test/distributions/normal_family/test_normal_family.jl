@@ -115,8 +115,8 @@ end
 
 @testset "Normal family" begin
     @testset "Univariate conversions" begin
-        types  = ExponentialFamily.union_types(UnivariateNormalDistributionsFamily{Float64})
-        etypes = ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
+        types  = union_types(UnivariateNormalDistributionsFamily{Float64})
+        etypes = union_types(UnivariateNormalDistributionsFamily)
 
         rng = MersenneTwister(1234)
 
@@ -145,8 +145,8 @@ end
     end
 
     @testset "Multivariate conversions" begin
-        types  = ExponentialFamily.union_types(MultivariateNormalDistributionsFamily{Float64})
-        etypes = ExponentialFamily.union_types(MultivariateNormalDistributionsFamily)
+        types  = union_types(MultivariateNormalDistributionsFamily{Float64})
+        etypes = union_types(MultivariateNormalDistributionsFamily)
 
         dims = (2, 3, 5)
         rng  = MersenneTwister(1234)
@@ -294,7 +294,7 @@ end
     end
 
     @testset "ExponentialFamilyDistribution{NormalMeanVariance}" begin
-        @testset for μ in -10.0:5.0:10.0, σ² in 0.1:1.0:5.0, T in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
+        @testset for μ in -10.0:5.0:10.0, σ² in 0.1:1.0:5.0, T in union_types(UnivariateNormalDistributionsFamily)
             @testset let d = convert(T, NormalMeanVariance(μ, σ²))
                 ef = test_exponentialfamily_interface(d)
 
@@ -320,8 +320,8 @@ end
     end
 
     @testset "prod with ExponentialFamilyDistribution{NormalMeanVariance}" for μleft in 10randn(4), σ²left in 10rand(4), μright in 10randn(4),
-        σ²right in 10rand(4), Tleft in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily),
-        Tright in ExponentialFamily.union_types(UnivariateNormalDistributionsFamily)
+        σ²right in 10rand(4), Tleft in union_types(UnivariateNormalDistributionsFamily),
+        Tright in union_types(UnivariateNormalDistributionsFamily)
 
         @testset let (left, right) = (convert(Tleft, NormalMeanVariance(μleft, σ²left)), convert(Tright, NormalMeanVariance(μright, σ²right)))
             @test test_generic_simple_exponentialfamily_product(
@@ -338,7 +338,7 @@ end
     end
 
     @testset "ExponentialFamilyDistribution{MvNormalMeanCovariance}" begin
-        @testset for s in (2, 3), T in ExponentialFamily.union_types(MultivariateNormalDistributionsFamily)
+        @testset for s in (2, 3), T in union_types(MultivariateNormalDistributionsFamily)
             μ = 10randn(s)
             L = randn(s, s)
             Σ = L * L'

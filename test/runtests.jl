@@ -3,6 +3,11 @@ using Test
 
 include("testutils.jl")
 
+# Helpers for tests
+
+union_types(x::Union) = (x.a, union_types(x.b)...)
+union_types(x::Type)  = (x,)
+
 @testset "ExponentialFamily" begin
     include("test_prod.jl")
     include("test_distributions.jl")

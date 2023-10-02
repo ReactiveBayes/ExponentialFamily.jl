@@ -18,8 +18,9 @@ function Base.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dir
     return Dirichlet(mvec)
 end
 
-probvec(dist::Dirichlet)                  = params(dist)[1]
-std(dist::Dirichlet)                      = vmap(sqrt, var(dist))
+probvec(dist::Dirichlet) = params(dist)[1]
+std(dist::Dirichlet)     = vmap(sqrt, var(dist))
+
 mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
 mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
 

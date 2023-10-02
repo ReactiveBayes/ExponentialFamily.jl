@@ -52,6 +52,12 @@ PromoteTypeConverter(::Type{T}, convert::C) where {T, C} = PromoteTypeConverter{
 
 (converter::PromoteTypeConverter{T})(something) where {T} = converter.convert(T, something)
 
+function deep_eltype end
+
+deep_eltype(::Type{T}) where {T}                  = T
+deep_eltype(::Type{T}) where {T <: AbstractArray} = deep_eltype(eltype(T))
+deep_eltype(any)                                  = deep_eltype(typeof(any))
+
 """
     promote_variate_PromoteTypeConverter(::Type{ <: VariateForm }, distribution_type)
 
