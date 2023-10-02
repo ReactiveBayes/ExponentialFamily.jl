@@ -27,13 +27,15 @@ using IrrationalConstants:
     log2π,      # log(2π)
     log4π       # log(4π)
 
+import Base: show, maximum, minimum
+import Base: convert, promote_rule
+
+include("statsfuns.jl")
 include("prod.jl")
 include("distributions.jl")
 include("exponential_family.jl")
 
-include("helpers/fixes.jl")
 include("helpers/algebra/common.jl")
-include("helpers/algebra/combinatorics.jl")
 
 include("distributions/bernoulli.jl")
 include("distributions/categorical.jl")

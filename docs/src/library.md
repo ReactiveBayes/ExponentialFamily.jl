@@ -67,6 +67,16 @@ ExponentialFamily.promote_samplefloattype
 ExponentialFamily.convert_paramfloattype
 ```
 
+## [Extra stats functions](@id library-statsfuns)
+
+```@docs
+ExponentialFamily.mirrorlog
+ExponentialFamily.xtlog
+ExponentialFamily.logmvbeta
+ExponentialFamily.clamplog
+ExponentialFamily.mvtrigamma
+```
+
 ## [Helper utilities](@id library-helpers)
 
 ```@docs
