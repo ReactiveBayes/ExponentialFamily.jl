@@ -1,6 +1,6 @@
 module KnownExponentialFamilyDistributionTest
 
-using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools
+using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools, Random
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
@@ -77,6 +77,53 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
 ## ===========================================================================
 ## Tests
 
+@testset "pack_parameters" begin
+    import ExponentialFamily: pack_parameters
+
+    to_test_fixed = [
+        (1, 2),
+        (1.0, 2),
+        (1, 2.0),
+        (1.0, 2.0),
+        ([1, 2, 3], 3),
+        ([1, 2, 3], 3.0),
+        ([1.0, 2.0, 3.0], 3),
+        ([1.0, 2.0, 3.0], 3.0),
+        (4, [1, 2, 3]),
+        (4.0, [1, 2, 3]),
+        (4, [1.0, 2.0, 3.0]),
+        (4.0, [1.0, 2.0, 3.0]),
+        ([1, 2, 3], 3, [1 2 3; 1 2 3; 1 2 3], 4),
+        ([1, 2, 3], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4),
+        ([1, 2, 3], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4.0),
+        ([1, 2, 3], 3.0, [1 2 3; 1 2 3; 1 2 3], 4),
+        ([1, 2, 3], 3.0, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4),
+        ([1, 2, 3], 3.0, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4.0),
+        ([1.0, 2.0, 3.0], 3, [1 2 3; 1 2 3; 1 2 3], 4),
+        ([1.0, 2.0, 3.0], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4),
+        ([1.0, 2.0, 3.0], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4.0)
+    ]
+
+    for test in to_test_fixed
+        @test all(@inferred(pack_parameters(test)) .== collect(Iterators.flatten(test)))
+    end
+
+
+
+    for _ in 1:10
+        to_test_random = [
+            rand(Float64),
+            rand(1:10),
+            [rand(Float64) for _ in rand(1:10)],
+            [rand(1:10) for _ in rand(1:10)],
+            [rand(Float64) for _ in rand(1:10) for _ in rand(1:10)],
+            [rand(1:10) for _ in rand(1:10) for _ in rand(1:10)]
+        ]
+        params = Tuple(shuffle(to_test_random))
+        @test all(@inferred(pack_parameters(params)) .== collect(Iterators.flatten(params)))
+    end
+end
+
 @testset "ExponentialFamilyDistributionAttributes" begin
     @testset "getmapping" begin
         @test @inferred(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
@@ -124,8 +171,8 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 1.0)) === 0
-        @test @ballocated(pdf($member, 1.0)) === 0
+        @test @ballocated(logpdf($member, 1.0), samples = 1, evals = 1) === 0
+        @test @ballocated(pdf($member, 1.0), samples = 1, evals = 1) === 0
 
         @test _similar isa typeof(member)
 
@@ -177,8 +224,8 @@ end
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0)) === 0
-        @test @ballocated(pdf($member, 2.0)) === 0
+        @test @ballocated(logpdf($member, 2.0), samples = 1, evals = 1) === 0
+        @test @ballocated(pdf($member, 2.0), samples = 1, evals = 1) === 0
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
@@ -252,8 +299,8 @@ end
 
         # The standard `@allocated` is not really reliable in this test 
         # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0)) === 0
-        @test @ballocated(pdf($member, 2.0)) === 0
+        @test @ballocated(logpdf($member, 2.0), samples = 1, evals = 1) === 0
+        @test @ballocated(pdf($member, 2.0), samples = 1, evals = 1) === 0
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)

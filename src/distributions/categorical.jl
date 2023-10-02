@@ -58,10 +58,6 @@ function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{Any}, _)
     return (softmax(η),)
 end
 
-function pack_parameters(::Type{Categorical}, tuple_of_η::Tuple{Any})
-    return first(tuple_of_η)
-end
-
 function unpack_parameters(::Type{Categorical}, packed)
     return (packed,)
 end

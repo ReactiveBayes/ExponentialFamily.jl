@@ -35,10 +35,6 @@ function (::NaturalToMean{Erlang})(tuple_of_η::Tuple{Any, Any})
     return (η1 + one(η1), -inv(η2))
 end
 
-function pack_parameters(::Type{Erlang}, params::Tuple{Any, Any})
-    return collect(promote(params...))
-end
-
 function unpack_parameters(::Type{Erlang}, packed)
     fi = firstindex(packed)
     si = fi + 1

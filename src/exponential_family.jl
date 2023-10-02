@@ -487,7 +487,7 @@ flatten_parameters(params::Tuple) = Iterators.flatten(params)
 flatten_parameters(::Type{T}, params::Tuple) where {T} = flatten_parameters(params)
 
 """
-    pack_parameters([ space ],  ::Type{T}, params::Tuple)
+    pack_parameters([ space ], ::Type{T}, params::Tuple)
 
 This function returns the parameters of a distribution of type `T` in a vectorized (packed) form. For most of the distributions the packed versions are of the 
 same structure in any parameters space. For some distributions, however, it is necessary to indicate the `space` of the packaged parameters.
@@ -496,11 +496,36 @@ function pack_parameters end
 
 # Assume that for the most distributions the `pack_parameters` does not depend on the `space` parameter
 pack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, params::Tuple) where {T} = pack_parameters(T, params)
+pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution} = pack_parameters(params)
 
-function pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution} 
-    F = promote_type(deep_eltype.(params)...)
-    return collect(F, flatten_parameters(T, params))
+# Below is an optimized version of packing, which assumes that the packed container is 
+# an array, what it does essentially is 
+# 1. preallocates the `container` of the needed length
+# 2. recursively iterates through the tuple of parameters 
+# 3. for each parameter copies the content into the preallocated container without checking
+function pack_parameters(params::Tuple)
+    lengths = map(length, params)
+    len = sum(lengths)
+    F = mapreduce(ExponentialFamily.deep_eltype, promote_type, params)
+    container = Vector{F}(undef, len)
+    return __pack_parameters_fast!(container, 1, 1, lengths, Base.first(params), Base.tail(params))
 end
+
+function __pack_parameters_fast!(container::Vector, offset::Int, current::Int, lengths, front, tail::Tuple)
+    N = lengths[current]
+    __pack_copyto!(container, offset, front, 1, N)
+    return __pack_parameters_fast!(container, offset + N, current + 1, lengths, Base.first(tail), Base.tail(tail))
+end
+
+function __pack_parameters_fast!(container::Vector, i::Int, k::Int, lengths, front, ::Tuple{})
+    N = lengths[k]
+    __pack_copyto!(container, i, front, 1, N)
+    return container
+end
+
+__pack_copyto!(dest, doffset, source, soffset, n) = copyto!(dest, doffset, source, soffset, n)
+__pack_copyto!(dest::Array, doffset, source::Array, soffset, n) = unsafe_copyto!(dest, doffset, source, soffset, n)
+__pack_copyto!(dest::Array, doffset, source::Number, soffset, n) = @inbounds(dest[doffset] = source)
 
 """
     unpack_parameters([ space ], ::Type{T}, parameters)
