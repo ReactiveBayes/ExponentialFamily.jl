@@ -9,6 +9,10 @@ import ExponentialFamily:
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
 
+function Base.isapprox(a::Tuple, b::Tuple; kwargs...) 
+    return length(a) === length(b) && all((d) -> isapprox(d[1], d[2]; kwargs...), zip(a, b))
+end
+
 function test_exponentialfamily_interface(distribution;
     test_parameters_conversion = true,
     test_similar_creation = true,
@@ -162,7 +166,7 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
         @test @inferred(std(ef)) ≈ std(distribution)
         @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
-        @test all(rand!(StableRNG(42), ef, [copy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [copy(x) for _ in 1:10]))
+        @test all(rand!(StableRNG(42), ef, [deepcopy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [deepcopy(x) for _ in 1:10]))
 
         @test @inferred(isbasemeasureconstant(ef)) === isbasemeasureconstant(T)
         @test @inferred(basemeasure(ef, x)) == getbasemeasure(T, conditioner)(x)

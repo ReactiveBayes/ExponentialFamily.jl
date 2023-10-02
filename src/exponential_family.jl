@@ -496,7 +496,11 @@ function pack_parameters end
 
 # Assume that for the most distributions the `pack_parameters` does not depend on the `space` parameter
 pack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, params::Tuple) where {T} = pack_parameters(T, params)
-pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution} = collect(flatten_parameters(T, params))
+
+function pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution} 
+    F = promote_type(deep_eltype.(params)...)
+    return collect(F, flatten_parameters(T, params))
+end
 
 """
     unpack_parameters([ space ], ::Type{T}, parameters)

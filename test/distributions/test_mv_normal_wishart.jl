@@ -14,7 +14,6 @@ using Random
 
 include("../testutils.jl")
 
-
 @testset "MvNormalWishart" begin
     @testset "common" begin
         m = rand(2)
@@ -27,10 +26,15 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{MvNormalWishart}" begin
-        @testset for dim in (3), invS in rand(Wishart(10,diageye(dim)),4)
+        @testset for dim in (3), invS in rand(Wishart(10, diageye(dim)), 4)
             ν = dim + 2
-            @testset let (d = MvNormalWishart(rand(dim), invS, rand(),ν))
-                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false,test_fisherinformation_against_jacobian = false)
+            @testset let (d = MvNormalWishart(rand(dim), invS, rand(), ν))
+                ef = test_exponentialfamily_interface(
+                    d;
+                    option_assume_no_allocations = false,
+                    test_fisherinformation_against_hessian = false,
+                    test_fisherinformation_against_jacobian = false
+                )
             end
         end
     end
@@ -41,8 +45,8 @@ include("../testutils.jl")
             m2 = rand(j)
             Ψ1 = m1 * m1' + I
             Ψ2 = m2 * m2' + I
-            dist1 = MvNormalWishart(m1, Ψ1, κ+rand(), rand() + 4)
-            dist2 = MvNormalWishart(m2, Ψ2, κ+rand(), rand() + 4)
+            dist1 = MvNormalWishart(m1, Ψ1, κ + rand(), rand() + 4)
+            dist2 = MvNormalWishart(m2, Ψ2, κ + rand(), rand() + 4)
             ef1 = convert(ExponentialFamilyDistribution, dist1)
             ef2 = convert(ExponentialFamilyDistribution, dist2)
             @test prod(PreserveTypeProd(Distribution), dist1, dist2) ≈ convert(Distribution, prod(ClosedProd(), ef1, ef2))
@@ -50,8 +54,8 @@ include("../testutils.jl")
     end
 
     @testset "prod with ExponentialFamilyDistribution{MvNormalWishart}" begin
-        for Sleft in rand(Wishart(10,diageye(2)),2), Sright in rand(Wishart(10,diageye(2)),2), νright in (6,7), νleft in (4,5)
-            let left =MvNormalWishart(rand(2),Sleft,rand(),νleft), right = MvNormalWishart(rand(2), Sright,rand(),νright)
+        for Sleft in rand(Wishart(10, diageye(2)), 2), Sright in rand(Wishart(10, diageye(2)), 2), νright in (6, 7), νleft in (4, 5)
+            let left = MvNormalWishart(rand(2), Sleft, rand(), νleft), right = MvNormalWishart(rand(2), Sright, rand(), νright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
                     right,

@@ -38,31 +38,29 @@ invscatter(d::MvNormalWishart) = cholinv(getindex(params(d), 2))
 scale(d::MvNormalWishart) = getindex(params(d), 3)
 dof(d::MvNormalWishart) = getindex(params(d), 4)
 locationdim(d::MvNormalWishart) = length(d.μ)
-mean(d::MvNormalWishart) = (d.μ, d.ν*d.Ψ)
+mean(d::MvNormalWishart) = (d.μ, d.ν * d.Ψ)
 cov(d::MvNormalWishart) = var(d)
-function std(d::MvNormalWishart) 
+
+function std(d::MvNormalWishart)
     c = d.ν - locationdim(d) + one(d.ν)
-    ψ = d.Ψ*(d.κ + one(d.κ))/(d.κ*c)
-    return (real(sqrt((c/(c-2))*ψ)), real(sqrt(cov(Wishart(d.ν,d.Ψ)))))
+    ψ = d.Ψ * (d.κ + one(d.κ)) / (d.κ * c)
+    return (real(sqrt((c / (c - 2)) * ψ)), real(sqrt(cov(Wishart(d.ν, d.Ψ)))))
 end
-function var(d::MvNormalWishart) 
+
+function var(d::MvNormalWishart)
     c = d.ν - locationdim(d) + one(d.ν)
-    ψ = d.Ψ*(d.κ + one(d.κ))/(d.κ*c)
-    return ((c/(c-2))*ψ, cov(Wishart(d.ν,d.Ψ)))
+    ψ = d.Ψ * (d.κ + one(d.κ)) / (d.κ * c)
+    return ((c / (c - 2)) * ψ, cov(Wishart(d.ν, d.Ψ)))
 end
 
 function locationdim(ef::ExponentialFamilyDistribution{MvNormalWishart})
     len = length(getnaturalparameters(ef))
-
     return Int64((-1 + isqrt(1 - 4 * (2 - len))) / 2)
 end
 
 function Distributions.pdf(dist::MvNormalWishart, x::Tuple)
-    μ,Ψ,κ,ν = params(dist)
-
-    x1 = first(x)
-    x2 = getindex(x,2)
-
+    μ, Ψ, κ, ν = params(dist)
+    x1, x2 = x
     return pdf(MvNormalMeanPrecision(μ, κ * x2), x1) * pdf(Wishart(ν, Ψ), x2)
 end
 
@@ -99,56 +97,56 @@ end
 default_prod_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = PreserveTypeProd(Distribution)
 
 function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalWishart, right::MvNormalWishart)
-    μleft,Sleft,λleft,νleft = params(left)
-    μright,Sright,λright,νright = params(right)
+    μleft, Sleft, λleft, νleft = params(left)
+    μright, Sright, λright, νright = params(right)
 
     λ = λleft + λright
     ν = νleft + νright - locationdim(left)
 
-    μhat = λleft*μleft + λright*μright
+    μhat = λleft * μleft + λright * μright
     μ = μhat / λ
 
     Sinvleft = cholinv(Sleft)
     Sinvright = cholinv(Sright)
-    
-    S = cholinv(Sinvleft + λleft*μleft*μleft' + Sinvright + λright*μright*μright' - μhat*μhat'/λ)
-    
-    return MvNormalWishart(μ, S,λ,ν)
+
+    S = cholinv(Sinvleft + λleft * μleft * μleft' + Sinvright + λright * μright * μright' - μhat * μhat' / λ)
+
+    return MvNormalWishart(μ, S, λ, ν)
 end
 
-function insupport(::ExponentialFamilyDistribution{MvNormalWishart},x)
-    return isposdef(getindex(x,2))
+function insupport(::ExponentialFamilyDistribution{MvNormalWishart}, x)
+    return isposdef(getindex(x, 2))
 end
 
-function isproper(::NaturalParametersSpace, ::Type{MvNormalWishart}, η, conditioner) 
+function isproper(::NaturalParametersSpace, ::Type{MvNormalWishart}, η, conditioner)
     if !isnothing(conditioner) || length(η) < 8 || any(isnan, η) || any(isinf, η)
         return false
     end
 
-    (η1,η2,η3,η4) = unpack_parameters(MvNormalWishart, η)
+    (η1, η2, η3, η4) = unpack_parameters(MvNormalWishart, η)
     # return  η1 > 0 && isposdef(-η2)
-    return  η3 < 0 && η4 > -1/2 
+    return η3 < 0 && η4 > -1 / 2
 end
-function isproper(::MeanParametersSpace, ::Type{MvNormalWishart}, θ, conditioner) 
-    if !isnothing(conditioner) || length(θ) <= 8 || any(isnan, θ) || any(isinf, θ) 
+function isproper(::MeanParametersSpace, ::Type{MvNormalWishart}, θ, conditioner)
+    if !isnothing(conditioner) || length(θ) <= 8 || any(isnan, θ) || any(isinf, θ)
         return false
     end
 
-    (θ1,θ2,θ3,θ4) = unpack_parameters(MvNormalWishart, θ)
+    (θ1, θ2, θ3, θ4) = unpack_parameters(MvNormalWishart, θ)
 
-    return  θ4 > length(θ1) - one(θ4) && θ3 > 0 
+    return θ4 > length(θ1) - one(θ4) && θ3 > 0
     # return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
 end
 
 function (::MeanToNatural{MvNormalWishart})(tuple_of_θ::Tuple{Any, Any, Any, Any})
     (μ, S, λ, ν) = tuple_of_θ
-    return (λ*μ, (-1 / 2) * (cholinv(S) + λ*μ*μ'), -λ/2, (ν - length(μ)) / 2)
+    return (λ * μ, (-1 / 2) * (cholinv(S) + λ * μ * μ'), -λ / 2, (ν - length(μ)) / 2)
 end
 
-function (::NaturalToMean{MvNormalWishart})(tuple_of_η::Tuple{Any,Any,Any,Any})
-    (η1,η2,η3,η4) = tuple_of_η
-    
-    return (-(1 / 2) * η1 / η3, cholinv(-2 * η2 + (1 / 2) * η1 * η1' / (η3)), -2 * η3, length(η1) + 2 * η4 )
+function (::NaturalToMean{MvNormalWishart})(tuple_of_η::Tuple{Any, Any, Any, Any})
+    (η1, η2, η3, η4) = tuple_of_η
+
+    return (-(1 / 2) * η1 / η3, cholinv(-2 * η2 + (1 / 2) * η1 * η1' / (η3)), -2 * η3, length(η1) + 2 * η4)
 end
 
 function unpack_parameters(::Type{MvNormalWishart}, η)
@@ -167,81 +165,74 @@ isbasemeasureconstant(::Type{MvNormalWishart}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{MvNormalWishart}) = (x) -> 1.0
 
-function getsufficientstatistics(::Type{MvNormalWishart}) 
-    return ( 
-     (z) -> begin
-         (x, S) = z
-         return S*x
-     end ,
-    
-     (z) -> begin
-        (_, S) = z
-        return S
-     end ,
- 
-     (z) -> begin
-         
-         (x, S) = z
-         return dot(x , S, x)
-     end ,
- 
-     (z) -> begin
-        (_, S) = z
-          return logdet(S)
-     end ,
+function getsufficientstatistics(::Type{MvNormalWishart})
+    return (
+        (z) -> begin
+            (x, S) = z
+            return S * x
+        end, (z) -> begin
+            (_, S) = z
+            return S
+        end, (z) -> begin
+            (x, S) = z
+            return dot(x, S, x)
+        end, (z) -> begin
+            (_, S) = z
+            return logdet(S)
+        end
     )
-        
- end
+end
 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> begin
-    η1, η2, η3, η4 = unpack_parameters(MvNormalWishart,η)
+    η1, η2, η3, η4 = unpack_parameters(MvNormalWishart, η)
     d = length(η1)
     term1 = -(d * (1 / 2)) * log(-2 * (η3))
     term2 = -((d + 2 * η4) * (1 / 2)) * logdet(-2 * η2 + (1 / 2) * η1 * η1' / (η3))
     term3 = log(2.0) * d * (d + 2 * η4) * (1 / 2)
     term4 = logmvgamma(d, (d + 2 * η4) * (1 / 2))
 
-    return (term1 + term2 + term3 + term4) + (d/2)log2π
+    return (term1 + term2 + term3 + term4) + (d / 2)log2π
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> begin
-    η1, η2, η3, η4 = unpack_parameters(MvNormalWishart,η)
-    d = length(η1)
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) =
+    (η) -> begin
+        η1, η2, η3, η4 = unpack_parameters(MvNormalWishart, η)
+        d = length(η1)
 
-    ϕ = -2η2 + kron(η1,η1')/(2η3)
-    invϕ = cholinv(ϕ)
-    kroninv = kron(invϕ, invϕ)
-    kronright = kron(diageye(d), η1)/(2η3)
-    kronleft = kron(η1, diageye(d))/(2η3)
-    vinvϕ = vec(cholinv(ϕ))
-    constant = -(d+2η4)/2
-    kronη1 = vec(kron(η1,η1'))
+        ϕ = -2η2 + kron(η1, η1') / (2η3)
+        invϕ = cholinv(ϕ)
+        kroninv = kron(invϕ, invϕ)
+        kronright = kron(diageye(d), η1) / (2η3)
+        kronleft = kron(η1, diageye(d)) / (2η3)
+        vinvϕ = vec(cholinv(ϕ))
+        constant = -(d + 2η4) / 2
+        kronη1 = vec(kron(η1, η1'))
 
-    fimatrix = zeros(d^2+d+2, d^2+d+2)
-   
-    @inbounds begin
-    ##diagonals
-        fimatrix[1:d,1:d] = -constant*((kroninv*(kronright+kronleft))'*(kronleft + kronright)) + constant*invϕ/η3
-        fimatrix[d+1:d^2+d, d+1:d^2+d] = -4*constant*kroninv
-        fimatrix[d^2+d+1, d^2+d+1]= constant*vinvϕ'*(kronη1)/η3^3 - (constant/(4*η3^4))*(kroninv*kronη1)'*kronη1 + d/(2η3^2)
-        fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, -constant)
+        fimatrix = zeros(d^2 + d + 2, d^2 + d + 2)
 
-    ##offdiagonals
-        fimatrix[1:d,d+1:d^2+d] = 2constant*(kroninv*(kronright+kronleft))'
-        fimatrix[d+1:d^2+d,1:d] = fimatrix[1:d,d+1:d^2+d]'
-        fimatrix[1:d,d^2+d+1] = (constant) * ((kroninv*(kronleft + kronright))'*kronη1 /(2*η3^2) - (kronleft+kronright)'*vinvϕ/η3)
-        fimatrix[d^2+d+1, 1:d] = fimatrix[1:d,d^2+d+1]'
-        fimatrix[1:d, end] = -vinvϕ'*(kronleft + kronright)
-        fimatrix[end, 1:d] = fimatrix[1:d, end]'
-        fimatrix[d+1:d^2+d,d^2+d+1] = -constant/(η3^2)*kroninv*kronη1
-        fimatrix[d^2+d+1, d+1:d^2+d] = fimatrix[d+1:d^2+d,d^2+d+1]'
-        fimatrix[d+1:d^2+d, d^2+d+2] = 2vinvϕ
-        fimatrix[d^2+d+2, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+2]'
-        fimatrix[d^2+d+1,d^2+d+2] = vinvϕ'*kronη1/(2η3^2)
-        fimatrix[d^2+d+2,d^2+d+1] = fimatrix[d^2+d+1,d^2+d+2]
+        @inbounds begin
+            ##diagonals
+            fimatrix[1:d, 1:d] = -constant * ((kroninv * (kronright + kronleft))' * (kronleft + kronright)) + constant * invϕ / η3
+            fimatrix[d+1:d^2+d, d+1:d^2+d] = -4 * constant * kroninv
+            fimatrix[d^2+d+1, d^2+d+1] = constant * vinvϕ' * (kronη1) / η3^3 - (constant / (4 * η3^4)) * (kroninv * kronη1)' * kronη1 + d / (2η3^2)
+            fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, -constant)
+
+            ##offdiagonals
+            fimatrix[1:d, d+1:d^2+d] = 2constant * (kroninv * (kronright + kronleft))'
+            fimatrix[d+1:d^2+d, 1:d] = fimatrix[1:d, d+1:d^2+d]'
+            fimatrix[1:d, d^2+d+1] = (constant) * ((kroninv * (kronleft + kronright))' * kronη1 / (2 * η3^2) - (kronleft + kronright)' * vinvϕ / η3)
+            fimatrix[d^2+d+1, 1:d] = fimatrix[1:d, d^2+d+1]'
+            fimatrix[1:d, end] = -vinvϕ' * (kronleft + kronright)
+            fimatrix[end, 1:d] = fimatrix[1:d, end]'
+            fimatrix[d+1:d^2+d, d^2+d+1] = -constant / (η3^2) * kroninv * kronη1
+            fimatrix[d^2+d+1, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+1]'
+            fimatrix[d+1:d^2+d, d^2+d+2] = 2vinvϕ
+            fimatrix[d^2+d+2, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+2]'
+            fimatrix[d^2+d+1, d^2+d+2] = vinvϕ' * kronη1 / (2η3^2)
+            fimatrix[d^2+d+2, d^2+d+1] = fimatrix[d^2+d+1, d^2+d+2]
+        end
+        return fimatrix
     end
-    return fimatrix 
-end
 
 # Mean parametrization
 
@@ -250,60 +241,40 @@ getlogpartition(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     d = length(μ)
 
     term1 = -(d * (1 / 2)) * log(λ)
-    term2 = (ν* (1 / 2)) * logdet(S)
-    term3 = log(2.0)*d*ν/2
+    term2 = (ν * (1 / 2)) * logdet(S)
+    term3 = log(2.0) * d * ν / 2
     term4 = logmvgamma(d, ν * (1 / 2))
 
-    return term1+term2+term3+term4+(d/2)log2π
+    return term1 + term2 + term3 + term4 + (d / 2)log2π
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
-    μ, T, κ, ν = unpack_parameters(MvNormalWishart,θ)
+    μ, T, κ, ν = unpack_parameters(MvNormalWishart, θ)
     d = length(μ)
 
-    kronT = kron(T,T)
-    fimatrix = zeros(d^2+d+2, d^2+d+2)
+    kronT = kron(T, T)
+    fimatrix = zeros(d^2 + d + 2, d^2 + d + 2)
 
     @inbounds begin
-    ##diagonals
-        fimatrix[1:d,1:d] = ν*κ*T 
-        fimatrix[d+1:d^2+d, d+1:d^2+d] = (ν/2)*kronT
-        fimatrix[d^2+d+1, d^2+d+1] = d/(2κ^2)
-        fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, ν/2)/4
+        ##diagonals
+        fimatrix[1:d, 1:d] = ν * κ * T
+        fimatrix[d+1:d^2+d, d+1:d^2+d] = (ν / 2) * kronT
+        fimatrix[d^2+d+1, d^2+d+1] = d / (2κ^2)
+        fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, ν / 2) / 4
 
         # fimatrix[d+1:d^2+d, d^2+d+2] = -vec(inv(T))/2
         # fimatrix[d^2+d+2, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+2]'
     end
 
-    return fimatrix 
+    return fimatrix
 
     # return blockdiag(sparse(ν*κ*T) , sparse((ν/2)*kronT) , sparse(Diagonal([d/(2κ^2), mvtrigamma(d, ν/2)/4])))
-    
+
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # function check_valid_natural(::Type{<:MvNormalWishart}, params)
 #     return length(params) >= 4 && length(params) % 2 == 0
 # end
-
 
 # sufficientstatistics(::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}) =
 #     (x, Λ) -> vcat(Λ * x, vec(Λ), dot(x, Λ, x), logdet(Λ))
@@ -362,4 +333,3 @@ end
 #     1 / (2 * pi)^(locationdim(d) / 2)
 # basemeasure(d::Union{<:ExponentialFamilyDistribution{MvNormalWishart}, <:MvNormalWishart}, x) =
 #     1 / (2 * pi)^(locationdim(d) / 2)
-
