@@ -16,7 +16,6 @@ import StatsFuns: logmvgamma
 
 include("../testutils.jl")
 
-
 @testset "InverseWishartFast" begin
     @testset "common" begin
         @test InverseWishartFast <: Distribution
@@ -27,24 +26,22 @@ include("../testutils.jl")
         @test variate_form(InverseWishartFast) === Matrixvariate
     end
 
-
     @testset "ExponentialFamilyDistribution{InverseWishartFast}" begin
-        @testset for dim in (3), S in rand(InverseWishart(10,diageye(dim)),2)
+        @testset for dim in (3), S in rand(InverseWishart(10, diageye(dim)), 2)
             ν = dim + 4
-            @testset let (d = InverseWishartFast(ν,S))
-                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false,test_fisherinformation_against_hessian = false)
-                (η1,η2) = unpack_parameters(InverseWishartFast,getnaturalparameters(ef))
-          
+            @testset let (d = InverseWishartFast(ν, S))
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
+                (η1, η2) = unpack_parameters(InverseWishartFast, getnaturalparameters(ef))
+
                 for x in diageye(dim)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
-                    @test @inferred(sufficientstatistics(ef, x)) === (logdet(x), cholinv(x))
+                    @test @inferred(sufficientstatistics(ef, x)) === (logdet(x), inv(x))
                     @test @inferred(logpartition(ef)) ≈ (η1 + (dim + 1) / 2) * logdet(-η2) + logmvgamma(dim, -(η1 + (dim + 1) / 2))
                 end
             end
         end
     end
-
 
     @testset "statistics" begin
         rng = StableRNG(42)
@@ -129,12 +126,10 @@ include("../testutils.jl")
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
-        @test isapprox(mean(cholinv, InverseWishartFast(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
 
         ν, S = 4.0, diageye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
-        @test isapprox(mean(cholinv, InverseWishartFast(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
     end
 
     @testset "prod" begin
@@ -190,7 +185,7 @@ include("../testutils.jl")
     end
 
     @testset "prod with ExponentialFamilyDistribution{InverseWishartFast}" begin
-        for Sleft in rand(InverseWishart(10,diageye(2)),2), Sright in rand(InverseWishart(10,diageye(2)),2), νright in (6,7), νleft in (4,5)
+        for Sleft in rand(InverseWishart(10, diageye(2)), 2), Sright in rand(InverseWishart(10, diageye(2)), 2), νright in (6, 7), νleft in (4, 5)
             let left = InverseWishartFast(νleft, Sleft), right = InverseWishartFast(νright, Sright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,

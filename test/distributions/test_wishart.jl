@@ -38,9 +38,8 @@ import StatsFuns: logmvgamma
     @testset "mean(::cholinv)" begin
         L    = rand(2, 2)
         S    = L * L' + diageye(2)
-        invS = cholinv(S)
+        invS = inv(S)
         @test mean(inv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
-        @test mean(cholinv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
     end
 
     @testset "vague" begin
@@ -57,7 +56,7 @@ import StatsFuns: logmvgamma
             v = rand() + d
             L = rand(d, d)
             S = L' * L + d * diageye(d)
-            invS = cholinv(S)
+            invS = inv(S)
             cS = copy(S)
             cinvS = copy(invS)
             container1 = [zeros(d, d) for _ in 1:100]
@@ -78,12 +77,12 @@ import StatsFuns: logmvgamma
     end
 
     @testset "ExponentialFamilyDistribution{WishartFast}" begin
-        @testset for dim in (3), invS in rand(Wishart(10,diageye(dim)),2)
+        @testset for dim in (3), invS in rand(Wishart(10, diageye(dim)), 2)
             ν = dim + 2
             @testset let (d = WishartFast(ν, invS))
-                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false,test_fisherinformation_against_hessian = false)
-                (η1,η2) = unpack_parameters(WishartFast,getnaturalparameters(ef))
-          
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
+                (η1, η2) = unpack_parameters(WishartFast, getnaturalparameters(ef))
+
                 for x in diageye(dim)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
@@ -95,26 +94,26 @@ import StatsFuns: logmvgamma
     end
 
     @testset "prod" begin
-        inv_v1 = cholinv([9.0 -3.4; -3.4 11.0])
-        inv_v2 = cholinv([10.2 -3.3; -3.3 5.0])
-        inv_v3 = cholinv([8.1 -2.7; -2.7 9.0])
+        inv_v1 = inv([9.0 -3.4; -3.4 11.0])
+        inv_v2 = inv([10.2 -3.3; -3.3 5.0])
+        inv_v3 = inv([8.1 -2.7; -2.7 9.0])
 
         @test prod(PreserveTypeProd(Distribution), WishartFast(3, inv_v1), WishartFast(3, inv_v2)) ≈
               WishartFast(
             3,
-            cholinv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
+            inv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
         )
         @test prod(PreserveTypeProd(Distribution), WishartFast(4, inv_v1), WishartFast(4, inv_v3)) ≈
               WishartFast(
             5,
-            cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
+            inv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
         )
         @test prod(PreserveTypeProd(Distribution), WishartFast(5, inv_v2), WishartFast(4, inv_v3)) ≈
-              WishartFast(6, cholinv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
+              WishartFast(6, inv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
     end
 
     @testset "prod with ExponentialFamilyDistribution{Wishart}" begin
-        for Sleft in rand(Wishart(10,diageye(2)),2), Sright in rand(Wishart(10,diageye(2)),2), νright in (6,7), νleft in (4,5)
+        for Sleft in rand(Wishart(10, diageye(2)), 2), Sright in rand(Wishart(10, diageye(2)), 2), νright in (6, 7), νleft in (4, 5)
             let left = WishartFast(νleft, Sleft), right = WishartFast(νright, Sright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
@@ -124,8 +123,6 @@ import StatsFuns: logmvgamma
             end
         end
     end
-
-
 end
 
 end
