@@ -83,6 +83,19 @@ include("../testutils.jl")
         @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
     end
 
+    @testset "Bernoulli × Categorical" begin
+        @test prod(ClosedProd(), Bernoulli(0.5), Categorical([0.5, 0.5])) ≈
+              Categorical([0.5, 0.5])
+        @test prod(ClosedProd(), Bernoulli(0.1), Categorical(0.4, 0.6)) ≈
+              Categorical([1 - 0.14285714285714285, 0.14285714285714285])
+        @test prod(ClosedProd(), Bernoulli(0.78), Categorical([0.95, 0.05])) ≈
+              Categorical([1 - 0.1572580645161291, 0.1572580645161291])
+        @test prod(ClosedProd(), Bernoulli(0.5), Categorical([0.3, 0.3, 0.4])) ≈
+              Categorical([0.5, 0.5, 0])
+        @test prod(ClosedProd(), Bernoulli(0.5), Categorical([1.0])) ≈
+              Categorical([1.0, 0])
+    end
+
     @testset "prod with ExponentialFamilyDistribution" for pleft in 0.1:0.1:0.9, pright in 0.1:0.1:0.9
         let left = Bernoulli(pleft), right = Bernoulli(pright)
             @test test_generic_simple_exponentialfamily_product(
