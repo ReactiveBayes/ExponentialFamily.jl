@@ -1,6 +1,7 @@
 module ExponentialFamily
 
 using TinyHugeNumbers
+using FastCholesky
 
 using IrrationalConstants:
     twoπ,       # 2π
@@ -25,14 +26,6 @@ using IrrationalConstants:
     logπ,       # log(π)
     log2π,      # log(2π)
     log4π       # log(4π)
-
-using FastCholesky:
-    cholinv,
-    cholinv_logdet,
-    chollogdet,
-    cholsqrt,
-    fastcholesky,
-    fastcholesky!
 
 include("prod.jl")
 include("distributions.jl")

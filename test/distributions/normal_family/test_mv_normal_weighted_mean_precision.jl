@@ -32,17 +32,17 @@ using Distributions
         Λ    = [1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5]
         dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
-        @test mean(dist) ≈ cholinv(Λ) * xi
-        @test mode(dist) ≈ cholinv(Λ) * xi
+        @test mean(dist) ≈ inv(Λ) * xi
+        @test mode(dist) ≈ inv(Λ) * xi
         @test weightedmean(dist) == xi
         @test invcov(dist) == Λ
         @test precision(dist) == Λ
-        @test cov(dist) ≈ cholinv(Λ)
-        @test std(dist) ≈ cholsqrt(cholinv(Λ))
-        @test all(mean_cov(dist) .≈ (cholinv(Λ) * xi, cholinv(Λ)))
-        @test all(mean_invcov(dist) .≈ (cholinv(Λ) * xi, Λ))
-        @test all(mean_precision(dist) .≈ (cholinv(Λ) * xi, Λ))
-        @test all(weightedmean_cov(dist) .≈ (xi, cholinv(Λ)))
+        @test cov(dist) ≈ inv(Λ)
+        @test std(dist) * std(dist)' ≈ inv(Λ)
+        @test all(mean_cov(dist) .≈ (inv(Λ) * xi, inv(Λ)))
+        @test all(mean_invcov(dist) .≈ (inv(Λ) * xi, Λ))
+        @test all(mean_precision(dist) .≈ (inv(Λ) * xi, Λ))
+        @test all(weightedmean_cov(dist) .≈ (xi, inv(Λ)))
         @test all(weightedmean_invcov(dist) .≈ (xi, Λ))
         @test all(weightedmean_precision(dist) .≈ (xi, Λ))
 

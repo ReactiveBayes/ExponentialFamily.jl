@@ -36,12 +36,12 @@ using Distributions
         @test weightedmean(dist) == Λ * μ
         @test invcov(dist) == Λ
         @test precision(dist) == Λ
-        @test cov(dist) ≈ cholinv(Λ)
-        @test std(dist) ≈ cholsqrt(cholinv(Λ))
-        @test all(mean_cov(dist) .≈ (μ, cholinv(Λ)))
+        @test cov(dist) ≈ inv(Λ)
+        @test std(dist) * std(dist)' ≈ inv(Λ)
+        @test all(mean_cov(dist) .≈ (μ, inv(Λ)))
         @test all(mean_invcov(dist) .≈ (μ, Λ))
         @test all(mean_precision(dist) .≈ (μ, Λ))
-        @test all(weightedmean_cov(dist) .≈ (Λ * μ, cholinv(Λ)))
+        @test all(weightedmean_cov(dist) .≈ (Λ * μ, inv(Λ)))
         @test all(weightedmean_invcov(dist) .≈ (Λ * μ, Λ))
         @test all(weightedmean_precision(dist) .≈ (Λ * μ, Λ))
 

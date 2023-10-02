@@ -6,13 +6,8 @@ import ExponentialFamily:
     sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
     ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule, fastcholesky
 
-function Base.isapprox(t1::Tuple{Any, Any}, t2::Tuple{Any, Any})
-    return all(map((d) -> isapprox(d[1],d[2]), zip(t1,t2)))
-end
-
-function Base.copy(t::Tuple{Any, Any})
-    return map(copy, t)
-end
+union_types(x::Union) = (x.a, union_types(x.b)...)
+union_types(x::Type)  = (x,)
 
 function test_exponentialfamily_interface(distribution;
     test_parameters_conversion = true,

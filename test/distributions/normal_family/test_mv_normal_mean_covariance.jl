@@ -7,7 +7,7 @@ using Distributions
 using ForwardDiff
 using StableRNGs
 
-import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, fisherinformation, as_vec
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, fisherinformation
 
 @testset "MvNormalMeanCovariance" begin
     @testset "Constructor" begin
@@ -37,17 +37,17 @@ import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters, f
 
         @test mean(dist) == μ
         @test mode(dist) == μ
-        @test weightedmean(dist) ≈ cholinv(Σ) * μ
-        @test invcov(dist) ≈ cholinv(Σ)
-        @test precision(dist) ≈ cholinv(Σ)
+        @test weightedmean(dist) ≈ inv(Σ) * μ
+        @test invcov(dist) ≈ inv(Σ)
+        @test precision(dist) ≈ inv(Σ)
         @test cov(dist) == Σ
-        @test std(dist) ≈ cholsqrt(Σ)
+        @test std(dist) * std(dist)' ≈ Σ
         @test all(mean_cov(dist) .≈ (μ, Σ))
-        @test all(mean_invcov(dist) .≈ (μ, cholinv(Σ)))
-        @test all(mean_precision(dist) .≈ (μ, cholinv(Σ)))
-        @test all(weightedmean_cov(dist) .≈ (cholinv(Σ) * μ, Σ))
-        @test all(weightedmean_invcov(dist) .≈ (cholinv(Σ) * μ, cholinv(Σ)))
-        @test all(weightedmean_precision(dist) .≈ (cholinv(Σ) * μ, cholinv(Σ)))
+        @test all(mean_invcov(dist) .≈ (μ, inv(Σ)))
+        @test all(mean_precision(dist) .≈ (μ, inv(Σ)))
+        @test all(weightedmean_cov(dist) .≈ (inv(Σ) * μ, Σ))
+        @test all(weightedmean_invcov(dist) .≈ (inv(Σ) * μ, inv(Σ)))
+        @test all(weightedmean_precision(dist) .≈ (inv(Σ) * μ, inv(Σ)))
 
         @test length(dist) == 3
         @test entropy(dist) ≈ 5.361886000915401

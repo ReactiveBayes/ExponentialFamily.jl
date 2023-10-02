@@ -1,12 +1,9 @@
-using ExponentialFamily
+module ExponentialFamilyTests
+
+using ExponentialFamily, Distributions, FastCholesky
 using Test
 
 include("testutils.jl")
-
-# Helpers for tests
-
-union_types(x::Union) = (x.a, union_types(x.b)...)
-union_types(x::Type)  = (x,)
 
 @testset "ExponentialFamily" begin
     include("test_prod.jl")
@@ -50,4 +47,6 @@ union_types(x::Type)  = (x,)
     include("distributions/test_chi_squared.jl")
     # include("distributions/test_mv_normal_wishart.jl")
     include("distributions/test_normal_gamma.jl")
+end
+
 end

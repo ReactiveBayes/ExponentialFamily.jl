@@ -5,7 +5,7 @@ using Test, LinearAlgebra, ForwardDiff, Random, StableRNGs, SparseArrays
 
 include("../../testutils.jl")
 
-import ExponentialFamily: promote_variate_type, fastcholesky
+import ExponentialFamily: promote_variate_type
 
 # We need this extra function to ensure better derivatives with AD, it is slower than our implementation
 # but is more AD friendly
@@ -350,7 +350,7 @@ end
                     test_fisherinformation_against_jacobian = false
                 )
 
-                (η₁, η₂) = (cholinv(Σ) * mean(d), -cholinv(Σ) / 2)
+                (η₁, η₂) = (inv(Σ) * mean(d), -inv(Σ) / 2)
 
                 for x in [10randn(s) for _ in 1:4]
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
@@ -385,12 +385,11 @@ end
 
         fi_ef = fisherinformation(ef)
         # @test_broken isposdef(fi_ef)
-        # The `isposdef` check is not really reliable in Julia, here, instead
-        # we compute eigen values and additionally check that our `fastcholesky` inverse actually produces the correct inverse
+        # The `isposdef` check is not really reliable in Julia, here, instead we compute eigen values
         @test issymmetric(fi_ef) || (LowerTriangular(fi_ef) ≈ (UpperTriangular(fi_ef)'))
         @test isposdef(fi_ef) || all(>(0), eigvals(fi_ef))
 
-        fi_ef_inv = inv(fastcholesky(fi_ef))
+        fi_ef_inv = inv(fi_ef)
         @test (fi_ef_inv * fi_ef) ≈ Diagonal(ones(d + d^2)) rtol = 1e-2
 
         # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
