@@ -3,6 +3,8 @@ module NormalTest
 using ExponentialFamily, Distributions
 using Test, LinearAlgebra, ForwardDiff, Random, StableRNGs, SparseArrays
 
+import ExponentialFamily: dot3arg
+
 include("../../testutils.jl")
 
 import ExponentialFamily: promote_variate_type
@@ -12,7 +14,7 @@ import ExponentialFamily: promote_variate_type
 function getlogpartitionfortest(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance})
     return (η) -> begin
         weightedmean, minushalfprecision = unpack_parameters(MvNormalMeanCovariance, η)
-        return (dot(weightedmean, inv(-minushalfprecision), weightedmean) / 2 - logdet(-2 * minushalfprecision)) / 2
+        return (dot3arg(weightedmean, inv(-minushalfprecision), weightedmean) / 2 - logdet(-2 * minushalfprecision)) / 2
     end
 end
 
@@ -89,13 +91,15 @@ function check_basic_statistics(left::MultivariateNormalDistributionsFamily, rig
                 atol = 1e-12
             )
         )
-        @test all(
+        if !all(
             isapprox.(
                 ForwardDiff.hessian((x) -> logpdf(left, x), value),
                 ForwardDiff.hessian((x) -> logpdf(right, x), value),
                 atol = 1e-12
             )
         )
+            error(left, right)
+        end
     end
 
     # `MvNormal` is not defining some of these methods and we don't want to define them either, because of the type piracy

@@ -52,10 +52,10 @@ Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVector)
     μ = mean(dist)
-    for i in 1:length(r)
-        @inbounds r[i] = μ[i] - x[i]
+    @inbounds @simd for i in 1:length(r)
+        r[i] = μ[i] - x[i]
     end
-    return dot(r, invcov(dist), r) # x' * A * x
+    return dot3arg(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanPrecision{T}) where {T} = T

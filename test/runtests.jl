@@ -45,7 +45,7 @@ include("testutils.jl")
     include("distributions/test_weibull.jl")
     include("distributions/test_laplace.jl")
     include("distributions/test_chi_squared.jl")
-    # include("distributions/test_mv_normal_wishart.jl")
+    include("distributions/test_mv_normal_wishart.jl")
     include("distributions/test_normal_gamma.jl")
 end
 

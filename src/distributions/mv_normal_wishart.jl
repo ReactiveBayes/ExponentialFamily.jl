@@ -175,7 +175,7 @@ function getsufficientstatistics(::Type{MvNormalWishart})
             return S
         end, (z) -> begin
             (x, S) = z
-            return dot(x, S, x)
+            return dot3arg(x, S, x)
         end, (z) -> begin
             (_, S) = z
             return logdet(S)

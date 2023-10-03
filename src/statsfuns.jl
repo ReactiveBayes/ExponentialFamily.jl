@@ -2,6 +2,8 @@ using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
 using SpecialFunctions: gamma, loggamma
 
+import ForwardDiff
+
 """
     mirrorlog(x)
 
@@ -36,6 +38,28 @@ clamplog(x) = log(clamp(x, tiny, typemax(x)))
 Computes multivariate trigamma function .
 """
 mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)
+
+
+# We create a specialized 3-argument dot function, because the built-in Julia version is not auto-differentiable
+function dot3arg(x, A, y)
+    return dot(x, A, y)
+end
+function dot3arg(x::AbstractVector, A::AbstractMatrix, y::AbstractVector{D}) where {D <: ForwardDiff.Dual}
+    (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
+    T = typeof(dot(first(x), first(A), first(y)))
+    s = zero(T)
+    i₁ = first(eachindex(x))
+    x₁ = first(x)
+    @inbounds for j in eachindex(y)
+        yj = y[j]
+        temp = zero(adjoint(A[i₁, j]) * x₁)
+        @simd for i in eachindex(x)
+            temp += adjoint(A[i, j]) * x[i]
+        end
+        s += dot(temp, yj)
+    end
+    return s
+end
 
 function binomial_prod(n, p, x)
     try
