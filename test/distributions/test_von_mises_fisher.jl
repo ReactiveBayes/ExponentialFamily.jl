@@ -33,7 +33,7 @@ include("../testutils.jl")
             a = a_unnormalized ./ norm(a_unnormalized)
             @testset let d = VonMisesFisher(a, b)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_jacobian = false,
-                test_fisherinformation_properties = false,
+                    test_fisherinformation_properties = false
                 )
 
                 run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false, mappings = (
@@ -47,33 +47,30 @@ include("../testutils.jl")
                     @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x,))
                     @test @inferred(logpartition(ef)) ≈ log(besseli((len / 2) - 1, b)) - ((len / 2) - 1) * log(b)
                 end
-
             end
         end
-
     end
 
     @testset "prod" begin
         for strategy in (ClosedProd(), PreserveTypeLeftProd(), PreserveTypeRightProd(), PreserveTypeProd(Distribution))
             @test prod(strategy, VonMisesFisher([sin(30), cos(30)], 3.0), VonMisesFisher([sin(45), cos(45)], 4.0)) ≈
-                Base.convert(
+                  Base.convert(
                 Distribution,
                 prod(strategy, convert(ExponentialFamilyDistribution, VonMisesFisher([sin(30), cos(30)], 3.0)),
                     convert(ExponentialFamilyDistribution, VonMisesFisher([sin(45), cos(45)], 4.0)))
             )
             @test prod(strategy, VonMisesFisher([sin(15), cos(15)], 5.0), VonMisesFisher([cos(20), sin(20)], 2.0)) ≈
-                Base.convert(
+                  Base.convert(
                 Distribution,
-                prod(strategy,convert(ExponentialFamilyDistribution, VonMisesFisher([sin(15), cos(15)], 5.0)),
+                prod(strategy, convert(ExponentialFamilyDistribution, VonMisesFisher([sin(15), cos(15)], 5.0)),
                     convert(ExponentialFamilyDistribution, VonMisesFisher([cos(20), sin(20)], 2.0)))
             )
-
         end
     end
 
     @testset "prod with ExponentialFamilyDistribution" begin
-        for μleft in eachcol(10rand(4,4)), μright in eachcol(10rand(4,4)) , σleft in (2,3), σright in (2,3)
-            let left = VonMisesFisher(μleft/norm(μleft), σleft), right = VonMisesFisher(μright/norm(μright), σright)
+        for μleft in eachcol(10rand(4, 4)), μright in eachcol(10rand(4, 4)), σleft in (2, 3), σright in (2, 3)
+            let left = VonMisesFisher(μleft / norm(μleft), σleft), right = VonMisesFisher(μright / norm(μright), σright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
                     right,

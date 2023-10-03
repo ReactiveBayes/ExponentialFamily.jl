@@ -9,7 +9,7 @@ import ExponentialFamily:
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
 
-function Base.isapprox(a::Tuple, b::Tuple; kwargs...) 
+function Base.isapprox(a::Tuple, b::Tuple; kwargs...)
     return length(a) === length(b) && all((d) -> isapprox(d[1], d[2]; kwargs...), zip(a, b))
 end
 

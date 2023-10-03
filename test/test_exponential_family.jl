@@ -108,8 +108,6 @@ ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromE
         @test all(@inferred(pack_parameters(test)) .== collect(Iterators.flatten(test)))
     end
 
-
-
     for _ in 1:10
         to_test_random = [
             rand(Float64),

@@ -92,12 +92,12 @@ include("../testutils.jl")
     end
 
     @testset "prod with ExponentialFamilyDistribution: different location parameter" begin
-        @testset for locationleft in (0.0, 1.0), sleft in 0.1:0.1:0.4, locationright in (2.0,3.0), sright in 1.1:0.1:1.3
+        @testset for locationleft in (0.0, 1.0), sleft in 0.1:0.1:0.4, locationright in (2.0, 3.0), sright in 1.1:0.1:1.3
             let left = Laplace(locationleft, sleft), right = Laplace(locationright, sright)
                 ef_left = convert(ExponentialFamilyDistribution, left)
                 ef_right = convert(ExponentialFamilyDistribution, right)
-                ef_prod = prod(PreserveTypeProd(ExponentialFamilyDistribution),ef_left,ef_right)
-                @test first(hquadrature(x -> pdf(ef_prod, tan(x * pi / 2)) * (pi / 2) * (1 / cos(x * pi / 2)^2), -1.0, 1.0)) ≈ 1.0 atol=1e-6
+                ef_prod = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
+                @test first(hquadrature(x -> pdf(ef_prod, tan(x * pi / 2)) * (pi / 2) * (1 / cos(x * pi / 2)^2), -1.0, 1.0)) ≈ 1.0 atol = 1e-6
             end
         end
     end

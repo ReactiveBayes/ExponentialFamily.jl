@@ -69,35 +69,37 @@ function Base.prod(
     (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
     (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
     if isapprox(conditioner_left, conditioner_right)
-        return error("""
-        To compute a generic product of two `ExponentialFamilyDistribution{Laplace}` distribution in their natural parametrization with same conditioners (location parameter).
-        To compute a generic product in the natural parameters space, convert both distributions to the 
-        `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution{Laplace})`
-        prod strategy.
-    """)
+        return error(
+            """
+    To compute a generic product of two `ExponentialFamilyDistribution{Laplace}` distribution in their natural parametrization with same conditioners (location parameter).
+    To compute a generic product in the natural parameters space, convert both distributions to the 
+    `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution{Laplace})`
+    prod strategy.
+"""
+        )
     else
         basemeasure = (x) -> one(x)
         vec_conditioner = [conditioner_left, conditioner_right]
-        vec_params = vcat(η_left,η_right)
+        vec_params = vcat(η_left, η_right)
         sorted_conditioner = sort(vec_conditioner)
         naturalparameters = vec_params[indexin(sorted_conditioner, vec_conditioner)]
-        μlarge = getindex(sorted_conditioner,2)
+        μlarge = getindex(sorted_conditioner, 2)
         μsmall = first(sorted_conditioner)
         sufficientstatistics = (x -> abs(x - μsmall), x -> abs(x - μlarge))
         supp = RealInterval{Float64}(-Inf, Inf)
         ### η is in one-to-one relation with sorted conditioner
         function logpartition(η)
-            A = exp(μsmall*η[1] + μlarge*η[2])
-            B = exp(μlarge*η[2] - μsmall*η[1])
-            C = exp(-μsmall*η[1] - μlarge*η[2])
+            A = exp(μsmall * η[1] + μlarge * η[2])
+            B = exp(μlarge * η[2] - μsmall * η[1])
+            C = exp(-μsmall * η[1] - μlarge * η[2])
 
-            term1 = (A/(-η[1]-η[2]))*exp(μsmall*(-η[1] - η[2]))
-            term2 = (B/(η[1] - η[2]))*(exp(μlarge*(η[1]-η[2])) - exp(μsmall*(η[1]-η[2])))
-            term3 = (C/(-η[1]-η[2]))*exp(μlarge*(η[1]+η[2]))
+            term1 = (A / (-η[1] - η[2])) * exp(μsmall * (-η[1] - η[2]))
+            term2 = (B / (η[1] - η[2])) * (exp(μlarge * (η[1] - η[2])) - exp(μsmall * (η[1] - η[2])))
+            term3 = (C / (-η[1] - η[2])) * exp(μlarge * (η[1] + η[2]))
 
-            return log(term1+term2+term3)
+            return log(term1 + term2 + term3)
         end
-        attributes = ExponentialFamilyDistributionAttributes(basemeasure,sufficientstatistics,logpartition,supp)
+        attributes = ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, supp)
         return ExponentialFamilyDistribution(
             Univariate,
             naturalparameters,

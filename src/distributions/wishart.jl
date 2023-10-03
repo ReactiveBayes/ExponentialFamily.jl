@@ -98,13 +98,12 @@ function Base.convert(::Type{WishartFast}, dist::Wishart)
     return WishartFast(ν, cholinv(S))
 end
 
-function Distributions.rand(rng::AbstractRNG,  sampleable::WishartFast{T}) where {T}
+function Distributions.rand(rng::AbstractRNG, sampleable::WishartFast{T}) where {T}
     container = Matrix{Float64}(undef, size(sampleable))
     rand!(rng, sampleable, container)
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T},x::AbstractMatrix) where {T}
-    
+function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T}, x::AbstractMatrix) where {T}
     (df, S) = Distributions.params(sampleable)
     L = Distributions.PDMats.chol_lower(fastcholesky(S))
 
@@ -119,7 +118,6 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T},x::Abs
     axes2 = axes(A, 2)
     r     = rank(S)
 
-    
     if singular
         randn!(rng, view(A, :, view(axes2, 1:r)))
         fill!(view(A, :, view(axes2, (r+1):lastindex(axes2))), zero(eltype(A)))
@@ -130,10 +128,8 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T},x::Abs
     lmul!(L, A)
 
     mul!(x, A, A', 1, 0)
-    
 
     return x
-
 end
 
 function Distributions.rand(rng::AbstractRNG, sampleable::WishartFast{T}, n::Int) where {T}
@@ -178,8 +174,8 @@ function logpdf_sample_optimized(dist::Wishart)
     return (optimized_dist, optimized_dist)
 end
 
-function Distributions._logpdf(d::WishartFast, X::AbstractMatrix{<:Real}) 
-    dist = convert(Wishart,d)
+function Distributions._logpdf(d::WishartFast, X::AbstractMatrix{<:Real})
+    dist = convert(Wishart, d)
     return Distributions.logkernel(dist, X) + dist.logc0
 end
 
@@ -211,34 +207,34 @@ function insupport(ef::ExponentialFamilyDistribution{WishartFast}, x::Matrix)
     return size(getindex(unpack_parameters(ef), 2)) == size(x) && isposdef(x)
 end
 
-function isproper(::NaturalParametersSpace, ::Type{WishartFast}, η, conditioner) 
+function isproper(::NaturalParametersSpace, ::Type{WishartFast}, η, conditioner)
     if !isnothing(conditioner) || length(η) <= 4 || any(isnan, η) || any(isinf, η)
         return false
     end
 
-    (η1,η2) = unpack_parameters(WishartFast, η)
+    (η1, η2) = unpack_parameters(WishartFast, η)
     # return  η1 > 0 && isposdef(-η2)
-    return  η1 > 0
+    return η1 > 0
 end
-function isproper(::MeanParametersSpace, ::Type{WishartFast}, θ, conditioner) 
+function isproper(::MeanParametersSpace, ::Type{WishartFast}, θ, conditioner)
     if !isnothing(conditioner) || length(θ) <= 4 || any(isnan, θ) || any(isinf, θ)
         return false
     end
 
-    (θ1,θ2) = unpack_parameters(WishartFast, θ)
+    (θ1, θ2) = unpack_parameters(WishartFast, θ)
 
-    return  θ1 > size(θ2,1) - one(θ1) 
+    return θ1 > size(θ2, 1) - one(θ1)
     # return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
 end
 
 function (::MeanToNatural{WishartFast})(tuple_of_θ::Tuple{Any, Any})
     (ν, invS) = tuple_of_θ
-    return ((ν - size(invS,2)- one(ν))/2, -invS/2)
+    return ((ν - size(invS, 2) - one(ν)) / 2, -invS / 2)
 end
 
 function (::NaturalToMean{WishartFast})(tuple_of_η::Tuple{Any, Any})
     (η1, η2) = tuple_of_η
-    return (2 * η1 + first(size(η2)) + 1,  -2*η2)
+    return (2 * η1 + first(size(η2)) + 1, -2 * η2)
 end
 
 function unpack_parameters(::Type{WishartFast}, packed)
@@ -256,45 +252,46 @@ getbasemeasure(::Type{WishartFast}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{WishartFast}) = (chollogdet, identity)
 
 getlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
-    η1, η2 = unpack_parameters(WishartFast,η)
+    η1, η2 = unpack_parameters(WishartFast, η)
     p = first(size(η2))
     term1 = -(η1 + (p + one(η1)) / 2) * (logdet(-η2))
     term2 = logmvgamma(p, η1 + (p + one(η1)) / 2)
     return term1 + term2
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
-    η1, η2 = unpack_parameters(WishartFast,η)
-    p = first(size(η2))
-    invη2 = cholinv(η2)
-    vinvη2 = -view(invη2, :)
-    fimatrix = Matrix{Float64}(undef,p^2+1,p^2+1)
-    @inbounds fimatrix[1,1] = mvtrigamma(p, (η1 + (p + one(η1)) / 2))
-    @inbounds fimatrix[1,2:end] = vinvη2
-    @inbounds fimatrix[2:end,1 ] = vinvη2
-    @inbounds fimatrix[2:end,2:end] = (η1+(p+one(η1))/2)*kron(invη2, invη2)
-    return fimatrix
-end
+getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
+    (η) -> begin
+        η1, η2 = unpack_parameters(WishartFast, η)
+        p = first(size(η2))
+        invη2 = cholinv(η2)
+        vinvη2 = -view(invη2, :)
+        fimatrix = Matrix{Float64}(undef, p^2 + 1, p^2 + 1)
+        @inbounds fimatrix[1, 1] = mvtrigamma(p, (η1 + (p + one(η1)) / 2))
+        @inbounds fimatrix[1, 2:end] = vinvη2
+        @inbounds fimatrix[2:end, 1] = vinvη2
+        @inbounds fimatrix[2:end, 2:end] = (η1 + (p + one(η1)) / 2) * kron(invη2, invη2)
+        return fimatrix
+    end
 
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     (ν, invS) = unpack_parameters(WishartFast, θ)
     p = first(size(invS))
-    return (ν/2)*(p*log(2.0) - logdet(invS)) + mvtrigamma(p,ν/2) 
+    return (ν / 2) * (p * log(2.0) - logdet(invS)) + mvtrigamma(p, ν / 2)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
-    (df, invS ) = unpack_parameters(WishartFast, θ)
+    (df, invS) = unpack_parameters(WishartFast, θ)
     S = cholinv(invS)
     p = first(size(S))
-    vinvS = 1/2*vec(S)'
-    fimatrix = Matrix{Float64}(undef,p^2+1,p^2+1)
+    vinvS = 1 / 2 * vec(S)'
+    fimatrix = Matrix{Float64}(undef, p^2 + 1, p^2 + 1)
 
-    @inbounds fimatrix[1,1] = mvtrigamma(p, df / 2)/4
-    @inbounds fimatrix[1,2:end] = vinvS
-    @inbounds fimatrix[2:end,1 ] = vinvS
-    @inbounds fimatrix[2:end,2:end] = (df/2)*kron(S, S)
+    @inbounds fimatrix[1, 1] = mvtrigamma(p, df / 2) / 4
+    @inbounds fimatrix[1, 2:end] = vinvS
+    @inbounds fimatrix[2:end, 1] = vinvS
+    @inbounds fimatrix[2:end, 2:end] = (df / 2) * kron(S, S)
 
     return fimatrix
 end

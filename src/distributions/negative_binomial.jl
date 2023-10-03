@@ -31,7 +31,7 @@ function Base.prod(
 
     naturalparameters = η_left + η_right
 
-    sufficientstatistics = (identity, )
+    sufficientstatistics = (identity,)
 
     function basemeasure(x)
         p_left, p_right, p_x = promote(rleft, rright, x)
@@ -43,7 +43,7 @@ function Base.prod(
     end
 
     supp = NaturalNumbers()
-    attributes = ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics,logpartition,supp)
+    attributes = ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, supp)
     return ExponentialFamilyDistribution(
         Univariate,
         naturalparameters,
@@ -76,7 +76,7 @@ end
 
 function separate_conditioner(::Type{NegativeBinomial}, params)
     r, p = params
-    return ((p,),r)
+    return ((p,), r)
 end
 
 function join_conditioner(::Type{NegativeBinomial}, cparams, conditioner)
@@ -87,7 +87,7 @@ end
 
 function (::MeanToNatural{NegativeBinomial})(tuple_of_θ::Tuple{Any}, _)
     (p,) = tuple_of_θ
-    
+
     return (log(one(p) - p),)
 end
 
@@ -102,12 +102,12 @@ end
 
 isbasemeasureconstant(::Type{NegativeBinomial}) = NonConstantBaseMeasure()
 
-getbasemeasure(::Type{NegativeBinomial}, conditioner) = (x) ->  binomial(Int(x + conditioner - 1), x)
+getbasemeasure(::Type{NegativeBinomial}, conditioner) = (x) -> binomial(Int(x + conditioner - 1), x)
 getsufficientstatistics(::Type{NegativeBinomial}, conditioner) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{NegativeBinomial}, conditioner) = (η) -> begin
     (η1,) = unpack_parameters(NegativeBinomial, η)
-    return -conditioner*log(one(η1) - exp(η1))
+    return -conditioner * log(one(η1) - exp(η1))
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{NegativeBinomial}, r) = (η) -> begin
@@ -118,11 +118,11 @@ end
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
-    (p, ) = unpack_parameters(NegativeBinomial, θ)
-    return -conditioner*log(one(p)-p)
+    (p,) = unpack_parameters(NegativeBinomial, θ)
+    return -conditioner * log(one(p) - p)
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{NegativeBinomial}, r) = (θ) -> begin
-    (p, ) = unpack_parameters(NegativeBinomial, θ)
-    return  SA[r / (p^2 * (one(p) - p));;]
+    (p,) = unpack_parameters(NegativeBinomial, θ)
+    return SA[r / (p^2 * (one(p) - p));;]
 end

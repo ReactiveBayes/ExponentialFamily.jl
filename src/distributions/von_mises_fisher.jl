@@ -3,7 +3,7 @@ using Distributions
 import Distributions: VonMisesFisher
 import SpecialFunctions: besseli, gamma
 import LinearAlgebra: norm
-import FillArrays: Eye 
+import FillArrays: Eye
 import HCubature: hquadrature
 using HypergeometricFunctions
 
@@ -12,12 +12,12 @@ vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 default_prod_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = PreserveTypeProd(Distribution)
 
 function Base.prod(::PreserveTypeProd{Distribution}, left::VonMisesFisher, right::VonMisesFisher)
-    (μleft,κleft) = params(left)
+    (μleft, κleft) = params(left)
     (μright, κright) = params(right)
-    weightedsum = μleft*κleft + μright*κright
+    weightedsum = μleft * κleft + μright * κright
     κ = norm(weightedsum)
     μ = weightedsum / κ
-    return VonMisesFisher(μ,κ)
+    return VonMisesFisher(μ, κ)
 end
 
 function Distributions.mean(dist::VonMisesFisher)
@@ -30,8 +30,8 @@ end
 function Distributions.cov(dist::VonMisesFisher)
     (μ, κ) = Distributions.params(dist)
     ν = length(μ)
-    rb =  besseli(ν/2, κ)*inv(besseli((ν/2) - 1, κ))
-    return (rb*inv(κ))*Eye{Float64}(ν) + (besseli((ν/2) + 1, κ)/besseli((ν/2) - 1, κ) - rb^2)*μ*μ' 
+    rb = besseli(ν / 2, κ) * inv(besseli((ν / 2) - 1, κ))
+    return (rb * inv(κ)) * Eye{Float64}(ν) + (besseli((ν / 2) + 1, κ) / besseli((ν / 2) - 1, κ) - rb^2) * μ * μ'
 end
 
 Distributions.var(dist::VonMisesFisher) = diag(cov(dist))

@@ -9,7 +9,8 @@ using SpecialFunctions
 using ForwardDiff
 using StableRNGs
 
-import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters,
+import ExponentialFamily:
+    ExponentialFamilyDistribution, getnaturalparameters,
     getsufficientstatistics, getlogpartition, getbasemeasure, fisherinformation, getconditioner
 import ExponentialFamily: basemeasure, isproper
 
@@ -23,18 +24,18 @@ include("../testutils.jl")
     @testset "ExponentialFamilyDistribution{Weibull}" begin
         @testset for shape in (1.0, 2.0, 3.0), scale in (0.25, 0.5, 2.0)
             @testset let d = Weibull(shape, scale)
-                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false,test_fisherinformation_against_jacobian = false)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_jacobian = false)
                 η1 = first(getnaturalparameters(ef))
                 run_test_fisherinformation_against_jacobian(
-                            d;
-                            assume_no_allocations = true,
-                            mappings = (
-                                MeanParametersSpace() => NaturalParametersSpace()
-                            )
-                        )
+                    d;
+                    assume_no_allocations = true,
+                    mappings = (
+                        MeanParametersSpace() => NaturalParametersSpace()
+                    )
+                )
                 for x in scale:1.0:scale+3.0
                     @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
-                    @test @inferred(basemeasure(ef, x)) === x^(shape-1)
+                    @test @inferred(basemeasure(ef, x)) === x^(shape - 1)
                     @test @inferred(sufficientstatistics(ef, x)) === (x^shape,)
                     @test @inferred(logpartition(ef)) ≈ -log(-η1) - log(shape)
                 end
@@ -42,11 +43,12 @@ include("../testutils.jl")
         end
 
         @testset "fisher information by natural to mean jacobian" begin
-            @testset for k in (1,3), λ in (0.1, 4.0) 
+            @testset for k in (1, 3), λ in (0.1, 4.0)
                 η = -(1 / λ)^k
                 transformation(η) = [k, (-1 / η[1])^(1 / k)]
-                J = ForwardDiff.jacobian(transformation, [η]) 
-                @test first(J' * getfisherinformation(MeanParametersSpace(),Weibull,k)(λ) * J) ≈ first(getfisherinformation(NaturalParametersSpace(),Weibull,k)(η)) atol = 1e-8
+                J = ForwardDiff.jacobian(transformation, [η])
+                @test first(J' * getfisherinformation(MeanParametersSpace(), Weibull, k)(λ) * J) ≈
+                      first(getfisherinformation(NaturalParametersSpace(), Weibull, k)(η)) atol = 1e-8
             end
         end
 
@@ -72,7 +74,7 @@ include("../testutils.jl")
             ef_right = convert(Distribution, ExponentialFamilyDistribution(Weibull, [-η^2], k))
             res = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
             @test getbasemeasure(res)(x) == x^(2 * (k - 1))
-            @test sufficientstatistics(res, x) == (x^k, )
+            @test sufficientstatistics(res, x) == (x^k,)
             @test getlogpartition(res)(η - η^2) ==
                   log(abs(η - η^2)^(1 / k)) + loggamma(2 - 1 / k) - 2 * log(abs(η - η^2)) - log(k)
             @test getnaturalparameters(res) ≈ [η - η^2]
@@ -93,7 +95,5 @@ include("../testutils.jl")
                   1.0
         end
     end
-
-
 end
 end

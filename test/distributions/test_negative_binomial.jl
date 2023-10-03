@@ -3,7 +3,7 @@ module NegativeBinomialTest
 using Test
 using ExponentialFamily
 using Distributions
-import ExponentialFamily: ExponentialFamilyDistribution,getnaturalparameters
+import ExponentialFamily: ExponentialFamilyDistribution, getnaturalparameters
 
 include("../testutils.jl")
 
@@ -25,14 +25,14 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{NegativeBinomial}" begin
-        @testset for p in (0.1,0.4), r in (2,3,4)
+        @testset for p in (0.1, 0.4), r in (2, 3, 4)
             @testset let d = NegativeBinomial(r, p)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
                 for x in 2:4
                     @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === binomial(Int(x + r - 1), x)
                     @test @inferred(sufficientstatistics(ef, x)) === (x,)
-                    @test @inferred(logpartition(ef)) ≈ -r*log(1 - exp(getnaturalparameters(ef)[1]))
+                    @test @inferred(logpartition(ef)) ≈ -r * log(1 - exp(getnaturalparameters(ef)[1]))
                 end
             end
         end
@@ -63,12 +63,10 @@ include("../testutils.jl")
                 efright = convert(ExponentialFamilyDistribution, right)
                 η_right = first(getnaturalparameters(efright))
                 prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
-           
+
                 @test sum(pdf(prod_dist, x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-5
             end
         end
     end
-
-
 end
 end
