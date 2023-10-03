@@ -84,7 +84,7 @@ function Distributions.mean(::typeof(cholinv), distribution::Wishart)
     return mean(InverseWishart(ν, cholinv(S)))
 end
 
-vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* Eye(dims))
+vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* Array(Eye(dims)))
 
 Base.ndims(dist::Wishart) = size(dist, 1)
 

@@ -192,7 +192,7 @@ function Distributions._logpdf(d::InverseWishartFast, X::AbstractMatrix{<:Real})
     return Distributions.logkernel(dist, X) + dist.logc0
 end
 
-vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* Eye(dims))
+vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* Array(Eye(dims)))
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 

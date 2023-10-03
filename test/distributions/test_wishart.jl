@@ -77,16 +77,16 @@ import StatsFuns: logmvgamma
     end
 
     @testset "ExponentialFamilyDistribution{WishartFast}" begin
-        @testset for dim in (3), invS in rand(Wishart(10, Eye(dim)), 2)
+        @testset for dim in (3), invS in rand(Wishart(10, Array(Eye(dim))), 2)
             ν = dim + 2
             @testset let (d = WishartFast(ν, invS))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
                 (η1, η2) = unpack_parameters(WishartFast, getnaturalparameters(ef))
 
-                for x in Eye(dim)
+                for x in (Eye(dim), Diagonal(ones(dim)), Array(Eye(dim)))
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
-                    @test @inferred(sufficientstatistics(ef, x)) === (logdet(x), x)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (logdet(x), x))
                     @test @inferred(logpartition(ef)) ≈ -(η1 + (dim + 1) / 2) * logdet(-η2) + logmvgamma(dim, η1 + (dim + 1) / 2)
                 end
             end
@@ -113,7 +113,7 @@ import StatsFuns: logmvgamma
     end
 
     @testset "prod with ExponentialFamilyDistribution{Wishart}" begin
-        for Sleft in rand(Wishart(10, Eye(2)), 2), Sright in rand(Wishart(10, Eye(2)), 2), νright in (6, 7), νleft in (4, 5)
+        for Sleft in rand(Wishart(10, Array(Eye(2))), 2), Sright in rand(Wishart(10, Array(Eye(2))), 2), νright in (6, 7), νleft in (4, 5)
             let left = WishartFast(νleft, Sleft), right = WishartFast(νright, Sright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
