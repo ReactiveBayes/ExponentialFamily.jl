@@ -27,13 +27,13 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{InverseWishartFast}" begin
-        @testset for dim in (3), S in rand(InverseWishart(10, diageye(dim)), 2)
+        @testset for dim in (3), S in rand(InverseWishart(10, Eye(dim)), 2)
             ν = dim + 4
             @testset let (d = InverseWishartFast(ν, S))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
                 (η1, η2) = unpack_parameters(InverseWishartFast, getnaturalparameters(ef))
 
-                for x in diageye(dim)
+                for x in Eye(dim)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
                     @test @inferred(sufficientstatistics(ef, x)) === (logdet(x), inv(x))
@@ -75,7 +75,7 @@ include("../testutils.jl")
         @test typeof(d1) <: InverseWishart
         ν1, S1 = params(d1)
         @test ν1 == dims + 2
-        @test S1 == tiny .* diageye(dims)
+        @test S1 == tiny .* Eye(dims)
 
         @test mean(d1) == S1
 
@@ -85,7 +85,7 @@ include("../testutils.jl")
         @test typeof(d2) <: InverseWishart
         ν2, S2 = params(d2)
         @test ν2 == dims + 2
-        @test S2 == tiny .* diageye(dims)
+        @test S2 == tiny .* Eye(dims)
 
         @test mean(d2) == S2
     end
@@ -97,7 +97,7 @@ include("../testutils.jl")
                 [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
             )
         ) ≈ 10.111427477184794
-        @test entropy(InverseWishartFast(5.0, diageye(4))) ≈ 8.939145914882221
+        @test entropy(InverseWishartFast(5.0, Eye(4))) ≈ 8.939145914882221
     end
 
     @testset "convert" begin
@@ -116,7 +116,7 @@ include("../testutils.jl")
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(logdet, InverseWishartFast(ν, S)), mean(logdet.(samples)), atol = 1e-2)
 
-        ν, S = 4.0, diageye(3)
+        ν, S = 4.0, Eye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(logdet, InverseWishartFast(ν, S)), mean(logdet.(samples)), atol = 1e-2)
     end
@@ -127,29 +127,29 @@ include("../testutils.jl")
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
 
-        ν, S = 4.0, diageye(3)
+        ν, S = 4.0, Eye(3)
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
     end
 
     @testset "prod" begin
-        d1 = InverseWishartFast(3.0, diageye(2))
+        d1 = InverseWishartFast(3.0, Eye(2))
         d2 = InverseWishartFast(-3.0, [0.6423504672769315 0.9203141654948761; 0.9203141654948761 1.528137747462735])
 
         @test prod(PreserveTypeProd(Distribution), d1, d2) ≈
               InverseWishartFast(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
 
-        d1 = InverseWishartFast(4.0, diageye(3))
-        d2 = InverseWishartFast(-2.0, diageye(3))
+        d1 = InverseWishartFast(4.0, Eye(3))
+        d2 = InverseWishartFast(-2.0, Eye(3))
 
-        @test prod(PreserveTypeProd(Distribution), d1, d2) ≈ InverseWishartFast(6.0, 2 * diageye(3))
+        @test prod(PreserveTypeProd(Distribution), d1, d2) ≈ InverseWishartFast(6.0, 2 * Eye(3))
     end
 
     @testset "rand" begin
         for d in (2, 3, 4, 5)
             v = rand() + d
             L = rand(d, d)
-            S = L' * L + d * diageye(d)
+            S = L' * L + d * Eye(d)
             cS = copy(S)
             container1 = [zeros(d, d) for _ in 1:100]
             container2 = [zeros(d, d) for _ in 1:100]
@@ -171,11 +171,11 @@ include("../testutils.jl")
         for d in (2, 3, 4, 5), n in (10, 20)
             v = rand() + d
             L = rand(d, d)
-            S = L' * L + d * diageye(d)
+            S = L' * L + d * Eye(d)
 
             samples = map(1:n) do _
                 L_sample = rand(d, d)
-                return L_sample' * L_sample + d * diageye(d)
+                return L_sample' * L_sample + d * Eye(d)
             end
 
             result = zeros(n)
@@ -185,7 +185,7 @@ include("../testutils.jl")
     end
 
     @testset "prod with ExponentialFamilyDistribution{InverseWishartFast}" begin
-        for Sleft in rand(InverseWishart(10, diageye(2)), 2), Sright in rand(InverseWishart(10, diageye(2)), 2), νright in (6, 7), νleft in (4, 5)
+        for Sleft in rand(InverseWishart(10, Eye(2)), 2), Sright in rand(InverseWishart(10, Eye(2)), 2), νright in (6, 7), νleft in (4, 5)
             let left = InverseWishartFast(νleft, Sleft), right = InverseWishartFast(νright, Sright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,

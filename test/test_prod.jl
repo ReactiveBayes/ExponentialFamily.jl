@@ -5,6 +5,7 @@ using ExponentialFamily
 using Random
 using LinearAlgebra
 using Distributions
+using FillArrays
 
 import ExponentialFamily:
     ExponentialFamilyDistribution, prod, default_prod_rule, ProductOf, LinearizedProductOf, getleft, getright

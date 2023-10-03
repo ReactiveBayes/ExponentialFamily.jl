@@ -1,7 +1,7 @@
 module ExponentialFamilyTests
 
 using ExponentialFamily, Distributions, FastCholesky
-using Test
+using Test, FillArrays
 
 include("testutils.jl")
 

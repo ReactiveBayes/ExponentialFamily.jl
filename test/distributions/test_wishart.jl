@@ -37,7 +37,7 @@ import StatsFuns: logmvgamma
 
     @testset "mean(::cholinv)" begin
         L    = rand(2, 2)
-        S    = L * L' + diageye(2)
+        S    = L * L' + Eye(2)
         invS = inv(S)
         @test mean(inv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
     end
@@ -55,7 +55,7 @@ import StatsFuns: logmvgamma
         for d in (2, 3, 4, 5)
             v = rand() + d
             L = rand(d, d)
-            S = L' * L + d * diageye(d)
+            S = L' * L + d * Eye(d)
             invS = inv(S)
             cS = copy(S)
             cinvS = copy(invS)
@@ -77,13 +77,13 @@ import StatsFuns: logmvgamma
     end
 
     @testset "ExponentialFamilyDistribution{WishartFast}" begin
-        @testset for dim in (3), invS in rand(Wishart(10, diageye(dim)), 2)
+        @testset for dim in (3), invS in rand(Wishart(10, Eye(dim)), 2)
             ν = dim + 2
             @testset let (d = WishartFast(ν, invS))
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
                 (η1, η2) = unpack_parameters(WishartFast, getnaturalparameters(ef))
 
-                for x in diageye(dim)
+                for x in Eye(dim)
                     @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                     @test @inferred(basemeasure(ef, x)) === 1.0
                     @test @inferred(sufficientstatistics(ef, x)) === (logdet(x), x)
@@ -113,7 +113,7 @@ import StatsFuns: logmvgamma
     end
 
     @testset "prod with ExponentialFamilyDistribution{Wishart}" begin
-        for Sleft in rand(Wishart(10, diageye(2)), 2), Sright in rand(Wishart(10, diageye(2)), 2), νright in (6, 7), νleft in (4, 5)
+        for Sleft in rand(Wishart(10, Eye(2)), 2), Sright in rand(Wishart(10, Eye(2)), 2), νright in (6, 7), νleft in (4, 5)
             let left = WishartFast(νleft, Sleft), right = WishartFast(νright, Sright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,

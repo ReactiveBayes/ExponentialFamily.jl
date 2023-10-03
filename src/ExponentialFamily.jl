@@ -35,8 +35,6 @@ include("prod.jl")
 include("distributions.jl")
 include("exponential_family.jl")
 
-include("helpers/algebra/common.jl")
-
 include("distributions/bernoulli.jl")
 include("distributions/categorical.jl")
 include("distributions/gamma_family/gamma_shape_rate.jl")

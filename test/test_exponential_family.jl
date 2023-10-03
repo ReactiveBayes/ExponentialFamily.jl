@@ -1,6 +1,6 @@
 module KnownExponentialFamilyDistributionTest
 
-using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools, Random
+using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools, Random, FillArrays
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure

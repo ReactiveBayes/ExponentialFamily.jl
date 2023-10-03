@@ -6,6 +6,7 @@ using Distributions
 using StaticArrays
 using StableRNGs
 using LinearAlgebra
+using FillArrays
 
 import Distributions: variate_form, value_support
 import ExponentialFamily: deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype,
@@ -35,8 +36,8 @@ import ExponentialFamily: FactorizedJoint
 
         # Add `Matrixvariate` distributions
         for T in Types, n in (2, 3)
-            push!(distributions, InverseWishart(5one(T), diageye(T, n)))
-            push!(distributions, Wishart(5one(T), diageye(T, n)))
+            push!(distributions, InverseWishart(5one(T), Array{T}(Eye(n))))
+            push!(distributions, Wishart(5one(T), Array{T}(Eye(n))))
         end
 
         return filter((dist) -> variate_form(typeof(dist)) <: V, distributions)
@@ -125,7 +126,7 @@ import ExponentialFamily: FactorizedJoint
         vmultipliers = [
             (NormalMeanPrecision(),),
             (NormalMeanVariance(), Beta(1.0, 1.0)),
-            (Normal(), Gamma(), MvNormal(zeros(2), diageye(2)))
+            (Normal(), Gamma(), MvNormal(zeros(2), Eye(2)))
         ]
 
         @testset "getindex" begin

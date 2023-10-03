@@ -1,5 +1,5 @@
 using ExponentialFamily, Distributions, LinearAlgebra, TinyHugeNumbers
-using Test, ForwardDiff, Random, StatsFuns, StableRNGs
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
 
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, getconditioner, compute_logscale, logpartition, basemeasure, insupport,

@@ -8,7 +8,6 @@ makedocs(
     modules  = [ExponentialFamily],
     clean    = true,
     sitename = "ExponentialFamily.jl",
-    warnonly = Documenter.except(:doctest, :eval_block, :example_block, :meta_block, :parse_error, :setup_block),
     pages    = [
     "Home"      => "index.md",
     "Interface" => "interface.md",

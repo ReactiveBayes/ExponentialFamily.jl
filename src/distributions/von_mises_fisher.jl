@@ -99,7 +99,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) ->
     df1  = (1 / 4) * (bessel4 + 2 * bessel1 + bessel3) * delu
     df2  = ((-1 / 2) * (bessel2 + bessel0) / bessel1^2) * delu
     df3  = (-(p / 2 - 1) / u^2) * delu
-    df4  = diageye(p) / u - η * η' / u^3
+    df4  = Eye(p) / u - η * η' / u^3
 
     return f4 * df1 * f2 + f4 * f1 * df2 + f1 * f2 * df4 - f4 * df3 - f3 * df4
 end
@@ -127,6 +127,6 @@ getfisherinformation(::MeanParametersSpace, ::Type{VonMisesFisher}) =
             (p / 2 - 1) / k^2 + (1 / 4) * (bessel3 + 2 * bessel1 + bessel4) / bessel1 -
             (1 / 4) * (bessel2 + bessel0)^2 / bessel1^2
         Ap = bessel0 / bessel1
-        tmp2 = (1 - Ap * p / k - Ap^2) * μ * μ' + inv(k) * Ap * diageye(p)
+        tmp2 = (1 - Ap * p / k - Ap^2) * μ * μ' + inv(k) * Ap * Eye(p)
         return [k^2*tmp2 -Ap*μ; -Ap*μ' tmp]
     end

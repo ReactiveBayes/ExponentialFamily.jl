@@ -678,7 +678,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
         (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
         invη2 = -cholinv(-η₂)
         n = size(η₁, 1)
-        ident = diageye(n)
+        ident = Eye(n)
         Iₙ = PermutationMatrix(1, 1)
         offdiag =
             1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *

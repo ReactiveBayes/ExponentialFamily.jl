@@ -26,7 +26,7 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{MvNormalWishart}" begin
-        @testset for dim in (3), invS in rand(Wishart(10, diageye(dim)), 4)
+        @testset for dim in (3), invS in rand(Wishart(10, Eye(dim)), 4)
             ν = dim + 2
             @testset let (d = MvNormalWishart(rand(dim), invS, rand(), ν))
                 ef = test_exponentialfamily_interface(
@@ -54,7 +54,7 @@ include("../testutils.jl")
     end
 
     @testset "prod with ExponentialFamilyDistribution{MvNormalWishart}" begin
-        for Sleft in rand(Wishart(10, diageye(2)), 2), Sright in rand(Wishart(10, diageye(2)), 2), νright in (6, 7), νleft in (4, 5)
+        for Sleft in rand(Wishart(10, Eye(2)), 2), Sright in rand(Wishart(10, Eye(2)), 2), νright in (6, 7), νleft in (4, 5)
             let left = MvNormalWishart(rand(2), Sleft, rand(), νleft), right = MvNormalWishart(rand(2), Sright, rand(), νright)
                 @test test_generic_simple_exponentialfamily_product(
                     left,
