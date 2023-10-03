@@ -9,7 +9,7 @@ import Base: prod, prod!, show, showerror
     ClosedProd
 
 `ClosedProd` is one of the strategies for `prod` function. This strategy uses either `PreserveTypeProd(Distribution)` or `PreserveTypeProd(ExponentialFamilyDistribution)`, 
-    depending on the types of the input arguments. For example, if both inputs are of type `Distribution`, then `ClosedProd` would fallback to `PreserveTypeProd(Distribution)`.
+depending on the types of the input arguments. For example, if both inputs are of type `Distribution`, then `ClosedProd` would fallback to `PreserveTypeProd(Distribution)`.
 
 See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`GenericProd`](@ref)
 """
@@ -22,14 +22,28 @@ struct ClosedProd end
 There are multiple strategies for prod function, e.g. `ClosedProd`, `GenericProd` or `PreserveTypeProd`.
 
 # Examples:
+
 ```jldoctest
-using ExponentialFamily
+julia> product = prod(PreserveTypeProd(Distribution), NormalMeanVariance(-1.0, 1.0), NormalMeanVariance(1.0, 1.0))
+NormalWeightedMeanPrecision{Float64}(xi=0.0, w=2.0)
 
-product = prod(ClosedProd(), NormalMeanVariance(-1.0, 1.0), NormalMeanVariance(1.0, 1.0))
+julia> mean(product), var(product)
+(0.0, 0.5)
+```
 
-mean(product), var(product)
+```jldoctest
+julia> product = prod(PreserveTypeProd(NormalMeanVariance), NormalMeanVariance(-1.0, 1.0), NormalMeanVariance(1.0, 1.0))
+NormalMeanVariance{Float64}(μ=0.0, v=0.5)
 
-# output
+julia> mean(product), var(product)
+(0.0, 0.5)
+```
+
+```jldoctest
+julia> product = prod(PreserveTypeProd(ExponentialFamilyDistribution), NormalMeanVariance(-1.0, 1.0), NormalMeanVariance(1.0, 1.0))
+ExponentialFamily(NormalMeanVariance)
+
+julia> mean(product), var(product)
 (0.0, 0.5)
 ```
 
@@ -48,6 +62,14 @@ prod(::ClosedProd, ::Missing, ::Missing) = missing
 By default it uses the strategy from `default_prod_rule` and converts the output to the prespecified type but can be overwritten 
 for some distributions for better performance.
 
+```jldoctest
+julia> product = prod(PreserveTypeProd(NormalMeanVariance), NormalMeanVariance(-1.0, 1.0), NormalMeanVariance(1.0, 1.0))
+NormalMeanVariance{Float64}(μ=0.0, v=0.5)
+
+julia> mean(product), var(product)
+(0.0, 0.5)
+```
+
 See also: [`prod`](@ref), [`ClosedProd`](@ref), [`PreserveTypeLeftProd`](@ref), [`PreserveTypeRightProd`](@ref), [`GenericProd`](@ref)
 """
 struct PreserveTypeProd{T} end
@@ -65,6 +87,14 @@ prod(::PreserveTypeProd, ::Missing, ::Missing) = missing
 
 An alias for the `PreserveTypeProd(L)` where `L` is the type of the `left` argument of the `prod` function.
 
+```jldoctest
+julia> product = prod(PreserveTypeLeftProd(), NormalMeanVariance(-1.0, 1.0), NormalMeanPrecision(1.0, 1.0))
+NormalMeanVariance{Float64}(μ=0.0, v=0.5)
+
+julia> mean(product), var(product)
+(0.0, 0.5)
+```
+
 See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeRightProd`](@ref), [`GenericProd`](@ref)
 """
 struct PreserveTypeLeftProd end
@@ -75,6 +105,14 @@ prod(::PreserveTypeLeftProd, left::L, right) where {L} = prod(PreserveTypeProd(L
     PreserveTypeRightProd
 
 An alias for the `PreserveTypeProd(R)` where `R` is the type of the `right` argument of the `prod` function.    
+
+```jldoctest
+julia> product = prod(PreserveTypeRightProd(), NormalMeanVariance(-1.0, 1.0), NormalMeanPrecision(1.0, 1.0))
+NormalMeanPrecision{Float64}(μ=0.0, w=2.0)
+
+julia> mean(product), var(product)
+(0.0, 0.5)
+```
 
 See also: [`prod`](@ref), [`PreserveTypeProd`](@ref), [`PreserveTypeLeftProd`](@ref), [`GenericProd`](@ref)
 """

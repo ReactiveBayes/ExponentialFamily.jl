@@ -18,7 +18,7 @@ import Base: map
 Return the transformation function that maps the parameters in the mean parameters space to the natural parameters space for a distribution of type `T`.
 The transformation function is of signature `(params_in_mean_space, [ conditioner ]) -> params_in_natural_space`.
 
-See also: [`NaturalToMean`](@ref)
+See also: [`NaturalToMean`](@ref), [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref), [`getmapping`](@ref)
 """
 struct MeanToNatural{T} end
 
@@ -35,7 +35,7 @@ end
 Return the transformation function that maps the parameters in the natural parameters space to the mean parameters space for a distribution of type `T`.
 The transformation function is of signature `(params_in_natural_space, [ conditioner ]) -> params_in_mean_space`.
 
-See also: [`MeanToNatural`](@ref)
+See also: [`MeanToNatural`](@ref), [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref), [`getmapping`](@ref)
 """
 struct NaturalToMean{T} end
 
@@ -54,7 +54,7 @@ Some functions (such as `logpartition` or `fisherinformation`) accept an additio
 Use `map(MeanParametersSpace() => NaturalParametersSpace(), T, parameters, conditioner)` to map the `parameters` and the `conditioner` of a distribution of type `T`
 from the mean parametrization to the corresponding natural parametrization.
 
-See also: [`NaturalParametersSpace`](@ref)
+See also: [`NaturalParametersSpace`](@ref), [`getmapping`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
 """
 struct MeanParametersSpace end
 
@@ -66,7 +66,7 @@ Some functions (such as `logpartition` or `fisherinformation`) accept an additio
 Use `map(NaturalParametersSpace() => MeanParametersSpace(), T, parameters, conditioner)` to map the `parameters` and the `conditioner` of a distribution of type `T`
 from the natural parametrization to the corresponding mean parametrization.
 
-See also: [`MeanParametersSpace`](@ref)
+See also: [`MeanParametersSpace`](@ref), [`getmapping`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
 """
 struct NaturalParametersSpace end
 
@@ -137,7 +137,7 @@ A structure to represent the attributes of an exponential family member.
 - `logpartition::L`: The log-partition (cumulant) of the exponential family member.
 - `support::P`: The support of the exponential family member.
 
-See also: [`ExponentialFamilyDistribution`](@ref)
+See also: [`ExponentialFamilyDistribution`](@ref), [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
 struct ExponentialFamilyDistributionAttributes{B, S, L, P}
     basemeasure::B
@@ -160,6 +160,19 @@ value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where
 
 `ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
 Type `T` can be either a distribution type (e.g. from the `Distributions.jl` package) or a variate type (e.g. `Univariate`).
+In the context of the package, exponential family distributions are represented in the form:
+
+```math
+pₓ(x ∣ η) = h(x) ⋅ exp[ η ⋅ T(x) - A(η) ]
+```
+
+Here:
+- `h(x)` is the base measure.
+- `T(x)` represents sufficient statistics.
+- `A(η)` stands for the log partition.
+- `η` denotes the natural parameters.
+
+For a given member of exponential family: 
 
 - `getattributes` returns either `nothing` or `ExponentialFamilyDistributionAttributes`.
 - `getbasemeasure` returns a positive a valued function. 
@@ -170,6 +183,22 @@ Type `T` can be either a distribution type (e.g. from the `Distributions.jl` pac
 
 !!! note
     The `attributes` can be `nothing`. In which case the package will try to derive the corresponding attributes from the type `T`.
+
+```jldoctest
+julia> ef = convert(ExponentialFamilyDistribution, Bernoulli(0.5))
+ExponentialFamily(Bernoulli)
+
+julia> getsufficientstatistics(ef)
+(identity,)
+```
+
+```jldoctest
+julia> ef = convert(ExponentialFamilyDistribution, Laplace(1.0, 0.5))
+ExponentialFamily(Laplace, conditioned on 1.0)
+
+julia> logpdf(ef, 4.0)
+-6.0
+```
 
 See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
@@ -201,6 +230,15 @@ function ExponentialFamilyDistribution(
         error("Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
     end
     return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
+end
+
+function Base.show(io::IO, ef::ExponentialFamilyDistribution{T}) where {T}
+    print(io, "ExponentialFamily(", T)
+    conditioner = getconditioner(ef)
+    if !isnothing(conditioner)
+        print(io, ", conditioned on ", conditioner)
+    end
+    print(io, ")")
 end
 
 """
@@ -491,6 +529,20 @@ flatten_parameters(::Type{T}, params::Tuple) where {T} = flatten_parameters(para
 
 This function returns the parameters of a distribution of type `T` in a vectorized (packed) form. For most of the distributions the packed versions are of the 
 same structure in any parameters space. For some distributions, however, it is necessary to indicate the `space` of the packaged parameters.
+
+```jldoctest
+julia> ExponentialFamily.pack_parameters((1, [2.0, 3.0], [4.0 5.0 6.0; 7.0 8.0 9.0]))
+9-element Vector{Float64}:
+ 1.0
+ 2.0
+ 3.0
+ 4.0
+ 7.0
+ 5.0
+ 8.0
+ 6.0
+ 9.0
+```
 """
 function pack_parameters end
 
@@ -513,19 +565,19 @@ end
 
 function __pack_parameters_fast!(container::Vector, offset::Int, current::Int, lengths, front, tail::Tuple)
     N = lengths[current]
-    __pack_copyto!(container, offset, front, 1, N)
+    __pack_copyto!(container, offset, front, N)
     return __pack_parameters_fast!(container, offset + N, current + 1, lengths, Base.first(tail), Base.tail(tail))
 end
 
 function __pack_parameters_fast!(container::Vector, i::Int, k::Int, lengths, front, ::Tuple{})
     N = lengths[k]
-    __pack_copyto!(container, i, front, 1, N)
+    __pack_copyto!(container, i, front, N)
     return container
 end
 
-__pack_copyto!(dest, doffset, source, soffset, n) = copyto!(dest, doffset, source, soffset, n)
-__pack_copyto!(dest::Array, doffset, source::Array, soffset, n) = unsafe_copyto!(dest, doffset, source, soffset, n)
-__pack_copyto!(dest::Array, doffset, source::Number, soffset, n) = @inbounds(dest[doffset] = source)
+__pack_copyto!(dest, doffset, source, n) = copyto!(dest, doffset, source, firstindex(source), n)
+__pack_copyto!(dest::Array, doffset, source::Array, n) = unsafe_copyto!(dest, doffset, source, firstindex(source), n)
+__pack_copyto!(dest::Array, doffset, source::Number, _) = @inbounds(dest[doffset] = source)
 
 """
     unpack_parameters([ space ], ::Type{T}, parameters)
