@@ -1,7 +1,7 @@
 name = "ExponentialFamily"
 uuid = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
-authors = ["Ismail Senoz"]
-version = "0.1.0"
+authors = ["Ismail Senoz <i.senoz@tue.nl>, Dmitry Bagaev <d.v.bagaev@tue.nl>, Mykola Lukashchuk <m.lukashchuk@tue.nl>"]
+version = "1.0.0"
 
 [deps]
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
