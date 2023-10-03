@@ -13,6 +13,8 @@ prod(::ClosedProd, left, right)
 ExponentialFamily.default_prod_rule
 ```
 
+### [Product strategies](@id library-prod-strategies)
+
 For certain distributions, it's possible to compute the product using a straightforward mathematical equation, yielding a closed-form solution. 
 However, for some distributions, finding a closed-form solution might not be feasible. 
 Various strategies ensure consistent behavior in these situations. 
@@ -36,8 +38,6 @@ These strategies offer flexibility and reliability when working with different t
 These are the distributions that are not included in the Distributions.jl package.
 
 ```@docs
-ExponentialFamily.Contingency
-ExponentialFamily.ContinuousBernoulli
 ExponentialFamily.MatrixDirichlet
 ExponentialFamily.GammaShapeRate
 ExponentialFamily.GammaShapeScale
@@ -52,6 +52,8 @@ ExponentialFamily.WishartFast
 ExponentialFamily.InverseWishartFast
 ExponentialFamily.JointGaussian
 ExponentialFamily.NormalGamma
+ExponentialFamily.MvNormalWishart
+ExponentialFamily.FactorizedJoint
 ```
 
 ## [Promotion type utilities](@id library-promotion-utilities)

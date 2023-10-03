@@ -11,7 +11,7 @@ which yields a joint probability distribution. Calculating the product of two pr
 p(X\vert D) \propto \underbrace{p(X)p(D|X)}_{\mathrm{product~of~two~distributions}}
 ```
 
-To perform this operation, the ExponentialFamily library employs the `prod` function. This function takes a product [strategy](@ref api-todo-replace-strategies) as its first argument. For instance:
+To perform this operation, the ExponentialFamily library employs the `prod` function. This function takes a product [strategy](@ref library-prod-strategies) as its first argument. For instance:
 
 ```@example prod-example
 using ExponentialFamily, Distributions

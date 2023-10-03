@@ -8,9 +8,9 @@ It is beneficial to become familiar with the [Wikipedia article](https://en.wiki
 
 In the context of the package, exponential family distributions are represented in the form:
 
-$$
+```math
 f_X(x\mid\eta) = h(x) \cdot \exp\left[ \eta \cdot T(x) - A(\eta) \right]
-$$
+```
 
 Here:
 - `h(x)` is the base measure.
