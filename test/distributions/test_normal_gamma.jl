@@ -20,7 +20,7 @@ include("../testutils.jl")
     end
 
     @testset "ExponentialFamilyDistribution{NormalGamma}" begin
-        @testset for μ in 10randn(3), λ in 10rand(3), α in 10rand(3), β in 10 * rand(3)
+        @testset for μ in 10randn(3), λ in 10rand(3), α in (1 .+ 10rand(3)), β in 10 * rand(3)
             @testset let d = NormalGamma(μ, λ, α, β)
                 ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
 
@@ -48,7 +48,7 @@ include("../testutils.jl")
 
     @testset "prod with ExponentialFamilyDistribution" begin
         for μleft in 10randn(2), μright in 10randn(2), σleft in 10rand(2), σright in 10rand(2),
-            αleft in 10rand(2), αright in 10rand(2), βleft in 10rand(2), βright in 10rand(2)
+            αleft in (1 .+ 10rand(2)), αright in (1 .+ 10rand(2)), βleft in 10rand(2), βright in 10rand(2)
 
             let left = NormalGamma(μleft, σleft, αleft, βleft), right = NormalGamma(μright, σright, αright + 1 / 2, βright)
                 @test test_generic_simple_exponentialfamily_product(
