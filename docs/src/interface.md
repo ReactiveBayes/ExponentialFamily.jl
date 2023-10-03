@@ -15,8 +15,8 @@ f_X(x\mid\eta) = h(x) \cdot \exp\left[ \eta \cdot T(x) - A(\eta) \right]
 Here:
 - `h(x)` is the base measure.
 - `T(x)` represents sufficient statistics.
-- `A(\theta)` stands for the log partition.
-- `\eta` denotes the natural parameters.
+- `A(η)` stands for the log partition.
+- `η` denotes the natural parameters.
 
 In the following discussion we also use the following convention
 
