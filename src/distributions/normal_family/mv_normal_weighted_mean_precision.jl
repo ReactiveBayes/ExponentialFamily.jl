@@ -61,7 +61,7 @@ Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) = 
 function Distributions.sqmahal!(r, dist::MvNormalWeightedMeanPrecision, x::AbstractVector)
     μ = mean(dist)
     @inbounds @simd for i in 1:length(r)
-         r[i] = μ[i] - x[i]
+        r[i] = μ[i] - x[i]
     end
     return dot3arg(r, invcov(dist), r) # x' * A * x
 end

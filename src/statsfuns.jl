@@ -39,7 +39,6 @@ Computes multivariate trigamma function .
 """
 mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)
 
-
 # We create a specialized 3-argument dot function, because the built-in Julia version is not auto-differentiable
 function dot3arg(x, A, y)
     return dot(x, A, y)
