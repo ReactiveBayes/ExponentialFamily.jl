@@ -174,8 +174,8 @@ include("testutils.jl")
     @testset "Testset helpers" begin
         @test key_to_filename(filename_to_key("distributions/test_normal_mean_variance.jl")) == "distributions/test_normal_mean_variance.jl"
         @test filename_to_key(key_to_filename("distributions:normal_mean_variance")) == "distributions:normal_mean_variance"
-        @test key_to_filename(filename_to_key("test_message.jl")) == "test_message.jl"
-        @test filename_to_key(key_to_filename("message")) == "message"
+        @test key_to_filename(filename_to_key("test_prod.jl")) == "test_prod.jl"
+        @test filename_to_key(key_to_filename("prod")) == "prod"
     end
 
     addtests(testrunner, "test_prod.jl")
