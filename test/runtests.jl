@@ -33,15 +33,6 @@ function flush_workerio(ident)
     end
 end
 
-# Unregistered GraphPPL, do not commit this two lines, but use them to test ReactiveMP locally
-# ENV["JULIA_PKG_USE_CLI_GIT"] = true
-# import Pkg; Pkg.rm("GraphPPL"); Pkg.add(Pkg.PackageSpec(name="GraphPPL", rev="master"));
-
-# DocMeta.setdocmeta!(ReactiveMP, :DocTestSetup, :(using ReactiveMP, Distributions); recursive=true)
-
-# Example usage of a reduced testset
-# julia --project --color=yes -e 'import Pkg; Pkg.test(test_args = [ "distributions:normal_mean_variance" ])'
-
 # Makes it hard to use your computer if Julia occupies all cpus, so we max at 4
 # GitHub actions has 2 cores in most of the cases 
 addprocs(min(Sys.CPU_THREADS, 4))
