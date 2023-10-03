@@ -6,71 +6,87 @@ using Distributions
 using ExponentialFamily
 using ForwardDiff
 using StableRNGs
+using HCubature
 import ExponentialFamily:
     ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, getconditioner
 
+include("../testutils.jl")
+
 @testset "Pareto" begin
-    @testset "Stats methods" begin
-        d = Pareto(3.0)
-        @test Pareto() == Pareto(1.0)
-        @test typeof(vague(Pareto)) <: Pareto
-        @test vague(Pareto) == Pareto(1e12)
-        @test shape(d) == 3.0
-        @test scale(d) == 1.0
-        @test mean(d) == 1.5
-        @test var(d) == 0.75
-    end
-
-    @testset "isproper" begin
-        @test isproper(ExponentialFamilyDistribution(Pareto, [-2.0], 1)) == true
-        @test_throws AssertionError ExponentialFamilyDistribution(Pareto, [-2.0], 2.1)
-        @test_throws MethodError ExponentialFamilyDistribution(Pareto, [1.3])
-    end
-
-    @testset "prod" begin
-        @test prod(ClosedProd(), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
-        @test prod(ClosedProd(), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
-        @test prod(ClosedProd(), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
-        @test prod(ClosedProd(), Pareto(3), Pareto(2)) == Pareto(6.0)
-    end
-
-    @testset "natural parameters related" begin
-        @test Distributions.logpdf(Pareto(10.0, 1.0), 1.0) ≈
-              Distributions.logpdf(convert(ExponentialFamilyDistribution, Pareto(10.0, 1.0)), 1.0)
-        @test Distributions.logpdf(Pareto(5.0, 1.0), 1.0) ≈
-              Distributions.logpdf(convert(ExponentialFamilyDistribution, Pareto(5.0, 1.0)), 1.0)
-    end
-
-    @testset "fisher information" begin
-        rng = StableRNG(42)
-        n_samples = 1000
-        for λ in 1:10, u in 1:10
-            dist = Pareto(λ, u)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
-
-            samples = rand(rng, Pareto(λ, u), n_samples)
-            transformation(η) = [-1 - η[1], getconditioner(ef)]
-            J = ForwardDiff.jacobian(transformation, η)
-            totalHessian = zeros(2, 2)
-            # for sample in samples
-            #     totalHessian -= ForwardDiff.hessian((params) -> logpdf.(Pareto(params[1], params[2]), sample), [λ, u])
-            # end
-            # @test fisherinformation(dist) ≈ totalHessian / n_samples atol = 1e-8
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef)
-            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Pareto, η, getconditioner(ef)))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
+    @testset "ExponentialFamilyDistribution{Pareto}" begin
+        @testset for shape in (1.0, 2.0, 3.0), scale in (0.25, 0.5, 2.0)
+            @testset let d = Pareto(shape, scale)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+                η1 = -shape - 1
+                for x in scale:1.0:scale+3.0
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
+                    @test @inferred(sufficientstatistics(ef, x)) === (log(x),)
+                    @test @inferred(logpartition(ef)) ≈ log(scale^(one(η1) + η1) / (-one(η1) - η1))
+                end
+            end
         end
+
+        for space in (MeanParametersSpace(), NaturalParametersSpace())
+            @test !isproper(space, Pareto, [Inf], 1.0)
+            @test !isproper(space, Pareto, [1.0], Inf)
+            @test !isproper(space, Pareto, [NaN], 1.0)
+            @test !isproper(space, Pareto, [1.0], NaN)
+            @test !isproper(space, Pareto, [0.5, 0.5], 1.0)
+
+            # Conditioner is required
+            @test_throws Exception isproper(space, Pareto, [0.5], [0.5, 0.5])
+            @test_throws Exception isproper(space, Pareto, [1.0], nothing)
+            @test_throws Exception isproper(space, Pareto, [1.0], nothing)
+        end
+
+        @test_throws Exception convert(ExponentialFamilyDistribution, Pareto(Inf, Inf))
     end
 
-    @testset "ExponentialFamilyDistribution mean, var" begin
-        for λ in 1:10, u in 1:10
-            dist = Pareto(λ, u)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
+    @testset "prod with Distributions" begin
+        @test prod(PreserveTypeProd(Pareto), Pareto(0.5), Pareto(0.6)) == Pareto(2.1)
+        @test prod(PreserveTypeProd(Pareto), Pareto(0.3), Pareto(0.8)) == Pareto(2.1)
+        @test prod(PreserveTypeProd(Pareto), Pareto(0.5), Pareto(0.5)) == Pareto(2.0)
+        @test prod(PreserveTypeProd(Pareto), Pareto(3), Pareto(2)) == Pareto(6.0)
+    end
+
+    @testset "prod with ExponentialFamilyDistribution{Pareto}" begin
+        for conditioner in (0.01, 1.0), alphaleft in 0.1:0.1:0.9, alpharight in 0.1:0.1:0.9
+            let left = Pareto(alphaleft, conditioner), right = Pareto(alpharight, conditioner)
+                @test test_generic_simple_exponentialfamily_product(
+                    left,
+                    right,
+                    strategies = (PreserveTypeProd(ExponentialFamilyDistribution{Pareto}), GenericProd())
+                )
+            end
+        end
+
+        # Different conditioner parameters cannot be compute a closed prod with the same type
+        @test_throws Exception prod(
+            PreserveTypeProd(ExponentialFamilyDistribution{Pareto}),
+            convert(ExponentialFamilyDistribution, Pareto(0.0, 0.54)),
+            convert(ExponentialFamilyDistribution, Pareto(0.01, 0.5))
+        )
+        @test_throws Exception prod(
+            PreserveTypeProd(ExponentialFamilyDistribution{Pareto}),
+            convert(ExponentialFamilyDistribution, Pareto(1.0, 0.56)),
+            convert(ExponentialFamilyDistribution, Pareto(2.0, 0.5))
+        )
+    end
+
+    @testset "prod with different conditioner" begin
+        for conditioner_left in (2, 3), conditioner_right in (4, 5), alphaleft in 0.1:0.1:0.3, alpharight in 0.1:0.1:0.3
+            let left = Pareto(alphaleft, conditioner_left), right = Pareto(alpharight, conditioner_right)
+                ef_left = convert(ExponentialFamilyDistribution, left)
+                ef_right = convert(ExponentialFamilyDistribution, right)
+                prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
+                @test getnaturalparameters(prod_dist) ≈ getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
+                @test getsupport(prod_dist).lb == max(conditioner_left, conditioner_right)
+                @test sufficientstatistics(prod_dist, (max(conditioner_left, conditioner_right) + 1)) === (log(max(conditioner_left, conditioner_right) + 1),)
+                @test first(
+                    hquadrature(x -> pdf(prod_dist, tan(x * pi / 2)) * (pi / 2) * (1 / cos(x * pi / 2)^2), (2 / pi) * atan(getsupport(prod_dist).lb), 1.0)
+                ) ≈ 1.0
+            end
         end
     end
 end

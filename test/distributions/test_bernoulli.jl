@@ -1,14 +1,9 @@
 module BernoulliTest
 
-using Test
-using ExponentialFamily
-using Distributions
-using ForwardDiff
-using Random
-using StatsFuns
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, compute_logscale, logpartition, basemeasure,
-    sufficientstatistics, fisherinformation, pack_naturalparameters, unpack_naturalparameters
+using ExponentialFamily, Distributions
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs
+
+include("../testutils.jl")
 
 @testset "Bernoulli" begin
 
@@ -39,66 +34,80 @@ import ExponentialFamily:
         @test compute_logscale(Categorical([1.0, 0.0, 0.0]), Bernoulli(0.5), Categorical([1.0, 0, 0])) ≈ log(0.5)
     end
 
-    @testset "natural parameters related" begin
-        @test logpartition(convert(ExponentialFamilyDistribution, Bernoulli(0.5))) ≈ log(2)
-        b_99 = Bernoulli(0.99)
-        for i in 1:9
-            b = Bernoulli(i / 10.0)
-            bnp = convert(ExponentialFamilyDistribution, b)
-            @test convert(Distribution, bnp) ≈ b
-            @test logpdf(bnp, 1) ≈ logpdf(b, 1)
-            @test logpdf(bnp, 0) ≈ logpdf(b, 0)
+    @testset "ExponentialFamilyDistribution{Bernoulli}" begin
+        @testset for p in 0.1:0.1:0.9
+            @testset let d = Bernoulli(p)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+                η₁ = logit(p)
 
-            @test convert(ExponentialFamilyDistribution, b) ==
-                  ExponentialFamilyDistribution(Bernoulli, [logit(i / 10.0)])
-        end
-        @test isproper(ExponentialFamilyDistribution(Bernoulli, [10])) === true
-        bernoullief = ExponentialFamilyDistribution(Bernoulli, [log(0.1)])
-        @test sufficientstatistics(bernoullief, 1) == [1]
-        @test sufficientstatistics(bernoullief, 0) == [0]
-    end
+                for x in (0, 1)
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
+                    @test @inferred(sufficientstatistics(ef, x)) === (x,)
+                    @test @inferred(logpartition(ef)) ≈ log(1 + exp(η₁))
+                end
 
-    @testset "prod with ExponentialFamilyDistribution" begin
-        for pleft in 0.01:0.01:0.99
-            ηleft  = [log(pleft / (1 - pleft))]
-            efleft = ExponentialFamilyDistribution(Bernoulli, ηleft)
-            for pright in 0.01:0.01:0.99
-                ηright = [log(pright / (1 - pright))]
-                efright = ExponentialFamilyDistribution(Bernoulli, ηright)
-                @test prod(ClosedProd(), efleft, efright) ==
-                      ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
-                @test prod(efleft, efright) == ExponentialFamilyDistribution(Bernoulli, ηleft + ηright)
+                @test !@inferred(insupport(ef, -0.5))
+                @test !@inferred(insupport(ef, 0.5))
+
+                # Not in the support
+                @test_throws Exception logpdf(ef, 0.5)
+                @test_throws Exception logpdf(ef, -0.5)
             end
         end
+
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), Bernoulli, [-1])
+        @test !isproper(MeanParametersSpace(), Bernoulli, [0.5, 0.5])
+        @test !isproper(NaturalParametersSpace(), Bernoulli, [0.5, 0.5])
+        @test !isproper(NaturalParametersSpace(), Bernoulli, [Inf])
+
+        @test_throws Exception convert(ExponentialFamilyDistribution, Bernoulli(1.0)) # We cannot convert from `1.0`, `logit` function returns `Inf`
     end
 
     @testset "prod with Distribution" begin
-        @test prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5)) ≈ Bernoulli(0.5)
-        @test prod(ClosedProd(), Bernoulli(0.1), Bernoulli(0.6)) ≈ Bernoulli(0.14285714285714285)
-        @test prod(ClosedProd(), Bernoulli(0.78), Bernoulli(0.05)) ≈ Bernoulli(0.1572580645161291)
-    end
-
-    transformation(logprobability) = exp(logprobability[1]) / (one(Float64) + exp(logprobability[1]))
-    @testset "fisherinformation" begin
-        for p in 0.1:0.1:0.9
-            dist = Bernoulli(p)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
-
-            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Bernoulli, η))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-            J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test @inferred(prod(strategy, Bernoulli(0.5), Bernoulli(0.5))) ≈ Bernoulli(0.5)
+            @test @inferred(prod(strategy, Bernoulli(0.1), Bernoulli(0.6))) ≈ Bernoulli(0.14285714285714285)
+            @test @inferred(prod(strategy, Bernoulli(0.78), Bernoulli(0.05))) ≈ Bernoulli(0.1572580645161291)
         end
+
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            # Test symmetric case
+            @test @inferred(prod(strategy, Bernoulli(0.5), Categorical([0.5, 0.5]))) ≈ Categorical([0.5, 0.5])
+            @test @inferred(prod(strategy, Categorical([0.5, 0.5]), Bernoulli(0.5))) ≈ Categorical([0.5, 0.5])
+        end
+
+        @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(PreserveTypeProd(Distribution), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
     end
 
-    @testset "ExponentialFamilyDistribution mean var" begin
-        for p in 0.1:0.1:0.9
-            dist = Bernoulli(p)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
+    @testset "Bernoulli × Categorical" begin
+        @test prod(ClosedProd(), Bernoulli(0.5), Categorical([0.5, 0.5])) ≈
+              Categorical([0.5, 0.5])
+        @test prod(ClosedProd(), Bernoulli(0.1), Categorical(0.4, 0.6)) ≈
+              Categorical([1 - 0.14285714285714285, 0.14285714285714285])
+        @test prod(ClosedProd(), Bernoulli(0.78), Categorical([0.95, 0.05])) ≈
+              Categorical([1 - 0.1572580645161291, 0.1572580645161291])
+        @test prod(ClosedProd(), Bernoulli(0.5), Categorical([0.3, 0.3, 0.4])) ≈
+              Categorical([0.5, 0.5, 0])
+        @test prod(ClosedProd(), Bernoulli(0.5), Categorical([1.0])) ≈
+              Categorical([1.0, 0])
+    end
+
+    @testset "prod with ExponentialFamilyDistribution" for pleft in 0.1:0.1:0.9, pright in 0.1:0.1:0.9
+        let left = Bernoulli(pleft), right = Bernoulli(pright)
+            @test test_generic_simple_exponentialfamily_product(
+                left,
+                right,
+                strategies = (
+                    ClosedProd(),
+                    GenericProd(),
+                    PreserveTypeProd(ExponentialFamilyDistribution),
+                    PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
+                )
+            )
         end
     end
 end

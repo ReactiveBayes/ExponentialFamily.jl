@@ -36,6 +36,7 @@ InverseWishartFast(ν::Integer, S::AbstractMatrix{Real}) = InverseWishartFast(fl
 Distributions.params(dist::InverseWishartFast) = (dist.ν, dist.S)
 Distributions.mean(dist::InverseWishartFast)   = mean(convert(InverseWishart, dist))
 Distributions.var(dist::InverseWishartFast)    = var(convert(InverseWishart, dist))
+Distributions.std(dist::InverseWishartFast)    = map(sqrt, var(convert(InverseWishart, dist)))
 Distributions.cov(dist::InverseWishartFast)    = cov(convert(InverseWishart, dist))
 Distributions.mode(dist::InverseWishartFast)   = mode(convert(InverseWishart, dist))
 
@@ -75,6 +76,41 @@ end
 function Distributions.mean(::typeof(cholinv), dist::InverseWishartFast)
     ν, S = params(dist)
     return mean(Wishart(ν, cholinv(S)))
+end
+
+function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartFast{T}) where {T}
+    container = Matrix{Float64}(undef, size(sampleable))
+    rand!(rng, sampleable, container)
+end
+
+function Distributions.rand!(rng::AbstractRNG, sampleable::InverseWishartFast{T}, x::AbstractMatrix) where {T}
+    (df, S⁻¹) = Distributions.params(sampleable)##Why is the inverse here?
+    S = cholinv(S⁻¹)
+    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+
+    p = size(S, 1)
+    singular = df <= p - 1
+    if singular
+        isinteger(df) || throw(ArgumentError("df of a singular Wishart distribution must be an integer (got $df)"))
+    end
+
+    A     = similar(S)
+    l     = length(S)
+    axes2 = axes(A, 2)
+    r     = rank(S)
+
+    if singular
+        randn!(rng, view(A, :, view(axes2, 1:r)))
+        fill!(view(A, :, view(axes2, (r+1):lastindex(axes2))), zero(eltype(A)))
+    else
+        Distributions._wishart_genA!(rng, A, df)
+    end
+    # Distributions.unwhiten!(S, A)
+    lmul!(L, A)
+
+    mul!(x, A, A', 1, 0)
+
+    return x
 end
 
 function Distributions.rand(rng::AbstractRNG, sampleable::InverseWishartFast{T}, n::Int) where {T}
@@ -151,7 +187,12 @@ function Distributions.pdf!(
     return out
 end
 
-vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* diageye(dims))
+function Distributions._logpdf(d::InverseWishartFast, X::AbstractMatrix{<:Real})
+    dist = convert(InverseWishart, d)
+    return Distributions.logkernel(dist, X) + dist.logc0
+end
+
+vague(::Type{<:InverseWishart}, dims::Integer) = InverseWishart(dims + 2, tiny .* Array(Eye(dims)))
 
 Base.ndims(dist::InverseWishart) = size(dist, 1)
 
@@ -169,9 +210,9 @@ end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `InverseWishartFast` messages as they are significantly faster in creation
-closed_prod_rule(::Type{<:InverseWishartFast}, ::Type{<:InverseWishartFast}) = ClosedProd()
+default_prod_rule(::Type{<:InverseWishartFast}, ::Type{<:InverseWishartFast}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::InverseWishartFast, right::InverseWishartFast)
+function Base.prod(::PreserveTypeProd{Distribution}, left::InverseWishartFast, right::InverseWishartFast)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two InverseWishart distributions of different sizes"
 
     d = size(left, 1)
@@ -186,85 +227,95 @@ function Base.prod(::ClosedProd, left::InverseWishartFast, right::InverseWishart
     return InverseWishartFast(df, V)
 end
 
-function pack_naturalparameters(dist::Union{InverseWishartFast, InverseWishart})
-    dof, scale = params(dist)
-    p = first(size(scale))
+# Natural parametrization
 
-    return vcat(-(dof + p + 1) / 2, vec(-scale / 2))
+function insupport(ef::ExponentialFamilyDistribution{InverseWishartFast}, x::Matrix)
+    return size(getindex(unpack_parameters(ef), 2)) == size(x) && isposdef(x)
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
-    η = getnaturalparameters(ef)
-    len = length(η)
+function isproper(::NaturalParametersSpace, ::Type{InverseWishartFast}, η, conditioner)
+    if !isnothing(conditioner) || length(η) <= 4 || any(isnan, η) || any(isinf, η)
+        return false
+    end
+
+    (η1, η2) = unpack_parameters(InverseWishartFast, η)
+    # return  η1 > 0 && isposdef(-η2)
+    return η1 < 0
+end
+function isproper(::MeanParametersSpace, ::Type{InverseWishartFast}, θ, conditioner)
+    if !isnothing(conditioner) || length(θ) <= 4 || any(isnan, θ) || any(isinf, θ)
+        return false
+    end
+
+    (θ1, θ2) = unpack_parameters(InverseWishartFast, θ)
+
+    return θ1 > size(θ2, 1) - one(θ1)
+    # return  θ1 > size(θ2,1) - one(θ1) && isposdef(θ2)
+end
+
+function (::MeanToNatural{InverseWishartFast})(tuple_of_θ::Tuple{Any, Any})
+    (ν, S) = tuple_of_θ
+    return (-(ν + size(S, 2) + one(ν)) / 2, -S / 2)
+end
+
+function (::NaturalToMean{InverseWishartFast})(tuple_of_η::Tuple{Any, Any})
+    (η1, η2) = tuple_of_η
+    return (-2 * η1 - first(size(η2)) - 1, -2 * η2)
+end
+
+function unpack_parameters(::Type{InverseWishartFast}, packed)
+    len = length(packed)
     n = Int64(isqrt(len - 1))
-    @inbounds η1 = η[1]
-    @inbounds η2 = reshape(view(η, 2:len), n, n)
+    @inbounds η1 = packed[1]
+    @inbounds η2 = reshape(view(packed, 2:len), n, n)
 
-    return η1, η2
+    return (η1, η2)
 end
 
-check_valid_natural(::Type{<:Union{InverseWishartFast, InverseWishart}}, params) = length(params) >= 5
+isbasemeasureconstant(::Type{InverseWishartFast}) = ConstantBaseMeasure()
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::Union{InverseWishartFast, InverseWishart}) =
-    ExponentialFamilyDistribution(InverseWishartFast, pack_naturalparameters(dist))
+getbasemeasure(::Type{InverseWishartFast}) = (x) -> one(Float64)
+getsufficientstatistics(::Type{InverseWishartFast}) = (chollogdet, cholinv)
 
-function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{<:InverseWishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
-    p = first(size(η2))
-    return InverseWishart(-(2 * η1 + p + 1), -2 * η2)
-end
-
-function logpartition(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
+getlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
+    η1, η2 = unpack_parameters(InverseWishartFast, η)
     p = first(size(η2))
     term1 = (η1 + (p + 1) / 2) * logdet(-η2)
     term2 = logmvgamma(p, -(η1 + (p + 1) / 2))
     return term1 + term2
 end
 
-function isproper(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
-    isposdef(-η2) && (η1 < 0)
-end
+getfisherinformation(::NaturalParametersSpace, ::Type{InverseWishartFast}) =
+    (η) -> begin
+        η1, η2 = unpack_parameters(InverseWishartFast, η)
+        p = first(size(η2))
+        invη2 = inv(η2)
+        vinvη2 = view(invη2, :)
+        fimatrix = Matrix{Float64}(undef, p^2 + 1, p^2 + 1)
+        @inbounds fimatrix[1, 1] = mvtrigamma(p, -(η1 + (p + one(η1)) / 2))
+        @inbounds fimatrix[1, 2:end] = -vinvη2
+        @inbounds fimatrix[2:end, 1] = -vinvη2
+        @inbounds fimatrix[2:end, 2:end] = -(η1 + (p + one(η1)) / 2) * kron(invη2, invη2)
+        return fimatrix
+    end
 
-function fisherinformation(ef::ExponentialFamilyDistribution{<:InverseWishartFast})
-    η1, η2 = unpack_naturalparameters(ef)
-    p = first(size(η2))
-    invη2 = inv(η2)
-    return [mvtrigamma(p, (η1 + (p + 1) / 2)) -vec(invη2)'; -vec(invη2) (η1+(p+1)/2)*kron(invη2, invη2)]
-end
+# Mean parametrization
 
-function fisherinformation(dist::InverseWishart)
-    ν = dist.df
-    S = dist.Ψ
+getlogpartition(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
+    (ν, S) = unpack_parameters(InverseWishartFast, θ)
     p = first(size(S))
-    invscale = inv(S)
+    return (ν / 2) * (p * log(2.0) - logdet(S)) + mvtrigamma(p, ν / 2)
+end
+
+getfisherinformation(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
+    (ν, S) = unpack_parameters(InverseWishartFast, θ)
+    p = first(size(S))
+    invscale = cholinv(S)
 
     hessian = ones(eltype(S), p^2 + 1, p^2 + 1)
-    hessian[1, 1] = mvtrigamma(p, -ν / 2) / 4
-    hessian[1, 2:p^2+1] = as_vec(invscale) / 2
-    hessian[2:p^2+1, 1] = as_vec(invscale) / 2
-    hessian[2:p^2+1, 2:p^2+1] = ν / 2 * kron(invscale, invscale)
-    hessian[2:p^2+1, 2:p^2+1] = -1 * hessian[2:p^2+1, 2:p^2+1]
+    @inbounds hessian[1, 1] = mvtrigamma(p, ν / 2) / 4
+    @inbounds hessian[1, 2:p^2+1] = view(invscale, :) / 2
+    @inbounds hessian[2:p^2+1, 1] = view(invscale, :) / 2
+    @inbounds hessian[2:p^2+1, 2:p^2+1] = (ν / 2) * kron(invscale, invscale)
     return hessian
-end
-
-function insupport(ef::ExponentialFamilyDistribution{InverseWishartFast, P, C, Safe}, x::Matrix) where {P, C}
-    return size(getindex(unpack_naturalparameters(ef), 2)) == size(x) && isposdef(x)
-end
-
-basemeasure(::ExponentialFamilyDistribution{<:InverseWishartFast}) = one(Float64)
-function basemeasure(
-    ::ExponentialFamilyDistribution{<:InverseWishartFast},
-    x
-)
-    return one(eltype(x))
-end
-
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:InverseWishartFast}) = (x) -> sufficientstatistics(ef, x)
-function sufficientstatistics(
-    ::ExponentialFamilyDistribution{<:InverseWishartFast},
-    x
-)
-    return vcat(chollogdet(x), vec(cholinv(x)))
 end

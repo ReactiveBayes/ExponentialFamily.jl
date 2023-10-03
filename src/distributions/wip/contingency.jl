@@ -189,7 +189,7 @@ function Random.rand(rng::AbstractRNG, dist::Contingency{T}, nsamples::Int64) wh
 end
 
 function Random.rand!(rng::AbstractRNG, dist::Contingency, container::AbstractVector{T}) where {T <: Real}
-    probvector   = as_vec(contingency_matrix(dist))
+    probvector   = vec(contingency_matrix(dist))
     sampleindex  = rand(rng, Categorical(probvector))
     cartesianind = indexin(probvector[sampleindex], contingency_matrix(dist))
     container[1] = cartesianind[1][1]

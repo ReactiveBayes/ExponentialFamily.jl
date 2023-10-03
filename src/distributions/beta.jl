@@ -3,14 +3,15 @@ export Beta
 import Distributions: Beta, params
 import SpecialFunctions: digamma, logbeta, loggamma, trigamma
 import StatsFuns: betalogpdf
+
 using StaticArrays
 using LogExpFunctions
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 
-closed_prod_rule(::Type{<:Beta}, ::Type{<:Beta}) = ClosedProd()
+default_prod_rule(::Type{<:Beta}, ::Type{<:Beta}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::Beta, right::Beta)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Beta, right::Beta)
     left_a, left_b   = params(left)
     right_a, right_b = params(right)
     T                = promote_samplefloattype(left, right)
@@ -31,72 +32,57 @@ function mean(::typeof(mirrorlog), dist::Beta)
     return digamma(b) - digamma(a + b)
 end
 
-function pack_naturalparameters(dist::Beta)
-    a, b = params(dist)
-    return [a - oneunit(a), b - oneunit(b)]
+# Natural parametrization
+
+isproper(::NaturalParametersSpace, ::Type{Beta}, η, conditioner) = isnothing(conditioner) && length(η) === 2 && all(>(-1), η)
+isproper(::MeanParametersSpace, ::Type{Beta}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ)
+
+function (::MeanToNatural{Beta})(tuple_of_θ::Tuple{Any, Any})
+    (a, b) = tuple_of_θ
+    return (a - one(a), b - one(b))
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Beta})
-    vectorized = getnaturalparameters(ef)
-    @inbounds η1 = vectorized[1]
-    @inbounds η2 = vectorized[2]
-    return η1, η2
+function (::NaturalToMean{Beta})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    return (η₁ + one(η₁), η₂ + one(η₂))
 end
 
-function isproper(ef::ExponentialFamilyDistribution{Beta})
-    αm1, βm1 = unpack_naturalparameters(ef)
-    return ((αm1 + one(αm1)) > zero(αm1)) && ((βm1 + one(βm1)) > zero(βm1))
+function unpack_parameters(::Type{Beta}, packed)
+    fi = firstindex(packed)
+    si = firstindex(packed) + 1
+    return (packed[fi], packed[si])
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Beta)
-    ExponentialFamilyDistribution(Beta, pack_naturalparameters(dist))
+isbasemeasureconstant(::Type{Beta}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{Beta}) = (x) -> oneunit(x)
+getsufficientstatistics(::Type{Beta}) = (log, mirrorlog)
+
+getlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(Beta, η)
+    return logbeta(η₁ + one(η₁), η₂ + one(η₂))
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Beta})
-    αm1, βm1 = unpack_naturalparameters(exponentialfamily)
-    return Beta(αm1 + one(αm1), βm1 + one(βm1), check_args = false)
+getfisherinformation(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(Beta, η)
+    psia = trigamma(η₁ + one(η₁))
+    psib = trigamma(η₂ + one(η₂))
+    psiab = trigamma(η₁ + η₂ + 2)
+    return SA[psia-psiab -psiab; -psiab psib-psiab]
 end
 
-check_valid_natural(::Type{<:Beta}, v) = length(v) === 2
+# Mean parametrization
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{Beta})
-    αm1, βm1 = unpack_naturalparameters(exponentialfamily)
-    return logbeta(
-        αm1 + one(αm1),
-        βm1 + one(βm1)
-    )
+getlogpartition(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
+    (a, b) = unpack_parameters(Beta, θ)
+    return logbeta(a, b)
 end
 
-function support(::ExponentialFamilyDistribution{Beta})
-    return ClosedInterval{Real}(zero(Float64), one(Float64))
-end
-
-basemeasureconstant(::ExponentialFamilyDistribution{Beta}) = ConstantBaseMeasure()
-basemeasureconstant(::Type{<:Beta}) = ConstantBaseMeasure()
-
-basemeasure(::Type{<:Beta}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Beta}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Beta}, x) = one(x)
-
-sufficientstatistics(type::Type{<:Beta}) = x -> sufficientstatistics(type, x)
-sufficientstatistics(::Type{<:Beta}, x) = SA[log(x), log(one(x) - x)]
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Beta}) = x -> sufficientstatistics(ef, x)
-sufficientstatistics(::ExponentialFamilyDistribution{<:Beta}, x) = SA[log(x), log(one(x) - x)]
-
-function fisherinformation(dist::Beta)
-    a, b = params(dist)
+getfisherinformation(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
+    (a, b) = unpack_parameters(Beta, θ)
     psia = trigamma(a)
     psib = trigamma(b)
     psiab = trigamma(a + b)
 
-    return SA[psia-psiab -psiab; -psiab psib-psiab]
-end
-
-function fisherinformation(ef::ExponentialFamilyDistribution{Beta})
-    η1, η2 = unpack_naturalparameters(ef)
-
-    psia = trigamma(η1 + one(typeof(η1)))
-    psib = trigamma(η2 + one(typeof(η2)))
-    psiab = trigamma(η1 + η2 + 2)
     return SA[psia-psiab -psiab; -psiab psib-psiab]
 end

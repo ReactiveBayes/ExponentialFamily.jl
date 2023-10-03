@@ -55,25 +55,11 @@ Base.convert(::Type{NormalWeightedMeanPrecision{T}}, xi::Real, w::Real) where {T
 
 vague(::Type{<:NormalWeightedMeanPrecision}) = NormalWeightedMeanPrecision(0.0, tiny)
 
-closed_prod_rule(::Type{<:NormalWeightedMeanPrecision}, ::Type{<:NormalWeightedMeanPrecision}) =
-    ClosedProd()
+default_prod_rule(::Type{<:NormalWeightedMeanPrecision}, ::Type{<:NormalWeightedMeanPrecision}) =
+    PreserveTypeProd(Distribution)
 
-function Base.prod(::ProdPreserveType, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision)
+function Base.prod(::PreserveTypeProd{Distribution}, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)
     w  = precision(left) + precision(right)
     return NormalWeightedMeanPrecision(xi, w)
-end
-
-function Base.prod(::ClosedProd, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision)
-    xi = weightedmean(left) + weightedmean(right)
-    w  = precision(left) + precision(right)
-    return NormalWeightedMeanPrecision(xi, w)
-end
-
-function fisherinformation(dist::NormalWeightedMeanPrecision)
-    xi, w = params(dist)
-    return [
-        1/w -xi/(w^2)
-        -xi/(w^2) (xi^2+0.5*w)/w^3
-    ]
 end

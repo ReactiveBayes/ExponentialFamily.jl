@@ -6,137 +6,181 @@ using StaticArrays
 
 vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
-closed_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = ClosedProd()
+# The default product between two `Laplace` objects is `PreserveTypeProd(Laplace)`,
+# which is possible only if the location parameters match
+default_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = PreserveTypeProd(Laplace)
+
+function Base.prod(::PreserveTypeProd{Laplace}, left::Laplace, right::Laplace)
+    location_left, scale_left = params(left)
+    location_right, scale_right = params(right)
+
+    if isapprox(location_left, location_right)
+        return Laplace(location_left, scale_left * scale_right / (scale_left + scale_right))
+    end
+
+    error("""
+        Cannot compute a closed product of two `Laplace` distribution with different location parameters.
+        To compute a generic product in the natural parameters space, convert both distributions to the 
+        `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution)`
+        prod strategy.
+    """)
+end
+
+# The default product between two `ExponentialFamilyDistribution{Laplace}` objects is 
+# `ProdPreserveType(ExponentialFamilyDistribution{Laplace})`, which is possible only if the location parameters match
+default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Laplace} =
+    PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
+
+function Base.prod!(
+    container::ExponentialFamilyDistribution{Laplace},
+    left::ExponentialFamilyDistribution{Laplace},
+    right::ExponentialFamilyDistribution{Laplace}
+)
+    (η_container, conditioner_container) = (getnaturalparameters(container), getconditioner(container))
+    (η_left, conditioner_left) = (getnaturalparameters(left), getconditioner(left))
+    (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))
+
+    if isapprox(conditioner_left, conditioner_right) && isapprox(conditioner_left, conditioner_container)
+        LoopVectorization.vmap!(+, η_container, η_left, η_right)
+        return container
+    end
+
+    error("""
+        Cannot compute a closed product of two `Laplace` distribution in their natural parametrization with different conditioners (location parameter).
+        To compute a generic product in the natural parameters space, convert both distributions to the 
+        `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution)`
+        prod strategy.
+    """)
+end
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{ExponentialFamilyDistribution{Laplace}},
+    left::ExponentialFamilyDistribution{Laplace},
+    right::ExponentialFamilyDistribution{Laplace}
+)
+    return prod!(similar(left), left, right)
+end
+
+function Base.prod(
+    ::PreserveTypeProd{ExponentialFamilyDistribution},
     ef_left::ExponentialFamilyDistribution{T},
     ef_right::ExponentialFamilyDistribution{T}
 ) where {T <: Laplace}
     (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
     (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
-    if conditioner_left == conditioner_right
-        return ExponentialFamilyDistribution(Laplace, η_left + η_right, conditioner_left)
+    if isapprox(conditioner_left, conditioner_right)
+        return error(
+            """
+    To compute a generic product of two `ExponentialFamilyDistribution{Laplace}` distribution in their natural parametrization with same conditioners (location parameter).
+    To compute a generic product in the natural parameters space, convert both distributions to the 
+    `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution{Laplace})`
+    prod strategy.
+"""
+        )
     else
         basemeasure = (x) -> one(x)
-        sufficientstatistics = (x) -> SA[abs(x - conditioner_left), abs(x - conditioner_right)]
-        sorted_conditioner = sort(SA[conditioner_left, conditioner_right])
-        function logpartition(η)
-            A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
-            A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
-            A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right)
-            B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
-            B2 =
-                (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
-                (η[1] - η[2])
-            B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
-
-            return log(A1 * B1 + A2 * B2 + A3 * B3)
-        end
-        naturalparameters = vcat(η_left, η_right)
+        vec_conditioner = [conditioner_left, conditioner_right]
+        vec_params = vcat(η_left, η_right)
+        sorted_conditioner = sort(vec_conditioner)
+        naturalparameters = vec_params[indexin(sorted_conditioner, vec_conditioner)]
+        μlarge = getindex(sorted_conditioner, 2)
+        μsmall = first(sorted_conditioner)
+        sufficientstatistics = (x -> abs(x - μsmall), x -> abs(x - μlarge))
         supp = RealInterval{Float64}(-Inf, Inf)
+        ### η is in one-to-one relation with sorted conditioner
+        function logpartition(η)
+            A = exp(μsmall * η[1] + μlarge * η[2])
+            B = exp(μlarge * η[2] - μsmall * η[1])
+            C = exp(-μsmall * η[1] - μlarge * η[2])
 
+            term1 = (A / (-η[1] - η[2])) * exp(μsmall * (-η[1] - η[2]))
+            term2 = (B / (η[1] - η[2])) * (exp(μlarge * (η[1] - η[2])) - exp(μsmall * (η[1] - η[2])))
+            term3 = (C / (-η[1] - η[2])) * exp(μlarge * (η[1] + η[2]))
+
+            return log(term1 + term2 + term3)
+        end
+        attributes = ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, supp)
         return ExponentialFamilyDistribution(
             Univariate,
             naturalparameters,
             nothing,
-            basemeasure,
-            sufficientstatistics,
-            logpartition,
-            supp
+            attributes
         )
     end
 end
 
-# TODO: check for redundant code
-function Base.prod(::ClosedProd, left::Laplace, right::Laplace)
-    location_left, scale_left = params(left)
-    location_right, scale_right = params(right)
+# Natural parametrization
 
-    if location_left == location_right
-        return Laplace(location_left, scale_left * scale_right / (scale_left + scale_right))
-    else
-        ef_left = convert(ExponentialFamilyDistribution, left)
-        ef_right = convert(ExponentialFamilyDistribution, right)
-
-        (η_left, conditioner_left) = (getnaturalparameters(ef_left), getconditioner(ef_left))
-        (η_right, conditioner_right) = (getnaturalparameters(ef_right), getconditioner(ef_right))
-        basemeasure = (x) -> one(x)
-        sufficientstatistics = (x) -> SA[abs(x - conditioner_left), abs(x - conditioner_right)]
-        sorted_conditioner = sort(SA[conditioner_left, conditioner_right])
-        function logpartition(η)
-            A1 = exp(η[1] * conditioner_left + η[2] * conditioner_right)
-            A2 = exp(-η[1] * conditioner_left + η[2] * conditioner_right)
-            A3 = exp(-η[1] * conditioner_left - η[2] * conditioner_right)
-            B1 = (exp(sorted_conditioner[2] * (-η[1] - η[2])) - 1.0) / (-η[1] - η[2])
-            B2 =
-                (exp(sorted_conditioner[1] * (η[1] - η[2])) - exp(sorted_conditioner[2] * (η[1] - η[2]))) /
-                (η[1] - η[2])
-            B3 = (1.0 - exp(sorted_conditioner[1] * (η[1] + η[2]))) / (η[1] + η[2])
-
-            return log(A1 * B1 + A2 * B2 + A3 * B3)
-        end
-        naturalparameters = vcat(η_left, η_right)
-        supp = RealInterval{Float64}(-Inf, Inf)
-
-        return ExponentialFamilyDistribution(
-            Univariate,
-            naturalparameters,
-            nothing,
-            basemeasure,
-            sufficientstatistics,
-            logpartition,
-            supp
-        )
+function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner::Number)
+    if isnan(conditioner) || isinf(conditioner) || length(η) !== 1
+        return false
     end
+
+    (η₁,) = unpack_parameters(Laplace, η)
+
+    return !isnan(η₁) && !isinf(η₁) && η₁ < 0
 end
 
-support(::Union{<:ExponentialFamilyDistribution{Laplace}, <:Laplace}) = RealInterval{Float64}(-Inf, Inf)
+function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner::Number)
+    if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1
+        return false
+    end
 
-pack_naturalparameters(dist::Laplace) = [-inv((params(dist)[2]))]
-unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Laplace}) = (first(getnaturalparameters(ef)),)
+    (scale,) = unpack_parameters(Laplace, θ)
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Laplace)
-    μ, _ = params(dist)
-    return ExponentialFamilyDistribution(Laplace, pack_naturalparameters(dist), μ)
+    return !isnan(scale) && !isinf(scale) && scale > 0
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Laplace})
-    return Laplace(getconditioner(exponentialfamily), -inv(first(unpack_naturalparameters(exponentialfamily))))
+function separate_conditioner(::Type{Laplace}, params)
+    location, scale = params
+    return ((scale,), location)
 end
 
-check_valid_natural(::Type{<:Laplace}, params) = length(params) == 1
-
-check_valid_conditioner(::Type{<:Laplace}, conditioner) = true
-
-isproper(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
-    first(unpack_naturalparameters(exponentialfamily)) < 0
-
-logpartition(exponentialfamily::ExponentialFamilyDistribution{Laplace}) =
-    log(-2 / first(unpack_naturalparameters(exponentialfamily)))
-
-basemeasure(::ExponentialFamilyDistribution{Laplace}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Laplace}, x::Real) =
-    one(x)
-
-basemeasure(::Laplace, x::Real) = one(x)
-
-fisherinformation(ef::ExponentialFamilyDistribution{Laplace}) = SA[inv(first(unpack_naturalparameters(ef))^2)]
-
-function fisherinformation(dist::Laplace)
-    # Obtained by using the weak derivative of the logpdf with respect to location parameter. Which results in sign function.
-    # Expectation of sign function will be zero and expectation of square of sign will be 1. 
-    b = scale(dist)
-    return SA[1/b^2 0; 0 1/b^2]
+function join_conditioner(::Type{Laplace}, cparams, conditioner)
+    (scale,) = cparams
+    location = conditioner
+    return (location, scale)
 end
 
-sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}) = x -> sufficientstatistics(ef, x)
-function sufficientstatistics(ef::ExponentialFamilyDistribution{Laplace}, x)
-    μ = getconditioner(ef)
-    return SA[abs(x - μ)]
+function (::MeanToNatural{Laplace})(tuple_of_θ::Tuple{Any}, _)
+    (scale,) = tuple_of_θ
+    return (-inv(scale),)
 end
 
-function sufficientstatistics(dist::Laplace, x)
-    μ, _ = params(dist)
-    return SA[abs(x - μ)]
+function (::NaturalToMean{Laplace})(tuple_of_η::Tuple{Any}, _)
+    (η₁,) = tuple_of_η
+    return (-inv(η₁),)
+end
+
+function unpack_parameters(::Type{Laplace}, packed)
+    return (first(packed),)
+end
+
+isbasemeasureconstant(::Type{Laplace}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{Laplace}, _) = (x) -> oneunit(x)
+getsufficientstatistics(::Type{Laplace}, conditioner) = (
+    (x) -> abs(x - conditioner),
+)
+
+getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
+    (η₁,) = unpack_parameters(Laplace, η)
+    return log(-2 / η₁)
+end
+
+getfisherinformation(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
+    (η₁,) = unpack_parameters(Laplace, η)
+    return SA[inv(η₁^2);;]
+end
+
+# Mean parametrization
+
+getlogpartition(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+    (scale,) = unpack_parameters(Laplace, θ)
+    return log(2scale)
+end
+
+getfisherinformation(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+    (scale,) = unpack_parameters(Laplace, θ)
+    return SA[inv(abs2(scale));;] # 1 / scale^2
 end

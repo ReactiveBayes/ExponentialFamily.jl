@@ -55,21 +55,10 @@ Base.convert(::Type{NormalMeanVariance{T}}, μ::Real, v::Real) where {T <: Real}
 
 vague(::Type{<:NormalMeanVariance}) = NormalMeanVariance(0.0, huge)
 
-closed_prod_rule(::Type{<:NormalMeanVariance}, ::Type{<:NormalMeanVariance}) = ClosedProd()
+default_prod_rule(::Type{<:NormalMeanVariance}, ::Type{<:NormalMeanVariance}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ProdPreserveType, left::NormalMeanVariance, right::NormalMeanVariance)
-    μ = (mean(left) * var(right) + mean(right) * var(left)) / (var(right) + var(left))
-    v = (var(left) * var(right)) / (var(left) + var(right))
-    return NormalMeanVariance(μ, v)
-end
-
-function Base.prod(::ClosedProd, left::NormalMeanVariance, right::NormalMeanVariance)
+function Base.prod(::PreserveTypeProd{Distribution}, left::NormalMeanVariance, right::NormalMeanVariance)
     xi = mean(left) / var(left) + mean(right) / var(right)
     w = 1 / var(left) + 1 / var(right)
     return NormalWeightedMeanPrecision(xi, w)
-end
-
-function fisherinformation(dist::NormalMeanVariance)
-    _, v = params(dist)
-    return [1/v 0; 0 1/(2*v^2)]
 end

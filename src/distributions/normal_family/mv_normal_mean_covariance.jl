@@ -56,15 +56,16 @@ Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ
 Distributions.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
 Distributions.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
+Distributions.params(dist::MvNormalMeanCovariance)    = (mean(dist), cov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanCovariance, x::AbstractVector)
     μ = mean(dist)
-    for i in 1:length(r)
-        @inbounds r[i] = μ[i] - x[i]
+    @inbounds @simd for i in 1:length(r)
+        r[i] = μ[i] - x[i]
     end
-    return dot(r, invcov(dist), r) # x' * A * x
+    return dot3arg(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanCovariance{T}) where {T} = T
@@ -82,24 +83,16 @@ end
 vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
-closed_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = ClosedProd()
+default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ProdPreserveType, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
-    invcovleft  = invcov(left)
-    invcovright = invcov(right)
-    Σ           = cholinv(invcovleft + invcovright)
-    μ           = Σ * (invcovleft * mean(left) + invcovright * mean(right))
-    return MvNormalMeanCovariance(μ, Σ)
-end
-
-function Base.prod(::ClosedProd, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
+function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     xi_left, W_left = weightedmean_precision(left)
     xi_right, W_right = weightedmean_precision(right)
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::MvNormalMeanCovariance{T1},
     right::MvNormalMeanCovariance{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
@@ -114,13 +107,4 @@ function Base.prod(
     xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, W_right), convert(AbstractVector{T}, mean(right)), one(T), xi)
 
     return MvNormalWeightedMeanPrecision(xi, W)
-end
-
-function fisherinformation(dist::MvNormalMeanCovariance{T}) where {T}
-    μ, Σ = mean(dist), cov(dist)
-    invΣ = inv(Σ)
-    n = size(μ, 1)
-    offdiag = zeros(n, n^2)
-    G = (1 / 2) * kron(invΣ, invΣ)
-    [invΣ offdiag; offdiag' G]
 end

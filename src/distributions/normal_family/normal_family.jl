@@ -11,8 +11,8 @@ const MvGaussianMeanCovariance        = MvNormalMeanCovariance
 const MvGaussianMeanPrecision         = MvNormalMeanPrecision
 const MvGaussianWeightedMeanPrecision = MvNormalWeightedMeanPrecision
 
-const UnivariateNormalDistributionsFamily{T}   = Union{NormalMeanPrecision{T}, NormalMeanVariance{T}, NormalWeightedMeanPrecision{T}}
-const MultivariateNormalDistributionsFamily{T} = Union{MvNormalMeanPrecision{T}, MvNormalMeanCovariance{T}, MvNormalWeightedMeanPrecision{T}}
+const UnivariateNormalDistributionsFamily{T}   = Union{NormalMeanPrecision{T}, NormalMeanVariance{T}, NormalWeightedMeanPrecision{T}, Normal{T}}
+const MultivariateNormalDistributionsFamily{T} = Union{MvNormalMeanPrecision{T}, MvNormalMeanCovariance{T}, MvNormalWeightedMeanPrecision{T}, MvNormal{T}}
 const NormalDistributionsFamily{T}             = Union{UnivariateNormalDistributionsFamily{T}, MultivariateNormalDistributionsFamily{T}}
 
 const UnivariateGaussianDistributionsFamily   = UnivariateNormalDistributionsFamily
@@ -29,6 +29,30 @@ using StatsFuns: log2π
 using LinearAlgebra
 using SpecialFunctions
 
+# special functions for `Normal` and `FullNormal`
+
+function weightedmean_invcov(dist::Normal)
+    mean, var = mean_var(dist)
+    invcov = inv(var)
+    return invcov * mean, invcov
+end
+
+function mean_invcov(dist::Normal)
+    mean, var = mean_var(dist)
+    return mean, inv(var)
+end
+
+function weightedmean_invcov(dist::FullNormal)
+    mean, var = mean_cov(dist)
+    invcov = cholinv(var)
+    return invcov * mean, invcov
+end
+
+function mean_invcov(dist::FullNormal)
+    mean, cov = mean_cov(dist)
+    return mean, cholinv(cov)
+end
+
 # Joint over multiple Gaussians
 
 """
@@ -36,6 +60,8 @@ using SpecialFunctions
 
 `JointNormal` is an auxilary structure used for the joint marginal over Normally distributed variables.
 `JointNormal` stores a vector with the original dimensionalities (ds), so statistics can later be re-separated.
+
+Use `ExponentialFamily.getcomponent(joint, index)` to get a specific component of the joint distribution.
 
 # Fields
 - `dist`: joint distribution (typically just a big `MvNormal` distribution, but maybe a tuple of individual means and covariance matrices)
@@ -95,11 +121,15 @@ Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
-convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal) where {T} =
-    convert_eltype(JointNormal, T, joint, joint.dist)
+paramfloattype(joint::JointNormal) = paramfloattype(joint, joint.dist)
+convert_paramfloattype(::Type{T}, joint::JointNormal) where {T} = convert_paramfloattype(T, joint, joint.dist)
 
-function convert_eltype(::Type{JointNormal}, ::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
-    μ, Σ  = map(e -> convert_eltype(T, e), mean_cov(dist))
+function paramfloattype(joint::JointNormal, dist::NormalDistributionsFamily)
+    return paramfloattype(dist)
+end
+
+function convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
+    μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
     cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
 end
@@ -117,25 +147,25 @@ function Base.convert(::Type{JointNormal}, means::Tuple, covs::Tuple)
     return JointNormal((means, covs), size.(means))
 end
 
-"""Return the marginalized statistics of the Gaussian corresponding to an index `index`"""
-getmarginal(joint::JointNormal, index) = getmarginal(joint, joint.dist, joint.ds, joint.ds[index], index)
+# Return the marginalized statistics of the Gaussian corresponding to an index `index`
+getcomponent(joint::JointNormal, index) = getcomponent(joint, joint.dist, joint.ds, joint.ds[index], index)
 
 # `JointNormal` holds a single univariate gaussian and the dimensionalities indicate only a single Univariate element
-function getmarginal(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert size(dist) === sz "Broken `JointNormal` state"
     return dist
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Multivariate element
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert size(dist) === sz "Broken `JointNormal` state"
     return dist
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Univariate element
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert length(dist) === 1 "Broken `JointNormal` state"
     m, V = mean_cov(dist)
@@ -143,7 +173,7 @@ function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tupl
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     len   = first(sz)
@@ -154,7 +184,7 @@ function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz:
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
-function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     μ, Σ = mean_cov(dist)
@@ -163,12 +193,12 @@ function getmarginal(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz:
 end
 
 # `JointNormal` holds gaussians individually, simply returns a Multivariate gaussian at index `index`
-function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
+function getcomponent(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
     return MvNormalMeanCovariance(first(dist)[index], last(dist)[index])
 end
 
 # `JointNormal` holds gaussians individually, simply returns a Univariate gaussian at index `index`
-function getmarginal(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
+function getcomponent(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
     return NormalMeanVariance(first(dist)[index], last(dist)[index])
 end
 
@@ -178,6 +208,11 @@ Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) =
 
 """An alias for the [`JointNormal`](@ref)."""
 const JointGaussian = JointNormal
+
+# Half-Normal related
+function convert_paramfloattype(::Type{T}, distribution::Truncated{<:Normal}) where {T}
+    return Truncated(convert_paramfloattype(T, distribution.untruncated), convert(T, distribution.lower), convert(T, distribution.upper))
+end
 
 # Variate forms promotion
 
@@ -194,8 +229,34 @@ promote_variate_type(::Type{Multivariate}, ::Type{<:NormalWeightedMeanPrecision}
 
 # Conversion to gaussian distributions from `Distributions.jl`
 
-Base.convert(::Type{Normal}, dist::UnivariateNormalDistributionsFamily)     = Normal(mean_std(dist)...)
-Base.convert(::Type{MvNormal}, dist::MultivariateNormalDistributionsFamily) = MvNormal(mean_cov(dist)...)
+function Base.convert(::Type{Normal{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
+    mean, std = mean_std(dist)
+    return Normal(convert(T, mean), convert(T, std))
+end
+
+function Base.convert(::Type{Normal}, dist::UnivariateNormalDistributionsFamily{T}) where {T <: Real}
+    return convert(Normal{T}, dist)
+end
+
+function Base.convert(
+    ::Type{MvNormal{T, C, M}},
+    dist::MultivariateNormalDistributionsFamily
+) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
+    mean, cov = mean_cov(dist)
+    return MvNormal(convert(M, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
+end
+
+function Base.convert(::Type{MvNormal{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
+    return convert(MvNormal{T, Distributions.PDMats.PDMat{T, Matrix{T}}, Vector{T}}, dist)
+end
+
+function Base.convert(::Type{MvNormal}, dist::MultivariateNormalDistributionsFamily{T}) where {T <: Real}
+    return convert(MvNormal{T}, dist)
+end
+
+function Base.convert(::Type{MvNormal{T}}, mean::AbstractVector, cov::AbstractMatrix) where {T <: Real}
+    return MvNormal(convert(AbstractVector{T}, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
+end
 
 # Conversion to mean - variance parametrisation
 
@@ -311,19 +372,35 @@ function Base.convert(
     return convert(MvNormalWeightedMeanPrecision{T}, dist)
 end
 
+# Special case for `Normal` to `NormalWeightedMeanPrecision` from `Distributions`
+
+function Base.convert(::Type{NormalWeightedMeanPrecision}, dist::Normal)
+    mean, var = mean_var(dist)
+    precision = inv(var)
+    return NormalWeightedMeanPrecision(precision * mean, precision)
+end
+
+# Special case for `FullNormal` to `NormalWeightedMeanPrecision` from `Distributions`
+
+function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::FullNormal)
+    mean, cov = mean_cov(dist)
+    precision = cholinv(cov)
+    return MvNormalWeightedMeanPrecision(precision * mean, precision)
+end
+
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
-closed_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
-    ClosedProd()
+default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    PreserveTypeProd(Distribution)
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::L,
     right::R
 ) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
-    return prod(ClosedProd(), wleft, wright)
+    return prod(default_prod_rule(wleft, wright), wleft, wright)
 end
 
 function compute_logscale(
@@ -340,17 +417,17 @@ function compute_logscale(
     return -(logdet(v) + log2π) / 2 - m^2 / v / 2
 end
 
-closed_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
-    ClosedProd()
+default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
+    PreserveTypeProd(Distribution)
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::L,
     right::R
 ) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(ClosedProd(), wleft, wright)
+    return prod(default_prod_rule(wleft, wright), wleft, wright)
 end
 
 function compute_logscale(
@@ -366,19 +443,21 @@ function compute_logscale(
     n                = length(left)
     v_inv, v_logdet  = cholinv_logdet(v)
     m                = m_left - m_right
-    return -(v_logdet + n * log2π) / 2 - dot(m, v_inv, m) / 2
+    return -(v_logdet + n * log2π) / 2 - dot3arg(m, v_inv, m) / 2
 end
 
-function logpdf_sample_optimized(dist::UnivariateNormalDistributionsFamily)
-    μ, σ = mean_std(dist)
-    optimized_dist = Normal(μ, σ)
-    return (optimized_dist, optimized_dist)
-end
+logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
+logpdf_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
 
-function logpdf_sample_optimized(dist::MultivariateNormalDistributionsFamily)
-    μ, Σ = mean_cov(dist)
-    optimized_dist = MvNormal(μ, Σ)
-    return (optimized_dist, optimized_dist)
+sample_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
+sample_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
+
+function logpdf_sample_optimized(
+    dist::Union{UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily}
+)
+    # For Gaussian both sample and logpdf are the same in terms of optimality
+    optimal = logpdf_optimized(dist)
+    return (optimal, optimal)
 end
 
 # Sample related
@@ -435,96 +514,183 @@ function Random.rand!(
     container
 end
 
-## Natural parameters for the Normal distribution
-function check_valid_natural(::Type{<:NormalDistributionsFamily}, params)
-    len = length(params)
-    return (len + len^2) % 2 == 0
-end
-function pack_naturalparameters(dist::UnivariateGaussianDistributionsFamily)
-    weightedmean, precision = weightedmean_precision(dist)
-    return [weightedmean, precision * MINUSHALF]
-end
-function pack_naturalparameters(dist::MultivariateGaussianDistributionsFamily)
-    weightedmean, precision = weightedmean_precision(dist)
-    return vcat(weightedmean, vec(precision * MINUSHALF))
-end
+## Natural parameters for the Normal family distribution
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-    η = getnaturalparameters(ef)
-    @inbounds weightedmean = η[1]
-    @inbounds minushalfprecision = η[2]
+### Univariate case
 
-    return weightedmean, minushalfprecision
+# Assume a single exponential family type tag both for all members of `UnivariateNormalDistributionsFamily`
+# Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
+exponential_family_typetag(::UnivariateNormalDistributionsFamily) = NormalMeanVariance
+
+Distributions.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
+
+function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
+    if length(θ) !== 2
+        return false
+    end
+    (θ₁, θ₂) = unpack_parameters(NormalMeanVariance, θ)
+    return isnothing(conditioner) && (!isinf(θ₁) && !isnan(θ₁)) && (θ₂ > 0)
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-    η = getnaturalparameters(ef)
-    len = length(η)
-    n = Int64((-1 + isqrt(1 + 4 * len)) / 2)
-
-    @inbounds η1 = view(η, 1:n)
-    @inbounds η2 = reshape(view(η, n+1:len), n, n)
-
-    return η1, η2
+function isproper(::NaturalParametersSpace, ::Type{NormalMeanVariance}, η, conditioner)
+    if length(η) !== 2
+        return false
+    end
+    (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+    return isnothing(conditioner) && (!isinf(η₁) && !isnan(η₁)) && (η₂ < 0)
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::UnivariateGaussianDistributionsFamily)
-    return ExponentialFamilyDistribution(NormalWeightedMeanPrecision, pack_naturalparameters(dist))
+function (::MeanToNatural{NormalMeanVariance})(tuple_of_θ::Tuple{Any, Any})
+    (μ, σ²) = tuple_of_θ
+    return (μ / σ², -inv(2σ²))
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MultivariateGaussianDistributionsFamily)
-    return ExponentialFamilyDistribution(MvNormalWeightedMeanPrecision, pack_naturalparameters(dist))
+function (::NaturalToMean{NormalMeanVariance})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    return (-η₁ / 2η₂, -inv(2η₂))
 end
 
-function Base.convert(
-    ::Type{Distribution},
-    exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily}
-)
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-
-    return MvNormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
+function unpack_parameters(::Type{NormalMeanVariance}, packed)
+    fi = firstindex(packed)
+    si = firstindex(packed) + 1
+    return (packed[fi], packed[si])
 end
 
-function Base.convert(
-    ::Type{Distribution},
-    exponentialfamily::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily}
-)
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    return NormalWeightedMeanPrecision(weightedmean, -2 * minushalfprecision)
+getsupport(::ExponentialFamilyDistribution{NormalMeanVariance}) = RealNumbers()
+
+isbasemeasureconstant(::Type{NormalMeanVariance}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{NormalMeanVariance}) = (x) -> convert(typeof(x), invsqrt2π)
+getsufficientstatistics(::Type{NormalMeanVariance}) = (identity, abs2)
+
+getlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+    return -abs2(η₁) / 4η₂ - log(-2η₂) / 2
 end
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    return -weightedmean^2 / (4 * minushalfprecision) - log(-2 * minushalfprecision) * HALF
+getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+        return SA[
+            -inv(2η₂) η₁/(2abs2(η₂))
+            η₁/(2abs2(η₂)) inv(2abs2(η₂))-abs2(η₁)/(2(η₂^3))
+        ]
+    end
+
+### Univariate / mean parameters space
+
+getlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+    (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
+    return μ / 2σ² + log(sqrt(σ²))
 end
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(exponentialfamily)
-    # return -weightedmean' * (minushalfprecision \ weightedmean) / 4 - logdet(-2 * minushalfprecision) * HALF
-    # return Distributions.invquad(-minushalfprecision , weightedmean)/4 - (logdet(minushalfprecision) + length(weightedmean)*LOG2)* HALF
-    # return (dot(weightedmean,inv(-minushalfprecision),weightedmean)*HALF - (logdet(minushalfprecision) + length(weightedmean)*LOG2))* HALF
-    return (dot(weightedmean, inv(-minushalfprecision), weightedmean) * HALF - logdet(-2 * minushalfprecision)) * HALF
+getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+    (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
+    return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{<:NormalDistributionsFamily}) =
-    isposdef(-getindex(unpack_naturalparameters(exponentialfamily), 2))
-basemeasure(
-    ef::ExponentialFamilyDistribution{<:NormalDistributionsFamily}
-) = TWOPI^(-length(unpack_naturalparameters(ef)[1]) * HALF)
+### Fallback for the entire family 
 
-basemeasure(
-    ::Union{<:ExponentialFamilyDistribution{<:NormalDistributionsFamily}, <:NormalDistributionsFamily},
-    x
-) =
-    (TWOPI)^(-length(x) * HALF)
+getbasemeasure(::Type{<:UnivariateNormalDistributionsFamily}) = getbasemeasure(NormalMeanVariance)
+getsufficientstatistics(::Type{<:UnivariateNormalDistributionsFamily}) = getsufficientstatistics(NormalMeanVariance)
+getlogpartition(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    getlogpartition(space, NormalMeanVariance)
+getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+    getfisherinformation(space, NormalMeanVariance)
 
-function fisherinformation(ef::ExponentialFamilyDistribution{<:UnivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(ef)
-    return [
-        -1/(2*minushalfprecision) weightedmean/(2*minushalfprecision^2)
-        weightedmean/(2*minushalfprecision^2) 1/(2*minushalfprecision^2)-weightedmean^2/(2*minushalfprecision^3)
-    ]
+### Multivariate case
+
+# Assume a single exponential family type tag both for all members of `UnivariateNormalDistributionsFamily`
+# Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
+exponential_family_typetag(::MultivariateGaussianDistributionsFamily) = MvNormalMeanCovariance
+
+Distributions.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
+
+function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
+    k = div(-1 + isqrt(1 + 4 * length(θ)), 2)
+    if length(θ) < 2 || (length(θ) !== (k + k^2))
+        return false
+    end
+    (μ, Σ) = unpack_parameters(MvNormalMeanCovariance, θ)
+    return isnothing(conditioner) && length(μ) === size(Σ, 1) && (size(Σ, 1) === size(Σ, 2)) && isposdef(Σ)
 end
+
+function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, conditioner)
+    k = div(-1 + isqrt(1 + 4 * length(η)), 2)
+    if length(η) < 2 || (length(η) !== (k + k^2))
+        return false
+    end
+    (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
+end
+
+function (::MeanToNatural{MvNormalMeanCovariance})(tuple_of_θ::Tuple{Any, Any})
+    (μ, Σ) = tuple_of_θ
+    Σ⁻¹ = cholinv(Σ)
+    return (Σ⁻¹ * μ, Σ⁻¹ / -2)
+end
+
+function (::NaturalToMean{MvNormalMeanCovariance})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    Σ = cholinv(-2η₂)
+    return (Σ * η₁, Σ)
+end
+
+function unpack_parameters(::Type{MvNormalMeanCovariance}, packed)
+    len = length(packed)
+    n = div(-1 + isqrt(1 + 4 * len), 2)
+
+    p₁ = view(packed, 1:n)
+    p₂ = reshape(view(packed, n+1:len), n, n)
+
+    return (p₁, p₂)
+end
+
+# getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) = RealNumbers()^div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2)
+# The function above is not type-stable, the function below is type-stable, but does not uses an arbitrary `IndicatorFunction`
+struct MvNormalDomainIndicator
+    dims::Int
+end
+
+(indicator::MvNormalDomainIndicator)(v) = false
+(indicator::MvNormalDomainIndicator)(v::AbstractVector) = length(v) === indicator.dims && isreal(v)
+
+getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanCovariance}) =
+    Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(div(-1 + isqrt(1 + 4 * length(getnaturalparameters(ef))), 2))))
+
+isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
+
+# It is a constant base measure with respect to `x`, only depends on its length, but we consider the length fixed
+getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(length(x) / -2)
+getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * x')
+
+getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+    k = length(η₁)
+    C = fastcholesky(-η₂)
+    l = logdet(C)
+    Cinv = LinearAlgebra.inv!(C)
+    return (dot(η₁, Cinv, η₁) / 2 - (k * log(2) + l)) / 2
+end
+
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+        invη2 = -cholinv(-η₂)
+        n = size(η₁, 1)
+        ident = Eye(n)
+        Iₙ = PermutationMatrix(1, 1)
+        offdiag =
+            1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
+            kron(ident, kron(Iₙ, ident))
+        G =
+            -1 / 4 *
+            (
+                kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
+                kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
+            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+        [-1/2*invη2 offdiag; offdiag' G]
+    end
 
 function PermutationMatrix(m, n)
     P = Matrix{Int}(undef, m * n, m * n)
@@ -540,48 +706,11 @@ function PermutationMatrix(m, n)
     P
 end
 
-function fisherinformation(ef::ExponentialFamilyDistribution{<:MultivariateGaussianDistributionsFamily})
-    η1, η2 = unpack_naturalparameters(ef)
-    invη2 = inv(η2)
-    n = size(η1, 1)
-    ident = diageye(n)
-    Iₙ = PermutationMatrix(1, 1)
-    offdiag =
-        1 / 4 * (invη2 * kron(ident, transpose(invη2 * η1)) + invη2 * kron(η1' * invη2, ident)) *
-        kron(ident, kron(Iₙ, ident))
-    G =
-        -1 / 4 *
-        (
-            kron(invη2, invη2) * kron(ident, η1) * kron(ident, transpose(invη2 * η1)) +
-            kron(invη2, invη2) * kron(η1, ident) * kron(η1' * invη2, ident)
-        ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
-    [-1/2*invη2 offdiag; offdiag' G]
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+    μ, Σ = unpack_parameters(MvNormalMeanCovariance, θ)
+    invΣ = cholinv(Σ)
+    n = size(μ, 1)
+    offdiag = zeros(n, n^2)
+    G = (1 / 2) * kron(invΣ, invΣ)
+    [invΣ offdiag; offdiag' G]
 end
-
-function mean(ef::ExponentialFamilyDistribution{MultivariateGaussianDistributionsFamily})
-    weightedmean, minushalfprecision = unpack_naturalparameters(ef)
-    return (-2 * minushalfprecision) \ weightedmean
-end
-
-function cov(ef::ExponentialFamilyDistribution{MultivariateGaussianDistributionsFamily})
-    _, minushalfprecision = unpack_naturalparameters(ef)
-    return inv(-2 * minushalfprecision)
-end
-
-sufficientstatistics(
-    ef::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily}
-) = x -> sufficientstatistics(ef, x)
-
-sufficientstatistics(
-    ef::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily}
-) = x -> sufficientstatistics(ef, x)
-
-sufficientstatistics(
-    ::ExponentialFamilyDistribution{<:MultivariateNormalDistributionsFamily},
-    x::Vector{T}
-) where {T} = vcat(x, kron(x, x))
-
-sufficientstatistics(
-    ::ExponentialFamilyDistribution{<:UnivariateNormalDistributionsFamily},
-    x::T
-) where {T} = [x, x^2]

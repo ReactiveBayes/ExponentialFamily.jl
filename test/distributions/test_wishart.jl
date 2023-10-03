@@ -8,20 +8,12 @@ using LinearAlgebra
 using StableRNGs
 using ForwardDiff
 
-import ExponentialFamily: WishartFast, ExponentialFamilyDistribution, reconstructargument!,
-    getnaturalparameters, basemeasure, fisherinformation, logpartition, as_vec
+include("../testutils.jl")
+
+import ExponentialFamily:
+    WishartFast, ExponentialFamilyDistribution,
+    getnaturalparameters, basemeasure, fisherinformation, logpartition
 import StatsFuns: logmvgamma
-
-function logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-    return logpartition(ExponentialFamilyDistribution(T, ηvec))
-end
-
-function transformation(params)
-    η1, η2 = params[1], params[2:end]
-    p = Int(sqrt(length(η2)))
-    η2 = reshape(η2, (p, p))
-    return [2 * η1 + p + 1; as_vec(0.5inv(-η2))]
-end
 
 @testset "Wishart" begin
 
@@ -45,10 +37,9 @@ end
 
     @testset "mean(::cholinv)" begin
         L    = rand(2, 2)
-        S    = L * L' + diageye(2)
-        invS = cholinv(S)
+        S    = L * L' + Eye(2)
+        invS = inv(S)
         @test mean(inv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
-        @test mean(cholinv, Wishart(5, S)) ≈ mean(InverseWishart(5, invS))
     end
 
     @testset "vague" begin
@@ -64,8 +55,8 @@ end
         for d in (2, 3, 4, 5)
             v = rand() + d
             L = rand(d, d)
-            S = L' * L + d * diageye(d)
-            invS = cholinv(S)
+            S = L' * L + d * Eye(d)
+            invS = inv(S)
             cS = copy(S)
             cinvS = copy(invS)
             container1 = [zeros(d, d) for _ in 1:100]
@@ -85,125 +76,51 @@ end
         end
     end
 
-    @testset "prod" begin
-        inv_v1 = cholinv([9.0 -3.4; -3.4 11.0])
-        inv_v2 = cholinv([10.2 -3.3; -3.3 5.0])
-        inv_v3 = cholinv([8.1 -2.7; -2.7 9.0])
+    @testset "ExponentialFamilyDistribution{WishartFast}" begin
+        @testset for dim in (3), invS in rand(Wishart(10, Array(Eye(dim))), 2)
+            ν = dim + 2
+            @testset let (d = WishartFast(ν, invS))
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
+                (η1, η2) = unpack_parameters(WishartFast, getnaturalparameters(ef))
 
-        @test prod(ClosedProd(), WishartFast(3, inv_v1), WishartFast(3, inv_v2)) ≈
+                for x in (Eye(dim), Diagonal(ones(dim)), Array(Eye(dim)))
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === 1.0
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (logdet(x), x))
+                    @test @inferred(logpartition(ef)) ≈ -(η1 + (dim + 1) / 2) * logdet(-η2) + logmvgamma(dim, η1 + (dim + 1) / 2)
+                end
+            end
+        end
+    end
+
+    @testset "prod" begin
+        inv_v1 = inv([9.0 -3.4; -3.4 11.0])
+        inv_v2 = inv([10.2 -3.3; -3.3 5.0])
+        inv_v3 = inv([8.1 -2.7; -2.7 9.0])
+
+        @test prod(PreserveTypeProd(Distribution), WishartFast(3, inv_v1), WishartFast(3, inv_v2)) ≈
               WishartFast(
             3,
-            cholinv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
+            inv([4.776325721474591 -1.6199382410125422; -1.6199382410125422 3.3487476649765537])
         )
-        @test prod(ClosedProd(), WishartFast(4, inv_v1), WishartFast(4, inv_v3)) ≈
+        @test prod(PreserveTypeProd(Distribution), WishartFast(4, inv_v1), WishartFast(4, inv_v3)) ≈
               WishartFast(
             5,
-            cholinv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
+            inv([4.261143738311623 -1.5064864332819319; -1.5064864332819319 4.949867121624725])
         )
-        @test prod(ClosedProd(), WishartFast(5, inv_v2), WishartFast(4, inv_v3)) ≈
-              WishartFast(6, cholinv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
+        @test prod(PreserveTypeProd(Distribution), WishartFast(5, inv_v2), WishartFast(4, inv_v3)) ≈
+              WishartFast(6, inv([4.51459128065395 -1.4750681198910067; -1.4750681198910067 3.129155313351499]))
     end
 
-    @testset "ndims" begin
-        @test ndims(vague(Wishart, 3)) === 3
-        @test ndims(vague(Wishart, 4)) === 4
-        @test ndims(vague(Wishart, 5)) === 5
-    end
-
-    @testset "natural parameters related" begin
-        @testset "Constructor" begin
-            for i in 1:10
-                @test convert(
-                    Distribution,
-                    ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
-                ) ≈
-                      WishartFast(9.0, -2 * [-i 0.0; 0.0 -i])
-            end
-        end
-
-        @testset "logpdf" begin
-            for i in 1:10
-                wishart_np = ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
-                distribution = Wishart(9.0, -0.5 * inv([-i 0.0; 0.0 -i]))
-                @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
-                @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
-                @test logpdf(distribution, [1.0 -0.1; -0.1 3.0]) ≈ logpdf(wishart_np, [1.0 -0.1; -0.1 3.0])
-            end
-        end
-
-        @testset "logpartition" begin
-            @test logpartition(ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-1.0 0.0; 0.0 -1.0])))) ≈
-                  logmvgamma(2, 3.0 + (2 + 1) / 2)
-        end
-
-        @testset "isproper" begin
-            for i in 1:10
-                @test isproper(ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))) === true
-                @test isproper(ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([i 0.0; 0.0 -i])))) === false
-                @test isproper(ExponentialFamilyDistribution(WishartFast, vcat(-1.0, vec([-i 0.0; 0.0 -i])))) === false
-            end
-        end
-
-        @testset "basemeasure" begin
-            for i in 1:10
-                L = rand(2, 2)
-                @test basemeasure(
-                    ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i]))),
-                    L * L'
-                ) == 1.0
-            end
-        end
-
-        @testset "base operations" begin
-            for i in 1:10
-                np1 = ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
-                np2 = ExponentialFamilyDistribution(WishartFast, vcat(3.0, vec([-2i 0.0; 0.0 -2i])))
-                @test prod(np1, np2) == ExponentialFamilyDistribution(
-                    WishartFast,
-                    vcat(3.0, vec([-2i 0.0; 0.0 -2i])) + vcat(3.0, vec([-i 0.0; 0.0 -i]))
+    @testset "prod with ExponentialFamilyDistribution{Wishart}" begin
+        for Sleft in rand(Wishart(10, Array(Eye(2))), 2), Sright in rand(Wishart(10, Array(Eye(2))), 2), νright in (6, 7), νleft in (4, 5)
+            let left = WishartFast(νleft, Sleft), right = WishartFast(νright, Sright)
+                @test test_generic_simple_exponentialfamily_product(
+                    left,
+                    right,
+                    strategies = (PreserveTypeProd(ExponentialFamilyDistribution{WishartFast}), GenericProd())
                 )
             end
-        end
-
-        @testset "fisher information" begin
-            rng = StableRNG(42)
-            for df in 3:6
-                L = randn(rng, df, df)
-                A = L * L' + 1e-8 * diageye(df)
-                dist = Wishart(df, A)
-                distfast = WishartFast(df, cholinv(A))
-                ef = convert(ExponentialFamilyDistribution, dist)
-                η_vec = getnaturalparameters(ef)
-                fef = fisherinformation(ef)
-                fdist = fisherinformation(dist)
-                fdistfast = fisherinformation(distfast)
-                ## We do not test the analytic solution agains autograd because autograd hessian return values that are permuted and
-                ## causes fisherinformation to be non-positive definite.
-                J = ForwardDiff.jacobian(transformation, η_vec)
-                @test fef ≈ J' * fdist * J rtol = 1e-8
-                @test fdist ≈ fdistfast rtol = 1e-8
-                f_logpartition = (η_vec) -> logpartition(ef, η_vec)
-                autograd_information = (η_vec) -> ForwardDiff.hessian(f_logpartition, η_vec)
-                ag_fi = autograd_information(η_vec)
-
-                svdfisheref = svd(fef)
-                svdautograd = svd(ag_fi)
-                ## Julia returns very small complex values which causes problems. Therefore we take the real parts. 
-                eigenfisheref = real.(eigvals(fef))
-                @test all(x -> x > 0, eigenfisheref)
-                @test svdfisheref.S ≈ svdautograd.S
-            end
-        end
-    end
-    @testset "ExponentialFamilyDistribution mean,cov" begin
-        rng = StableRNG(42)
-        for df in 2:20
-            L = randn(rng, df, df)
-            A = L * L' + 1e-8 * diageye(df)
-            dist = Wishart(df, A)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) rtol = 1e-8
-            @test cov(dist) ≈ cov(ef) rtol = 1e-8
         end
     end
 end

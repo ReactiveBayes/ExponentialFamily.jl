@@ -7,91 +7,47 @@ using Random
 using ForwardDiff
 using DomainSets
 using StableRNGs
+using HCubature
 
 import ExponentialFamily: mirrorlog, ExponentialFamilyDistribution, logpartition,
     basemeasure, getbasemeasure, getnaturalparameters, getsufficientstatistics, fisherinformation, support, getsupport
 
+include("../testutils.jl")
+
 @testset "Rayleigh" begin
-    @testset "vague" begin
-        d = vague(Rayleigh)
+    @testset "ExponentialFamilyDistribution{Rayleigh}" begin
+        @testset for σ in 10rand(4)
+            @testset let d = Rayleigh(σ)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+                η1 = first(getnaturalparameters(ef))
 
-        @test typeof(d) <: Rayleigh
-        @test mean(d) ≈ d.σ * √(π / 2)
-        @test params(d) === (1e12,)
+                for x in 10rand(4)
+                    @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === x
+                    @test @inferred(sufficientstatistics(ef, x)) === (x^2,)
+                    @test @inferred(logpartition(ef)) ≈ -log(-2 * η1)
+                end
+            end
+        end
+
+        for space in (MeanParametersSpace(), NaturalParametersSpace())
+            @test !isproper(space, Rayleigh, [Inf])
+
+            @test !isproper(space, Rayleigh, [NaN])
+            @test !isproper(space, Rayleigh, [1.0], NaN)
+            @test !isproper(space, Rayleigh, [0.5, 0.5], 1.0)
+        end
+        @test !isproper(MeanParametersSpace(), Rayleigh, [-1.0])
+        @test_throws Exception convert(ExponentialFamilyDistribution, Rayleigh(Inf))
     end
 
-    @testset "prod" begin
-        naturalparameters(σ1, σ2) = -0.5(σ1^2 + σ2^2) / (σ1 * σ2)^2
-        basemeasure = (x) -> 4 * x^2 / sqrt(pi)
-        sufficientstatistics = (x) -> [x^2]
-        logpartition = (η) -> log(η^(-3 / 2))
-        supp = DomainSets.HalfLine()
-        @test getnaturalparameters(prod(ClosedProd(), Rayleigh(3.0), Rayleigh(2.0))) == [naturalparameters(3.0, 2.0)]
-        @test getsupport(prod(ClosedProd(), Rayleigh(7.0), Rayleigh(1.0))) == supp
-        @test getbasemeasure(prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)))(1.0) == basemeasure(1.0)
-        @test getsufficientstatistics(prod(ClosedProd(), Rayleigh(1.0), Rayleigh(2.0)))(1.0) ==
-              sufficientstatistics(1.0)
-    end
-
-    @testset "natural parameters related" begin
-        @testset "Constructor" begin
-            for i in 1:10
-                @test convert(Distribution, ExponentialFamilyDistribution(Rayleigh, [-i])) ==
-                      Rayleigh(sqrt(1 / 2i))
-
-                @test convert(ExponentialFamilyDistribution, Rayleigh(i)) ==
-                      ExponentialFamilyDistribution(Rayleigh, [-1 / (2i^2)])
-            end
-        end
-
-        @testset "logpartition" begin
-            @test logpartition(ExponentialFamilyDistribution(Rayleigh, [-1.0])) ≈ -log(2)
-            @test logpartition(ExponentialFamilyDistribution(Rayleigh, [-2.0])) ≈ -log(4)
-        end
-
-        @testset "logpdf" begin
-            for i in 1:10
-                @test logpdf(ExponentialFamilyDistribution(Rayleigh, [-i]), 0.01) ≈
-                      logpdf(Rayleigh(sqrt(1 / 2i)), 0.01)
-                @test logpdf(ExponentialFamilyDistribution(Rayleigh, [-i]), 0.5) ≈
-                      logpdf(Rayleigh(sqrt(1 / 2i)), 0.5)
-            end
-        end
-
-        @testset "isproper" begin
-            for i in 1:10
-                @test isproper(ExponentialFamilyDistribution(Rayleigh, [-i])) === true
-                @test isproper(ExponentialFamilyDistribution(Rayleigh, [i])) === false
-            end
-        end
-
-        @testset "basemeasure" begin
-            for (i) in (1:10)
-                @test basemeasure(ExponentialFamilyDistribution(Rayleigh, [-i]), i^2) == i^2
-            end
-        end
-        transformation(η) = sqrt(-1 / (2η[1]))
-        @testset "fisher information" begin
-            for λ in 1:10
-                dist = Rayleigh(λ)
-                ef = convert(ExponentialFamilyDistribution, dist)
-                η = getnaturalparameters(ef)
-                f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Rayleigh, η))
-                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-                @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-                J = ForwardDiff.gradient(transformation, η)
-                @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
-            end
-        end
-    end
-
-    @testset "ExponentialFamilyDistribution mean, var" begin
-        for λ in 1:10
-            dist = Rayleigh(λ)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
+    @testset "prod with PreserveTypeProd{ExponentialFamilyDistribution}" for σleft in 1:4, σright in 4:7
+        @testset let (left, right) = (Rayleigh(σleft), Rayleigh(σright))
+            ef_left = convert(ExponentialFamilyDistribution, left)
+            ef_right = convert(ExponentialFamilyDistribution, right)
+            prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
+            @test first(hquadrature(x -> pdf(prod_dist, tan(x * pi / 2)) * (pi / 2) * (1 / cos(x * pi / 2)^2), 0.0, 1.0)) ≈ 1.0
+            @test getnaturalparameters(prod_dist) == getnaturalparameters(ef_left) + getnaturalparameters(ef_right)
         end
     end
 end

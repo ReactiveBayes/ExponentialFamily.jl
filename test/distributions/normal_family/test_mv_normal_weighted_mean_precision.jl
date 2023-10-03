@@ -32,17 +32,17 @@ using Distributions
         Λ    = [1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5]
         dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
-        @test mean(dist) ≈ cholinv(Λ) * xi
-        @test mode(dist) ≈ cholinv(Λ) * xi
+        @test mean(dist) ≈ inv(Λ) * xi
+        @test mode(dist) ≈ inv(Λ) * xi
         @test weightedmean(dist) == xi
         @test invcov(dist) == Λ
         @test precision(dist) == Λ
-        @test cov(dist) ≈ cholinv(Λ)
-        @test std(dist) ≈ cholsqrt(cholinv(Λ))
-        @test all(mean_cov(dist) .≈ (cholinv(Λ) * xi, cholinv(Λ)))
-        @test all(mean_invcov(dist) .≈ (cholinv(Λ) * xi, Λ))
-        @test all(mean_precision(dist) .≈ (cholinv(Λ) * xi, Λ))
-        @test all(weightedmean_cov(dist) .≈ (xi, cholinv(Λ)))
+        @test cov(dist) ≈ inv(Λ)
+        @test std(dist) * std(dist)' ≈ inv(Λ)
+        @test all(mean_cov(dist) .≈ (inv(Λ) * xi, inv(Λ)))
+        @test all(mean_invcov(dist) .≈ (inv(Λ) * xi, Λ))
+        @test all(mean_precision(dist) .≈ (inv(Λ) * xi, Λ))
+        @test all(weightedmean_cov(dist) .≈ (xi, inv(Λ)))
         @test all(weightedmean_invcov(dist) .≈ (xi, Λ))
         @test all(weightedmean_precision(dist) .≈ (xi, Λ))
 
@@ -87,18 +87,20 @@ using Distributions
     end
 
     @testset "prod" begin
-        @test prod(
-            ClosedProd(),
-            MvNormalWeightedMeanPrecision([-1, -1], [2, 2]),
-            MvNormalWeightedMeanPrecision([1, 1], [2, 4])
-        ) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            @test prod(
+                strategy,
+                MvNormalWeightedMeanPrecision([-1, -1], [2, 2]),
+                MvNormalWeightedMeanPrecision([1, 1], [2, 4])
+            ) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
 
-        xi   = [0.2, 3.0, 4.0]
-        Λ    = [1.5 -0.1 0.1; -0.1 1.8 0.0; 0.1 0.0 3.5]
-        dist = MvNormalWeightedMeanPrecision(xi, Λ)
+            xi   = [0.2, 3.0, 4.0]
+            Λ    = [1.5 -0.1 0.1; -0.1 1.8 0.0; 0.1 0.0 3.5]
+            dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
-        @test prod(ClosedProd(), dist, dist) ≈
-              MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
+            @test prod(strategy, dist, dist) ≈
+                  MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
+        end
     end
 
     @testset "convert" begin

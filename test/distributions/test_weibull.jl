@@ -9,30 +9,72 @@ using SpecialFunctions
 using ForwardDiff
 using StableRNGs
 
-import ExponentialFamily: ExponentialFamilyDistribution, ExponentialFamilyDistribution, getnaturalparameters,
+import ExponentialFamily:
+    ExponentialFamilyDistribution, getnaturalparameters,
     getsufficientstatistics, getlogpartition, getbasemeasure, fisherinformation, getconditioner
 import ExponentialFamily: basemeasure, isproper
-import StatsFuns: xlogy
+
+include("../testutils.jl")
 
 @testset "Weibull" begin
 
     # Weibull comes from Distributions.jl and most of the things should be covered there
     # Here we test some extra ExponentialFamily.jl specific functionality
 
-    @testset "convert" begin
-        for λ in 0.5:0.5:10, k in 0.5:0.5:10
-            @test convert(ExponentialFamilyDistribution, Weibull(k, λ)) ≈
-                  ExponentialFamilyDistribution(Weibull, [-(1 / λ)^(k)], k)
+    @testset "ExponentialFamilyDistribution{Weibull}" begin
+        @testset for shape in (1.0, 2.0, 3.0), scale in (0.25, 0.5, 2.0)
+            @testset let d = Weibull(shape, scale)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_jacobian = false)
+                η1 = first(getnaturalparameters(ef))
+                run_test_fisherinformation_against_jacobian(
+                    d;
+                    assume_no_allocations = true,
+                    mappings = (
+                        MeanParametersSpace() => NaturalParametersSpace()
+                    )
+                )
+                for x in scale:1.0:scale+3.0
+                    @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === x^(shape - 1)
+                    @test @inferred(sufficientstatistics(ef, x)) === (x^shape,)
+                    @test @inferred(logpartition(ef)) ≈ -log(-η1) - log(shape)
+                end
+            end
         end
+
+        @testset "fisher information by natural to mean jacobian" begin
+            @testset for k in (1, 3), λ in (0.1, 4.0)
+                η = -(1 / λ)^k
+                transformation(η) = [k, (-1 / η[1])^(1 / k)]
+                J = ForwardDiff.jacobian(transformation, [η])
+                @test first(J' * getfisherinformation(MeanParametersSpace(), Weibull, k)(λ) * J) ≈
+                      first(getfisherinformation(NaturalParametersSpace(), Weibull, k)(η)) atol = 1e-8
+            end
+        end
+
+        for space in (MeanParametersSpace(), NaturalParametersSpace())
+            @test !isproper(space, Weibull, [Inf], 1.0)
+            @test !isproper(space, Weibull, [1.0], Inf)
+            @test !isproper(space, Weibull, [NaN], 1.0)
+            @test !isproper(space, Weibull, [1.0], NaN)
+            @test !isproper(space, Weibull, [0.5, 0.5], 1.0)
+
+            # Conditioner is required
+            @test_throws Exception isproper(space, Weibull, [0.5], [0.5, 0.5])
+            @test_throws Exception isproper(space, Weibull, [1.0], nothing)
+            @test_throws Exception isproper(space, Weibull, [1.0], nothing)
+        end
+
+        @test_throws Exception convert(ExponentialFamilyDistribution, Weibull(Inf, Inf))
     end
 
-    @testset "prod (same k)" begin
-        for η in -10:0.5:-0.5, k in 1.0:0.5:10, x in 0.5:0.5:10
+    @testset "prod with PreserveTypeProd{ExponentialFamilyDistribution} for the same conditioner" begin
+        @testset for η in -2.0:0.5:-0.5, k in 1.0:0.5:2, x in 0.5:0.5:2.0
             ef_left = convert(Distribution, ExponentialFamilyDistribution(Weibull, [η], k))
             ef_right = convert(Distribution, ExponentialFamilyDistribution(Weibull, [-η^2], k))
-            res = prod(ClosedProd(), ef_left, ef_right)
+            res = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
             @test getbasemeasure(res)(x) == x^(2 * (k - 1))
-            @test getsufficientstatistics(res)(x) == [x^k]
+            @test sufficientstatistics(res, x) == (x^k,)
             @test getlogpartition(res)(η - η^2) ==
                   log(abs(η - η^2)^(1 / k)) + loggamma(2 - 1 / k) - 2 * log(abs(η - η^2)) - log(k)
             @test getnaturalparameters(res) ≈ [η - η^2]
@@ -41,65 +83,16 @@ import StatsFuns: xlogy
         end
     end
 
-    @testset "prod (different k)" begin
+    @testset "prod with PreserveTypeProd{ExponentialFamilyDistribution} for different k" begin
         for η in -12:4:-0.5, k in 1.0:4:10, x in 0.5:4:10
             ef_left = convert(Distribution, ExponentialFamilyDistribution(Weibull, [η], k * 2))
             ef_right = convert(Distribution, ExponentialFamilyDistribution(Weibull, [-η^2], k))
-            res = prod(ClosedProd(), ef_left, ef_right)
+            res = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
             @test getbasemeasure(res)(x) == x^(k + k * 2 - 2)
-            @test getsufficientstatistics(res)(x) == [x^(2 * k), x^k]
+            @test sufficientstatistics(res, x) == (x^(2 * k), x^k)
             @test getnaturalparameters(res) ≈ [η, -η^2]
             @test first(hquadrature(x -> pdf(res, tan(x * pi / 2)) * (pi / 2) * (1 / cos(pi * x / 2))^2, 0.0, 1.0)) ≈
                   1.0
-        end
-    end
-
-    @testset "logpartition" begin
-        @test logpartition(ExponentialFamilyDistribution(Weibull, [-1], 1)) ≈ 0
-    end
-
-    @testset "isproper" begin
-        for η in -10:0.5:10, k in 0.5:0.5:10
-            @test isproper(ExponentialFamilyDistribution(Weibull, [η], k)) == (η < 0)
-        end
-    end
-
-    @testset "basemeasure" begin
-        for η in -10:0.5:-0.5, k in 0.5:0.5:10, x in 0.5:0.5:10
-            @test basemeasure(ExponentialFamilyDistribution(Weibull, [η], k), x) ≈ x^(k - 1)
-        end
-    end
-
-    @testset "isproper" begin
-        for η in -12:4:-0.5, k in 1.0:4:10
-            ef_proper = ExponentialFamilyDistribution(Weibull, [η], k)
-            ef_improper = ExponentialFamilyDistribution(Weibull, [-η], k)
-            @test isproper(ef_proper) == true
-            @test isproper(ef_improper) == false
-        end
-    end
-
-    @testset "fisher information" begin
-        for (λ, k) in Iterators.product(1:5, 1:5)
-            dist = Weibull(λ, k)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
-
-            transformation(η) = [getconditioner(ef), (-1 / η[1])^(1 / getconditioner(ef))]
-            J = ForwardDiff.jacobian(transformation, η)
-            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Weibull, η, k))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test first(fisherinformation(ef)) ≈ first(autograd_information(η)) atol = 1e-8
-            @test first(J' * fisherinformation(dist) * J) ≈ first(fisherinformation(ef)) atol = 1e-8
-        end
-    end
-
-    @testset "ExponentialFamilyDistribution mean,var" begin
-        for (λ, k) in Iterators.product(1:5, 1:5)
-            dist = Weibull(λ, k)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
         end
     end
 end

@@ -2,6 +2,7 @@ module NormalWeightedMeanPrecisionTest
 
 using Test
 using ExponentialFamily
+using Distributions
 
 import ExponentialFamily: ExponentialFamilyDistribution, fisherinformation
 
@@ -116,20 +117,13 @@ import ExponentialFamily: ExponentialFamilyDistribution, fisherinformation
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), NormalWeightedMeanPrecision(-1, 1 / 1), NormalWeightedMeanPrecision(1, 1 / 1)) ≈
-              NormalWeightedMeanPrecision(0, 2)
-        @test prod(ClosedProd(), NormalWeightedMeanPrecision(-1, 1 / 2), NormalWeightedMeanPrecision(1, 1 / 4)) ≈
-              NormalWeightedMeanPrecision(0, 3 / 4)
-        @test prod(ClosedProd(), NormalWeightedMeanPrecision(2, 1 / 2), NormalWeightedMeanPrecision(0, 1 / 10)) ≈
-              NormalWeightedMeanPrecision(2, 3 / 5)
-    end
-
-    @testset "fisherinformation" begin
-        for (xi, w) in Iterators.product(1:10, 1:10)
-            dist = NormalWeightedMeanPrecision(xi, w)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            J = [1 0; 0 -2]
-            @test J * fisherinformation(dist) * J ≈ fisherinformation(ef)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            @test prod(strategy, NormalWeightedMeanPrecision(-1, 1 / 1), NormalWeightedMeanPrecision(1, 1 / 1)) ≈
+                  NormalWeightedMeanPrecision(0, 2)
+            @test prod(strategy, NormalWeightedMeanPrecision(-1, 1 / 2), NormalWeightedMeanPrecision(1, 1 / 4)) ≈
+                  NormalWeightedMeanPrecision(0, 3 / 4)
+            @test prod(strategy, NormalWeightedMeanPrecision(2, 1 / 2), NormalWeightedMeanPrecision(0, 1 / 10)) ≈
+                  NormalWeightedMeanPrecision(2, 3 / 5)
         end
     end
 end

@@ -46,15 +46,16 @@ Distributions.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
+Distributions.params(dist::MvNormalMeanPrecision)    = (mean(dist), invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVector)
     μ = mean(dist)
-    for i in 1:length(r)
-        @inbounds r[i] = μ[i] - x[i]
+    @inbounds @simd for i in 1:length(r)
+        r[i] = μ[i] - x[i]
     end
-    return dot(r, invcov(dist), r) # x' * A * x
+    return dot3arg(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanPrecision{T}) where {T} = T
@@ -72,42 +73,16 @@ end
 vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
     MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-closed_prod_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = ClosedProd()
+default_prod_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ProdPreserveType, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
-    Λ = precision(left) + precision(right)
-    μ = cholinv(Λ) * (precision(left) * mean(left) + precision(right) * mean(right))
-    return MvNormalMeanPrecision(μ, Λ)
-end
-
-function Base.prod(
-    ::ProdPreserveType,
-    left::MvNormalMeanPrecision{T1},
-    right::MvNormalMeanPrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
-    Λ = precision(left) + precision(right)
-
-    # fast & efficient implementation of precision(right)*mean(right) + precision(left)*mean(left)
-    xi = precision(right) * mean(right)
-    T  = promote_type(T1, T2)
-    xi = convert(AbstractVector{T}, xi)
-    Λ  = convert(AbstractMatrix{T}, Λ)
-    xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)
-
-    z = fastcholesky(Λ)
-    μ = z \ xi
-
-    return MvNormalMeanPrecision(μ, Λ)
-end
-
-function Base.prod(::ClosedProd, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
+function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanPrecision, right::MvNormalMeanPrecision)
     W = precision(left) + precision(right)
     xi = precision(left) * mean(left) + precision(right) * mean(right)
     return MvNormalWeightedMeanPrecision(xi, W)
 end
 
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{Distribution},
     left::MvNormalMeanPrecision{T1},
     right::MvNormalMeanPrecision{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}

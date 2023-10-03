@@ -5,96 +5,213 @@ using ExponentialFamily
 using Random
 using LinearAlgebra
 using Distributions
+using FillArrays
 
 import ExponentialFamily:
-    ExponentialFamilyDistribution, distributiontype, prod, closed_prod_rule, get_constraint,
-    getleft, getright
+    ExponentialFamilyDistribution, prod, default_prod_rule, ProductOf, LinearizedProductOf, getleft, getright
+import ExponentialFamily:
+    UnspecifiedProd, PreserveTypeProd, PreserveTypeLeftProd, PreserveTypeRightProd, ClosedProd, GenericProd
 
-@testset "ProdGeneric" begin
-    × = (x, y) -> prod(ProdGeneric(), x, y)
+## ===========================================================================
+## Tests fixtures
 
-    @testset "ProdGeneric should use ClosedProd where possible" begin
-        @test get_constraint(ProdGeneric()) == ClosedProd()
+# An object, which does not specify any prod rules
+struct SomeUnknownObject end
 
-        efber1 = ExponentialFamilyDistribution(Bernoulli, [log(0.1)])
-        efber2 = ExponentialFamilyDistribution(Bernoulli, [log(0.3)])
-        @test closed_prod_rule(efber1, efber2) == ClosedProd()
-        efberprod = prod(ProdGeneric(), efber1, efber2)
-        @test distributiontype(efberprod) === Bernoulli
+# Two objects that 
+# - implement `ClosedProd` between each other 
+# - implement `prod` with `ClosedProd` between each other 
+# - can be eaily converted between each other
+# - can be converted to an `Int`
+struct ObjectWithClosedProd1 end
+struct ObjectWithClosedProd2 end
 
-        efnormal1 = ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [0.2, -2.0])
-        efnormal2 = ExponentialFamilyDistribution(NormalWeightedMeanPrecision, [1.0, -0.1])
-        @test closed_prod_rule(efnormal1, efnormal2) == ClosedProd()
-        efnormalprod = prod(ProdGeneric(), efnormal1, efnormal2)
-        @test distributiontype(efnormalprod) === NormalWeightedMeanPrecision
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd1}) = PreserveTypeProd(ObjectWithClosedProd1)
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd2}) = PreserveTypeProd(ObjectWithClosedProd2)
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd2}) = PreserveTypeProd(ObjectWithClosedProd1)
+ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd1}) = PreserveTypeProd(ObjectWithClosedProd2)
 
-        efgamma1 = ExponentialFamilyDistribution(Gamma, [2, -2])
-        efgamma2 = ExponentialFamilyDistribution(Gamma, [3, -3])
-        @test closed_prod_rule(efgamma1, efgamma2) == ClosedProd()
-        efgammaprod = prod(ProdGeneric(), efgamma1, efgamma2)
-        @test distributiontype(efgammaprod) === Gamma
+prod(::PreserveTypeProd{ObjectWithClosedProd1}, ::ObjectWithClosedProd1, ::ObjectWithClosedProd1) = ObjectWithClosedProd1()
+prod(::PreserveTypeProd{ObjectWithClosedProd2}, ::ObjectWithClosedProd2, ::ObjectWithClosedProd2) = ObjectWithClosedProd2()
+prod(::PreserveTypeProd{ObjectWithClosedProd1}, ::ObjectWithClosedProd1, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
+prod(::PreserveTypeProd{ObjectWithClosedProd2}, ::ObjectWithClosedProd2, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
+
+Base.convert(::Type{ObjectWithClosedProd1}, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
+Base.convert(::Type{ObjectWithClosedProd2}, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
+
+Base.convert(::Type{Int}, ::ObjectWithClosedProd1) = 1
+Base.convert(::Type{Int}, ::ObjectWithClosedProd2) = 2
+
+struct ADistributionObject <: ContinuousUnivariateDistribution end
+
+prod(::PreserveTypeProd{Distribution}, ::ADistributionObject, ::ADistributionObject) = ADistributionObject()
+
+## ===========================================================================
+## Tests
+
+@testset "UnspecifiedProd" begin
+    @testset "`default_prod_rule` should return `UnspecifiedProd` for two unknown objects" begin
+        @test default_prod_rule(SomeUnknownObject, SomeUnknownObject) === UnspecifiedProd()
+    end
+
+    @testset "`missing` should be ignored with the `UnspecifiedProd`" begin
+        @test prod(UnspecifiedProd(), missing, SomeUnknownObject()) === SomeUnknownObject()
+        @test prod(UnspecifiedProd(), SomeUnknownObject(), missing) === SomeUnknownObject()
+        @test prod(UnspecifiedProd(), missing, missing) === missing
+    end
+end
+
+@testset "ClosedProd" begin
+    @testset "`missing` should be ignored with the `ClosedProd`" begin
+        struct SomeObject end
+        @test prod(ClosedProd(), missing, SomeUnknownObject()) === SomeUnknownObject()
+        @test prod(ClosedProd(), SomeUnknownObject(), missing) === SomeUnknownObject()
+        @test prod(ClosedProd(), missing, missing) === missing
+    end
+
+    @testset "`ClosedProd` for distribution objects should assume `ProdPreserveType(Distribution)`" begin
+        @test prod(ClosedProd(), ADistributionObject(), ADistributionObject()) isa ADistributionObject
+    end
+
+    @testset "`ClosedProd` for EF objects should assume `ProdPreserveType(ExponentialFamilyDistribution)`" begin
+        ef = convert(ExponentialFamilyDistribution, Beta(2.0, 3.0))
+        @test prod(ClosedProd(), ef, ef) isa ExponentialFamilyDistribution
+    end
+end
+
+@testset "PreserveTypeProd" begin
+    @testset "`missing` should be ignored with the `PreserveTypeProd`" begin
+        # Can convert the result of the prod to the desired type
+        @test prod(PreserveTypeProd(SomeUnknownObject), missing, SomeUnknownObject()) isa SomeUnknownObject
+        @test prod(PreserveTypeProd(SomeUnknownObject), SomeUnknownObject(), missing) isa SomeUnknownObject
+        @test prod(PreserveTypeProd(Missing), missing, missing) isa Missing
+        @test prod(PreserveTypeProd(SomeUnknownObject), missing, missing) isa Missing
+    end
+
+    @testset "`PreserveTypeLeftProd` should preserve the type of the left argument" begin
+        @test prod(PreserveTypeLeftProd(), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa ObjectWithClosedProd1
+        @test prod(PreserveTypeLeftProd(), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa ObjectWithClosedProd2
+    end
+
+    @testset "`PreserveTypeRightProd` should preserve the type of the left argument" begin
+        @test prod(PreserveTypeRightProd(), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa ObjectWithClosedProd2
+        @test prod(PreserveTypeRightProd(), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa ObjectWithClosedProd1
+    end
+
+    @testset "`ProdPreserveType(T)` should preserve the desired type of `T`" begin
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd1
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd1
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd1
+        @test prod(PreserveTypeProd(ObjectWithClosedProd1), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd1
+
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa
+              ObjectWithClosedProd2
+        @test prod(PreserveTypeProd(ObjectWithClosedProd2), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa
+              ObjectWithClosedProd2
+
+        # The output can be converted to an `Int` (see the fixtures above)
+        @test prod(PreserveTypeProd(Int), ObjectWithClosedProd1(), ObjectWithClosedProd1()) isa Int
+        @test prod(PreserveTypeProd(Int), ObjectWithClosedProd1(), ObjectWithClosedProd2()) isa Int
+        @test prod(PreserveTypeProd(Int), ObjectWithClosedProd2(), ObjectWithClosedProd1()) isa Int
+        @test prod(PreserveTypeProd(Int), ObjectWithClosedProd2(), ObjectWithClosedProd2()) isa Int
+
+        # The output can not be converted to a `Float` (see the fixtures above)
+        @test_throws MethodError prod(PreserveTypeProd(Float64), ObjectWithClosedProd1(), ObjectWithClosedProd1())
+        @test_throws MethodError prod(PreserveTypeProd(Float64), ObjectWithClosedProd1(), ObjectWithClosedProd2())
+        @test_throws MethodError prod(PreserveTypeProd(Float64), ObjectWithClosedProd2(), ObjectWithClosedProd1())
+        @test_throws MethodError prod(PreserveTypeProd(Float64), ObjectWithClosedProd2(), ObjectWithClosedProd2())
+    end
+end
+
+@testset "GenericProd" begin
+    × = (x, y) -> prod(GenericProd(), x, y)
+
+    @testset "GenericProd should use `default_prod_rule` where possible" begin
+
+        # `SomeUnknownObject` does not implement any prod rule (see the fixtures above)
+        @test SomeUnknownObject() × SomeUnknownObject() isa ProductOf{SomeUnknownObject, SomeUnknownObject}
+        @test ObjectWithClosedProd1() × SomeUnknownObject() isa ProductOf{ObjectWithClosedProd1, SomeUnknownObject}
+        @test SomeUnknownObject() × ObjectWithClosedProd1() isa ProductOf{SomeUnknownObject, ObjectWithClosedProd1}
+
+        @test getleft(ObjectWithClosedProd1() × SomeUnknownObject()) === ObjectWithClosedProd1()
+        @test getright(ObjectWithClosedProd1() × SomeUnknownObject()) === SomeUnknownObject()
+        @test getleft(SomeUnknownObject() × ObjectWithClosedProd1()) === SomeUnknownObject()
+        @test getright(SomeUnknownObject() × ObjectWithClosedProd1()) === ObjectWithClosedProd1()
+
+        # Both `ObjectWithClosedProd1` and `ObjectWithClosedProd2` implement `ClosedProd` as a default (see the fixtures above)
+        @test ObjectWithClosedProd1() × ObjectWithClosedProd1() isa ObjectWithClosedProd1
+        @test ObjectWithClosedProd2() × ObjectWithClosedProd2() isa ObjectWithClosedProd2
     end
 
     @testset "ProdGeneric should simplify a product tree if closed form product available for leaves" begin
-        dof = 5
-        ef1 = ExponentialFamilyDistribution(Chisq, [dof / 2 - 1])
-        ef2 = ExponentialFamilyDistribution(Gamma, [3.2, -2.3])
-        ef3 = ExponentialFamilyDistribution(Gamma, [1.2, -3.1])
-        ef4 = prod(ProdGeneric(), ef2, ef3)
+        d1 = SomeUnknownObject()
+        d2 = ObjectWithClosedProd1()
+        d3 = ObjectWithClosedProd2()
 
-        @test (ef1 × ef2) × ef3 == ef1 × ef4
-        @test getleft((ef1 × ef2) × ef3) == getleft(ef1 × ef4)
-        @test getright((ef1 × ef2) × ef3) == getright(ef1 × ef4)
+        @test (d1 × d2) × d2 == d1 × d2
+        @test (d1 × d3) × d3 == d1 × d3
+        @test (d2 × d3) × d3 == d2
+        @test (d3 × d2) × d2 == d3
 
-        @test (ef2 × ef1) × ef3 == ef4 × ef1
-        @test getleft((ef2 × ef1) × ef3) == getleft(ef4 × ef1)
-        @test getright((ef2 × ef1) × ef3) == getright(ef4 × ef1)
+        @test d1 × (d2 × d2) == d1 × d2
+        @test d1 × (d3 × d3) == d1 × d3
+        @test d2 × (d3 × d3) == d2
+        @test d3 × (d2 × d2) == d3
 
-        @test ef3 × (ef2 × ef1) == ef4 × ef1
-        @test getleft(ef3 × (ef2 × ef1)) == getleft(ef4 × ef1)
-        @test getright(ef3 × (ef2 × ef1)) == getright(ef4 × ef1)
+        @test (d2 × d1) × d2 == (d2 × d1)
+        @test (d3 × d1) × d3 == (d3 × d1)
+        @test (d2 × d2) × d1 == (d2 × d1)
+        @test (d3 × d3) × d1 == (d3 × d1)
 
-        @test ef3 × (ef1 × ef2) == ef1 × ef4
-        @test getleft(ef3 × (ef1 × ef2)) == getleft(ef1 × ef4)
-        @test getright(ef3 × (ef1 × ef2)) == getright(ef1 × ef4)
-
-        @test (ef2 × ef2) × (ef3 × ef3) == (ef3 × ef3) × (ef2 × ef2)
+        @test d2 × (d1 × d2) == (d1 × d2)
+        @test d3 × (d1 × d3) == (d1 × d3)
+        @test d2 × (d2 × d1) == (d2 × d1)
+        @test d3 × (d3 × d1) == (d3 × d1)
     end
 
     @testset "ProdGeneric should create a product tree if closed form product is not available" begin
-        ef1 = ExponentialFamilyDistribution(Gamma, [3.1, -2.0])
-        ef2 = ExponentialFamilyDistribution(Laplace, [0.1], -2)
-        ef3 = ExponentialFamilyDistribution(Categorical, [0.1, 0.9])
+        d1 = SomeUnknownObject()
 
-        @test ef1 × ef2 == ProductDistribution(ef1, ef2)
-        @test (ef1 × ef2) × ef3 == ProductDistribution(ProductDistribution(ef1, ef2), ef3)
+        @test 1.0 × 1 × d1 isa ProductOf{ProductOf{Float64, Int}, SomeUnknownObject}
+        @test 1 × 1.0 × d1 isa ProductOf{ProductOf{Int, Float64}, SomeUnknownObject}
     end
 
     @testset "ProdGeneric should create a linearised product tree if closed form product is not available, but objects are of the same type" begin
-        struct DummyDistribution1 end
-        struct DummyDistribution2 end
+        d1 = SomeUnknownObject()
+        d2 = ObjectWithClosedProd1()
 
-        d1 = DummyDistribution1()
-        d2 = DummyDistribution2()
+        @test d1 × d1 isa ProductOf{SomeUnknownObject, SomeUnknownObject}
 
-        @test d1 × d2 === ProductDistribution(DummyDistribution1(), DummyDistribution2())
-        @test d1 × d2 × d2 × d2 isa
-              ProductDistribution{DummyDistribution1, LinearizedProductDistribution{DummyDistribution2}}
-        @test (d1 × d2 × d2 × d2) × d1 × d1 isa ProductDistribution{
-            LinearizedProductDistribution{DummyDistribution1},
-            LinearizedProductDistribution{DummyDistribution2}
-        }
+        @testset let product = d1 × d1 × d1
+            @test product isa LinearizedProductOf{SomeUnknownObject}
+            @test length(product) === 3
 
-        ef1 = ExponentialFamilyDistribution(Poisson, [10])
-        ef2 = ExponentialFamilyDistribution(Weibull, [-3], 3)
-        ef3 = ef2 × ef2
-        ef4 = ef1 × ef1
-        ef5 = ef2 × ef2 × ef3
+            # Test that the next prod rule should preserve the type of the linearized product
+            @test default_prod_rule(product, d1) isa PreserveTypeProd{LinearizedProductOf{SomeUnknownObject}}
+        end
 
-        @test ef1 × ef2 == ProductDistribution(ef1, ef2)
-        @test ef5 == ProductDistribution(ef3, ef3)
+        @testset let product = (d1 × d1 × d1) × d1
+            @test product isa LinearizedProductOf{SomeUnknownObject}
+            @test length(product) === 4
 
-        @test ef1 × ef2 × ef2 × ef3 == ef1 × ef3 × ef3
+            # Test that the next prod rule should preserve the type of the linearized product
+            @test default_prod_rule(product, d1) isa PreserveTypeProd{LinearizedProductOf{SomeUnknownObject}}
+        end
+
+        @test d2 × d1 × d1 × d1 isa ProductOf{ObjectWithClosedProd1, LinearizedProductOf{SomeUnknownObject}}
+        @test d2 × d1 × d1 × d1 × d1 isa ProductOf{ObjectWithClosedProd1, LinearizedProductOf{SomeUnknownObject}}
+
+        # d2 × (...) × d2 should fold if closed prod is available
+        @test d2 × d1 × d1 × d1 × d1 × d2 == (d2 × d2) × d1 × d1 × d1 × d1
+        @test d2 × d1 × d2 × d1 × d2 × d1 × d1 × d2 == (d2 × d2 × d2 × d2) × d1 × d1 × d1 × d1
     end
 end
 

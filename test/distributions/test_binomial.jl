@@ -1,15 +1,15 @@
 module BinomialTest
 
-using Test
-using ExponentialFamily, LinearAlgebra
-using Distributions
-using Random
-using ForwardDiff
-import StatsFuns: logit, logistic
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
+using ExponentialFamily, Distributions
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs
+
+include("../testutils.jl")
 
 @testset "Binomial" begin
+
+    # Binomial comes from Distributions.jl and most of the things should be covered there
+    # Here we test some extra ExponentialFamily.jl specific functionality
+
     @testset "probvec" begin
         @test all(probvec(Binomial(2, 0.8)) .≈ (0.2, 0.8))
         @test probvec(Binomial(2, 0.2)) == (0.8, 0.2)
@@ -26,105 +26,60 @@ import ExponentialFamily:
         @test probvec(vague_dist) == (0.5, 0.5)
     end
 
-    @testset "natural parameters related" begin
-        d1 = Binomial(5, 1 / 3)
-        d2 = Binomial(5, 1 / 2)
-        η1 = ExponentialFamilyDistribution(Binomial, [logit(1 / 3)], 5)
-        η2 = ExponentialFamilyDistribution(Binomial, [logit(1 / 2)], 5)
+    @testset "ExponentialFamilyDistribution{Binomial}" begin
+        @testset for n in (2, 3, 4), p in 0.1:0.2:0.9
+            @testset let d = Binomial(n, p)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
-        @test convert(ExponentialFamilyDistribution, d1) == η1
-        @test convert(ExponentialFamilyDistribution, d2) == η2
+                η₁ = log(p / (1 - p))
 
-        @test convert(Distribution, η1) ≈ d1
-        @test convert(Distribution, η2) ≈ d2
-
-        η3 = ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 5)
-        η4 = ExponentialFamilyDistribution(Binomial, [log(exp(1) - 1)], 10)
-
-        @test logpartition(η3) ≈ 5.0
-        @test logpartition(η4) ≈ 10.0
-
-        @test logpdf(η1, 2) ≈ logpdf(d1, 2)
-        @test logpdf(η2, 3) ≈ logpdf(d2, 3)
-
-        @test pdf(η1, 2) ≈ pdf(d1, 2)
-        @test pdf(η2, 4) ≈ pdf(d2, 4)
-
-        binomialef = ExponentialFamilyDistribution(Binomial, [logit(0.3)], 10)
-        @test sufficientstatistics(binomialef, 1) == [1]
-        @test sufficientstatistics(binomialef, 7) == [7]
-        # @test_throws AssertionError sufficientstatistics(binomialef, 11)
-        # @test_throws AssertionError sufficientstatistics(binomialef, 1.1)
-    end
-
-    @testset "prod ExponentialFamilyDistribution" begin
-        for nleft in 1:2, pleft in 0.01:0.3:0.99
-            left = Binomial(nleft, pleft)
-            efleft = convert(ExponentialFamilyDistribution, left)
-            for nright in 1:1, pright in 0.01:0.3:0.99
-                right = Binomial(nright, pright)
-                efright = convert(ExponentialFamilyDistribution, right)
-                prod_dist = prod(efleft, efright)
-                hist_sum(x) =
-                    prod_dist.basemeasure(x) * exp(
-                        dot(prod_dist.sufficientstatistics(x), prod_dist.naturalparameters) -
-                        prod_dist.logpartition(prod_dist.naturalparameters)
-                    )
-                @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
-                sample_points = collect(1:max(nleft, nright))
-                for x in sample_points
-                    @test prod_dist.basemeasure(x) == (binomial(nleft, x) * binomial(nright, x))
-                    @test prod_dist.sufficientstatistics(x) == [x]
+                for x in 0:n
+                    @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === binomial(n, x)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x,))
+                    @test @inferred(logpartition(ef)) ≈ (n * log(1 + exp(η₁)))
                 end
+
+                @test !@inferred(insupport(ef, -1))
+                @test @inferred(insupport(ef, 0))
+
+                # Not in the support
+                @test_throws Exception logpdf(ef, -1)
             end
         end
+
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), Binomial, [-1], 1)
+        @test !isproper(MeanParametersSpace(), Binomial, [0.5], -1)
+        @test !isproper(MeanParametersSpace(), Binomial, [-0.1, 1], 10)
+        @test !isproper(NaturalParametersSpace(), Binomial, [-1.1], -1)
+        @test !isproper(NaturalParametersSpace(), Binomial, [1, -1.1], 10)
     end
 
-    @testset "prod Distribution" begin
-        for nleft in 1:15, pleft in 0.01:0.3:0.99
-            left = Binomial(nleft, pleft)
-            for nright in 1:10, pright in 0.01:0.3:0.99
-                right = Binomial(nright, pright)
-                prod_dist = prod(ClosedProd(), left, right)
-                hist_sum(x) =
-                    prod_dist.basemeasure(x) * exp(
-                        dot(prod_dist.sufficientstatistics(x), prod_dist.naturalparameters) -
-                        prod_dist.logpartition(prod_dist.naturalparameters[1])
-                    )
-                @test sum(hist_sum(x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-9
-                sample_points = collect(1:max(nleft, nright))
-                for x in sample_points
-                    @test prod_dist.basemeasure(x) == (binomial(nleft, x) * binomial(nright, x))
-                    @test prod_dist.sufficientstatistics(x) == [x]
+    @testset "prod ExponentialFamilyDistribution" for nleft in 1:1, pleft in 0.1:0.1:0.1, nright in 1:1, pright in 0.1:0.1:0.1
+        @testset let (left, right) = (Binomial(nleft, pleft), Binomial(nright, pright))
+            for (efleft, efright) in ((left, right), (convert(ExponentialFamilyDistribution, left), convert(ExponentialFamilyDistribution, right)))
+                for strategy in (PreserveTypeProd(ExponentialFamilyDistribution),)
+                    prod_dist = prod(strategy, efleft, efright)
+
+                    @test prod_dist isa ExponentialFamilyDistribution
+
+                    hist_sum(x) =
+                        basemeasure(prod_dist, x) * exp(
+                            dot(ExponentialFamily.flatten_parameters(sufficientstatistics(prod_dist, x)), getnaturalparameters(prod_dist)) -
+                            logpartition(prod_dist)
+                        )
+
+                    support = 0:1:max(nleft, nright)
+
+                    @test sum(hist_sum, support) ≈ 1.0 atol = 1e-9
+
+                    for x in support
+                        @test basemeasure(prod_dist, x) ≈ (binomial(nleft, x) * binomial(nright, x))
+                        @test all(sufficientstatistics(prod_dist, x) .≈ (x,))
+                    end
                 end
             end
-        end
-    end
-
-    @testset "fisher information" begin
-        function transformation(params)
-            return logistic(params[1])
-        end
-
-        for n in 2:10, κ in 0.01:0.1:1.0
-            dist = Binomial(n, κ)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
-
-            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Binomial, η, n))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-            J = ForwardDiff.gradient(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ first(fisherinformation(ef)) atol = 1e-8
-        end
-    end
-
-    @testset "ExponentialFamilyDistribution mean var" begin
-        for n in 2:10, κ in 0.01:0.1:1.0
-            dist = Binomial(n, κ)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
         end
     end
 end

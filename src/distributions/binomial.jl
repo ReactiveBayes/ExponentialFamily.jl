@@ -1,5 +1,7 @@
 export Binomial
+
 using DomainSets
+
 import Distributions: Binomial, probs, Univariate
 import StatsFuns: logit, logistic, log1pexp
 
@@ -10,27 +12,14 @@ vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
 
 probvec(dist::Binomial) = (failprob(dist), succprob(dist))
 
-function convert_eltype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) where {T <: Real, R <: Real}
+function convert_paramfloatype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) where {T <: Real, R <: Real}
     n, p = params(distribution)
-    return Binomial(n, convert(AbstractVector{T}, p))
-end
-
-function insupport(ef::ExponentialFamilyDistribution{Binomial, P, C, Safe}, x) where {P, C}
-    return x ∈ ClosedInterval{Int}(0, getconditioner(ef)) && typeof(x) <: Int
-end
-
-closed_prod_rule(::Type{<:Binomial}, ::Type{<:Binomial}) = ClosedProd()
-
-function Base.prod(::ClosedProd, left::Binomial, right::Binomial)
-    efleft = convert(ExponentialFamilyDistribution, left)
-    efright = convert(ExponentialFamilyDistribution, right)
-
-    return prod(efleft, efright)
+    return Binomial(n, convert(T, p))
 end
 
 # NOTE: The product of two Binomial distributions is NOT a Binomial distribution.
 function Base.prod(
-    ::ClosedProd,
+    ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
 ) where {T <: Binomial}
@@ -41,77 +30,83 @@ function Base.prod(
 
     naturalparameters = η_left + η_right
 
-    function basemeasure(x)
-        p_left, p_right, p_x = promote(left_trials, right_trials, x)
-        binomial_prod(p_left, p_right, p_x)
-    end
-
-    sufficientstatistics = (x) -> SA[x]
+    basemeasure = (x) -> binomial_prod(left_trials, right_trials, x)
+    sufficientstatistics = (identity,)
     logpartition = (η) -> log(_₂F₁(-left_trials, -right_trials, 1, exp(first(η))))
-    supp = 0:max(left_trials, right_trials)
+    support = 0:max(left_trials, right_trials)
+
+    attributes = ExponentialFamilyDistributionAttributes(
+        basemeasure,
+        sufficientstatistics,
+        logpartition,
+        support
+    )
 
     return ExponentialFamilyDistribution(
         Univariate,
         naturalparameters,
         nothing,
-        basemeasure,
-        sufficientstatistics,
-        logpartition,
-        supp
+        attributes
     )
 end
 
-function pack_naturalparameters(dist::Binomial)
-    return [logit(dist.p)]
+# Natural parametrization
+
+# This is needed, because `getsupport` of Binomial is not really defined with respect to its type due to need in ntrials
+Distributions.insupport(ef::ExponentialFamilyDistribution{Binomial}, x) = insupport(convert(Distribution, ef), x)
+
+isproper(::NaturalParametersSpace, ::Type{Binomial}, η, conditioner) = length(η) === 1 && isinteger(conditioner) && conditioner >= 0
+isproper(::MeanParametersSpace, ::Type{Binomial}, θ, conditioner::Number) = length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0
+
+function separate_conditioner(::Type{Binomial}, params)
+    ntrials, succprob = params
+    return ((succprob,), ntrials)
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Binomial})
-    vectorized = getnaturalparameters(ef)
-    @inbounds η1 = vectorized[1]
-    return (η1,)
+function join_conditioner(::Type{Binomial}, cparams, conditioner)
+    (succprob,) = cparams
+    ntrials = conditioner
+    return (ntrials, succprob)
 end
 
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Binomial)
-    return ExponentialFamilyDistribution(Binomial, pack_naturalparameters(dist), dist.n)
+function (::MeanToNatural{Binomial})(tuple_of_θ::Tuple{Any}, _)
+    (succprob,) = tuple_of_θ
+    return (logit(succprob),)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Binomial})
-    (η,) = unpack_naturalparameters(exponentialfamily)
-    return Binomial(getconditioner(exponentialfamily), logistic(η))
+function (::NaturalToMean{Binomial})(tuple_of_η::Tuple{Any}, _)
+    (η₁,) = tuple_of_η
+    return (logistic(η₁),)
 end
 
-check_valid_natural(::Type{<:Binomial}, params) = length(params) == 1
-
-function check_valid_conditioner(::Type{<:Binomial}, conditioner)
-    isinteger(conditioner) && conditioner > zero(conditioner)
+function unpack_parameters(::Type{Binomial}, packed)
+    return (first(packed),)
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
-    getconditioner(exponentialfamily) > zero(Int64) ? true : false
+isbasemeasureconstant(::Type{Binomial}) = NonConstantBaseMeasure()
 
-logpartition(exponentialfamily::ExponentialFamilyDistribution{Binomial}) =
-    getconditioner(exponentialfamily)log1pexp(first(unpack_naturalparameters(exponentialfamily)))
+getbasemeasure(::Type{Binomial}, ntrials) = Base.Fix1(binomial, ntrials)
+getsufficientstatistics(::Type{Binomial}, _) = (identity,)
 
-function fisherinformation(dist::Binomial)
-    n, p = params(dist)
-    return SA[n / (p * (1 - p));;]
+getlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
+    (η₁,) = unpack_parameters(Binomial, η)
+    return ntrials * log1pexp(η₁)
 end
 
-function fisherinformation(ef::ExponentialFamilyDistribution{Binomial})
-    (η,) = unpack_naturalparameters(ef)
-    aux = logistic(η)
-    n = getconditioner(ef)
-
-    return SA[n * aux * (1 - aux);;]
+getfisherinformation(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
+    (η₁,) = unpack_parameters(Binomial, η)
+    aux = logistic(η₁)
+    return SA[ntrials * aux * (1 - aux);;]
 end
 
-basemeasureconstant(::ExponentialFamilyDistribution{Binomial}) = NonConstantBaseMeasure()
-basemeasureconstant(::Type{<:Binomial}) = NonConstantBaseMeasure()
+## Mean parametrization
 
-basemeasure(ef::ExponentialFamilyDistribution{Binomial}) = x -> basemeasure(ef, x)
-basemeasure(ef::ExponentialFamilyDistribution{Binomial}, x) = binomial(getconditioner(ef), x)
+getlogpartition(::MeanParametersSpace, ::Type{Binomial}, ntrials) = (θ) -> begin
+    (p,) = unpack_parameters(Binomial, θ)
+    return -ntrials * log(1 - p)
+end
 
-sufficientstatistics(type::Type{<:Binomial}) = x -> sufficientstatistics(type, x)
-sufficientstatistics(::Type{<:Binomial}, x) = SA[x]
-sufficientstatistics(ef::ExponentialFamilyDistribution{<:Binomial}) = x -> sufficientstatistics(ef, x)
-sufficientstatistics(::ExponentialFamilyDistribution{<:Binomial}, x) = SA[x]
+getfisherinformation(::MeanParametersSpace, ::Type{Binomial}, ntrials) = (θ) -> begin
+    (p,) = unpack_parameters(Binomial, θ)
+    return SA[ntrials / (p * (1 - p));;]
+end

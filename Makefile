@@ -17,3 +17,6 @@ doc_init:
 
 docs: doc_init ## Generate documentation
 	julia --project=docs/ docs/make.jl
+
+servedocs: doc_init ## Serve documentation (and auto-reload on change), requires LiveServer.jl
+	julia --project=docs -e 'using LiveServer; servedocs()'

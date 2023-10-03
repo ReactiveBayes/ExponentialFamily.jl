@@ -2,6 +2,7 @@ module NormalMeanPrecisionTest
 
 using Test
 using ExponentialFamily
+using Distributions
 using ForwardDiff
 using StableRNGs
 
@@ -118,20 +119,13 @@ import ExponentialFamily: fisherinformation
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), NormalMeanPrecision(-1, 1 / 1), NormalMeanPrecision(1, 1 / 1)) ≈
-              NormalWeightedMeanPrecision(0.0, 2.0)
-        @test prod(ClosedProd(), NormalMeanPrecision(-1, 1 / 2), NormalMeanPrecision(1, 1 / 4)) ≈
-              NormalWeightedMeanPrecision(-1 / 4, 3 / 4)
-        @test prod(ClosedProd(), NormalMeanPrecision(2, 1 / 2), NormalMeanPrecision(0, 1 / 10)) ≈
-              NormalWeightedMeanPrecision(1, 3 / 5)
-    end
-
-    @testset "fisherinformation" begin
-        for (m, w) in Iterators.product(1:10, 1:10)
-            dist = NormalMeanPrecision(m, w)
-            normal_weighted_mean_precision = convert(NormalWeightedMeanPrecision, dist)
-            J = [1/w -m/w; 0 1]
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(normal_weighted_mean_precision)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            @test prod(strategy, NormalMeanPrecision(-1, 1 / 1), NormalMeanPrecision(1, 1 / 1)) ≈
+                  NormalWeightedMeanPrecision(0.0, 2.0)
+            @test prod(strategy, NormalMeanPrecision(-1, 1 / 2), NormalMeanPrecision(1, 1 / 4)) ≈
+                  NormalWeightedMeanPrecision(-1 / 4, 3 / 4)
+            @test prod(strategy, NormalMeanPrecision(2, 1 / 2), NormalMeanPrecision(0, 1 / 10)) ≈
+                  NormalWeightedMeanPrecision(1, 3 / 5)
         end
     end
 end

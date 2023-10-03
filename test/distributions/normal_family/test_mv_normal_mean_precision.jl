@@ -36,12 +36,12 @@ using Distributions
         @test weightedmean(dist) == Λ * μ
         @test invcov(dist) == Λ
         @test precision(dist) == Λ
-        @test cov(dist) ≈ cholinv(Λ)
-        @test std(dist) ≈ cholsqrt(cholinv(Λ))
-        @test all(mean_cov(dist) .≈ (μ, cholinv(Λ)))
+        @test cov(dist) ≈ inv(Λ)
+        @test std(dist) * std(dist)' ≈ inv(Λ)
+        @test all(mean_cov(dist) .≈ (μ, inv(Λ)))
         @test all(mean_invcov(dist) .≈ (μ, Λ))
         @test all(mean_precision(dist) .≈ (μ, Λ))
-        @test all(weightedmean_cov(dist) .≈ (Λ * μ, cholinv(Λ)))
+        @test all(weightedmean_cov(dist) .≈ (Λ * μ, inv(Λ)))
         @test all(weightedmean_invcov(dist) .≈ (Λ * μ, Λ))
         @test all(weightedmean_precision(dist) .≈ (Λ * μ, Λ))
 
@@ -86,15 +86,17 @@ using Distributions
     end
 
     @testset "prod" begin
-        @test prod(ClosedProd(), MvNormalMeanPrecision([-1, -1], [2, 2]), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
-              MvNormalWeightedMeanPrecision([0, 2], [4, 6])
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+            @test prod(strategy, MvNormalMeanPrecision([-1, -1], [2, 2]), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
+                  MvNormalWeightedMeanPrecision([0, 2], [4, 6])
 
-        μ    = [1.0, 2.0, 3.0]
-        Λ    = diagm(1 ./ [1.0, 2.0, 3.0])
-        dist = MvNormalMeanPrecision(μ, Λ)
+            μ    = [1.0, 2.0, 3.0]
+            Λ    = diagm(1 ./ [1.0, 2.0, 3.0])
+            dist = MvNormalMeanPrecision(μ, Λ)
 
-        @test prod(ClosedProd(), dist, dist) ≈
-              MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+            @test prod(strategy, dist, dist) ≈
+                  MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+        end
     end
 
     @testset "convert" begin

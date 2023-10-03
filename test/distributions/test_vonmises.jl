@@ -6,9 +6,10 @@ using Distributions
 using Random
 using StableRNGs
 using ForwardDiff
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, logpartition, basemeasure, fisherinformation
 import SpecialFunctions: besseli
+
+include("../testutils.jl")
+
 @testset "VonMises" begin
 
     # VonMises comes from Distributions.jl and most of the things should be covered there
@@ -22,101 +23,63 @@ import SpecialFunctions: besseli
         @test params(d) === (0.0, 1.0e-12)
     end
 
-    @testset "prod" begin
-        @test prod(ClosedProd(), VonMises(3.0, 2.0), VonMises(2.0, 1.0)) ≈ Base.convert(
-            Distribution,
-            prod(
-                convert(ExponentialFamilyDistribution, VonMises(3.0, 2.0)),
-                convert(ExponentialFamilyDistribution, VonMises(2.0, 1.0))
-            )
-        )
-        @test prod(ClosedProd(), VonMises(7.0, 1.0), VonMises(0.1, 4.5)) ≈ Base.convert(
-            Distribution,
-            prod(
-                convert(ExponentialFamilyDistribution, VonMises(7.0, 1.0)),
-                convert(ExponentialFamilyDistribution, VonMises(0.1, 4.5))
-            )
-        )
-        @test prod(ClosedProd(), VonMises(1.0, 3.0), VonMises(0.2, 0.4)) ≈ Base.convert(
-            Distribution,
-            prod(
-                convert(ExponentialFamilyDistribution, VonMises(1.0, 3.0)),
-                convert(ExponentialFamilyDistribution, VonMises(0.2, 0.4))
-            )
-        )
+    @testset "ExponentialFamilyDistribution{VonMises}" begin
+        @testset for a in -2:1.0:2, b in 0.1:4.0:10.0
+            @testset let d = VonMises(a, b)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+
+                for x in a-1:0.5:a+1
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === inv(twoπ)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (cos(x), sin(x)))
+                    @test @inferred(logpartition(ef)) ≈ (log(besseli(0, b)))
+                end
+
+                @test !@inferred(insupport(ef, -6))
+                @test @inferred(insupport(ef, 0.5))
+
+                # Not in the support
+                @test_throws Exception logpdf(ef, -6.0)
+            end
+        end
+
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), VonMises, [-1])
+        @test !isproper(MeanParametersSpace(), VonMises, [1], 3.0)
+        @test !isproper(MeanParametersSpace(), VonMises, [1, -2])
     end
 
-    @testset "natural parameters related" begin
-        @testset "Constructor" begin
-            for i in 1:10, j in 1:10
-                @test convert(Distribution, ExponentialFamilyDistribution(VonMises, [i, j])) ==
-                      VonMises(acos(i / sqrt(i^2 + j^2)), sqrt(i^2 + j^2))
+    @testset "prod with Distributions" begin
+        function prod_result_parameters(paramsleft, paramsright)
+            (μleft, κleft) = paramsleft
+            (μright, κright) = paramsright
+            a = κleft * cos(μleft) + κright * cos(μright)
+            b = κleft * sin(μleft) + κright * sin(μright)
 
-                @test convert(
-                    ExponentialFamilyDistribution,
-                    VonMises(acos(i / sqrt(i^2 + j^2)), sqrt(i^2 + j^2))
-                ) ≈
-                      ExponentialFamilyDistribution(VonMises, float([i, j]))
-            end
+            R = sqrt(a^2 + b^2)
+            α = atan(b / a)
+
+            return α, R
         end
-
-        @testset "logpartition" begin
-            @test logpartition(ExponentialFamilyDistribution(VonMises, [2 / √(2), 2 / √(2)])) ≈ log(besseli(0, 2))
-            @test logpartition(ExponentialFamilyDistribution(VonMises, [1, 1])) ≈ log(besseli(0, sqrt(2)))
-        end
-
-        @testset "logpdf" begin
-            for i in 1:10, j in 1:10
-                @test logpdf(ExponentialFamilyDistribution(VonMises, [i, j]), 0.01) ≈
-                      logpdf(VonMises(acos(i / sqrt(i^2 + j^2)), sqrt(i^2 + j^2)), 0.01)
-                @test logpdf(ExponentialFamilyDistribution(VonMises, [i, j]), 0.5) ≈
-                      logpdf(VonMises(acos(i / sqrt(i^2 + j^2)), sqrt(i^2 + j^2)), 0.5)
-            end
-        end
-
-        @testset "isproper" begin
-            for i in 0:10
-                @test isproper(ExponentialFamilyDistribution(VonMises, [i, i])) === true
-            end
-            for i in 1:10
-                @test isproper(ExponentialFamilyDistribution(VonMises, [-i, -i])) === true
-            end
-        end
-
-        @testset "basemeasure" begin
-            for (i, j) in (1:10, 1:10)
-                @test basemeasure(ExponentialFamilyDistribution(VonMises, [i, j]), rand()) == 1 / 2pi
-                @test basemeasure(VonMises(i + 1, j + 1), rand()) == 1 / 2pi
-            end
-        end
-
-        @testset "fisher information" begin
-            function transformation(params)
-                κ = sqrt(params' * params)
-                μ = acos(params[1] / κ)
-                return [μ, κ]
-            end
-
-            for μ in rand(200), κ in 1.0:0.4:5.0
-                dist = VonMises(μ, κ)
-                ef = convert(ExponentialFamilyDistribution, dist)
-                η = getnaturalparameters(ef)
-
-                f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(VonMises, η))
-                autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-                @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-8
-                J = ForwardDiff.jacobian(transformation, η)
-                @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-8
-            end
+        (μ1, κ1) = prod_result_parameters((3.0, 2.0), (2.0, 1.0))
+        (μ2, κ2) = prod_result_parameters((7.0, 1.0), (0.1, 4.5))
+        (μ3, κ3) = prod_result_parameters((1.0, 3.0), (0.2, 0.4))
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, VonMises(3.0, 2.0), VonMises(2.0, 1.0)) ≈ VonMises(μ1, κ1)
+            @test prod(strategy, VonMises(7.0, 1.0), VonMises(0.1, 4.5)) ≈ VonMises(μ2, κ2)
+            @test prod(strategy, VonMises(1.0, 3.0), VonMises(0.2, 0.4)) ≈ VonMises(μ3, κ3)
         end
     end
 
-    @testset "ExponentialFamilyDistribution mean,var" begin
-        for μ in rand(200), κ in 1.0:0.4:5.0
-            dist = VonMises(μ, κ)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
+    @testset "prod with ExponentialFamilyDistribution{VonMises}" begin
+        for kleft in (0.01, 1.0), kright in (0.01, 1.0), alphaleft in 0.1:0.1:0.9, alpharight in 0.1:0.1:0.9
+            let left = VonMises(alphaleft, kleft), right = VonMises(alpharight, kright)
+                @test test_generic_simple_exponentialfamily_product(
+                    left,
+                    right,
+                    strategies = (PreserveTypeProd(ExponentialFamilyDistribution{VonMises}), GenericProd())
+                )
+            end
         end
     end
 end

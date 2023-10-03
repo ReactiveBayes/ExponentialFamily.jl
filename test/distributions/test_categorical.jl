@@ -1,14 +1,9 @@
 module CategoricalTest
 
-using Test
-using ExponentialFamily
-using Distributions
-using StableRNGs
-using Random
-using ForwardDiff
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation, sufficientstatistics
-import LogExpFunctions: logsumexp
+using ExponentialFamily, Distributions
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs, LinearAlgebra
+
+include("../testutils.jl")
 
 @testset "Categorical" begin
 
@@ -35,88 +30,74 @@ import LogExpFunctions: logsumexp
         @test probvec(Categorical([0.8, 0.1, 0.1])) == [0.8, 0.1, 0.1]
     end
 
-    @testset "natural parameters related" begin
-        ηcat = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
-        dist = Categorical([1 / 2, 1 / 2])
-        η1   = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
-        η2   = ExponentialFamilyDistribution(Categorical, log.([1, 1]))
-
-        @test convert(Distribution, ηcat) == dist
-        @test convert(ExponentialFamilyDistribution, dist) ==
-              ExponentialFamilyDistribution(Categorical, log.([1, 1]))
-        @test prod(η1, η2) == ExponentialFamilyDistribution(Categorical, [0.0, 0.0])
-
-        @test logpdf(ηcat, 2) == logpdf(dist, 2)
-        @test logpdf(ηcat, 1) == logpdf(dist, 1)
-
-        @test basemeasure(η1, 2) == 1.0
-        @test basemeasure(η1, 1) == 1.0
-
-        @test logpartition(ηcat) == logsumexp(getnaturalparameters(ηcat))
-
-        categoricalef = ExponentialFamilyDistribution(Categorical, [0.1, 0.2, 0.3, 0.4])
-        @test sufficientstatistics(categoricalef, 3) == [0, 0, 1, 0]
-        @test sufficientstatistics(categoricalef, 4) == [0, 0, 0, 1]
-    end
-
     @testset "prod Distribution" begin
-        @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
-              Categorical([0.1, 0.4, 0.5])
-        @test prod(ClosedProd(), Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
-              Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
-        @test prod(ClosedProd(), Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ≈
-              Categorical([2 / 3, 1 / 4, 1 / 12])
-    end
-
-    @testset "prod ExponentialFamilyDistribution" begin
-        for d in 2:20
-            pleft     = rand(d)
-            pleft     = pleft ./ sum(pleft)
-            distleft  = Categorical(pleft)
-            efleft    = convert(ExponentialFamilyDistribution, distleft)
-            ηleft     = getnaturalparameters(efleft)
-            pright    = rand(d)
-            pright    = pright ./ sum(pright)
-            distright = Categorical(pright)
-            efright   = convert(ExponentialFamilyDistribution, distright)
-            ηright    = getnaturalparameters(efright)
-            efprod    = prod(efleft, efright)
-            distprod  = prod(ClosedProd(), distleft, distright)
-            @test efprod == ExponentialFamilyDistribution(Categorical, ηleft + ηright)
-            @test convert(Distribution, efprod) ≈ distprod
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, Categorical([0.1, 0.4, 0.5]), Categorical([1 / 3, 1 / 3, 1 / 3])) ==
+                  Categorical([0.1, 0.4, 0.5])
+            @test prod(strategy, Categorical([0.1, 0.4, 0.5]), Categorical([0.8, 0.1, 0.1])) ==
+                  Categorical([0.47058823529411764, 0.23529411764705882, 0.2941176470588235])
+            @test prod(strategy, Categorical([0.2, 0.6, 0.2]), Categorical([0.8, 0.1, 0.1])) ≈
+                  Categorical([2 / 3, 1 / 4, 1 / 12])
         end
     end
 
-    @testset "fisher information" begin
-        function transformation(η)
-            expη = exp.(η)
-            expη / sum(expη)
+    @testset "ExponentialFamilyDistribution{Categorical}" begin
+        @testset for s in (2, 3, 4, 5)
+            @testset let d = Categorical(normalize!(rand(s), 1))
+                ef = test_exponentialfamily_interface(
+                    d;
+                    test_fisherinformation_properties = false, # The fisher information is not-posdef, to discuss
+                    test_fisherinformation_against_jacobian = false
+                )
+
+                run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false, mappings = (
+                    NaturalParametersSpace() => MeanParametersSpace(),
+                    # MeanParametersSpace() => NaturalParametersSpace(), # here is the problem for discussion, the test is broken
+                ))
+
+                θ = probvec(d)
+                η = map(p -> log(p / θ[end]), θ)
+
+                for x in 1:s
+                    v = zeros(s)
+                    v[x] = 1
+
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (v,))
+                    @test @inferred(logpartition(ef)) ≈ logsumexp(η)
+                end
+
+                @test !@inferred(insupport(ef, s + 1))
+                @test @inferred(insupport(ef, s))
+
+                # # Not in the support
+                @test_throws Exception logpdf(ef, ones(s))
+            end
         end
 
-        rng = StableRNG(42)
-        for n in 2:5
-            p = rand(rng, Dirichlet(ones(n)))
-            dist = Categorical(p)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
-
-            f_logpartition = (η) -> logpartition(ExponentialFamilyDistribution(Categorical, η))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) atol = 1e-10
-
-            J = ForwardDiff.jacobian(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) atol = 1e-10
-        end
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), Categorical, [-1], 2) # conditioner does not match the length
+        @test !isproper(MeanParametersSpace(), Categorical, [-1], 1)
+        @test !isproper(MeanParametersSpace(), Categorical, [1, 0.5], 2)
+        @test !isproper(MeanParametersSpace(), Categorical, [-0.5, 1.5], 2)
+        @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 2) # conditioner does not match the length
+        @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 1)
+        @test !isproper(NaturalParametersSpace(), Categorical, [1], 1) # length should be >=2 
     end
 
-    @testset "ExponentialFamilyDistribution mean var" begin
-        rng = StableRNG(42)
-        for n in 2:10
-            p = rand(rng, Dirichlet(ones(n)))
-            dist = Categorical(p)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
+    @testset "prod with ExponentialFamilyDistribution" for s in (2, 3, 4, 5)
+        @testset let (left, right) = (Categorical(normalize!(rand(s), 1)), Categorical(normalize!(rand(s), 1)))
+            @test test_generic_simple_exponentialfamily_product(
+                left,
+                right,
+                strategies = (
+                    ClosedProd(),
+                    GenericProd(),
+                    PreserveTypeProd(ExponentialFamilyDistribution),
+                    PreserveTypeProd(ExponentialFamilyDistribution{Categorical})
+                )
+            )
         end
     end
 end

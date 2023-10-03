@@ -54,15 +54,16 @@ Distributions.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)
 Distributions.invcov(dist::MvNormalWeightedMeanPrecision)    = dist.Λ
 Distributions.std(dist::MvNormalWeightedMeanPrecision)       = cholsqrt(cov(dist))
 Distributions.logdetcov(dist::MvNormalWeightedMeanPrecision) = -chollogdet(invcov(dist))
+Distributions.params(dist::MvNormalWeightedMeanPrecision)    = (weightedmean(dist), invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
 function Distributions.sqmahal!(r, dist::MvNormalWeightedMeanPrecision, x::AbstractVector)
     μ = mean(dist)
-    for i in 1:length(r)
-        @inbounds r[i] = μ[i] - x[i]
+    @inbounds @simd for i in 1:length(r)
+        r[i] = μ[i] - x[i]
     end
-    return dot(r, invcov(dist), r) # x' * A * x
+    return dot3arg(r, invcov(dist), r) # x' * A * x
 end
 
 Base.eltype(::MvNormalWeightedMeanPrecision{T}) where {T} = T
@@ -85,16 +86,10 @@ end
 vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) =
     MvNormalWeightedMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-closed_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
-    ClosedProd()
+default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
+    PreserveTypeProd(Distribution)
 
-function Base.prod(::ProdPreserveType, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
-    xi = weightedmean(left) + weightedmean(right)
-    Λ  = invcov(left) + invcov(right)
-    return MvNormalWeightedMeanPrecision(xi, Λ)
-end
-
-function Base.prod(::ClosedProd, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
+function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)
     Λ  = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)

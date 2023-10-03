@@ -8,9 +8,9 @@ Distributions.cov(dist::LogNormal) = var(dist)
 
 vague(::Type{<:LogNormal}) = LogNormal(1, 1e12)
 
-closed_prod_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = ClosedProd()
+default_prod_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::LogNormal, right::LogNormal)
+function Base.prod(::PreserveTypeProd{Distribution}, left::LogNormal, right::LogNormal)
     mean1, scale1 = params(left)
     mean2, scale2 = params(right)
     var1 = scale1^2
@@ -22,65 +22,53 @@ function Base.prod(::ClosedProd, left::LogNormal, right::LogNormal)
     return LogNormal(mean3, sqrt(var3))
 end
 
-check_valid_natural(::Type{<:LogNormal}, params) = length(params) === 2
+# Natural parametrization
 
-function pack_naturalparameters(dist::LogNormal)
-    μ, scale = params(dist)
-    var = scale^2
+isproper(::NaturalParametersSpace, ::Type{LogNormal}, η, conditioner) = isnothing(conditioner) && (length(η) === 2) && (η[firstindex(η)+1] < 0)
+isproper(::MeanParametersSpace, ::Type{LogNormal}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (θ[firstindex(θ)+1] > 0)
 
-    return [μ / var, -1 / (2 * var)]
+function (::MeanToNatural{LogNormal})(tuple_of_θ::Tuple{Any, Any})
+    (μ, σ) = tuple_of_θ
+    σ² = abs2(σ)
+    return (μ / σ² - 1, -1 / (2σ²))
 end
 
-function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:LogNormal})
-    η = getnaturalparameters(ef)
-    @inbounds η1 = η[1]
-    @inbounds η2 = η[2]
-
-    return η1, η2
+function (::NaturalToMean{LogNormal})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    return (-(η₁ + 1) / (2η₂), sqrt(-1 / (2η₂)))
 end
 
-Base.convert(::Type{ExponentialFamilyDistribution}, dist::LogNormal) =
-    ExponentialFamilyDistribution(LogNormal, pack_naturalparameters(dist))
-
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{LogNormal})
-    η1, η2 = unpack_naturalparameters(exponentialfamily)
-    return LogNormal(-η1 / (2 * η2), sqrt(-1 / (2 * η2)))
+function unpack_parameters(::Type{LogNormal}, packed)
+    fi = firstindex(packed)
+    si = firstindex(packed) + 1
+    return (packed[fi], packed[si])
 end
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{LogNormal})
-    η1, η2 = unpack_naturalparameters(exponentialfamily)
-    return -(η1)^2 / (4 * η2) - log(-2η2) / 2
+isbasemeasureconstant(::Type{LogNormal}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{LogNormal}) = (x) -> invsqrt2π
+getsufficientstatistics(::Type{LogNormal}) = (log, x -> abs2(log(x)))
+
+getlogpartition(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(LogNormal, η)
+    return -(η₁ + 1)^2 / (4η₂) - log(-2η₂) / 2
 end
 
-function isproper(exponentialfamily::ExponentialFamilyDistribution{LogNormal})
-    _, η2 = unpack_naturalparameters(exponentialfamily)
-    return (η2 < 0)
+getfisherinformation(::NaturalParametersSpace, ::Type{LogNormal}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(LogNormal, η)
+        return SA[-1/(2η₂) (η₁+1)/(2η₂^2); (η₁+1)/(2η₂^2) -(η₁ + 1)^2/(2*(η₂^3))+1/(2*η₂^2)]
+    end
+
+# Mean parametrization
+
+getlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
+    (μ, σ) = unpack_parameters(LogNormal, θ)
+    return abs2(μ) / (2abs2(σ)) + log(σ)
 end
 
-support(::Union{<:ExponentialFamilyDistribution{LogNormal}, <:LogNormal}) = ClosedInterval{Real}(0, Inf)
-
-basemeasureconstant(::ExponentialFamilyDistribution{LogNormal}) = NonConstantBaseMeasure()
-basemeasureconstant(::Type{<:LogNormal}) = NonConstantBaseMeasure()
-basemeasure(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> basemeasure(ef, x)
-function basemeasure(::ExponentialFamilyDistribution{LogNormal}, x::Real)
-    return inv(sqrt(TWOPI) * x)
-end
-
-function basemeasure(::LogNormal, x::Real)
-    return inv(sqrt(TWOPI) * x)
-end
-
-function fisherinformation(d::LogNormal)
-    σ = d.σ
-    return SA[1/(σ^2) 0.0; 0.0 2/(σ^2)]
-end
-
-function fisherinformation(ef::ExponentialFamilyDistribution{LogNormal})
-    η1, η2 = unpack_naturalparameters(ef)
-    return SA[-1/(2η2) (η1)/(2η2^2); (η1)/(2η2^2) -(η1)^2/(2*(η2^3))+1/(2*η2^2)]
-end
-
-sufficientstatistics(ef::ExponentialFamilyDistribution{LogNormal}) = (x) -> sufficientstatistics(ef, x)
-function sufficientstatistics(::ExponentialFamilyDistribution{LogNormal}, x::Real)
-    return SA[log(x), log(x)^2]
+getfisherinformation(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
+    (μ, σ) = unpack_parameters(LogNormal, θ)
+    invσ² = inv(abs2(σ))
+    return SA[invσ² 0.0; 0.0 2invσ²]
 end

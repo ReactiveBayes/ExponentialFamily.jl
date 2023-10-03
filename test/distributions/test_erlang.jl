@@ -5,9 +5,11 @@ using ExponentialFamily
 using Random
 using Distributions
 using ForwardDiff
-import SpecialFunctions: logfactorial, loggamma
+import SpecialFunctions: logfactorial, loggamma, digamma
 import ExponentialFamily:
     xtlog, ExponentialFamilyDistribution, getnaturalparameters, basemeasure, fisherinformation
+
+include("../testutils.jl")
 
 @testset "Erlang" begin
     @testset "Constructors" begin
@@ -15,71 +17,66 @@ import ExponentialFamily:
         @test vague(Erlang) == Erlang(1, 1e12)
     end
 
-    @testset "natural parameters related" begin
-        for i in 2:10
-            @test convert(Distribution, ExponentialFamilyDistribution(Erlang, [i, -i])) ≈ Erlang(i + 1, inv(i))
-            @test Distributions.logpdf(ExponentialFamilyDistribution(Erlang, [i, -i]), 10) ≈
-                  Distributions.logpdf(Erlang(i + 1, inv(i)), 10)
-            @test isproper(ExponentialFamilyDistribution(Erlang, [i, -i])) === true
-            @test isproper(ExponentialFamilyDistribution(Erlang, [-i, i])) === false
-
-            @test convert(ExponentialFamilyDistribution, Erlang(i + 1, i)) ==
-                  ExponentialFamilyDistribution(Erlang, [i, -inv(i)])
-
-            @test Distributions.logpdf(Erlang(10, 4.0), 1.0) ≈
-                  Distributions.logpdf(convert(ExponentialFamilyDistribution, Erlang(10, 4.0)), 1.0)
-            @test Distributions.logpdf(Erlang(5, 2.0), 1.0) ≈
-                  Distributions.logpdf(convert(ExponentialFamilyDistribution, Erlang(5, 2.0)), 1.0)
-        end
+    @testset "mean(::typeof(log))" begin
+        @test mean(log, Erlang(1, 3.0)) ≈ digamma(1) + log(3.0)
+        @test mean(log, Erlang(2, 0.3)) ≈ digamma(2) + log(0.3)
+        @test mean(log, Erlang(3, 0.3)) ≈ digamma(3) + log(0.3)
     end
 
-    @testset "prod" begin
-        @test prod(ClosedProd(), Erlang(1, 1), Erlang(1, 1)) == Erlang(1, 1 / 2)
-        @test prod(ClosedProd(), Erlang(1, 2), Erlang(1, 1)) == Erlang(1, 2 / 3)
-        @test prod(ClosedProd(), Erlang(1, 2), Erlang(1, 2)) == Erlang(1, 1)
-        @test prod(ClosedProd(), Erlang(2, 2), Erlang(1, 2)) == Erlang(2, 1)
-        @test prod(ClosedProd(), Erlang(2, 2), Erlang(2, 2)) == Erlang(3, 1)
-        @test prod(
-            ExponentialFamilyDistribution(Erlang, [4, 2.0]),
-            ExponentialFamilyDistribution(Erlang, [2, 3.0])
-        ) ==
-              ExponentialFamilyDistribution(Erlang, [6, 5.0])
+    @testset "ExponentialFamilyDistribution{Erlang}" begin
+        @testset for a in 1:3, b in 1.0:1.0:3.0
+            @testset let d = Erlang(a, b)
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+
+                (η1, η2) = (a - 1, -inv(b))
+                for x in 10rand(4)
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === oneunit(x)
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (log(x), x))
+                    @test @inferred(logpartition(ef)) ≈ (logfactorial(η1) - (η1 + one(η1)) * log(-η2))
+                end
+
+                @test !@inferred(insupport(ef, -0.5))
+                @test @inferred(insupport(ef, 0.5))
+
+                # Not in the support
+                @test_throws Exception logpdf(ef, -0.5)
+            end
+        end
+
+        # Test failing isproper cases
+        @test !isproper(MeanParametersSpace(), Erlang, [-1])
+        @test !isproper(MeanParametersSpace(), Erlang, [1, -0.1])
+        @test !isproper(MeanParametersSpace(), Erlang, [-0.1, 1])
+        @test !isproper(NaturalParametersSpace(), Erlang, [-1.1])
+        @test isproper(NaturalParametersSpace(), Erlang, [1, -1.1])
+        @test !isproper(NaturalParametersSpace(), Erlang, [-1.1, 1])
     end
 
-    @testset "fisher information" begin
-        ## these functions are for testing purposes only.
-        function transformation(params)
-            a = getindex(params, 1)
-            b = getindex(params, 2)
-            return [a + 1, -b]
+    @testset "prod with Distributions" begin
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, Erlang(1, 1), Erlang(1, 1)) == Erlang(1, 1 / 2)
+            @test prod(strategy, Erlang(1, 2), Erlang(1, 1)) == Erlang(1, 2 / 3)
+            @test prod(strategy, Erlang(1, 2), Erlang(1, 2)) == Erlang(1, 1)
+            @test prod(strategy, Erlang(2, 2), Erlang(1, 2)) == Erlang(2, 1)
+            @test prod(strategy, Erlang(2, 2), Erlang(2, 2)) == Erlang(3, 1)
         end
 
-        function lp(exponentialfamily::ExponentialFamilyDistribution{Erlang})
-            η = getnaturalparameters(exponentialfamily)
-            a = first(η)
-            b = getindex(η, 2)
-            return loggamma(a) - (a + one(a)) * log(-b)
-        end
-
-        for μ in 3:20, κ in 2.0:0.1:10.0
-            dist = Erlang(μ, κ)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            η = getnaturalparameters(ef)
-
-            f_logpartition = (η) -> lp(ExponentialFamilyDistribution(Erlang, η))
-            autograd_information = (η) -> ForwardDiff.hessian(f_logpartition, η)
-            @test fisherinformation(ef) ≈ autograd_information(η) rtol = 1e-6
-            J = ForwardDiff.jacobian(transformation, η)
-            @test J' * fisherinformation(dist) * J ≈ fisherinformation(ef) rtol = 1e-6
-        end
+        @test @allocated(prod(ClosedProd(), Erlang(1, 1), Erlang(1, 1))) == 0
     end
 
-    @testset "ExponentialFamilyDistribution mean,var" begin
-        for μ in 3:20, κ in 2.0:0.1:10.0
-            dist = Erlang(μ, κ)
-            ef = convert(ExponentialFamilyDistribution, dist)
-            @test mean(dist) ≈ mean(ef) atol = 1e-8
-            @test var(dist) ≈ var(ef) atol = 1e-8
+    @testset "prod with ExponentialFamilyDistribution" for aleft in 1:3, aright in 2:5, bleft in 0.51:1.0:5.0, bright in 0.51:1.0:5.0
+        @testset let (left, right) = (Erlang(aleft, bleft), Erlang(aright, bright))
+            @test test_generic_simple_exponentialfamily_product(
+                left,
+                right,
+                strategies = (
+                    ClosedProd(),
+                    GenericProd(),
+                    PreserveTypeProd(ExponentialFamilyDistribution),
+                    PreserveTypeProd(ExponentialFamilyDistribution{Erlang})
+                )
+            )
         end
     end
 end

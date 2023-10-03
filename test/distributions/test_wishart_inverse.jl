@@ -8,21 +8,13 @@ using LinearAlgebra
 using StableRNGs
 using ForwardDiff
 
-import ExponentialFamily: InverseWishartFast, ExponentialFamilyDistribution, getnaturalparameters, basemeasure,
-    fisherinformation, logpartition, reconstructargument!, as_vec
+import ExponentialFamily:
+    InverseWishartFast, ExponentialFamilyDistribution, getnaturalparameters, basemeasure,
+    fisherinformation, logpartition, value_support, variate_form
 import Distributions: pdf!
 import StatsFuns: logmvgamma
 
-function logpartition(::ExponentialFamilyDistribution{T}, ηvec::Vector{F}) where {T, F <: Real}
-    return logpartition(ExponentialFamilyDistribution(T, ηvec))
-end
-
-function transformation(params)
-    η1, η2 = params[1], params[2:end]
-    p = Int(sqrt(length(η2)))
-    η2 = reshape(η2, (p, p))
-    return [-(2 * η1 + p + 1); vec(-2 * η2)]
-end
+include("../testutils.jl")
 
 @testset "InverseWishartFast" begin
     @testset "common" begin
@@ -32,6 +24,23 @@ end
 
         @test value_support(InverseWishartFast) === Continuous
         @test variate_form(InverseWishartFast) === Matrixvariate
+    end
+
+    @testset "ExponentialFamilyDistribution{InverseWishartFast}" begin
+        @testset for dim in (3), S in rand(InverseWishart(10, Array(Eye(dim))), 2)
+            ν = dim + 4
+            @testset let (d = InverseWishartFast(ν, S))
+                ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
+                (η1, η2) = unpack_parameters(InverseWishartFast, getnaturalparameters(ef))
+
+                for x in (Eye(dim), Diagonal(ones(dim)), Array(Eye(dim)))
+                    @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
+                    @test @inferred(basemeasure(ef, x)) === 1.0
+                    @test all(@inferred(sufficientstatistics(ef, x)) .≈ (logdet(x), inv(x)))
+                    @test @inferred(logpartition(ef)) ≈ (η1 + (dim + 1) / 2) * logdet(-η2) + logmvgamma(dim, -(η1 + (dim + 1) / 2))
+                end
+            end
+        end
     end
 
     @testset "statistics" begin
@@ -66,7 +75,7 @@ end
         @test typeof(d1) <: InverseWishart
         ν1, S1 = params(d1)
         @test ν1 == dims + 2
-        @test S1 == tiny .* diageye(dims)
+        @test S1 == tiny .* Eye(dims)
 
         @test mean(d1) == S1
 
@@ -76,7 +85,7 @@ end
         @test typeof(d2) <: InverseWishart
         ν2, S2 = params(d2)
         @test ν2 == dims + 2
-        @test S2 == tiny .* diageye(dims)
+        @test S2 == tiny .* Eye(dims)
 
         @test mean(d2) == S2
     end
@@ -88,7 +97,7 @@ end
                 [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
             )
         ) ≈ 10.111427477184794
-        @test entropy(InverseWishartFast(5.0, diageye(4))) ≈ 8.939145914882221
+        @test entropy(InverseWishartFast(5.0, Eye(4))) ≈ 8.939145914882221
     end
 
     @testset "convert" begin
@@ -107,7 +116,7 @@ end
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(logdet, InverseWishartFast(ν, S)), mean(logdet.(samples)), atol = 1e-2)
 
-        ν, S = 4.0, diageye(3)
+        ν, S = 4.0, Array(Eye(3))
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(logdet, InverseWishartFast(ν, S)), mean(logdet.(samples)), atol = 1e-2)
     end
@@ -117,32 +126,30 @@ end
         ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
-        @test isapprox(mean(cholinv, InverseWishartFast(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
 
-        ν, S = 4.0, diageye(3)
+        ν, S = 4.0, Array(Eye(3))
         samples = rand(rng, InverseWishart(ν, S), Int(1e6))
         @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
-        @test isapprox(mean(cholinv, InverseWishartFast(ν, S)), mean(cholinv.(samples)), atol = 1e-2)
     end
 
     @testset "prod" begin
-        d1 = InverseWishartFast(3.0, diageye(2))
+        d1 = InverseWishartFast(3.0, Eye(2))
         d2 = InverseWishartFast(-3.0, [0.6423504672769315 0.9203141654948761; 0.9203141654948761 1.528137747462735])
 
-        @test prod(ClosedProd(), d1, d2) ≈
+        @test prod(PreserveTypeProd(Distribution), d1, d2) ≈
               InverseWishartFast(3.0, [1.6423504672769313 0.9203141654948761; 0.9203141654948761 2.528137747462735])
 
-        d1 = InverseWishartFast(4.0, diageye(3))
-        d2 = InverseWishartFast(-2.0, diageye(3))
+        d1 = InverseWishartFast(4.0, Eye(3))
+        d2 = InverseWishartFast(-2.0, Eye(3))
 
-        @test prod(ClosedProd(), d1, d2) ≈ InverseWishartFast(6.0, 2 * diageye(3))
+        @test prod(PreserveTypeProd(Distribution), d1, d2) ≈ InverseWishartFast(6.0, 2 * Eye(3))
     end
 
     @testset "rand" begin
         for d in (2, 3, 4, 5)
             v = rand() + d
             L = rand(d, d)
-            S = L' * L + d * diageye(d)
+            S = L' * L + d * Eye(d)
             cS = copy(S)
             container1 = [zeros(d, d) for _ in 1:100]
             container2 = [zeros(d, d) for _ in 1:100]
@@ -164,11 +171,11 @@ end
         for d in (2, 3, 4, 5), n in (10, 20)
             v = rand() + d
             L = rand(d, d)
-            S = L' * L + d * diageye(d)
+            S = L' * L + d * Eye(d)
 
             samples = map(1:n) do _
                 L_sample = rand(d, d)
-                return L_sample' * L_sample + d * diageye(d)
+                return L_sample' * L_sample + d * Eye(d)
             end
 
             result = zeros(n)
@@ -177,98 +184,14 @@ end
         end
     end
 
-    @testset "InverseWishartExponentialFamilyDistribution" begin
-        @testset "Constructor" begin
-            for i in 1:10
-                @test convert(
-                    Distribution,
-                    ExponentialFamilyDistribution(InverseWishartFast, vcat(-3.0, vec([-i 0.0; 0.0 -i])))
-                ) ≈ InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
-            end
-        end
-
-        @testset "logpdf" begin
-            for i in 1:10
-                wishart_np = ExponentialFamilyDistribution(InverseWishartFast, vcat(-3.0, vec([-i 0.0; 0.0 -i])))
-                distribution = InverseWishart(3.0, -2([-i 0.0; 0.0 -i]))
-                @test logpdf(distribution, [1.0 0.0; 0.0 1.0]) ≈ logpdf(wishart_np, [1.0 0.0; 0.0 1.0])
-                @test logpdf(distribution, [1.0 0.2; 0.2 1.0]) ≈ logpdf(wishart_np, [1.0 0.2; 0.2 1.0])
-                @test logpdf(distribution, [1.0 -0.1; -0.1 3.0]) ≈ logpdf(wishart_np, [1.0 -0.1; -0.1 3.0])
-            end
-        end
-
-        @testset "logpartition" begin
-            @test logpartition(
-                ExponentialFamilyDistribution(InverseWishartFast, vcat(-3.0, vec([-1.0 0.0; 0.0 -1.0])))
-            ) ≈
-                  logmvgamma(2, 1.5)
-        end
-
-        @testset "isproper" begin
-            for i in 1:10
-                @test isproper(
-                    ExponentialFamilyDistribution(InverseWishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i])))
-                ) ===
-                      false
-                @test isproper(
-                    ExponentialFamilyDistribution(InverseWishartFast, vcat(3.0, vec([i 0.0; 0.0 -i])))
-                ) ===
-                      false
-                @test isproper(
-                    ExponentialFamilyDistribution(InverseWishartFast, vcat(-1.0, vec([-i 0.0; 0.0 -i])))
-                ) ===
-                      true
-            end
-        end
-
-        @testset "basemeasure" begin
-            for i in 1:10
-                L = rand(2, 2)
-                @test basemeasure(
-                    ExponentialFamilyDistribution(InverseWishartFast, vcat(3.0, vec([-i 0.0; 0.0 -i]))),
-                    L * L'
-                ) == 1.0
-            end
-        end
-
-        @testset "base operations" begin
-            for i in 1:10
-                np1 = ExponentialFamilyDistribution(InverseWishartFast, vcat(3.0, vec([i 0.0; 0.0 i])))
-                np2 = ExponentialFamilyDistribution(InverseWishartFast, vcat(3.0, vec([2i 0.0; 0.0 2i])))
-                @test prod(np1, np2) == ExponentialFamilyDistribution(
-                    InverseWishartFast,
-                    vcat(3.0, vec([i 0.0; 0.0 i])) + vcat(3.0, vec([2i 0.0; 0.0 2i]))
+    @testset "prod with ExponentialFamilyDistribution{InverseWishartFast}" begin
+        for Sleft in rand(InverseWishart(10, Array(Eye(2))), 2), Sright in rand(InverseWishart(10, Array(Eye(2))), 2), νright in (6, 7), νleft in (4, 5)
+            let left = InverseWishartFast(νleft, Sleft), right = InverseWishartFast(νright, Sright)
+                @test test_generic_simple_exponentialfamily_product(
+                    left,
+                    right,
+                    strategies = (PreserveTypeProd(ExponentialFamilyDistribution{InverseWishartFast}), GenericProd())
                 )
-            end
-        end
-
-        @testset "fisherinformation" begin
-            rng = StableRNG(42)
-            for d in 2:30
-                for df in d:30
-                    L = randn(rng, d, d)
-                    A = L * L' + 1e-8 * diageye(d)
-                    dist = InverseWishart(df, A)
-                    ef = convert(ExponentialFamilyDistribution, dist)
-                    η_vec = getnaturalparameters(ef)
-                    fef = fisherinformation(ef)
-                    fdist = fisherinformation(dist)
-
-                    J = ForwardDiff.jacobian(transformation, η_vec)
-                    @test fef ./ (J' * fdist * J) ≈ ones(size(fef))
-                end
-            end
-        end
-
-        @testset "ExponentialFamilyDistribution mean,cov" begin
-            rng = StableRNG(42)
-            for df in 2:20
-                L = randn(rng, df, df)
-                A = L * L' + 1e-8 * diageye(df)
-                dist = InverseWishart(df + 4, A)
-                ef = convert(ExponentialFamilyDistribution, dist)
-                @test mean(dist) ≈ mean(ef) rtol = 1e-8
-                @test cov(dist) ≈ cov(ef) rtol = 1e-8
             end
         end
     end

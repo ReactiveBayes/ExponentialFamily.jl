@@ -6,9 +6,9 @@ using StaticArrays
 
 vague(::Type{<:Exponential}) = Exponential(Float64(huge))
 
-closed_prod_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = ClosedProd()
+default_prod_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::ClosedProd, left::Exponential, right::Exponential)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Exponential, right::Exponential)
     invθ_left  = inv(left.θ)
     invθ_right = inv(right.θ)
     return Exponential(inv(invθ_left + invθ_right))
@@ -22,34 +22,46 @@ function logpartition(dist::Exponential)
     return -log(rate(dist))
 end
 
-check_valid_natural(::Type{<:Exponential}, params) = length(params) === 1
+# Natural parametrization
 
-pack_naturalparameters(dist::Exponential) = [-inv(dist.θ)]
-unpack_naturalparameters(ef::ExponentialFamilyDistribution) = (first(getnaturalparameters(ef)),)
-function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Exponential)
-    return ExponentialFamilyDistribution(Exponential, pack_naturalparameters(dist))
+isproper(::NaturalParametersSpace, ::Type{Exponential}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && first(η) < 0
+isproper(::MeanParametersSpace, ::Type{Exponential}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && first(θ) > 0
+
+function (::MeanToNatural{Exponential})(tuple_of_θ::Tuple{Any})
+    (scale,) = tuple_of_θ
+    return (-inv(scale),)
 end
 
-function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Exponential})
-    return Exponential(-inv(first(unpack_naturalparameters(exponentialfamily))))
+function (::NaturalToMean{Exponential})(tuple_of_η::Tuple{Any})
+    (η₁,) = tuple_of_η
+    return (-inv(η₁),)
 end
 
-function logpartition(ef::ExponentialFamilyDistribution{Exponential})
-    return -log(-first(unpack_naturalparameters(ef)))
+unpack_parameters(::Type{Exponential}, packed) = (first(packed),)
+
+isbasemeasureconstant(::Type{Exponential}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{Exponential}) = (x) -> oneunit(x)
+getsufficientstatistics(::Type{Exponential}) = (identity,)
+
+getlogpartition(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
+    (η₁,) = unpack_parameters(Exponential, η)
+    return -log(-η₁)
 end
 
-isproper(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
-    (first(unpack_naturalparameters(exponentialfamily)) <= zero(Float64))
+getfisherinformation(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
+    (η₁,) = unpack_parameters(Exponential, η)
+    SA[inv(η₁^2);;]
+end
 
-support(::Union{<:ExponentialFamilyDistribution{Exponential}, <:Exponential}) = ClosedInterval{Real}(0, Inf)
+## Mean parametrization
 
-basemeasure(::ExponentialFamilyDistribution{Exponential}) = one(Float64)
-basemeasure(::ExponentialFamilyDistribution{Exponential}, x::Real) = one(x)
+getlogpartition(::MeanParametersSpace, ::Type{Exponential}) = (θ) -> begin
+    (scale,) = unpack_parameters(Exponential, θ)
+    return log(scale)
+end
 
-fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Exponential}) =
-    SA[inv(first(unpack_naturalparameters(exponentialfamily))^2);;]
-
-fisherinformation(dist::Exponential) = SA[inv(dist.θ^2);;]
-
-sufficientstatistics(ef::ExponentialFamilyDistribution{Exponential}) = (x) -> sufficientstatistics(ef, x)
-sufficientstatistics(::ExponentialFamilyDistribution{Exponential}, x::Real) = SA[x]
+getfisherinformation(::MeanParametersSpace, ::Type{Exponential}) = (θ) -> begin
+    (scale,) = unpack_parameters(Exponential, θ)
+    SA[inv(scale^2);;]
+end

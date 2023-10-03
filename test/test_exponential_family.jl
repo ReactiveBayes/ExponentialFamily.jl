@@ -1,97 +1,321 @@
 module KnownExponentialFamilyDistributionTest
 
-using ExponentialFamily, Test, StatsFuns
-import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec,
-    pack_naturalparameters, unpack_naturalparameters, insupport
-import Distributions: pdf, logpdf, cdf
+using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools, Random, FillArrays
+
+import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
+import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
+import ExponentialFamily: getnaturalparameters, getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
+import ExponentialFamily: ExponentialFamilyDistributionAttributes, NaturalParametersSpace
+import ExponentialFamily: paramfloattype, convert_paramfloattype
+
+# import ExponentialFamily:
+#     ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec,
+#     pack_naturalparameters, unpack_naturalparameters, insupport
+# import Distributions: pdf, logpdf, cdf
+
+## ===========================================================================
+## Tests fixtures
+const ArbitraryExponentialFamilyAttributes = ExponentialFamilyDistributionAttributes(
+    (x) -> 1 / x,
+    ((x) -> x, (x) -> log(x)),
+    (η) -> 1 / sum(η),
+    RealInterval(0, Inf)
+)
+
+# Arbitrary distribution (un-conditioned)
+struct ArbitraryDistributionFromExponentialFamily <: ContinuousUnivariateDistribution
+    p1::Float64
+    p2::Float64
+end
+
+ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}, η, conditioner) = isnothing(conditioner)
+ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryDistributionFromExponentialFamily}) = ConstantBaseMeasure()
+ExponentialFamily.getbasemeasure(::Type{ArbitraryDistributionFromExponentialFamily}) = (x) -> oneunit(x)
+ExponentialFamily.getsufficientstatistics(::Type{ArbitraryDistributionFromExponentialFamily}) =
+    ((x) -> x, (x) -> log(x))
+ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}) = (η) -> 1 / sum(η)
+ExponentialFamily.getsupport(::Type{ArbitraryDistributionFromExponentialFamily}) = RealInterval(0, Inf)
+
+ExponentialFamily.vague(::Type{ArbitraryDistributionFromExponentialFamily}) =
+    ArbitraryDistributionFromExponentialFamily(1.0, 1.0)
+
+Distributions.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p1, dist.p2)
+
+(::MeanToNatural{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] + 1, params[2] + 1)
+(::NaturalToMean{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] - 1, params[2] - 1)
+
+ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η) = (η[1], η[2])
+
+# Arbitrary distribution (conditioned)
+struct ArbitraryConditionedDistributionFromExponentialFamily <: ContinuousUnivariateDistribution
+    con::Int
+    p1::Float64
+end
+
+ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η, conditioner) = isinteger(conditioner)
+ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) = NonConstantBaseMeasure()
+ExponentialFamily.getbasemeasure(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) = (x) -> x^conditioner
+ExponentialFamily.getsufficientstatistics(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) =
+    ((x) -> log(x - conditioner),)
+ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) =
+    (η) -> conditioner / sum(η)
+ExponentialFamily.getsupport(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) = RealInterval(0, Inf)
+
+ExponentialFamily.vague(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) =
+    ArbitraryConditionedDistributionFromExponentialFamily(1.0, -2)
+
+Distributions.params(dist::ArbitraryConditionedDistributionFromExponentialFamily) = (dist.con, dist.p1)
+
+ExponentialFamily.separate_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, params) = ((params[2],), params[1])
+ExponentialFamily.join_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, cparams, conditioner) = (conditioner, cparams...)
+
+(::MeanToNatural{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] + conditioner,)
+(::NaturalToMean{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] - conditioner,)
+
+ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η) = (η[1],)
+
+## ===========================================================================
+## Tests
+
+@testset "pack_parameters" begin
+    import ExponentialFamily: pack_parameters
+
+    to_test_fixed = [
+        (1, 2),
+        (1.0, 2),
+        (1, 2.0),
+        (1.0, 2.0),
+        ([1, 2, 3], 3),
+        ([1, 2, 3], 3.0),
+        ([1.0, 2.0, 3.0], 3),
+        ([1.0, 2.0, 3.0], 3.0),
+        (4, [1, 2, 3]),
+        (4.0, [1, 2, 3]),
+        (4, [1.0, 2.0, 3.0]),
+        (4.0, [1.0, 2.0, 3.0]),
+        ([1, 2, 3], 3, [1 2 3; 1 2 3; 1 2 3], 4),
+        ([1, 2, 3], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4),
+        ([1, 2, 3], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4.0),
+        ([1, 2, 3], 3.0, [1 2 3; 1 2 3; 1 2 3], 4),
+        ([1, 2, 3], 3.0, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4),
+        ([1, 2, 3], 3.0, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4.0),
+        ([1.0, 2.0, 3.0], 3, [1 2 3; 1 2 3; 1 2 3], 4),
+        ([1.0, 2.0, 3.0], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4),
+        ([1.0, 2.0, 3.0], 3, [1.0 2.0 3.0; 1.0 2.0 3.0; 1.0 2.0 3.0], 4.0)
+    ]
+
+    for test in to_test_fixed
+        @test all(@inferred(pack_parameters(test)) .== collect(Iterators.flatten(test)))
+    end
+
+    for _ in 1:10
+        to_test_random = [
+            rand(Float64),
+            rand(1:10),
+            [rand(Float64) for _ in rand(1:10)],
+            [rand(1:10) for _ in rand(1:10)],
+            [rand(Float64) for _ in rand(1:10) for _ in rand(1:10)],
+            [rand(1:10) for _ in rand(1:10) for _ in rand(1:10)]
+        ]
+        params = Tuple(shuffle(to_test_random))
+        @test all(@inferred(pack_parameters(params)) .== collect(Iterators.flatten(params)))
+    end
+end
+
+@testset "ExponentialFamilyDistributionAttributes" begin
+    @testset "getmapping" begin
+        @test @inferred(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
+              MeanToNatural{ArbitraryDistributionFromExponentialFamily}()
+        @test @inferred(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
+              NaturalToMean{ArbitraryDistributionFromExponentialFamily}()
+        @test @allocated(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
+        @test @allocated(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
+    end
+
+    # See the `ArbitraryExponentialFamilyAttributes` defined in the fixtures (above)
+    @testset let attributes = ArbitraryExponentialFamilyAttributes
+        @test @inferred(getbasemeasure(attributes)(2.0)) ≈ 0.5
+        @test @inferred(getsufficientstatistics(attributes)[1](2.0)) ≈ 2.0
+        @test @inferred(getsufficientstatistics(attributes)[2](2.0)) ≈ log(2.0)
+        @test @inferred(getlogpartition(attributes)([2.0])) ≈ 0.5
+        @test @inferred(getsupport(attributes)) == RealInterval(0, Inf)
+        @test @inferred(insupport(attributes, 1.0))
+        @test !@inferred(insupport(attributes, -1.0))
+    end
+
+    @testset let member =
+            ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
+        η = @inferred(getnaturalparameters(member))
+
+        @test ExponentialFamily.exponential_family_typetag(member) === Univariate
+
+        @test @inferred(basemeasure(member, 2.0)) ≈ 0.5
+        @test @inferred(getbasemeasure(member)(2.0)) ≈ 0.5
+        @test @inferred(getbasemeasure(member)(4.0)) ≈ 0.25
+
+        @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(4.0), getsufficientstatistics(member))) .≈ (4.0, log(4.0)))
+
+        @test @inferred(logpartition(member)) ≈ 0.25
+        @test @inferred(getlogpartition(member)([2.0, 2.0])) ≈ 0.25
+        @test @inferred(getlogpartition(member)([4.0, 4.0])) ≈ 0.125
+
+        @test @inferred(getsupport(member)) == RealInterval(0, Inf)
+        @test @inferred(insupport(member, 1.0))
+        @test !@inferred(insupport(member, -1.0))
+
+        _similar = @inferred(similar(member))
+
+        # The standard `@allocated` is not really reliable in this test 
+        # We avoid using the `BenchmarkTools`, but here it is essential
+        @test @ballocated(logpdf($member, 1.0), samples = 1, evals = 1) === 0
+        @test @ballocated(pdf($member, 1.0), samples = 1, evals = 1) === 0
+
+        @test _similar isa typeof(member)
+
+        # `similar` most probably returns the un-initialized natural parameters with garbage in it
+        # But we do expect the functions to work anyway given proper values
+        @test @inferred(basemeasure(_similar, 2.0)) ≈ 0.5
+        @test all(@inferred(sufficientstatistics(_similar, 2.0)) .≈ (2.0, log(2.0)))
+        @test @inferred(logpartition(_similar, η)) ≈ 0.25
+        @test @inferred(getsupport(_similar)) == RealInterval(0, Inf)
+    end
+end
+
 @testset "ExponentialFamilyDistribution" begin
-    ef1 = ExponentialFamilyDistribution(Bernoulli, [0.9])
-    ef2 = ExponentialFamilyDistribution(Bernoulli, [0.2])
-    @test getnaturalparameters(ef1) == [0.9]
-    @test_throws AssertionError ExponentialFamilyDistribution(Bernoulli, [0.9, 0.1])
 
-    @test getnaturalparameters(ef1) + getnaturalparameters(ef2) == [1.1]
-    @test getnaturalparameters(ef1) - getnaturalparameters(ef2) == [0.7]
-    (logprobability1,) = unpack_naturalparameters(ef1)
-    @test Base.convert(Bernoulli, ef1) == Bernoulli(exp(logprobability1) / (1 + exp(logprobability1)))
-    @test Base.convert(ExponentialFamilyDistribution, Bernoulli(0.9)) ==
-          ExponentialFamilyDistribution(Bernoulli, [logit(0.9)])
+    # See the `ArbitraryDistributionFromExponentialFamily` defined in the fixtures (above)
+    @testset for member in (
+        ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0]),
+        convert(ExponentialFamilyDistribution, ArbitraryDistributionFromExponentialFamily(1.0, 1.0))
+    )
+        η = @inferred(getnaturalparameters(member))
 
-    @test_throws AssertionError ExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), 2.0)
-    f = x -> x^3
-    @test_throws AssertionError ExponentialFamilyDistribution(Categorical, log.([0.9, 0.1]), f)
+        @test ExponentialFamily.exponential_family_typetag(member) === ArbitraryDistributionFromExponentialFamily
 
-    @test insupport(ef1, 1) == true
-    @test insupport(ef1, 0) == true
-end
+        @test convert(ExponentialFamilyDistribution, convert(Distribution, member)) ==
+              ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
+        @test convert(Distribution, convert(ExponentialFamilyDistribution, member)) == ArbitraryDistributionFromExponentialFamily(1.0, 1.0)
 
-@testset "pdf,cdf" begin
-    ef1 = ExponentialFamilyDistribution(Bernoulli, [0.9])
+        @test @inferred(basemeasure(member, 2.0)) ≈ 1.0
+        @test @inferred(getbasemeasure(member)(2.0)) ≈ 1.0
+        @test @inferred(getbasemeasure(member)(4.0)) ≈ 1.0
 
-    @test logpdf(ef1, 1) ≈ logpdf(Base.convert(Bernoulli, ef1), 1)
-    @test pdf(ef1, 1) ≈ pdf(Base.convert(Bernoulli, ef1), 1)
-    @test cdf(ef1, 1) == cdf(Base.convert(Bernoulli, ef1), 1)
+        @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (2.0, log(2.0)))
+        @test all(@inferred(map(f -> f(4.0), getsufficientstatistics(member))) .≈ (4.0, log(4.0)))
 
-    @test logpdf(ef1, 0) ≈ logpdf(Base.convert(Bernoulli, ef1), 0)
-    @test pdf(ef1, 0) ≈ pdf(Base.convert(Bernoulli, ef1), 0)
-    @test cdf(ef1, 0) == cdf(Base.convert(Bernoulli, ef1), 0)
+        @test @inferred(logpartition(member)) ≈ 0.25
+        @test @inferred(getlogpartition(member)([2.0, 2.0])) ≈ 0.25
+        @test @inferred(getlogpartition(member)([4.0, 4.0])) ≈ 0.125
 
-    @test cdf(ef1, 0.1) == cdf(Base.convert(Bernoulli, ef1), 0.1)
-end
+        @test @inferred(getsupport(member)) == RealInterval(0, Inf)
+        @test insupport(member, 1.0)
+        @test !insupport(member, -1.0)
 
-@testset "reconstruct arguments" begin
-    # Test case 1: reconstruct 2D array
-    A = reshape(1:6, 2, 3)
-    A_flat = as_vec(A)
-    A_recon = similar(A)
-    reconstructargument!(A_recon, A_recon, A_flat)
-    @test A == A_recon
+        # Computed by hand
+        @test @inferred(logpdf(member, 2.0)) ≈ (3.75 + 2log(2))
+        @test @inferred(logpdf(member, 4.0)) ≈ (7.75 + 4log(2))
+        @test @inferred(pdf(member, 2.0)) ≈ exp(3.75 + 2log(2))
+        @test @inferred(pdf(member, 4.0)) ≈ exp(7.75 + 4log(2))
 
-    # Test case 2: reconstruct 3D array
-    B = reshape(1:24, 2, 3, 4)
-    B_flat = as_vec(B)
-    B_recon = similar(B)
-    reconstructargument!(B_recon, B_recon, B_flat)
-    @test B == B_recon
+        # The standard `@allocated` is not really reliable in this test 
+        # We avoid using the `BenchmarkTools`, but here it is essential
+        @test @ballocated(logpdf($member, 2.0), samples = 1, evals = 1) === 0
+        @test @ballocated(pdf($member, 2.0), samples = 1, evals = 1) === 0
 
-    # Test case 3: reconstruct scalar array
-    C = [1]
-    C_flat = as_vec(C)
-    C_recon = similar(C)
-    reconstructargument!(C_recon, C_recon, C_flat)
-    @test C == C_recon
+        @test @inferred(member == member)
+        @test @inferred(member ≈ member)
 
-    # Test case 4: reconstruct array with different element types
-    D = [1.0, [2, 3 + 2im], [4 5; 6 1]]
-    D_flat = vcat(D[1], D[2], as_vec(D[3]))
-    D_recon = deepcopy(D)
-    reconstructargument!(D_recon, D_recon, D_flat)
-    @test D == D_recon
+        _similar = @inferred(similar(member))
+        _prod = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [4.0, 4.0])
 
-    E = [rand(2, 3), rand(2, 3), rand(2)]
-    E_flat = vcat(as_vec(E[1]), as_vec(E[2]), E[3])
-    E_recon = deepcopy(E)
-    reconstructargument!(E_recon, E_recon, E_flat)
-    @test E == E_recon
+        @test @inferred(prod(ClosedProd(), member, member)) == _prod
+        @test @inferred(prod(GenericProd(), member, member)) == _prod
+        @test @inferred(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) == _prod
+        @test @inferred(prod(PreserveTypeLeftProd(), member, member)) == _prod
+        @test @inferred(prod(PreserveTypeRightProd(), member, member)) == _prod
 
-    # Test case 6: reconstruct empty array
-    F = Array{Int}(undef, 0, 3)
-    F_flat = as_vec(F)
-    F_recon = similar(F)
-    reconstructargument!(F_recon, F_recon, F_flat)
-    @test F == F_recon
+        # Test that the generic prod version does not allocate as much as simply creating a similar ef member
+        # This is important, because the generic prod version should simply call the in-place version
+        @test @allocated(prod(ClosedProd(), member, member)) <= @allocated(similar(member))
+        @test @allocated(prod(GenericProd(), member, member)) <= @allocated(similar(member))
+        # @test @allocated(prod(PreserveTypeProd(ExponentialFamilyDistribution), member, member)) <=
+        #       @allocated(similar(member))
 
-    # Test case 7: η and ηef dimensions mismatch
-    G  = [0, 0]
-    G₁ = [0, 0, 2]
-    G̃ = [1, 2, 3, 4]
-    @test_throws AssertionError reconstructargument!(G, G₁, G̃)
+        @test @inferred(prod!(_similar, member, member)) == _prod
 
-    # Test case 8: ηvec does not have enough elements
-    E = [0, 0, 0]
-    Ẽ = [2, 1, 2, 3]
-    @test_throws AssertionError reconstructargument!(E, E, Ẽ)
+        # Test that the in-place prod preserves the container paramfloatype
+        for F in (Float16, Float32, Float64)
+            @test @inferred(paramfloattype(prod!(similar(member, F), member, member))) === F
+            @test @inferred(prod!(similar(member, F), member, member)) == convert_paramfloattype(F, _prod)
+        end
+
+        # Test that the generic in-place prod! version does not allocate at all
+        @test @allocated(prod!(_similar, member, member)) === 0
+    end
+
+    @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily})) isa
+          ExponentialFamilyDistribution{ArbitraryDistributionFromExponentialFamily}
+
+    # See the `ArbitraryDistributionFromExponentialFamily` defined in the fixtures (above)
+    # p1 = 3.0, con = -2
+    @testset for member in (
+        ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0], -2),
+        convert(ExponentialFamilyDistribution, ArbitraryConditionedDistributionFromExponentialFamily(-2, 3.0))
+    )
+        @test ExponentialFamily.exponential_family_typetag(member) === ArbitraryConditionedDistributionFromExponentialFamily
+
+        η = @inferred(getnaturalparameters(member))
+
+        @test convert(ExponentialFamilyDistribution, convert(Distribution, member)) ==
+              ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0], -2)
+        @test convert(Distribution, convert(ExponentialFamilyDistribution, member)) == ArbitraryConditionedDistributionFromExponentialFamily(-2, 3.0)
+
+        @test @inferred(basemeasure(member, 2.0)) ≈ 2.0^-2
+        @test @inferred(getbasemeasure(member)(2.0)) ≈ 2.0^-2
+        @test @inferred(getbasemeasure(member)(4.0)) ≈ 4.0^-2
+
+        @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (log(2.0 + 2),))
+        @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (log(2.0 + 2),))
+        @test all(@inferred(map(f -> f(4.0), getsufficientstatistics(member))) .≈ (log(4.0 + 2),))
+
+        @test @inferred(logpartition(member)) ≈ -2.0
+        @test @inferred(getlogpartition(member)([2.0])) ≈ -1.0
+        @test @inferred(getlogpartition(member)([4.0])) ≈ -0.5
+
+        @test @inferred(getsupport(member)) == RealInterval(0, Inf)
+        @test insupport(member, 1.0)
+        @test !insupport(member, -1.0)
+
+        # # Computed by hand
+        @test @inferred(logpdf(member, 2.0)) ≈ (log(2.0^-2) + log(2.0 + 2) + 2.0)
+        @test @inferred(logpdf(member, 4.0)) ≈ (log(4.0^-2) + log(4.0 + 2) + 2.0)
+        @test @inferred(pdf(member, 2.0)) ≈ exp((log(2.0^-2) + log(2.0 + 2) + 2.0))
+        @test @inferred(pdf(member, 4.0)) ≈ exp((log(4.0^-2) + log(4.0 + 2) + 2.0))
+
+        # The standard `@allocated` is not really reliable in this test 
+        # We avoid using the `BenchmarkTools`, but here it is essential
+        @test @ballocated(logpdf($member, 2.0), samples = 1, evals = 1) === 0
+        @test @ballocated(pdf($member, 2.0), samples = 1, evals = 1) === 0
+
+        @test @inferred(member == member)
+        @test @inferred(member ≈ member)
+
+        _similar = @inferred(similar(member))
+        _prod = ExponentialFamilyDistribution(ArbitraryConditionedDistributionFromExponentialFamily, [1.0], -2)
+
+        # We don't test the prod becasue the basemeasure is not a constant, so the generic prod is not applicable
+
+        # # Test that the in-place prod preserves the container paramfloatype
+        for F in (Float16, Float32, Float64)
+            @test @inferred(paramfloattype(similar(member, F))) === F
+        end
+    end
+
+    @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily})) isa
+          ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily}
 end
 
 end
