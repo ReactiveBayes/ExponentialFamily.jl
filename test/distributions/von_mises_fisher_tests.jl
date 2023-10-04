@@ -12,7 +12,7 @@
     @test params(d) == (zeros(3), 1.0e-12)
 end
 
-@testset "VonMisesFisher: ExponentialFamilyDistribution" begin
+@testitem "VonMisesFisher: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
     for len in 3, b in (0.5)
