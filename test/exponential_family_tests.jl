@@ -241,7 +241,6 @@ end
             @test @inferred(paramfloattype(similar(member, F))) === F
         end
     end
-
 end
 
 @testitem "vague" begin

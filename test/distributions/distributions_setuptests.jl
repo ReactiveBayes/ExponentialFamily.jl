@@ -2,50 +2,50 @@ using ExponentialFamily, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
 
 import ExponentialFamily:
-    ExponentialFamilyDistribution, 
-    getnaturalparameters, 
-    getconditioner, 
-    compute_logscale, 
-    logpartition, 
-    basemeasure, 
+    ExponentialFamilyDistribution,
+    getnaturalparameters,
+    getconditioner,
+    compute_logscale,
+    logpartition,
+    basemeasure,
     insupport,
-    sufficientstatistics, 
-    fisherinformation, 
-    pack_parameters, 
-    unpack_parameters, 
+    sufficientstatistics,
+    fisherinformation,
+    pack_parameters,
+    unpack_parameters,
     isbasemeasureconstant,
-    ConstantBaseMeasure, 
-    MeanToNatural, 
-    NaturalToMean, 
-    NaturalParametersSpace, 
-    default_prod_rule, 
-    fastcholesky, 
+    ConstantBaseMeasure,
+    MeanToNatural,
+    NaturalToMean,
+    NaturalParametersSpace,
+    default_prod_rule,
+    fastcholesky,
     mirrorlog,
-    deep_eltype, 
-    sampletype, 
-    samplefloattype, 
-    promote_sampletype, 
+    deep_eltype,
+    sampletype,
+    samplefloattype,
+    promote_sampletype,
     promote_samplefloattype,
-    paramfloattype, 
-    convert_paramfloattype, 
+    paramfloattype,
+    convert_paramfloattype,
     FactorizedJoint,
     promote_variate_type,
     invscatter,
     location,
     locationdim
 
-import Distributions: 
-    variate_form, 
-    value_support    
+import Distributions:
+    variate_form,
+    value_support
 
-import SpecialFunctions: 
+import SpecialFunctions:
     logbeta,
     loggamma,
     digamma,
     logfactorial,
     besseli
 
-import HCubature: 
+import HCubature:
     hquadrature
 
 import DomainSets:
