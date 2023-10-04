@@ -2,9 +2,16 @@
 using Test, ExponentialFamily, Distributions, StaticArrays, StableRNGs, LinearAlgebra, FillArrays
 
 import Distributions: variate_form, value_support
-import ExponentialFamily: deep_eltype, sampletype, samplefloattype, promote_sampletype, promote_samplefloattype,
-    paramfloattype, convert_paramfloattype
-import ExponentialFamily: FactorizedJoint
+
+import ExponentialFamily: 
+    deep_eltype, 
+    sampletype, 
+    samplefloattype, 
+    promote_sampletype, 
+    promote_samplefloattype,
+    paramfloattype, 
+    convert_paramfloattype, 
+    FactorizedJoint
 
 function generate_random_distributions(::Type{V} = Any; seed = abs(rand(Int)), Types = (Float32, Float64)) where {V}
     rng = StableRNG(seed)

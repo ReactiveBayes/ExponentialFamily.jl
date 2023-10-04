@@ -20,12 +20,36 @@ import ExponentialFamily:
     NaturalParametersSpace, 
     default_prod_rule, 
     fastcholesky, 
-    mirrorlog
+    mirrorlog,
+    deep_eltype, 
+    sampletype, 
+    samplefloattype, 
+    promote_sampletype, 
+    promote_samplefloattype,
+    paramfloattype, 
+    convert_paramfloattype, 
+    FactorizedJoint,
+    promote_variate_type,
+    invscatter,
+    location,
+    locationdim
+
+import Distributions: 
+    variate_form, 
+    value_support    
 
 import SpecialFunctions: 
     logbeta,
     loggamma,
-    digamma
+    digamma,
+    logfactorial,
+    besseli
+
+import HCubature: 
+    hquadrature
+
+import DomainSets:
+    NaturalNumbers
 
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
