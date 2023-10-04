@@ -2,9 +2,30 @@ using ExponentialFamily, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
 
 import ExponentialFamily:
-    ExponentialFamilyDistribution, getnaturalparameters, getconditioner, compute_logscale, logpartition, basemeasure, insupport,
-    sufficientstatistics, fisherinformation, pack_parameters, unpack_parameters, isbasemeasureconstant,
-    ConstantBaseMeasure, MeanToNatural, NaturalToMean, NaturalParametersSpace, default_prod_rule, fastcholesky
+    ExponentialFamilyDistribution, 
+    getnaturalparameters, 
+    getconditioner, 
+    compute_logscale, 
+    logpartition, 
+    basemeasure, 
+    insupport,
+    sufficientstatistics, 
+    fisherinformation, 
+    pack_parameters, 
+    unpack_parameters, 
+    isbasemeasureconstant,
+    ConstantBaseMeasure, 
+    MeanToNatural, 
+    NaturalToMean, 
+    NaturalParametersSpace, 
+    default_prod_rule, 
+    fastcholesky, 
+    mirrorlog
+
+import SpecialFunctions: 
+    logbeta,
+    loggamma,
+    digamma
 
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)

@@ -1,55 +1,7 @@
-module ExponentialFamilyProdGenericTest
 
-using Test
-using ExponentialFamily
-using Random
-using LinearAlgebra
-using Distributions
-using FillArrays
+@testitem "UnspecifiedProd" begin
+    include("./prod_setuptests.jl")
 
-import ExponentialFamily:
-    ExponentialFamilyDistribution, prod, default_prod_rule, ProductOf, LinearizedProductOf, getleft, getright
-import ExponentialFamily:
-    UnspecifiedProd, PreserveTypeProd, PreserveTypeLeftProd, PreserveTypeRightProd, ClosedProd, GenericProd
-
-## ===========================================================================
-## Tests fixtures
-
-# An object, which does not specify any prod rules
-struct SomeUnknownObject end
-
-# Two objects that 
-# - implement `ClosedProd` between each other 
-# - implement `prod` with `ClosedProd` between each other 
-# - can be eaily converted between each other
-# - can be converted to an `Int`
-struct ObjectWithClosedProd1 end
-struct ObjectWithClosedProd2 end
-
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd1}) = PreserveTypeProd(ObjectWithClosedProd1)
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd2}) = PreserveTypeProd(ObjectWithClosedProd2)
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd1}, ::Type{ObjectWithClosedProd2}) = PreserveTypeProd(ObjectWithClosedProd1)
-ExponentialFamily.default_prod_rule(::Type{ObjectWithClosedProd2}, ::Type{ObjectWithClosedProd1}) = PreserveTypeProd(ObjectWithClosedProd2)
-
-prod(::PreserveTypeProd{ObjectWithClosedProd1}, ::ObjectWithClosedProd1, ::ObjectWithClosedProd1) = ObjectWithClosedProd1()
-prod(::PreserveTypeProd{ObjectWithClosedProd2}, ::ObjectWithClosedProd2, ::ObjectWithClosedProd2) = ObjectWithClosedProd2()
-prod(::PreserveTypeProd{ObjectWithClosedProd1}, ::ObjectWithClosedProd1, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
-prod(::PreserveTypeProd{ObjectWithClosedProd2}, ::ObjectWithClosedProd2, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
-
-Base.convert(::Type{ObjectWithClosedProd1}, ::ObjectWithClosedProd2) = ObjectWithClosedProd1()
-Base.convert(::Type{ObjectWithClosedProd2}, ::ObjectWithClosedProd1) = ObjectWithClosedProd2()
-
-Base.convert(::Type{Int}, ::ObjectWithClosedProd1) = 1
-Base.convert(::Type{Int}, ::ObjectWithClosedProd2) = 2
-
-struct ADistributionObject <: ContinuousUnivariateDistribution end
-
-prod(::PreserveTypeProd{Distribution}, ::ADistributionObject, ::ADistributionObject) = ADistributionObject()
-
-## ===========================================================================
-## Tests
-
-@testset "UnspecifiedProd" begin
     @testset "`default_prod_rule` should return `UnspecifiedProd` for two unknown objects" begin
         @test default_prod_rule(SomeUnknownObject, SomeUnknownObject) === UnspecifiedProd()
     end
@@ -61,7 +13,9 @@ prod(::PreserveTypeProd{Distribution}, ::ADistributionObject, ::ADistributionObj
     end
 end
 
-@testset "ClosedProd" begin
+@testitem "ClosedProd" begin
+    include("./prod_setuptests.jl")
+
     @testset "`missing` should be ignored with the `ClosedProd`" begin
         struct SomeObject end
         @test prod(ClosedProd(), missing, SomeUnknownObject()) === SomeUnknownObject()
@@ -79,7 +33,9 @@ end
     end
 end
 
-@testset "PreserveTypeProd" begin
+@testitem "PreserveTypeProd" begin
+    include("./prod_setuptests.jl")
+
     @testset "`missing` should be ignored with the `PreserveTypeProd`" begin
         # Can convert the result of the prod to the desired type
         @test prod(PreserveTypeProd(SomeUnknownObject), missing, SomeUnknownObject()) isa SomeUnknownObject
@@ -131,7 +87,9 @@ end
     end
 end
 
-@testset "GenericProd" begin
+@testitem "GenericProd" begin
+    include("./prod_setuptests.jl")
+
     × = (x, y) -> prod(GenericProd(), x, y)
 
     @testset "GenericProd should use `default_prod_rule` where possible" begin
@@ -213,6 +171,4 @@ end
         @test d2 × d1 × d1 × d1 × d1 × d2 == (d2 × d2) × d1 × d1 × d1 × d1
         @test d2 × d1 × d2 × d1 × d2 × d1 × d1 × d2 == (d2 × d2 × d2 × d2) × d1 × d1 × d1 × d1
     end
-end
-
 end
