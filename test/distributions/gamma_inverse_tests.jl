@@ -53,8 +53,8 @@ end
                 test_fisherinformation_against_jacobian = false
             )
 
-            run_test_fisherinformation_against_hessian(d; assume_no_allocations = false)
-            run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false)
+            run_test_fisherinformation_against_hessian(d; assume_no_allocations = false, assume_ours_faster = false)
+            run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false, assume_ours_faster = false)
 
             (α, β) = params(MeanParametersSpace(), d)
 
