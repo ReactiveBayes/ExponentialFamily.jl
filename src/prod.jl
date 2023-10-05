@@ -1,4 +1,4 @@
-export ProductDistribution, ClosedProd, PreserveTypeProd, PreserveTypeLeftProd, PreserveTypeRightProd
+export ClosedProd, PreserveTypeProd, PreserveTypeLeftProd, PreserveTypeRightProd
 export GenericProd, ProductOf, LinearizedProductOf
 
 import Distributions

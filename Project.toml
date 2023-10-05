@@ -4,7 +4,6 @@ authors = ["Ismail Senoz <i.senoz@tue.nl>", "Dmitry Bagaev <d.v.bagaev@tue.nl>"]
 version = "1.0.0"
 
 [deps]
-BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 FastCholesky = "2d5283b6-8564-42b6-bb00-83ed8e915756"
@@ -27,7 +26,7 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 TinyHugeNumbers = "783c9a47-75a3-44ac-a16b-f1ab7b3acf04"
 
 [compat]
-BlockArrays = "0.16"
+Aqua = "0.7"
 Distributions = "0.25"
 DomainSets = "0.6"
 FastCholesky = "1.0"
@@ -48,6 +47,7 @@ TinyHugeNumbers = "1.0.0"
 julia = "1.9"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CpuId = "adafc99b-e345-5852-983c-f28acb93d879"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
@@ -55,4 +55,4 @@ StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["BenchmarkTools", "CpuId", "ReTestItems", "Test", "StableRNGs"]
+test = ["Aqua", "BenchmarkTools", "CpuId", "ReTestItems", "Test", "StableRNGs"]
