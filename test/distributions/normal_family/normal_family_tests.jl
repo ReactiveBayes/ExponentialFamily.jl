@@ -243,7 +243,7 @@ end
 
     for s in (2, 3), T in union_types(MultivariateNormalDistributionsFamily)
         μ = 10randn(s)
-        L = randn(s, s)
+        L = LowerTriangular(randn(s, s) + s * I)
         Σ = L * L'
         @testset let d = convert(T, MvNormalMeanCovariance(μ, Σ))
             ef = test_exponentialfamily_interface(
@@ -284,8 +284,8 @@ end
 
     for i in 1:5, d in 2:10
         rng = StableRNG(d * i)
-        μ = rand(rng, d)
-        L = randn(rng, d, d)
+        μ = 10randn(rng, d)
+        L = LowerTriangular(randn(rng, d, d) + d * I)
         Σ = L * L'
         ef = convert(ExponentialFamilyDistribution, MvNormalMeanCovariance(μ, Σ))
 
@@ -296,12 +296,12 @@ end
         @test isposdef(fi_ef) || all(>(0), eigvals(fi_ef))
 
         fi_ef_inv = inv(fi_ef)
-        @test (fi_ef_inv * fi_ef) ≈ Diagonal(ones(d + d^2)) rtol = 1e-2
+        @test (fi_ef_inv * fi_ef) ≈ Diagonal(ones(d + d^2))
 
         # WARNING: ForwardDiff returns a non-positive definite Hessian for a convex function. 
         # The matrices are identical up to permutations, resulting in eigenvalues that are the same up to a sign.
         fi_ag = ForwardDiff.hessian(getlogpartitionfortest(NaturalParametersSpace(), MvNormalMeanCovariance), getnaturalparameters(ef))
-        @test norm(sort(eigvals(fi_ef)) - sort(abs.(eigvals(fi_ag)))) ≈ 0 atol = (6e-5 * d^2)
+        @test norm(sort(eigvals(fi_ef)) - sort(abs.(eigvals(fi_ag)))) ≈ 0 atol = (1e-9 * d^2)
     end
 end
 
@@ -311,8 +311,8 @@ end
 
     for i in 1:5, d in 2:3
         rng = StableRNG(d * i)
-        μ = rand(rng, d)
-        L = randn(rng, d, d)
+        μ = 10randn(rng, d)
+        L = LowerTriangular(randn(rng, d, d) + d * I)
         Σ = L * L'
         n_samples = 10000
         dist = MvNormalMeanCovariance(μ, Σ)
