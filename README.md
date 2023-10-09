@@ -1,8 +1,8 @@
 # ExponentialFamily.jl
 
-| **Documentation**                                                         | **Build Status**                 | **Code Coverage**                       |
-|:-------------------------------------------------------------------------:|:--------------------------------:|:---------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI][ci-img]][ci-url]          | [![CodeCov][codecov-img]][codecov-url]  |
+| **Documentation**                                                         | **Build Status**                                       | **Code Coverage**                       | 
+|:-------------------------------------------------------------------------:|:------------------------------------------------------:|:---------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI][ci-img]][ci-url] [![Aqua][aqua-img]][aqua-url]  | [![CodeCov][codecov-img]][codecov-url]  |
 
 [ci-img]: https://github.com/biaslab/ExponentialFamily.jl/actions/workflows/CI.yml/badge.svg?branch=main
 [ci-url]: https://github.com/biaslab/ExponentialFamily.jl/actions
@@ -16,6 +16,8 @@
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
 [docs-stable-url]: https://biaslab.github.io/ExponentialFamily.jl/stable
 
+[aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
+[aqua-url]: https://github.com/JuliaTesting/Aqua.jl
 
 ExponentialFamily.jl is a Julia package that extends the functionality of Distributions.jl by providing a collection of exponential family distributions and customized implementations. It is designed to facilitate working with exponential family distributions and offers specialized functionality tailored to this class of distributions.
 
