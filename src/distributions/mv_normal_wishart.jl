@@ -115,7 +115,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalWishart,
     return MvNormalWishart(μ, S, λ, ν)
 end
 
-function insupport(::ExponentialFamilyDistribution{MvNormalWishart}, x)
+function BayesBase.insupport(::ExponentialFamilyDistribution{MvNormalWishart}, x)
     return isposdef(getindex(x, 2))
 end
 

@@ -109,7 +109,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixDirichlet,
     return MatrixDirichlet(left.a + right.a - Ones{T}(size(left.a)))
 end
 
-function insupport(ef::ExponentialFamilyDistribution{MatrixDirichlet}, x)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{MatrixDirichlet}, x)
     l = length(getnaturalparameters(ef))
     ## The columns of x should be normalized. all(≈(1), sum(eachrow(x))) is a convenient way of doing that
     ## because eachrow(x) will return row slices and sum will take the sum of the row slices along the first dimension

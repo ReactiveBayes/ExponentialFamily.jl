@@ -134,7 +134,7 @@ function fisherinformation(dist::Multinomial)
     return n * I
 end
 
-function insupport(ef::ExponentialFamilyDistribution{Multinomial, P, C, Safe}, x) where {P, C}
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{Multinomial, P, C, Safe}, x) where {P, C}
     n = Int(sum(x))
     return n == getconditioner(ef)
 end
