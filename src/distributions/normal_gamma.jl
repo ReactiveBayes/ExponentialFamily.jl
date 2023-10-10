@@ -80,9 +80,9 @@ end
 
 Distributions.pdf(dist::NormalGamma, x::AbstractVector{<:Real}) = exp(logpdf(dist, x))
 
-default_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::NormalGamma, right::NormalGamma)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::NormalGamma, right::NormalGamma)
     (μleft, λleft, αleft, βleft) = params(left)
     (μright, λright, αright, βright) = params(right)
 

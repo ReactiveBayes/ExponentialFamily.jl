@@ -8,9 +8,9 @@ Distributions.cov(dist::LogNormal) = var(dist)
 
 vague(::Type{<:LogNormal}) = LogNormal(1, 1e12)
 
-default_prod_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::LogNormal, right::LogNormal)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::LogNormal, right::LogNormal)
     mean1, scale1 = params(left)
     mean2, scale2 = params(right)
     var1 = scale1^2

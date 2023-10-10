@@ -9,9 +9,9 @@ using HypergeometricFunctions
 
 vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
-default_prod_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::VonMisesFisher, right::VonMisesFisher)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMisesFisher, right::VonMisesFisher)
     (μleft, κleft) = params(left)
     (μright, κright) = params(right)
     weightedsum = μleft * κleft + μright * κright

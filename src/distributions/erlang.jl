@@ -13,9 +13,9 @@ end
 
 vague(::Type{<:Erlang}) = Erlang(1, huge)
 
-default_prod_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::Erlang, right::Erlang)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Erlang, right::Erlang)
     return Erlang(shape(left) + shape(right) - 1, (scale(left) * scale(right)) / (scale(left) + scale(right)))
 end
 

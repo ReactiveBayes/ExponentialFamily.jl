@@ -1,4 +1,4 @@
-using ExponentialFamily, Distributions, LinearAlgebra, TinyHugeNumbers
+using ExponentialFamily, BayesBase, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
 
 import ExponentialFamily:
@@ -18,7 +18,6 @@ import ExponentialFamily:
     MeanToNatural,
     NaturalToMean,
     NaturalParametersSpace,
-    default_prod_rule,
     fastcholesky,
     mirrorlog,
     deep_eltype,

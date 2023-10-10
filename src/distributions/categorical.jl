@@ -11,9 +11,9 @@ vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
     Categorical(convert(AbstractVector{T}, probs(distribution)))
 
-default_prod_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::Categorical, right::Categorical)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Categorical, right::Categorical)
     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
     norm = sum(mvec)
     return Categorical(mvec ./ norm)

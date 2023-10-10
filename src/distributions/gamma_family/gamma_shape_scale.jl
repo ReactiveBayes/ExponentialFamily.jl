@@ -37,9 +37,9 @@ end
 
 vague(::Type{<:GammaShapeScale}) = GammaShapeScale(one(Float64), huge)
 
-default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
+BayesBase.default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
 
-function Base.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeScale)
+function BayesBase.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)
     return GammaShapeScale(
         shape(left) + shape(right) - one(T),

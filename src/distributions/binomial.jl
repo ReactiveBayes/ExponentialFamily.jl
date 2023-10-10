@@ -18,7 +18,7 @@ function convert_paramfloatype(::Type{Binomial}, ::Type{T}, distribution::Binomi
 end
 
 # NOTE: The product of two Binomial distributions is NOT a Binomial distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

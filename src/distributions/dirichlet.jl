@@ -10,9 +10,9 @@ using LogExpFunctions
 
 vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 
-default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dirichlet)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
     mvec = mvec .- one(eltype(mvec))
     return Dirichlet(mvec)

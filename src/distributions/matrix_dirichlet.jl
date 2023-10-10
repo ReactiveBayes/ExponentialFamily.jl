@@ -101,9 +101,9 @@ Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
 
 mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
 
-default_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::MatrixDirichlet, right::MatrixDirichlet)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixDirichlet, right::MatrixDirichlet)
     T = promote_samplefloattype(left, right)
     return MatrixDirichlet(left.a + right.a - Ones{T}(size(left.a)))
 end

@@ -390,17 +390,17 @@ end
 
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
-default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+BayesBase.default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
     PreserveTypeProd(Distribution)
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{Distribution},
     left::L,
     right::R
 ) where {L <: UnivariateNormalDistributionsFamily, R <: UnivariateNormalDistributionsFamily}
     wleft  = convert(NormalWeightedMeanPrecision, left)
     wright = convert(NormalWeightedMeanPrecision, right)
-    return prod(default_prod_rule(wleft, wright), wleft, wright)
+    return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
 
 function compute_logscale(
@@ -417,17 +417,17 @@ function compute_logscale(
     return -(logdet(v) + log2π) / 2 - m^2 / v / 2
 end
 
-default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
+BayesBase.default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MultivariateNormalDistributionsFamily}) =
     PreserveTypeProd(Distribution)
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{Distribution},
     left::L,
     right::R
 ) where {L <: MultivariateNormalDistributionsFamily, R <: MultivariateNormalDistributionsFamily}
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(default_prod_rule(wleft, wright), wleft, wright)
+    return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
 
 function compute_logscale(

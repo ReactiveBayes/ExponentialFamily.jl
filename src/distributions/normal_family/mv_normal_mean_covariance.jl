@@ -83,15 +83,15 @@ end
 vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
-default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
     xi_left, W_left = weightedmean_precision(left)
     xi_right, W_right = weightedmean_precision(right)
     return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
 end
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{Distribution},
     left::MvNormalMeanCovariance{T1},
     right::MvNormalMeanCovariance{T2}

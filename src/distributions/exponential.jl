@@ -6,9 +6,9 @@ using StaticArrays
 
 vague(::Type{<:Exponential}) = Exponential(Float64(huge))
 
-default_prod_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::Exponential, right::Exponential)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Exponential, right::Exponential)
     invθ_left  = inv(left.θ)
     invθ_right = inv(right.θ)
     return Exponential(inv(invθ_left + invθ_right))

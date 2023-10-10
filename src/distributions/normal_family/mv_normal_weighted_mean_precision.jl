@@ -86,10 +86,10 @@ end
 vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) =
     MvNormalWeightedMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
+BayesBase.default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
     PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)
     Λ  = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)

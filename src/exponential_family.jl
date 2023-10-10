@@ -151,9 +151,8 @@ getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = a
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
 
-Distributions.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
-
-value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
+BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
+BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
 
 """
     ExponentialFamilyDistribution(::Type{T}, naturalparameters, conditioner, attributes)
@@ -342,10 +341,10 @@ getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsuppo
 getsupport(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getsupport(attributes)
 
-Distributions.insupport(ef::ExponentialFamilyDistribution, value) = Base.in(value, getsupport(ef))
+BayesBase.insupport(ef::ExponentialFamilyDistribution, value) = Base.in(value, getsupport(ef))
 
 # For all `<:Distribution` the `support` function should be defined
-getsupport(::Type{T}) where {T <: Distribution} = Distributions.support(T)
+getsupport(::Type{T}) where {T <: Distribution} = BayesBase.support(T)
 
 # Convenient mappings from a vectorized form to a vectorized form for distributions
 function (transformation::NaturalToMean{T})(v::AbstractVector) where {T <: Distribution}
@@ -386,7 +385,6 @@ isproper(::Type{T}, parameters, conditioner = nothing) where {T <: Distribution}
     isproper(NaturalParametersSpace(), T, parameters, conditioner)
 isproper(space::Union{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}, parameters) where {T} =
     isproper(space, T, parameters, nothing)
-
 isproper(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
     isproper(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
 
@@ -478,7 +476,7 @@ isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
-function Distributions.logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
+function BayesBase.logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
     # TODO: Think of what to do with this assert
     @assert insupport(ef, x)
 
@@ -497,21 +495,20 @@ end
 
 Evaluates and returns the probability density function of the exponential family distribution for the input `x`.
 """
-Distributions.pdf(ef::ExponentialFamilyDistribution, x) = exp(logpdf(ef, x))
+BayesBase.pdf(ef::ExponentialFamilyDistribution, x) = exp(logpdf(ef, x))
 
 """
     cdf(ef::ExponentialFamilyDistribution{D}, x) where { D <: Distribution }
 
 Evaluates and returns the cumulative distribution function of the exponential family distribution for the input `x`.
 """
-Distributions.cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution} =
-    Distributions.cdf(Base.convert(Distribution, ef), x)
+BayesBase.cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution} = cdf(Base.convert(Distribution, ef), x)
 
-variate_form(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = variate_form(D)
-variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm} = V
+BayesBase.variate_form(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = variate_form(D)
+BayesBase.variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm} = V
 
-value_support(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = value_support(D)
-value_support(::Type{<:ExponentialFamilyDistribution{D, P, C, A}}) where {D, P, C, A} = value_support(A)
+BayesBase.value_support(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = value_support(D)
+BayesBase.value_support(::Type{<:ExponentialFamilyDistribution{D, P, C, A}}) where {D, P, C, A} = value_support(A)
 
 """
     flatten_parameters(::Type{T}, params::Tuple)
@@ -644,7 +641,7 @@ Base.convert(::Type{T}, ef::ExponentialFamilyDistribution{E}) where {T <: Distri
 exponential_family_typetag(distribution) = distribution_typewrapper(distribution)
 exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
-Distributions.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
+BayesBase.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
 
 Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} =
     error("Cannot convert an arbitrary `ExponentialFamily{$T}` object to a `Distribution`. An explicit approximation method is required.")
@@ -677,11 +674,11 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Distribution)
     return ExponentialFamilyDistribution(T, η, conditioner)
 end
 
-function paramfloattype(ef::ExponentialFamilyDistribution)
+function BayesBase.paramfloattype(ef::ExponentialFamilyDistribution)
     return deep_eltype(getnaturalparameters(ef))
 end
 
-function convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T}) where {F, T}
+function BayesBase.convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T}) where {F, T}
     return ExponentialFamilyDistribution(
         T,
         convert_paramfloattype(F, getnaturalparameters(ef)),
@@ -690,19 +687,19 @@ function convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T})
     )
 end
 
-Distributions.mean(f::F, ef::ExponentialFamilyDistribution{T}) where {F, T <: Distribution} = mean(f, convert(T, ef))
-Distributions.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
-Distributions.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
-Distributions.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
-Distributions.cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
+BayesBase.mean(f::F, ef::ExponentialFamilyDistribution{T}) where {F, T <: Distribution} = mean(f, convert(T, ef))
+BayesBase.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = mean(convert(T, ef))
+BayesBase.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
+BayesBase.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
+BayesBase.cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
 
-Random.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
-Random.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)
+BayesBase.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
+BayesBase.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)
 
-Random.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args::Integer...) where {T <: Distribution} =
+BayesBase.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args::Integer...) where {T <: Distribution} =
     rand(rng, convert(T, ef), args...)
 
-Random.rand!(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, container) where {T <: Distribution} =
+BayesBase.rand!(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, container) where {T <: Distribution} =
     rand!(rng, convert(T, ef), container)
 
 Base.isapprox(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution; kwargs...) = false
@@ -752,24 +749,24 @@ function Base.similar(ef::ExponentialFamilyDistribution{T}, ::Type{F}) where {T,
     return ExponentialFamilyDistribution(T, similar(getnaturalparameters(ef), F), getconditioner(ef), getattributes(ef))
 end
 
-vague(::Type{ExponentialFamilyDistribution{T}}, args...) where {T <: Distribution} =
+BayesBase.vague(::Type{ExponentialFamilyDistribution{T}}, args...) where {T <: Distribution} =
     convert(ExponentialFamilyDistribution, vague(T, args...))
 
 # We assume that we want to preserve the `ExponentialFamilyDistribution` when working with two `ExponentialFamilyDistribution`s
-default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) =
+BayesBase.default_prod_rule(::Type{<:ExponentialFamilyDistribution}, ::Type{<:ExponentialFamilyDistribution}) =
     PreserveTypeProd(ExponentialFamilyDistribution)
 
-function prod(::ClosedProd, left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
+function BayesBase.prod(::ClosedProd, left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution)
     return prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
 end
 
-function prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Distribution, right::Distribution)
+function BayesBase.prod(::PreserveTypeProd{ExponentialFamilyDistribution}, left::Distribution, right::Distribution)
     ef_left = convert(ExponentialFamilyDistribution, left)
     ef_right = convert(ExponentialFamilyDistribution, right)
     return prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
 end
 
-function prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
@@ -784,13 +781,13 @@ function prod(
             F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
             # Create a suitable container for the in-place `prod!` operation, we use the `left` as a suitable candidate
             container = similar(left, F)
-            return Base.prod!(container, left, right)
+            return BayesBase.prod!(container, left, right)
         end
     end
     error("Generic product of two exponential family members is not implemented.")
 end
 
-function Base.prod!(
+function BayesBase.prod!(
     container::ExponentialFamilyDistribution{T},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

@@ -182,9 +182,9 @@ end
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartFast` messages as they are significantly faster in creation
 params(::MeanParametersSpace, dist::WishartFast) = (dist.ν, dist.invS)
-default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
 
     d = size(left, 1)

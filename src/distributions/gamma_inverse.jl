@@ -8,9 +8,9 @@ const GammaInverse = InverseGamma
 
 vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
 
-default_prod_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::GammaInverse, right::InverseGamma)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::GammaInverse, right::InverseGamma)
     return GammaInverse(shape(left) + shape(right) + one(Float64), scale(left) + scale(right))
 end
 

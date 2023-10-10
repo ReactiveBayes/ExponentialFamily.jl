@@ -9,9 +9,9 @@ using LogExpFunctions
 
 vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 
-default_prod_rule(::Type{<:Beta}, ::Type{<:Beta}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:Beta}, ::Type{<:Beta}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::Beta, right::Beta)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Beta, right::Beta)
     left_a, left_b   = params(left)
     right_a, right_b = params(right)
     T                = promote_samplefloattype(left, right)

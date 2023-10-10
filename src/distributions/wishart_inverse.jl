@@ -210,9 +210,9 @@ end
 
 # We do not define prod between `InverseWishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `InverseWishartFast` messages as they are significantly faster in creation
-default_prod_rule(::Type{<:InverseWishartFast}, ::Type{<:InverseWishartFast}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:InverseWishartFast}, ::Type{<:InverseWishartFast}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::InverseWishartFast, right::InverseWishartFast)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::InverseWishartFast, right::InverseWishartFast)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two InverseWishart distributions of different sizes"
 
     d = size(left, 1)

@@ -9,9 +9,9 @@ Distributions.cov(dist::Type{<:Pareto}) = var(dist)
 
 # The default product between two `Pareto` objects is `PreserveTypeProd(Pareto)`,
 # which is possible only if the location parameters match
-default_prod_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = PreserveTypeProd(Pareto)
+BayesBase.default_prod_rule(::Type{<:Pareto}, ::Type{<:Pareto}) = PreserveTypeProd(Pareto)
 
-function Base.prod(::PreserveTypeProd{Pareto}, left::Pareto, right::Pareto)
+function BayesBase.prod(::PreserveTypeProd{Pareto}, left::Pareto, right::Pareto)
     shape_left, scale_left = params(left)
     shape_right, scale_right = params(right)
 
@@ -29,10 +29,10 @@ end
 
 # The default product between two `ExponentialFamilyDistribution{Pareto}` objects is 
 # `ProdPreserveType(ExponentialFamilyDistribution{Pareto})`, which is possible only if the location parameters match
-default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Pareto} =
+BayesBase.default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Pareto} =
     PreserveTypeProd(ExponentialFamilyDistribution{Pareto})
 
-function Base.prod!(container::ExponentialFamilyDistribution{Pareto}, left::ExponentialFamilyDistribution{Pareto}, right::ExponentialFamilyDistribution{Pareto})
+function BayesBase.prod!(container::ExponentialFamilyDistribution{Pareto}, left::ExponentialFamilyDistribution{Pareto}, right::ExponentialFamilyDistribution{Pareto})
     (η_container, conditioner_container) = (getnaturalparameters(container), getconditioner(container))
     (η_left, conditioner_left) = (getnaturalparameters(left), getconditioner(left))
     (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))
@@ -50,7 +50,7 @@ function Base.prod!(container::ExponentialFamilyDistribution{Pareto}, left::Expo
     """)
 end
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution{Pareto}},
     left::ExponentialFamilyDistribution{Pareto},
     right::ExponentialFamilyDistribution{Pareto}
@@ -61,7 +61,7 @@ function insupport(ef::ExponentialFamilyDistribution{Pareto}, x)
     return x ∈ ClosedInterval{Real}(getconditioner(ef), Inf)
 end
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     ef_left::ExponentialFamilyDistribution{T},
     ef_right::ExponentialFamilyDistribution{T}

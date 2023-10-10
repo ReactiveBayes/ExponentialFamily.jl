@@ -19,7 +19,7 @@ function convert_eltype(
 end
 
 # NOTE: The product of two NegativeBinomial distributions is NOT a NegativeBinomial distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

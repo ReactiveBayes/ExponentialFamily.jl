@@ -15,10 +15,10 @@ function convert_eltype(::Type{Multinomial}, ::Type{T}, distribution::Multinomia
     return Multinomial(n, convert(AbstractVector{T}, p))
 end
 
-default_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = PreserveTypeProd(ExponentialFamilyDistribution)
+BayesBase.default_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = PreserveTypeProd(ExponentialFamilyDistribution)
 
 # NOTE: The product of two Multinomial distributions is NOT a Multinomial distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
@@ -49,7 +49,7 @@ function Base.prod(
     )
 end
 
-function Base.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
+function BayesBase.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
     @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
     ef_left = convert(ExponentialFamilyDistribution, left)
     ef_right = convert(ExponentialFamilyDistribution, right)

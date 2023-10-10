@@ -7,7 +7,7 @@ using HCubature
 using StaticArrays
 
 # NOTE: The product of two Weibull distributions is NOT a Weibull distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

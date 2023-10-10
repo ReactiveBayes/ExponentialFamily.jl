@@ -4,45 +4,11 @@ using SpecialFunctions: gamma, loggamma
 
 import ForwardDiff
 
-"""
-    mirrorlog(x)
-
-Returns `log(1 - x)`.
-"""
-mirrorlog(x) = log(one(x) - x)
-
-"""
-    xtlog(x)
-
-Returns `x * log(x)`.
-"""
-xtlog(x) = x * log(x)
-
-"""
-    logmvbeta(x)
-
-Uses the numerically stable algorithm to compute the logarithm of the multivariate beta distribution over with the parameter vector x.
-"""
-logmvbeta(x) = sum(loggamma, x) - loggamma(sum(x))
-
-"""
-    clamplog(x)
-
-Same as `log` but clamps the input argument `x` to be in the range `tiny <= x <= typemax(x)` such that `log(0)` does not explode.
-"""
-clamplog(x) = log(clamp(x, tiny, typemax(x)))
-
-"""
-    mvtrigamma(p, x)
-
-Computes multivariate trigamma function .
-"""
-mvtrigamma(p, x) = sum(trigamma(x + (one(x) - i) / 2) for i in 1:p)
-
 # We create a specialized 3-argument dot function, because the built-in Julia version is not auto-differentiable
 function dot3arg(x, A, y)
     return dot(x, A, y)
 end
+
 function dot3arg(x::AbstractVector, A::AbstractMatrix, y::AbstractVector{D}) where {D <: ForwardDiff.Dual}
     (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
     T = typeof(dot(first(x), first(A), first(y)))

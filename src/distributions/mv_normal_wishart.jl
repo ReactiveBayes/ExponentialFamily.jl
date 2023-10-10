@@ -94,9 +94,9 @@ function Random.rand(rng::AbstractRNG, dist::MvNormalWishart{T}, nsamples::Int64
     return container
 end
 
-default_prod_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:MvNormalWishart}, ::Type{<:MvNormalWishart}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalWishart, right::MvNormalWishart)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalWishart, right::MvNormalWishart)
     μleft, Sleft, λleft, νleft = params(left)
     μright, Sright, λright, νright = params(right)
 

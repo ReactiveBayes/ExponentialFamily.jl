@@ -6,7 +6,7 @@ using StaticArrays
 using DomainSets
 
 # # NOTE: The product of two Chisq distributions is NOT a Chisq distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

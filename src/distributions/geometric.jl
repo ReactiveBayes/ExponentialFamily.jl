@@ -9,9 +9,9 @@ vague(::Type{<:Geometric}) = Geometric(Float64(tiny))
 
 probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
-default_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = PreserveTypeProd(Distribution)
 
-Base.prod(::PreserveTypeProd{Distribution}, left::Geometric, right::Geometric) =
+BayesBase.prod(::PreserveTypeProd{Distribution}, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
 getsupport(::Type{Geometric}) = DomainSets.NaturalNumbers()

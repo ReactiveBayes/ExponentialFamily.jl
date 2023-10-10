@@ -55,10 +55,10 @@ Base.convert(::Type{NormalWeightedMeanPrecision{T}}, xi::Real, w::Real) where {T
 
 vague(::Type{<:NormalWeightedMeanPrecision}) = NormalWeightedMeanPrecision(0.0, tiny)
 
-default_prod_rule(::Type{<:NormalWeightedMeanPrecision}, ::Type{<:NormalWeightedMeanPrecision}) =
+BayesBase.default_prod_rule(::Type{<:NormalWeightedMeanPrecision}, ::Type{<:NormalWeightedMeanPrecision}) =
     PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::NormalWeightedMeanPrecision, right::NormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)
     w  = precision(left) + precision(right)
     return NormalWeightedMeanPrecision(xi, w)

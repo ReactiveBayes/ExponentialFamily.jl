@@ -10,7 +10,7 @@ Distributions.cov(dist::Poisson) = var(dist)
 getsupport(::Type{Poisson}) = DomainSets.NaturalNumbers()
 
 # NOTE: The product of two Poisson distributions is NOT a Poisson distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
