@@ -3,13 +3,12 @@ export ExponentialFamilyDistribution
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
 export getbasemeasure, getsufficientstatistics, getlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
-export basemeasure, sufficientstatistics, logpartition, fisherinformation, insupport, params
+export basemeasure, sufficientstatistics, logpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
 using Distributions, LinearAlgebra, StaticArrays, Random
 
-import Distributions: insupport, params
 import Base: map
 
 """

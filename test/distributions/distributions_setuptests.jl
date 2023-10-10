@@ -1,11 +1,12 @@
-using ExponentialFamily, BayesBase, Distributions, LinearAlgebra, TinyHugeNumbers
+using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
+
+import BayesBase: compute_logscale
 
 import ExponentialFamily:
     ExponentialFamilyDistribution,
     getnaturalparameters,
     getconditioner,
-    compute_logscale,
     logpartition,
     basemeasure,
     insupport,
@@ -18,17 +19,6 @@ import ExponentialFamily:
     MeanToNatural,
     NaturalToMean,
     NaturalParametersSpace,
-    fastcholesky,
-    mirrorlog,
-    deep_eltype,
-    sampletype,
-    samplefloattype,
-    promote_sampletype,
-    promote_samplefloattype,
-    paramfloattype,
-    convert_paramfloattype,
-    FactorizedJoint,
-    promote_variate_type,
     invscatter,
     location,
     locationdim

@@ -1,10 +1,9 @@
-using ExponentialFamily, Distributions, Test, StatsFuns, BenchmarkTools, Random, FillArrays
+using ExponentialFamily, BayesBase, Distributions, Test, StatsFuns, BenchmarkTools, Random, FillArrays
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
 import ExponentialFamily: getnaturalparameters, getbasemeasure, getsufficientstatistics, getlogpartition, getsupport
 import ExponentialFamily: ExponentialFamilyDistributionAttributes, NaturalParametersSpace
-import ExponentialFamily: paramfloattype, convert_paramfloattype
 
 # import ExponentialFamily:
 #     ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec,
@@ -34,10 +33,10 @@ ExponentialFamily.getsufficientstatistics(::Type{ArbitraryDistributionFromExpone
 ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryDistributionFromExponentialFamily}) = (η) -> 1 / sum(η)
 ExponentialFamily.getsupport(::Type{ArbitraryDistributionFromExponentialFamily}) = RealInterval(0, Inf)
 
-ExponentialFamily.vague(::Type{ArbitraryDistributionFromExponentialFamily}) =
+BayesBase.vague(::Type{ArbitraryDistributionFromExponentialFamily}) =
     ArbitraryDistributionFromExponentialFamily(1.0, 1.0)
 
-Distributions.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p1, dist.p2)
+BayesBase.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p1, dist.p2)
 
 (::MeanToNatural{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] + 1, params[2] + 1)
 (::NaturalToMean{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] - 1, params[2] - 1)
@@ -59,10 +58,10 @@ ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryCond
     (η) -> conditioner / sum(η)
 ExponentialFamily.getsupport(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) = RealInterval(0, Inf)
 
-ExponentialFamily.vague(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) =
+BayesBase.vague(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) =
     ArbitraryConditionedDistributionFromExponentialFamily(1.0, -2)
 
-Distributions.params(dist::ArbitraryConditionedDistributionFromExponentialFamily) = (dist.con, dist.p1)
+BayesBase.params(dist::ArbitraryConditionedDistributionFromExponentialFamily) = (dist.con, dist.p1)
 
 ExponentialFamily.separate_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, params) = ((params[2],), params[1])
 ExponentialFamily.join_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, cparams, conditioner) = (conditioner, cparams...)

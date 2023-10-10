@@ -31,23 +31,24 @@ struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Re
     end
 end
 
-params(d::MvNormalWishart) = (d.μ, d.Ψ, d.κ, d.ν)
-location(d::MvNormalWishart) = first(params(d))
 scatter(d::MvNormalWishart) = getindex(params(d), 2)
 invscatter(d::MvNormalWishart) = cholinv(getindex(params(d), 2))
-scale(d::MvNormalWishart) = getindex(params(d), 3)
-dof(d::MvNormalWishart) = getindex(params(d), 4)
 locationdim(d::MvNormalWishart) = length(d.μ)
-mean(d::MvNormalWishart) = (d.μ, d.ν * d.Ψ)
-cov(d::MvNormalWishart) = var(d)
 
-function std(d::MvNormalWishart)
+BayesBase.dof(d::MvNormalWishart) = getindex(params(d), 4)
+BayesBase.location(d::MvNormalWishart) = first(params(d))
+BayesBase.params(d::MvNormalWishart) = (d.μ, d.Ψ, d.κ, d.ν)
+BayesBase.scale(d::MvNormalWishart) = getindex(params(d), 3)
+BayesBase.mean(d::MvNormalWishart) = (d.μ, d.ν * d.Ψ)
+BayesBase.cov(d::MvNormalWishart) = var(d)
+
+function BayesBase.std(d::MvNormalWishart)
     c = d.ν - locationdim(d) + one(d.ν)
     ψ = d.Ψ * (d.κ + one(d.κ)) / (d.κ * c)
     return (real(sqrt((c / (c - 2)) * ψ)), real(sqrt(cov(Wishart(d.ν, d.Ψ)))))
 end
 
-function var(d::MvNormalWishart)
+function BayesBase.var(d::MvNormalWishart)
     c = d.ν - locationdim(d) + one(d.ν)
     ψ = d.Ψ * (d.κ + one(d.κ)) / (d.κ * c)
     return ((c / (c - 2)) * ψ, cov(Wishart(d.ν, d.Ψ)))
@@ -58,34 +59,34 @@ function locationdim(ef::ExponentialFamilyDistribution{MvNormalWishart})
     return Int64((-1 + isqrt(1 - 4 * (2 - len))) / 2)
 end
 
-function Distributions.pdf(dist::MvNormalWishart, x::Tuple)
+function BayesBase.pdf(dist::MvNormalWishart, x::Tuple)
     μ, Ψ, κ, ν = params(dist)
     x1, x2 = x
     return pdf(MvNormalMeanPrecision(μ, κ * x2), x1) * pdf(Wishart(ν, Ψ), x2)
 end
 
-Distributions.logpdf(dist::MvNormalWishart, x::Tuple) = log(pdf(dist, x))
+BayesBase.logpdf(dist::MvNormalWishart, x::Tuple) = log(pdf(dist, x))
 
-function Random.rand!(rng::AbstractRNG, dist::MvNormalWishart, container::Tuple{AbstractVector, AbstractMatrix})
+function BayesBase.rand!(rng::AbstractRNG, dist::MvNormalWishart, container::Tuple{AbstractVector, AbstractMatrix})
     μ, Ψ, κ, ν = params(dist)
     rand!(rng, Wishart(ν, Ψ), container[2])
     rand!(rng, MvNormalMeanPrecision(μ, κ * container[2]), container[1])
     return container
 end
 
-function Random.rand!(rng::AbstractRNG, dist::MvNormalWishart, container::AbstractVector{T}) where {T <: Tuple}
+function BayesBase.rand!(rng::AbstractRNG, dist::MvNormalWishart, container::AbstractVector{T}) where {T <: Tuple}
     for i in eachindex(container)
         rand!(rng, dist, container[i])
     end
     return container
 end
 
-function Random.rand(rng::AbstractRNG, dist::MvNormalWishart{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MvNormalWishart{T}) where {T}
     container = (Vector{T}(undef, locationdim(dist)), Matrix{T}(undef, (locationdim(dist), locationdim(dist))))
     return rand!(rng, dist, container)
 end
 
-function Random.rand(rng::AbstractRNG, dist::MvNormalWishart{T}, nsamples::Int64) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MvNormalWishart{T}, nsamples::Int64) where {T}
     container = Vector{Tuple{Vector{T}, Matrix{T}}}(undef, nsamples)
     for i in eachindex(container)
         container[i] = (Vector{T}(undef, locationdim(dist)), Matrix{T}(undef, (locationdim(dist), locationdim(dist))))
@@ -127,6 +128,7 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalWishart}, η, conditi
     # return  η1 > 0 && isposdef(-η2)
     return η3 < 0 && η4 > -1 / 2
 end
+
 function isproper(::MeanParametersSpace, ::Type{MvNormalWishart}, θ, conditioner)
     if !isnothing(conditioner) || length(θ) <= 8 || any(isnan, θ) || any(isinf, θ)
         return false
