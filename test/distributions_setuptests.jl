@@ -11,7 +11,8 @@ import ExponentialFamily:
     promote_samplefloattype,
     paramfloattype,
     convert_paramfloattype,
-    FactorizedJoint
+    FactorizedJoint,
+    PromoteTypeConverter
 
 function generate_random_distributions(::Type{V} = Any; seed = abs(rand(Int)), Types = (Float32, Float64)) where {V}
     rng = StableRNG(seed)
