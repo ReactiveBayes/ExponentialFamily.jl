@@ -7,8 +7,7 @@ import FillArrays: OneElement
 using LoopVectorization
 
 BayesBase.vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
-BayesBase.convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
-    Categorical(convert(AbstractVector{T}, probs(distribution)))
+BayesBase.convert_paramfloattype(::Type{T}, distribution::Categorical) where {T <: Real} = Categorical(convert(AbstractVector{T}, probs(distribution)))
 
 BayesBase.default_prod_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = PreserveTypeProd(Distribution)
 

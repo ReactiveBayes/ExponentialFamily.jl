@@ -11,7 +11,7 @@ import StaticArrays: SA
 BayesBase.vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
 BayesBase.probvec(dist::Binomial) = (failprob(dist), succprob(dist))
 
-function BayesBase.convert_paramfloatype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) where {T <: Real, R <: Real}
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::Binomial) where {T <: Real}
     n, p = params(distribution)
     return Binomial(n, convert(T, p))
 end

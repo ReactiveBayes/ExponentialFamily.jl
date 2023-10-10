@@ -9,11 +9,7 @@ BayesBase.probvec(dist::NegativeBinomial) = (failprob(dist), succprob(dist))
 
 Distributions.support(::Type{NegativeBinomial}) = NaturalNumbers()
 
-function BayesBase.convert_eltype(
-    ::Type{NegativeBinomial},
-    ::Type{T},
-    distribution::NegativeBinomial{R}
-) where {T <: Real, R <: Real}
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::NegativeBinomial) where {T <: Real}
     n, p = params(distribution)
     return NegativeBinomial(n, convert(AbstractVector{T}, p))
 end
