@@ -4,15 +4,14 @@ import SpecialFunctions: logfactorial, digamma
 import Distributions: Erlang, shape, scale, cov
 using StaticArrays
 
-Distributions.cov(dist::Erlang) = var(dist)
+BayesBase.cov(dist::Erlang) = var(dist)
 
-function mean(::typeof(log), dist::Erlang)
+function BayesBase.mean(::typeof(log), dist::Erlang)
     k, θ = params(dist)
     return digamma(k) + log(θ)
 end
 
-vague(::Type{<:Erlang}) = Erlang(1, huge)
-
+BayesBase.vague(::Type{<:Erlang}) = Erlang(1, huge)
 BayesBase.default_prod_rule(::Type{<:Erlang}, ::Type{<:Erlang}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Erlang, right::Erlang)

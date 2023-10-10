@@ -37,26 +37,26 @@ end
 
 Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
-function weightedmean(dist::MvNormalMeanCovariance)
+function BayesBase.weightedmean(dist::MvNormalMeanCovariance)
     z = fastcholesky(cov(dist))
     return z \ mean(dist)
 end
 
-function weightedmean_invcov(dist::MvNormalMeanCovariance)
+function BayesBase.weightedmean_invcov(dist::MvNormalMeanCovariance)
     W = precision(dist)
     xi = W * mean(dist)
     return (xi, W)
 end
 
-weightedmean_precision(dist::MvNormalMeanCovariance) = weightedmean_invcov(dist)
+BayesBase.weightedmean_precision(dist::MvNormalMeanCovariance) = weightedmean_invcov(dist)
 
-Distributions.mean(dist::MvNormalMeanCovariance)      = dist.μ
-Distributions.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
-Distributions.cov(dist::MvNormalMeanCovariance)       = dist.Σ
-Distributions.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
-Distributions.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
-Distributions.params(dist::MvNormalMeanCovariance)    = (mean(dist), cov(dist))
+BayesBase.mean(dist::MvNormalMeanCovariance)      = dist.μ
+BayesBase.var(dist::MvNormalMeanCovariance)       = diag(cov(dist))
+BayesBase.cov(dist::MvNormalMeanCovariance)       = dist.Σ
+BayesBase.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
+BayesBase.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
+BayesBase.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
+BayesBase.params(dist::MvNormalMeanCovariance)    = (mean(dist), cov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
@@ -80,7 +80,7 @@ function Base.convert(::Type{<:MvNormalMeanCovariance{T}}, μ::AbstractVector, �
     return MvNormalMeanCovariance(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Σ))
 end
 
-vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
+BayesBase.vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
     MvNormalMeanCovariance(zeros(Float64, dims), fill(convert(Float64, huge), dims))
 
 BayesBase.default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = PreserveTypeProd(Distribution)

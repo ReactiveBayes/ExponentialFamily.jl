@@ -3,9 +3,8 @@ export Pareto
 import Distributions: Pareto, shape, scale, params
 using StaticArrays
 
-vague(::Type{<:Pareto}) = Pareto(1e12)
-
-Distributions.cov(dist::Type{<:Pareto}) = var(dist)
+BayesBase.vague(::Type{<:Pareto}) = Pareto(1e12)
+BayesBase.cov(dist::Type{<:Pareto}) = var(dist)
 
 # The default product between two `Pareto` objects is `PreserveTypeProd(Pareto)`,
 # which is possible only if the location parameters match

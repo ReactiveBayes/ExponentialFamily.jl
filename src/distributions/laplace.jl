@@ -4,7 +4,7 @@ import Distributions: Laplace, params, logpdf
 using DomainSets
 using StaticArrays
 
-vague(::Type{<:Laplace}) = Laplace(0.0, huge)
+BayesBase.vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
 # The default product between two `Laplace` objects is `PreserveTypeProd(Laplace)`,
 # which is possible only if the location parameters match

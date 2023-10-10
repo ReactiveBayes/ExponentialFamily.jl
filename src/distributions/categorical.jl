@@ -6,9 +6,8 @@ import LogExpFunctions: logsumexp
 import FillArrays: OneElement
 using LoopVectorization
 
-vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
-
-convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
+BayesBase.vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
+BayesBase.convert_eltype(::Type{Categorical}, ::Type{T}, distribution::Categorical{R}) where {T <: Real, R <: Real} =
     Categorical(convert(AbstractVector{T}, probs(distribution)))
 
 BayesBase.default_prod_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = PreserveTypeProd(Distribution)
@@ -19,9 +18,9 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Categorical, rig
     return Categorical(mvec ./ norm)
 end
 
-probvec(dist::Categorical) = probs(dist)
+BayesBase.probvec(dist::Categorical) = probs(dist)
 
-function compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Categorical)
+function BayesBase.compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Categorical)
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 

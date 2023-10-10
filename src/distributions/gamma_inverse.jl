@@ -6,21 +6,20 @@ import ForwardDiff
 
 const GammaInverse = InverseGamma
 
-vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
-
+BayesBase.vague(::Type{<:GammaInverse}) = InverseGamma(2.0, huge)
 BayesBase.default_prod_rule(::Type{<:GammaInverse}, ::Type{<:GammaInverse}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::GammaInverse, right::InverseGamma)
     return GammaInverse(shape(left) + shape(right) + one(Float64), scale(left) + scale(right))
 end
 
-function mean(::typeof(log), dist::GammaInverse)
+function BayesBase.mean(::typeof(log), dist::GammaInverse)
     α = shape(dist)
     θ = scale(dist)
     return log(θ) - digamma(α)
 end
 
-function mean(::typeof(inv), dist::GammaInverse)
+function BayesBase.mean(::typeof(inv), dist::GammaInverse)
     α = shape(dist)
     θ = scale(dist)
     return α / θ

@@ -18,8 +18,8 @@ function Base.convert(::Type{GammaShapeRate}, dist::GammaDistributionsFamily{T})
     return convert(GammaShapeRate{T}, dist)
 end
 
-BayesBase.BayesBase.default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = PreserveTypeProd(Distribution)
-BayesBase.BayesBase.default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::GammaShapeRate, right::GammaShapeScale)
     T = promote_samplefloattype(left, right)
@@ -34,7 +34,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::GammaShapeScale,
     )
 end
 
-function compute_logscale(
+function BayesBase.compute_logscale(
     new_dist::GammaDistributionsFamily,
     left_dist::GammaDistributionsFamily,
     right_dist::GammaDistributionsFamily
@@ -59,7 +59,7 @@ end
 # Thus both convert to `ExponentialFamilyDistribution{Gamma}`
 exponential_family_typetag(::GammaDistributionsFamily) = Gamma
 
-Distributions.params(::MeanParametersSpace, dist::GammaDistributionsFamily) = (shape(dist), scale(dist))
+BayesBase.params(::MeanParametersSpace, dist::GammaDistributionsFamily) = (shape(dist), scale(dist))
 
 isproper(::MeanParametersSpace, ::Type{Gamma}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (all(>(0), θ))
 

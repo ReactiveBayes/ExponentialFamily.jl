@@ -4,9 +4,8 @@ import SpecialFunctions: digamma
 import Distributions: LogNormal
 using StaticArrays
 
-Distributions.cov(dist::LogNormal) = var(dist)
-
-vague(::Type{<:LogNormal}) = LogNormal(1, 1e12)
+BayesBase.cov(dist::LogNormal) = var(dist)
+BayesBase.vague(::Type{<:LogNormal}) = LogNormal(1, 1e12)
 
 BayesBase.default_prod_rule(::Type{<:LogNormal}, ::Type{<:LogNormal}) = PreserveTypeProd(Distribution)
 

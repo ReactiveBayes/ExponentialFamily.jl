@@ -7,7 +7,7 @@ import FillArrays: Eye
 import HCubature: hquadrature
 using HypergeometricFunctions
 
-vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
+BayesBase.vague(::Type{<:VonMisesFisher}, dims::Int64) = VonMisesFisher(zeros(dims), tiny)
 
 BayesBase.default_prod_rule(::Type{<:VonMisesFisher}, ::Type{<:VonMisesFisher}) = PreserveTypeProd(Distribution)
 
@@ -20,24 +20,24 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMisesFisher, 
     return VonMisesFisher(μ, κ)
 end
 
-function Distributions.mean(dist::VonMisesFisher)
+function BayesBase.mean(dist::VonMisesFisher)
     (μ, κ) = Distributions.params(dist)
     p = length(μ)
     factor = besseli(0.5p, κ) / besseli(0.5p - 1, κ)
     return factor * μ
 end
 
-function Distributions.cov(dist::VonMisesFisher)
+function BayesBase.cov(dist::VonMisesFisher)
     (μ, κ) = Distributions.params(dist)
     ν = length(μ)
     rb = besseli(ν / 2, κ) * inv(besseli((ν / 2) - 1, κ))
     return (rb * inv(κ)) * Eye{Float64}(ν) + (besseli((ν / 2) + 1, κ) / besseli((ν / 2) - 1, κ) - rb^2) * μ * μ'
 end
 
-Distributions.var(dist::VonMisesFisher) = diag(cov(dist))
-Distributions.std(dist::VonMisesFisher) = sqrt.(var(dist))
+BayesBase.var(dist::VonMisesFisher) = diag(cov(dist))
+BayesBase.std(dist::VonMisesFisher) = sqrt.(var(dist))
 
-function insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
     return length(getnaturalparameters(ef)) == length(x) && Distributions.isunitvec(x)
 end
 

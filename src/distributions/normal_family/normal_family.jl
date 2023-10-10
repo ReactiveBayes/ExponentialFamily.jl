@@ -31,24 +31,24 @@ using SpecialFunctions
 
 # special functions for `Normal` and `FullNormal`
 
-function weightedmean_invcov(dist::Normal)
+function BayesBase.weightedmean_invcov(dist::Normal)
     mean, var = mean_var(dist)
     invcov = inv(var)
     return invcov * mean, invcov
 end
 
-function mean_invcov(dist::Normal)
+function BayesBase.mean_invcov(dist::Normal)
     mean, var = mean_var(dist)
     return mean, inv(var)
 end
 
-function weightedmean_invcov(dist::FullNormal)
+function BayesBase.weightedmean_invcov(dist::FullNormal)
     mean, var = mean_cov(dist)
     invcov = cholinv(var)
     return invcov * mean, invcov
 end
 
-function mean_invcov(dist::FullNormal)
+function BayesBase.mean_invcov(dist::FullNormal)
     mean, cov = mean_cov(dist)
     return mean, cholinv(cov)
 end
@@ -76,16 +76,16 @@ end
 
 dimensionalities(joint::JointNormal) = joint.ds
 
-mean_cov(joint::JointNormal) = mean_cov(joint, joint.dist, joint.ds)
+BayesBase.mean_cov(joint::JointNormal) = mean_cov(joint, joint.dist, joint.ds)
 
 # In case if `JointNormal` internal representation stores the actual distribution we simply returns its statistics
-mean_cov(::JointNormal, dist::NormalDistributionsFamily, ::Tuple) = mean_cov(dist)
+BayesBase.mean_cov(::JointNormal, dist::NormalDistributionsFamily, ::Tuple) = mean_cov(dist)
 
 # In case if `JointNormal` internal representation stores the actual distribution with a single univariate element we return its statistics as numbers
-mean_cov(::JointNormal, dist::NormalDistributionsFamily, ::Tuple{Tuple{}}) = first.(mean_cov(dist))
+BayesBase.mean_cov(::JointNormal, dist::NormalDistributionsFamily, ::Tuple{Tuple{}}) = first.(mean_cov(dist))
 
 # In case if `JointNormal` internal representation stores tuples of means and covariances we need to concatenate them
-function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
+function BayesBase.mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
     total = sum(prod.(ds); init = 0)
     @assert total !== 0 "Broken `JointNormal` state"
 
@@ -107,28 +107,28 @@ function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple)
 end
 
 # In case if `JointNormal` internal representation stores tuples of means and covariances with a single univariate element we return its statistics
-function mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple{Tuple})
+function BayesBase.mean_cov(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple{Tuple})
     return (first(first(dist)), first(last(dist)))
 end
 
-entropy(joint::JointNormal) = entropy(joint, joint.dist)
+BayesBase.entropy(joint::JointNormal) = entropy(joint, joint.dist)
 
-entropy(joint::JointNormal, dist::NormalDistributionsFamily) = entropy(dist)
-entropy(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
+BayesBase.entropy(joint::JointNormal, dist::NormalDistributionsFamily) = entropy(dist)
+BayesBase.entropy(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = entropy(convert(MvNormalMeanCovariance, mean_cov(joint)...))
 
 Base.ndims(joint::JointNormal) = ndims(joint, joint.dist)
 
 Base.ndims(joint::JointNormal, dist::NormalDistributionsFamily) = ndims(dist)
 Base.ndims(joint::JointNormal, dist::Tuple{Tuple, Tuple})       = sum(length, first(dist))
 
-paramfloattype(joint::JointNormal) = paramfloattype(joint, joint.dist)
-convert_paramfloattype(::Type{T}, joint::JointNormal) where {T} = convert_paramfloattype(T, joint, joint.dist)
+BayesBase.paramfloattype(joint::JointNormal) = paramfloattype(joint, joint.dist)
+BayesBase.convert_paramfloattype(::Type{T}, joint::JointNormal) where {T} = convert_paramfloattype(T, joint, joint.dist)
 
-function paramfloattype(joint::JointNormal, dist::NormalDistributionsFamily)
+function BayesBase.paramfloattype(joint::JointNormal, dist::NormalDistributionsFamily)
     return paramfloattype(dist)
 end
 
-function convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
+function BayesBase.convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
     μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
     cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
@@ -148,24 +148,24 @@ function Base.convert(::Type{JointNormal}, means::Tuple, covs::Tuple)
 end
 
 # Return the marginalized statistics of the Gaussian corresponding to an index `index`
-getcomponent(joint::JointNormal, index) = getcomponent(joint, joint.dist, joint.ds, joint.ds[index], index)
+BayesBase.component(joint::JointNormal, index) = component(joint, joint.dist, joint.ds, joint.ds[index], index)
 
 # `JointNormal` holds a single univariate gaussian and the dimensionalities indicate only a single Univariate element
-function getcomponent(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+function BayesBase.component(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert size(dist) === sz "Broken `JointNormal` state"
     return dist
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Multivariate element
-function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
+function BayesBase.component(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{Int}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert size(dist) === sz "Broken `JointNormal` state"
     return dist
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities indicate only a single Univariate element
-function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
+function BayesBase.component(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tuple}, sz::Tuple{}, index)
     @assert index === 1 "Cannot marginalize `JointNormal` with single entry at index != 1"
     @assert length(dist) === 1 "Broken `JointNormal` state"
     m, V = mean_cov(dist)
@@ -173,7 +173,7 @@ function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple{Tup
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Multivariate
-function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
+function BayesBase.component(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     len   = first(sz)
@@ -184,7 +184,7 @@ function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz
 end
 
 # `JointNormal` holds a single big gaussian and the dimensionalities are generic, the element is Univariate
-function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
+function BayesBase.component(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
     μ, Σ = mean_cov(dist)
@@ -193,12 +193,12 @@ function getcomponent(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz
 end
 
 # `JointNormal` holds gaussians individually, simply returns a Multivariate gaussian at index `index`
-function getcomponent(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
+function BayesBase.component(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{Int}, index)
     return MvNormalMeanCovariance(first(dist)[index], last(dist)[index])
 end
 
 # `JointNormal` holds gaussians individually, simply returns a Univariate gaussian at index `index`
-function getcomponent(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
+function BayesBase.component(::JointNormal, dist::Tuple{Tuple, Tuple}, ds::Tuple, sz::Tuple{}, index)
     return NormalMeanVariance(first(dist)[index], last(dist)[index])
 end
 
@@ -210,22 +210,22 @@ Base.isapprox(left::JointNormal, right::JointNormal; kwargs...) =
 const JointGaussian = JointNormal
 
 # Half-Normal related
-function convert_paramfloattype(::Type{T}, distribution::Truncated{<:Normal}) where {T}
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::Truncated{<:Normal}) where {T}
     return Truncated(convert_paramfloattype(T, distribution.untruncated), convert(T, distribution.lower), convert(T, distribution.upper))
 end
 
 # Variate forms promotion
 
-promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
-promote_variate_type(::Type{Multivariate}, ::Type{F}) where {F <: MultivariateNormalDistributionsFamily} = F
+BayesBase.promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
+BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{F}) where {F <: MultivariateNormalDistributionsFamily} = F
 
-promote_variate_type(::Type{Univariate}, ::Type{<:MvNormalMeanCovariance})        = NormalMeanVariance
-promote_variate_type(::Type{Univariate}, ::Type{<:MvNormalMeanPrecision})         = NormalMeanPrecision
-promote_variate_type(::Type{Univariate}, ::Type{<:MvNormalWeightedMeanPrecision}) = NormalWeightedMeanPrecision
+BayesBase.promote_variate_type(::Type{Univariate}, ::Type{<:MvNormalMeanCovariance})        = NormalMeanVariance
+BayesBase.promote_variate_type(::Type{Univariate}, ::Type{<:MvNormalMeanPrecision})         = NormalMeanPrecision
+BayesBase.promote_variate_type(::Type{Univariate}, ::Type{<:MvNormalWeightedMeanPrecision}) = NormalWeightedMeanPrecision
 
-promote_variate_type(::Type{Multivariate}, ::Type{<:NormalMeanVariance})          = MvNormalMeanCovariance
-promote_variate_type(::Type{Multivariate}, ::Type{<:NormalMeanPrecision})         = MvNormalMeanPrecision
-promote_variate_type(::Type{Multivariate}, ::Type{<:NormalWeightedMeanPrecision}) = MvNormalWeightedMeanPrecision
+BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:NormalMeanVariance})          = MvNormalMeanCovariance
+BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:NormalMeanPrecision})         = MvNormalMeanPrecision
+BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:NormalWeightedMeanPrecision}) = MvNormalWeightedMeanPrecision
 
 # Conversion to gaussian distributions from `Distributions.jl`
 
@@ -403,7 +403,7 @@ function BayesBase.prod(
     return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
 
-function compute_logscale(
+function BayesBase.compute_logscale(
     ::N, left::L, right::R
 ) where {
     N <: UnivariateNormalDistributionsFamily,
@@ -430,7 +430,7 @@ function BayesBase.prod(
     return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
 
-function compute_logscale(
+function BayesBase.compute_logscale(
     ::N, left::L, right::R
 ) where {
     N <: MultivariateNormalDistributionsFamily,
@@ -446,13 +446,13 @@ function compute_logscale(
     return -(v_logdet + n * log2π) / 2 - dot3arg(m, v_inv, m) / 2
 end
 
-logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
-logpdf_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
+BayesBase.logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
+BayesBase.logpdf_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
 
-sample_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
-sample_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
+BayesBase.sampling_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
+BayesBase.sampling_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
 
-function logpdf_sample_optimized(
+function BayesBase.logpdf_sampling_optimized(
     dist::Union{UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily}
 )
     # For Gaussian both sample and logpdf are the same in terms of optimality
@@ -464,17 +464,17 @@ end
 
 ## Univariate case
 
-function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}) where {T}
     μ, σ = mean_std(dist)
     return μ + σ * randn(rng, T)
 end
 
-function Random.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}, size::Int64) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::UnivariateNormalDistributionsFamily{T}, size::Int64) where {T}
     container = Vector{T}(undef, size)
     return rand!(rng, dist, container)
 end
 
-function Random.rand!(
+function BayesBase.rand!(
     rng::AbstractRNG,
     dist::UnivariateNormalDistributionsFamily,
     container::AbstractArray{T}
@@ -489,17 +489,17 @@ end
 
 ## Multivariate case
 
-function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}) where {T}
     μ, L = mean_std(dist)
     return μ + L * randn(rng, T, length(μ))
 end
 
-function Random.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}, size::Int64) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}, size::Int64) where {T}
     container = Matrix{T}(undef, ndims(dist), size)
     return rand!(rng, dist, container)
 end
 
-function Random.rand!(
+function BayesBase.rand!(
     rng::AbstractRNG,
     dist::MultivariateNormalDistributionsFamily,
     container::AbstractArray{T}
@@ -522,7 +522,7 @@ end
 # Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
 exponential_family_typetag(::UnivariateNormalDistributionsFamily) = NormalMeanVariance
 
-Distributions.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
+BayesBase.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
 
 function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
     if length(θ) !== 2
@@ -604,7 +604,7 @@ getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, 
 # Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
 exponential_family_typetag(::MultivariateGaussianDistributionsFamily) = MvNormalMeanCovariance
 
-Distributions.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
+BayesBase.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
 
 function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
     k = div(-1 + isqrt(1 + 4 * length(θ)), 2)

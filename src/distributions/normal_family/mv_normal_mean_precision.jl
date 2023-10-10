@@ -37,16 +37,16 @@ end
 
 Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
 
-weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
+BayesBase.weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
 
-Distributions.mean(dist::MvNormalMeanPrecision)      = dist.μ
-Distributions.mode(dist::MvNormalMeanPrecision)      = mean(dist)
-Distributions.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
-Distributions.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
-Distributions.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
-Distributions.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
-Distributions.params(dist::MvNormalMeanPrecision)    = (mean(dist), invcov(dist))
+BayesBase.mean(dist::MvNormalMeanPrecision)      = dist.μ
+BayesBase.mode(dist::MvNormalMeanPrecision)      = mean(dist)
+BayesBase.var(dist::MvNormalMeanPrecision)       = diag(cov(dist))
+BayesBase.cov(dist::MvNormalMeanPrecision)       = cholinv(dist.Λ)
+BayesBase.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
+BayesBase.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
+BayesBase.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
+BayesBase.params(dist::MvNormalMeanPrecision)    = (mean(dist), invcov(dist))
 
 Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
 
@@ -70,7 +70,7 @@ function Base.convert(::Type{<:MvNormalMeanPrecision{T}}, μ::AbstractVector, Λ
     MvNormalMeanPrecision(convert(AbstractArray{T}, μ), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
+BayesBase.vague(::Type{<:MvNormalMeanPrecision}, dims::Int) =
     MvNormalMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
 BayesBase.default_prod_rule(::Type{<:MvNormalMeanPrecision}, ::Type{<:MvNormalMeanPrecision}) = PreserveTypeProd(Distribution)

@@ -30,7 +30,7 @@ function BayesBase.prod(
     )
 end
 
-function compute_logscale(new_dist::Chisq, left_dist::Chisq, right_dist::Chisq)
+function BayesBase.compute_logscale(new_dist::Chisq, left_dist::Chisq, right_dist::Chisq)
     lp = getlogpartition(MeanParametersSpace(), Chisq)
     return lp(params(new_dist)...) - lp(params(left_dist)...) - lp(params(right_dist)...)
 end

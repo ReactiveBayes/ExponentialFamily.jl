@@ -4,12 +4,12 @@ import StatsFuns: logit, logistic
 import DomainSets: NaturalNumbers
 using StaticArrays
 
-vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
+BayesBase.vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
+BayesBase.probvec(dist::NegativeBinomial) = (failprob(dist), succprob(dist))
 
-probvec(dist::NegativeBinomial) = (failprob(dist), succprob(dist))
 Distributions.support(::Type{NegativeBinomial}) = NaturalNumbers()
 
-function convert_eltype(
+function BayesBase.convert_eltype(
     ::Type{NegativeBinomial},
     ::Type{T},
     distribution::NegativeBinomial{R}

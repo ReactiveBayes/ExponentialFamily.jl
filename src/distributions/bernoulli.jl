@@ -3,8 +3,8 @@ export Bernoulli
 import Distributions: Bernoulli, succprob, failprob, logpdf
 import StatsFuns: logistic, logit
 
-vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
-probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
+BayesBase.vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
+BayesBase.probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
 BayesBase.default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = PreserveTypeProd(Distribution)
 
@@ -38,14 +38,14 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right
     return Categorical(normalize!(p_new, 1))
 end
 
-function compute_logscale(new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
+function BayesBase.compute_logscale(new_dist::Bernoulli, left_dist::Bernoulli, right_dist::Bernoulli)
     left_p = succprob(left_dist)
     right_p = succprob(right_dist)
     a = left_p * right_p + (one(left_p) - left_p) * (one(right_p) - right_p)
     return log(a)
 end
 
-function compute_logscale(new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
+function BayesBase.compute_logscale(new_dist::Categorical, left_dist::Bernoulli, right_dist::Categorical)
     p_left = probvec(left_dist)
     p_right = probvec(right_dist)
 
@@ -58,7 +58,7 @@ function compute_logscale(new_dist::Categorical, left_dist::Bernoulli, right_dis
     return log(Z)
 end
 
-compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
+BayesBase.compute_logscale(new_dist::Categorical, left_dist::Categorical, right_dist::Bernoulli) =
     compute_logscale(new_dist, right_dist, left_dist)
 
 # Natural parametrization

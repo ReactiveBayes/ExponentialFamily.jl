@@ -5,9 +5,7 @@ import Distributions: Poisson, shape, scale, cov
 using DomainSets
 using StaticArrays
 
-Distributions.cov(dist::Poisson) = var(dist)
-
-getsupport(::Type{Poisson}) = DomainSets.NaturalNumbers()
+BayesBase.cov(dist::Poisson) = var(dist)
 
 # NOTE: The product of two Poisson distributions is NOT a Poisson distribution.
 function BayesBase.prod(
@@ -34,6 +32,8 @@ function BayesBase.prod(
 end
 
 # Natural parametrization
+
+getsupport(::Type{Poisson}) = DomainSets.NaturalNumbers()
 
 isproper(::NaturalParametersSpace, ::Type{Poisson}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{Poisson}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)

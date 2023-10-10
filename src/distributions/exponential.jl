@@ -4,8 +4,7 @@ import Distributions: Exponential, params
 import SpecialFunctions: digamma, logbeta
 using StaticArrays
 
-vague(::Type{<:Exponential}) = Exponential(Float64(huge))
-
+BayesBase.vague(::Type{<:Exponential}) = Exponential(Float64(huge))
 BayesBase.default_prod_rule(::Type{<:Exponential}, ::Type{<:Exponential}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Exponential, right::Exponential)
@@ -14,12 +13,8 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Exponential, rig
     return Exponential(inv(invθ_left + invθ_right))
 end
 
-function mean(::typeof(log), dist::Exponential)
+function BayesBase.mean(::typeof(log), dist::Exponential)
     return -log(rate(dist)) - MathConstants.eulergamma
-end
-
-function logpartition(dist::Exponential)
-    return -log(rate(dist))
 end
 
 # Natural parametrization
