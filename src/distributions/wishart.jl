@@ -1,4 +1,4 @@
-export Wishart
+export Wishart, WishartDistributionsFamily
 
 import Distributions: Wishart
 import Base: ndims, size, convert
