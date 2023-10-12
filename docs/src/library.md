@@ -15,10 +15,9 @@ ExponentialFamily.MvNormalMeanPrecision
 ExponentialFamily.MvNormalMeanCovariance
 ExponentialFamily.MvNormalWeightedMeanPrecision
 ExponentialFamily.JointNormal
+ExponentialFamily.JointGaussian
 ExponentialFamily.WishartFast
 ExponentialFamily.InverseWishartFast
-ExponentialFamily.JointGaussian
 ExponentialFamily.NormalGamma
 ExponentialFamily.MvNormalWishart
-ExponentialFamily.FactorizedJoint
 ```

@@ -2,7 +2,7 @@ using Documenter
 using ExponentialFamily
 using Distributions
 
-DocMeta.setdocmeta!(ExponentialFamily, :DocTestSetup, :(using ExponentialFamily, Distributions); recursive = true)
+DocMeta.setdocmeta!(ExponentialFamily, :DocTestSetup, :(using ExponentialFamily, Distributions, BayesBase); recursive = true)
 
 makedocs(
     modules  = [ExponentialFamily],
