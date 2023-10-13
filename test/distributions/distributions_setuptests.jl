@@ -180,7 +180,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     end
 end
 
-function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocations = true)
+function run_test_basic_functions(distribution; nsamples = 10, test_gradients = true, assume_no_allocations = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
@@ -214,6 +214,34 @@ function run_test_basic_functions(distribution; nsamples = 10, assume_no_allocat
             @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T)))
             @test @inferred(logpartition(ef)) == getlogpartition(T)(η)
             @test @inferred(fisherinformation(ef)) == getfisherinformation(T)(η)
+        end
+
+        if test_gradients && value_support(T) === Continuous && x isa Number
+            let tlogpdf = ForwardDiff.derivative((x) -> logpdf(distribution, x), x)
+                if !isnan(tlogpdf) && !isinf(tlogpdf)
+                    @test ForwardDiff.derivative((x) -> logpdf(ef, x), x) ≈ tlogpdf
+                    @test ForwardDiff.gradient((x) -> logpdf(ef, x[1]), [x])[1] ≈ tlogpdf
+                end
+            end
+            let tpdf = ForwardDiff.derivative((x) -> pdf(distribution, x), x)
+                if !isnan(tpdf) && !isinf(tpdf)
+                    @test ForwardDiff.derivative((x) -> pdf(ef, x), x) ≈ tpdf
+                    @test ForwardDiff.gradient((x) -> pdf(ef, x[1]), [x])[1] ≈ tpdf
+                end
+            end
+        end
+
+        if test_gradients && value_support(T) === Continuous && x isa AbstractVector
+            let tlogpdf = ForwardDiff.gradient((x) -> logpdf(distribution, x), x)
+                if !any(isnan, tlogpdf) && !any(isinf, tlogpdf)
+                    @test ForwardDiff.gradient((x) -> logpdf(ef, x), x) ≈ tlogpdf
+                end
+            end
+            let tpdf = ForwardDiff.gradient((x) -> pdf(distribution, x), x)
+                if !any(isnan, tpdf) && !any(isinf, tpdf)
+                    @test ForwardDiff.gradient((x) -> pdf(ef, x), x) ≈ tpdf
+                end
+            end
         end
 
         # Test that the selected methods do not allocate
