@@ -667,9 +667,7 @@ getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
     k = length(η₁)
-    C = fastcholesky(-η₂)
-    l = logdet(C)
-    Cinv = LinearAlgebra.inv!(C)
+    Cinv, l = cholinv_logdet(-η₂)
     return (dot(η₁, Cinv, η₁) / 2 - (k * log(2) + l)) / 2
 end
 
