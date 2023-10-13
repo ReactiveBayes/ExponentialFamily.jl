@@ -130,7 +130,7 @@ end
 
 function BayesBase.convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
     μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
-    cdist = convert(promote_variate_type(variate_form(μ), NormalMeanVariance), μ, Σ)
+    cdist = convert(promote_variate_type(typeof(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
 end
 
@@ -148,7 +148,7 @@ function Base.convert(::Type{JointNormal}, means::Tuple, covs::Tuple)
 end
 
 # Return the marginalized statistics of the Gaussian corresponding to an index `index`
-BayesBase.component(joint::JointNormal, index) = component(joint, joint.dist, joint.ds, joint.ds[index], index)
+BayesBase.component(joint::JointNormal, index) = BayesBase.component(joint, joint.dist, joint.ds, joint.ds[index], index)
 
 # `JointNormal` holds a single univariate gaussian and the dimensionalities indicate only a single Univariate element
 function BayesBase.component(::JointNormal, dist::NormalMeanVariance, ds::Tuple{Tuple}, sz::Tuple{}, index)

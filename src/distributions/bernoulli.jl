@@ -8,7 +8,7 @@ BayesBase.probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
 
 BayesBase.default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Bernoulli}) = PreserveTypeProd(Distribution)
 
-function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Bernoulli)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Bernoulli)
     left_p  = succprob(left)
     right_p = succprob(right)
 
@@ -20,7 +20,7 @@ end
 
 BayesBase.default_prod_rule(::Type{<:Bernoulli}, ::Type{<:Categorical}) = PreserveTypeProd(Distribution)
 
-function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Categorical)
+function Base.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Categorical)
     p_left = probvec(left)
     p_right = probvec(right)
 
