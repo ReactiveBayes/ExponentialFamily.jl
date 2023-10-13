@@ -48,7 +48,10 @@ BayesBase.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
 BayesBase.params(dist::MvNormalMeanPrecision)    = (mean(dist), invcov(dist))
 
-Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
+function Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector) 
+    T = promote_type(eltype(x), paramfloattype(dist))
+    return sqmahal!(similar(x, T), dist, x)
+end
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanPrecision, x::AbstractVector)
     μ = mean(dist)

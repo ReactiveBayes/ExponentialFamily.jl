@@ -58,7 +58,10 @@ BayesBase.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
 BayesBase.params(dist::MvNormalMeanCovariance)    = (mean(dist), cov(dist))
 
-Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) = sqmahal!(similar(x), dist, x)
+function Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector) 
+    T = promote_type(eltype(x), paramfloattype(dist))
+    return sqmahal!(similar(x, T), dist, x)
+end
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanCovariance, x::AbstractVector)
     μ = mean(dist)

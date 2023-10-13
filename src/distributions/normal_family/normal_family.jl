@@ -53,6 +53,11 @@ function BayesBase.mean_invcov(dist::FullNormal)
     return mean, cholinv(cov)
 end
 
+function BayesBase.mean_std(dist::FullNormal)
+    mean, cov = mean_cov(dist)
+    return mean, cholsqrt(cov)
+end
+
 # Joint over multiple Gaussians
 
 """
@@ -495,7 +500,7 @@ function BayesBase.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsF
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MultivariateNormalDistributionsFamily{T}, size::Int64) where {T}
-    container = Matrix{T}(undef, ndims(dist), size)
+    container = Matrix{T}(undef, length(dist), size)
     return rand!(rng, dist, container)
 end
 
