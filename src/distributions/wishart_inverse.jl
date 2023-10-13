@@ -61,17 +61,17 @@ function BayesBase.entropy(dist::InverseWishartFast)
     (ν + d + 1) / 2 * mapreduce(i -> digamma((ν - d + i) / 2), +, 1:d)
 end
 
-function BayesBase.mean(::typeof(logdet), dist::InverseWishartFast)
+function BayesBase.mean(::typeof(logdet), dist::InverseWishartDistributionsFamily)
     d = size(dist, 1)
     ν, S = params(dist)
     return -(mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(2) - logdet(S))
 end
 
-function BayesBase.mean(::typeof(inv), dist::InverseWishartFast)
+function BayesBase.mean(::typeof(inv), dist::InverseWishartDistributionsFamily)
     return mean(cholinv, dist)
 end
 
-function BayesBase.mean(::typeof(cholinv), dist::InverseWishartFast)
+function BayesBase.mean(::typeof(cholinv), dist::InverseWishartDistributionsFamily)
     ν, S = params(dist)
     return mean(Wishart(ν, cholinv(S)))
 end

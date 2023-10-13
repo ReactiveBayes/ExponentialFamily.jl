@@ -100,7 +100,7 @@ end
 
 BayesBase.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
 
-BayesBase.mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
+BayesBase.mean(::Base.Broadcast.BroadcastFunction{typeof(log)}, dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
 
 BayesBase.default_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = PreserveTypeProd(Distribution)
 

@@ -46,18 +46,20 @@ end
 
 @testitem "MatrixDirichlet: mean(::typeof(log))" begin
     include("distributions_setuptests.jl")
+    
+    import Base.Broadcast: BroadcastFunction
 
-    @test mean(log, MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ [
+    @test mean(BroadcastFunction(log), MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ [
         -1.5000000000000002 -1.5000000000000002
         -1.5000000000000002 -1.5000000000000002
         -1.5000000000000002 -1.5000000000000002
     ]
-    @test mean(log, MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ [
+    @test mean(BroadcastFunction(log), MatrixDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ [
         -2.1920720408623637 -1.1517536610071326
         -0.646914475838374 -0.680458481634953
         -1.480247809171707 -2.6103310904778305
     ]
-    @test mean(log, MatrixDirichlet([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ [
+    @test mean(BroadcastFunction(log), MatrixDirichlet([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ [
         -6.879998107291004 -1.604778825293528
         -0.08484054226701443 -0.32259407259407213
         -6.879998107291004 -4.214965875553984
