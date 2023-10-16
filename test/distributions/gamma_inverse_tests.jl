@@ -47,14 +47,7 @@ end
 
     for α in 10rand(4), θ in 10rand(4)
         @testset let d = InverseGamma(α, θ)
-            ef = test_exponentialfamily_interface(d;
-                option_assume_no_allocations = true,
-                test_fisherinformation_against_hessian = false,
-                test_fisherinformation_against_jacobian = false
-            )
-
-            run_test_fisherinformation_against_hessian(d; assume_no_allocations = false, assume_ours_faster = false)
-            run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
             (α, β) = params(MeanParametersSpace(), d)
 
