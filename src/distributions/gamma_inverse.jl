@@ -1,7 +1,7 @@
 export GammaInverse
 
 import Distributions: InverseGamma, shape, scale
-import SpecialFunctions: digamma
+import SpecialFunctions: digamma, polygamma
 import ForwardDiff
 
 const GammaInverse = InverseGamma
@@ -66,8 +66,8 @@ end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{GammaInverse}) =
     (η) -> begin
-        # TODO, replace with hand written version
-        return ForwardDiff.hessian(getlogpartition(NaturalParametersSpace(), GammaInverse), η)::Matrix{eltype(η)}
+        (η₁, η₂) = unpack_parameters(GammaInverse, η)
+        return SA[polygamma(1, -η₁ - one(η₁)) -inv(-η₂); -inv(-η₂) (-η₁-one(η₁))/(η₂^2) ]
     end
 
 # Mean parametrization
@@ -79,6 +79,6 @@ end
 
 getfisherinformation(::MeanParametersSpace, ::Type{GammaInverse}) =
     (θ) -> begin
-        # TODO, replace with hand written version
-        return ForwardDiff.hessian(getlogpartition(MeanParametersSpace(), GammaInverse), θ)::Matrix{eltype(θ)}
+        (shape, scale) = unpack_parameters(Gamma, θ)
+        return SA[polygamma(1, shape) -inv(scale); -inv(scale) shape/(scale^2) ]
     end
