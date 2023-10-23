@@ -393,6 +393,16 @@ function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::FullNormal)
     return MvNormalWeightedMeanPrecision(precision * mean, precision)
 end
 
+# isapprox
+
+function Base.isapprox(left::UnivariateNormalDistributionsFamily, right::UnivariateNormalDistributionsFamily; kwargs...)
+    return isapprox(mean(left), mean(right); kwargs...) && isapprox(var(left), var(right); kwargs...)
+end
+
+function Base.isapprox(left::MultivariateNormalDistributionsFamily, right::MultivariateNormalDistributionsFamily; kwargs...)
+    return isapprox(mean(left), mean(right); kwargs...) && isapprox(cov(left), cov(right); kwargs...)
+end
+
 # Basic prod fallbacks to weighted mean precision and converts first argument back
 
 BayesBase.default_prod_rule(::Type{<:UnivariateNormalDistributionsFamily}, ::Type{<:UnivariateNormalDistributionsFamily}) =
