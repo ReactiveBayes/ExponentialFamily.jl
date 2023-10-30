@@ -135,8 +135,17 @@ function run_test_parameters_conversion(distribution)
     @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η)) .== tuple_of_η)
     @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .== tuple_of_θ)
 
-    @test all(params(MeanParametersSpace(), distribution) .≈ map(NaturalParametersSpace() => MeanParametersSpace(), T, params(NaturalParametersSpace(), distribution)))
-    @test all(params(NaturalParametersSpace(), distribution) .≈ map(MeanParametersSpace() => NaturalParametersSpace(), T, params(MeanParametersSpace(), distribution)))
+    # Extra methods for conditioner free distributions
+    if isnothing(conditioner)
+        @test all(
+            params(MeanParametersSpace(), distribution) .≈
+            map(NaturalParametersSpace() => MeanParametersSpace(), T, params(NaturalParametersSpace(), distribution))
+        )
+        @test all(
+            params(NaturalParametersSpace(), distribution) .≈
+            map(MeanParametersSpace() => NaturalParametersSpace(), T, params(MeanParametersSpace(), distribution))
+        )
+    end
 end
 
 function run_test_similar_creation(distribution)
