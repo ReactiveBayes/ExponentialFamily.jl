@@ -642,6 +642,11 @@ exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
 BayesBase.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
 
+function BayesBase.params(::NaturalParametersSpace, distribution::Distribution)
+    θ = params(MeanParametersSpace(), distribution)
+    return map(MeanParametersSpace() => NaturalParametersSpace(), exponential_family_typetag(distribution), θ)
+end
+
 Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} =
     error("Cannot convert an arbitrary `ExponentialFamily{$T}` object to a `Distribution`. An explicit approximation method is required.")
 
