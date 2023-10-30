@@ -66,8 +66,7 @@ BayesBase.vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
 BayesBase.default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ClosedProd()
 
 function BayesBase.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeRate)
-    T = promote_samplefloattype(left, right)
-    return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
+    return GammaShapeRate(shape(left) + shape(right) - 1, rate(left) + rate(right))
 end
 
 BayesBase.pdf(dist::GammaShapeRate, x::Real)    = exp(logpdf(dist, x))

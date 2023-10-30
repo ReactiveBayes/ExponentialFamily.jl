@@ -22,14 +22,12 @@ BayesBase.default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeScale})
 BayesBase.default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeRate}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::GammaShapeRate, right::GammaShapeScale)
-    T = promote_samplefloattype(left, right)
-    return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
+    return GammaShapeRate(shape(left) + shape(right) - 1, rate(left) + rate(right))
 end
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::GammaShapeScale, right::GammaShapeRate)
-    T = promote_samplefloattype(left, right)
     return GammaShapeScale(
-        shape(left) + shape(right) - one(T),
+        shape(left) + shape(right) - 1,
         (scale(left) * scale(right)) / (scale(left) + scale(right))
     )
 end
