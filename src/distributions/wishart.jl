@@ -82,6 +82,10 @@ function BayesBase.mean(::typeof(cholinv), distribution::Wishart)
     return mean(InverseWishart(ν, cholinv(S)))
 end
 
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::WishartFast) where {T}
+    return WishartFast(convert_paramfloattype(T, distribution.ν), convert_paramfloattype(T, distribution.invS))
+end
+
 BayesBase.vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* Array(Eye(dims)))
 
 Base.ndims(dist::Wishart) = size(dist, 1)
