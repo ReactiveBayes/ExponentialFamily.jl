@@ -396,11 +396,11 @@ end
 # isapprox
 
 function Base.isapprox(left::UnivariateNormalDistributionsFamily, right::UnivariateNormalDistributionsFamily; kwargs...)
-    return isapprox(mean(left), mean(right); kwargs...) && isapprox(var(left), var(right); kwargs...)
+    return all(p -> isapprox(p[1], p[2]; kwargs...), zip(params(left), params(right)))
 end
 
 function Base.isapprox(left::MultivariateNormalDistributionsFamily, right::MultivariateNormalDistributionsFamily; kwargs...)
-    return isapprox(mean(left), mean(right); kwargs...) && isapprox(cov(left), cov(right); kwargs...)
+    return all(p -> isapprox(p[1], p[2]; kwargs...), zip(params(left), params(right)))
 end
 
 # Basic prod fallbacks to weighted mean precision and converts first argument back
