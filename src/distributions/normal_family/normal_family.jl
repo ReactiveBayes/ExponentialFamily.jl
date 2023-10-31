@@ -42,18 +42,18 @@ function BayesBase.mean_invcov(dist::Normal)
     return mean, inv(var)
 end
 
-function BayesBase.weightedmean_invcov(dist::FullNormal)
+function BayesBase.weightedmean_invcov(dist::Union{FullNormal, MvNormal})
     mean, var = mean_cov(dist)
     invcov = cholinv(var)
     return invcov * mean, invcov
 end
 
-function BayesBase.mean_invcov(dist::FullNormal)
+function BayesBase.mean_invcov(dist::Union{FullNormal, MvNormal})
     mean, cov = mean_cov(dist)
     return mean, cholinv(cov)
 end
 
-function BayesBase.mean_std(dist::FullNormal)
+function BayesBase.mean_std(dist::Union{FullNormal, MvNormal})
     mean, cov = mean_cov(dist)
     return mean, cholsqrt(cov)
 end
