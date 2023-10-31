@@ -53,7 +53,7 @@ function Base.convert(::Type{InverseWishartFast{T}}, distribution::InverseWishar
 end
 
 # from "Parametric Bayesian Estimation of Differential Entropy and Relative Entropy" Gupta et al.
-function BayesBase.entropy(dist::InverseWishartFast)
+function BayesBase.entropy(dist::InverseWishartDistributionsFamily)
     d = size(dist, 1)
     ν, S = params(dist)
     d * (d - 1) / 4 * logπ + mapreduce(i -> loggamma((ν + 1.0 - i) / 2), +, 1:d) + ν / 2 * d +

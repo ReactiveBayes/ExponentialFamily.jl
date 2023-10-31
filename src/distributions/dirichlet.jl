@@ -2,6 +2,8 @@ export Dirichlet
 
 import Distributions: Dirichlet, std
 import SpecialFunctions: digamma, loggamma, trigamma
+import Base.Broadcast: BroadcastFunction
+
 using FillArrays
 using LoopVectorization
 using StaticArrays
@@ -20,8 +22,8 @@ end
 BayesBase.probvec(dist::Dirichlet) = params(dist)[1]
 BayesBase.std(dist::Dirichlet)     = vmap(sqrt, var(dist))
 
-BayesBase.mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
-BayesBase.mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
+BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
+BayesBase.mean(::BroadcastFunction{typeof(clamplog)}, dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
 
 function BayesBase.compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist::Dirichlet)
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
