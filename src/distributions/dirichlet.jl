@@ -2,33 +2,34 @@ export Dirichlet
 
 import Distributions: Dirichlet, std
 import SpecialFunctions: digamma, loggamma, trigamma
+import Base.Broadcast: BroadcastFunction
+
 using FillArrays
 using LoopVectorization
 using StaticArrays
 using LinearAlgebra
 using LogExpFunctions
 
-vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
+BayesBase.vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
+BayesBase.default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = PreserveTypeProd(Distribution)
 
-default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = PreserveTypeProd(Distribution)
-
-function Base.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dirichlet)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dirichlet)
     mvec = probvec(left) .+ probvec(right)
     mvec = mvec .- one(eltype(mvec))
     return Dirichlet(mvec)
 end
 
-probvec(dist::Dirichlet) = params(dist)[1]
-std(dist::Dirichlet)     = vmap(sqrt, var(dist))
+BayesBase.probvec(dist::Dirichlet) = params(dist)[1]
+BayesBase.std(dist::Dirichlet)     = vmap(sqrt, var(dist))
 
-mean(::typeof(log), dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
-mean(::typeof(clamplog), dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
+BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
+BayesBase.mean(::BroadcastFunction{typeof(clamplog)}, dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
 
-function compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist::Dirichlet)
+function BayesBase.compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist::Dirichlet)
     return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
 end
 
-function insupport(ef::ExponentialFamilyDistribution{Dirichlet}, x)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{Dirichlet}, x)
     l = length(getnaturalparameters(ef))
     return l == length(x) && !any(x -> x < zero(x), x) && sum(x) ≈ 1
 end

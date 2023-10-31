@@ -8,17 +8,16 @@ import StatsFuns: logit, logistic, log1pexp
 import HypergeometricFunctions: _₂F₁
 import StaticArrays: SA
 
-vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
+BayesBase.vague(::Type{<:Binomial}, trials::Int) = Binomial(trials)
+BayesBase.probvec(dist::Binomial) = (failprob(dist), succprob(dist))
 
-probvec(dist::Binomial) = (failprob(dist), succprob(dist))
-
-function convert_paramfloatype(::Type{Binomial}, ::Type{T}, distribution::Binomial{R}) where {T <: Real, R <: Real}
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::Binomial) where {T <: Real}
     n, p = params(distribution)
     return Binomial(n, convert(T, p))
 end
 
 # NOTE: The product of two Binomial distributions is NOT a Binomial distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
@@ -53,7 +52,7 @@ end
 # Natural parametrization
 
 # This is needed, because `getsupport` of Binomial is not really defined with respect to its type due to need in ntrials
-Distributions.insupport(ef::ExponentialFamilyDistribution{Binomial}, x) = insupport(convert(Distribution, ef), x)
+BayesBase.insupport(ef::ExponentialFamilyDistribution{Binomial}, x) = insupport(convert(Distribution, ef), x)
 
 isproper(::NaturalParametersSpace, ::Type{Binomial}, η, conditioner) = length(η) === 1 && isinteger(conditioner) && conditioner >= 0
 isproper(::MeanParametersSpace, ::Type{Binomial}, θ, conditioner::Number) = length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0

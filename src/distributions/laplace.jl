@@ -4,13 +4,13 @@ import Distributions: Laplace, params, logpdf
 using DomainSets
 using StaticArrays
 
-vague(::Type{<:Laplace}) = Laplace(0.0, huge)
+BayesBase.vague(::Type{<:Laplace}) = Laplace(0.0, huge)
 
 # The default product between two `Laplace` objects is `PreserveTypeProd(Laplace)`,
 # which is possible only if the location parameters match
-default_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = PreserveTypeProd(Laplace)
+BayesBase.default_prod_rule(::Type{<:Laplace}, ::Type{<:Laplace}) = PreserveTypeProd(Laplace)
 
-function Base.prod(::PreserveTypeProd{Laplace}, left::Laplace, right::Laplace)
+function BayesBase.prod(::PreserveTypeProd{Laplace}, left::Laplace, right::Laplace)
     location_left, scale_left = params(left)
     location_right, scale_right = params(right)
 
@@ -28,10 +28,10 @@ end
 
 # The default product between two `ExponentialFamilyDistribution{Laplace}` objects is 
 # `ProdPreserveType(ExponentialFamilyDistribution{Laplace})`, which is possible only if the location parameters match
-default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Laplace} =
+BayesBase.default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Laplace} =
     PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
 
-function Base.prod!(
+function BayesBase.prod!(
     container::ExponentialFamilyDistribution{Laplace},
     left::ExponentialFamilyDistribution{Laplace},
     right::ExponentialFamilyDistribution{Laplace}
@@ -53,7 +53,7 @@ function Base.prod!(
     """)
 end
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution{Laplace}},
     left::ExponentialFamilyDistribution{Laplace},
     right::ExponentialFamilyDistribution{Laplace}
@@ -61,7 +61,7 @@ function Base.prod(
     return prod!(similar(left), left, right)
 end
 
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     ef_left::ExponentialFamilyDistribution{T},
     ef_right::ExponentialFamilyDistribution{T}

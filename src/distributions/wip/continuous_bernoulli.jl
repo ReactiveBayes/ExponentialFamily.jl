@@ -179,11 +179,11 @@ function support(::Union{<:ExponentialFamilyDistribution{ContinuousBernoulli}, <
     return ClosedInterval{Real}(0.0, 1.0)
 end
 
-function insupport(ef::ExponentialFamilyDistribution{ContinuousBernoulli, P, C, Safe}, x::Real) where {P, C}
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{ContinuousBernoulli, P, C, Safe}, x::Real) where {P, C}
     return x ∈ support(ef)
 end
 
-function insupport(dist::ContinuousBernoulli, x::Real)
+function BayesBase.insupport(dist::ContinuousBernoulli, x::Real)
     return x ∈ support(dist)
 end
 

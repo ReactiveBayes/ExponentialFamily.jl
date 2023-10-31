@@ -21,9 +21,11 @@ end
 @testitem "Dirichlet: mean(::typeof(log))" begin
     include("distributions_setuptests.jl")
 
-    @test mean(log, Dirichlet([1.0, 1.0, 1.0])) ≈ [-1.5000000000000002, -1.5000000000000002, -1.5000000000000002]
-    @test mean(log, Dirichlet([1.1, 2.0, 2.0])) ≈ [-1.9517644694670657, -1.1052251939575213, -1.1052251939575213]
-    @test mean(log, Dirichlet([3.0, 1.2, 5.0])) ≈ [-1.2410879175727905, -2.4529121492634465, -0.657754584239457]
+    import Base.Broadcast: BroadcastFunction
+
+    @test mean(BroadcastFunction(log), Dirichlet([1.0, 1.0, 1.0])) ≈ [-1.5000000000000002, -1.5000000000000002, -1.5000000000000002]
+    @test mean(BroadcastFunction(log), Dirichlet([1.1, 2.0, 2.0])) ≈ [-1.9517644694670657, -1.1052251939575213, -1.1052251939575213]
+    @test mean(BroadcastFunction(log), Dirichlet([3.0, 1.2, 5.0])) ≈ [-1.2410879175727905, -2.4529121492634465, -0.657754584239457]
 end
 
 @testitem "Dirichlet: ExponentialFamilyDistribution" begin

@@ -3,11 +3,10 @@ using Distributions
 import Distributions: VonMises, params
 import SpecialFunctions: besselj0
 
-vague(::Type{<:VonMises}) = VonMises(0.0, tiny)
+BayesBase.vague(::Type{<:VonMises}) = VonMises(0.0, tiny)
+BayesBase.default_prod_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = PreserveTypeProd(Distribution)
 
-default_prod_rule(::Type{<:VonMises}, ::Type{<:VonMises}) = PreserveTypeProd(Distribution)
-
-function prod(::PreserveTypeProd{Distribution}, left::VonMises, right::VonMises)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMises, right::VonMises)
     μleft, κleft = params(left)
     μright, κright = params(right)
 
@@ -20,7 +19,7 @@ function prod(::PreserveTypeProd{Distribution}, left::VonMises, right::VonMises)
     return VonMises(α, R)
 end
 
-function Base.prod!(
+function BayesBase.prod!(
     container::ExponentialFamilyDistribution{T},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
@@ -34,17 +33,17 @@ function Base.prod!(
     return container
 end
 
-function prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
 ) where {T <: VonMises}
     F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
     container = ExponentialFamilyDistribution(VonMises, zeros(F, 2), zero(F), nothing)
-    return Base.prod!(container, left, right)
+    return BayesBase.prod!(container, left, right)
 end
 
-Distributions.insupport(ef::ExponentialFamilyDistribution{T}, value) where {T <: VonMises} = insupport(convert(Distribution, ef), value)
+BayesBase.insupport(ef::ExponentialFamilyDistribution{T}, value) where {T <: VonMises} = insupport(convert(Distribution, ef), value)
 
 # Natural parametrization
 

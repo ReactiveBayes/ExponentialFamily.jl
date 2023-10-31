@@ -121,10 +121,12 @@ end
     ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
     samples = rand(rng, InverseWishart(ν, S), Int(1e6))
     @test isapprox(mean(logdet, InverseWishartFast(ν, S)), mean(logdet.(samples)), atol = 1e-2)
+    @test isapprox(mean(logdet, InverseWishart(ν, S)), mean(logdet.(samples)), atol = 1e-2)
 
     ν, S = 4.0, Array(Eye(3))
     samples = rand(rng, InverseWishart(ν, S), Int(1e6))
     @test isapprox(mean(logdet, InverseWishartFast(ν, S)), mean(logdet.(samples)), atol = 1e-2)
+    @test isapprox(mean(logdet, InverseWishart(ν, S)), mean(logdet.(samples)), atol = 1e-2)
 end
 
 @testitem "InverseWishart: mean(::typeof(inv))" begin
@@ -136,10 +138,12 @@ end
     ν, S = 2.0, [2.2658069783329573 -0.47934965873423374; -0.47934965873423374 1.4313564100863712]
     samples = rand(rng, InverseWishart(ν, S), Int(1e6))
     @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
+    @test isapprox(mean(inv, InverseWishart(ν, S)), mean(inv.(samples)), atol = 1e-2)
 
     ν, S = 4.0, Array(Eye(3))
     samples = rand(rng, InverseWishart(ν, S), Int(1e6))
     @test isapprox(mean(inv, InverseWishartFast(ν, S)), mean(inv.(samples)), atol = 1e-2)
+    @test isapprox(mean(inv, InverseWishart(ν, S)), mean(inv.(samples)), atol = 1e-2)
 end
 
 @testitem "InverseWishart: prod" begin

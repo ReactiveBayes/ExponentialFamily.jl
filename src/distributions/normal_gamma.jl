@@ -29,37 +29,36 @@ function NormalGamma(μ::Real, λ::Real, α::Real, β::Real)
     return NormalGamma{T}(μ_promoted, λ_promoted, α_promoted, β_promoted)
 end
 
-params(d::NormalGamma)   = (d.μ, d.λ, d.α, d.β)
-location(d::NormalGamma) = first(params(d))
-scale(d::NormalGamma)    = getindex(params(d), 2)
-shape(d::NormalGamma)    = getindex(params(d), 3)
-rate(d::NormalGamma)     = getindex(params(d), 4)
+BayesBase.params(d::NormalGamma)   = (d.μ, d.λ, d.α, d.β)
+BayesBase.location(d::NormalGamma) = first(params(d))
+BayesBase.scale(d::NormalGamma)    = getindex(params(d), 2)
+BayesBase.shape(d::NormalGamma)    = getindex(params(d), 3)
+BayesBase.rate(d::NormalGamma)     = getindex(params(d), 4)
+BayesBase.mean(d::NormalGamma) = [d.μ, d.α / d.β]
+BayesBase.var(d::NormalGamma) = d.α > one(d.α) ? [d.β / (d.λ * (d.α - one(d.α))), d.α / (d.β^2)] : error("`var` of `NormalGamma` is not defined for `α < 1`")
+BayesBase.cov(d::NormalGamma) = d.α > one(d.α) ? [d.β/(d.λ*(d.α-one(d.α))) 0.0; 0.0 d.α/(d.β^2)] : error("`cov` of `NormalGamma` is not defined for `α < 1`")
+BayesBase.std(d::NormalGamma) = d.α > one(d.α) ? sqrt.(var(d)) : error("`std` of `NormalGamma` is not defined for `α < 1`")
 
-mean(d::NormalGamma) = [d.μ, d.α / d.β]
-var(d::NormalGamma) = d.α > one(d.α) ? [d.β / (d.λ * (d.α - one(d.α))), d.α / (d.β^2)] : error("`var` of `NormalGamma` is not defined for `α < 1`")
-cov(d::NormalGamma) = d.α > one(d.α) ? [d.β/(d.λ*(d.α-one(d.α))) 0.0; 0.0 d.α/(d.β^2)] : error("`cov` of `NormalGamma` is not defined for `α < 1`")
-std(d::NormalGamma) = d.α > one(d.α) ? sqrt.(var(d)) : error("`std` of `NormalGamma` is not defined for `α < 1`")
-
-function Random.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector)
+function BayesBase.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector)
     container[2] = rand(rng, GammaShapeRate(dist.α, dist.β))
     container[1] = rand(rng, NormalMeanPrecision(dist.μ, dist.λ * container[2]))
     return container
 end
 
-function Random.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector{T}) where {T <: Vector}
+function BayesBase.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector{T}) where {T <: Vector}
     for i in eachindex(container)
         rand!(rng, dist, container[i])
     end
     return container
 end
 
-function Random.rand(rng::AbstractRNG, dist::NormalGamma)
+function BayesBase.rand(rng::AbstractRNG, dist::NormalGamma)
     container = Vector{Float64}(undef, 2)
     rand!(rng, dist, container)
     return container
 end
 
-function Random.rand(rng::AbstractRNG, dist::NormalGamma, nsamples::Int)
+function BayesBase.rand(rng::AbstractRNG, dist::NormalGamma, nsamples::Int)
     container = Vector{Vector{Float64}}(undef, nsamples)
     for i in eachindex(container)
         container[i] = Vector{Float64}(undef, 2)
@@ -68,7 +67,7 @@ function Random.rand(rng::AbstractRNG, dist::NormalGamma, nsamples::Int)
     return container
 end
 
-function Distributions.logpdf(dist::NormalGamma, x::AbstractVector{<:Real})
+function BayesBase.logpdf(dist::NormalGamma, x::AbstractVector{<:Real})
     (μ, λ, α, β) = params(dist)
 
     constants = α * log(β) + (1 / 2) * (log(λ)) - loggamma(α) - (1 / 2) * log(twoπ)
@@ -78,11 +77,11 @@ function Distributions.logpdf(dist::NormalGamma, x::AbstractVector{<:Real})
     return constants + term1 + term2
 end
 
-Distributions.pdf(dist::NormalGamma, x::AbstractVector{<:Real}) = exp(logpdf(dist, x))
+BayesBase.pdf(dist::NormalGamma, x::AbstractVector{<:Real}) = exp(logpdf(dist, x))
 
-default_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:NormalGamma}, ::Type{<:NormalGamma}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::NormalGamma, right::NormalGamma)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::NormalGamma, right::NormalGamma)
     (μleft, λleft, αleft, βleft) = params(left)
     (μright, λright, αright, βright) = params(right)
 
@@ -100,7 +99,7 @@ struct NormalGammaDomain <: Domain{AbstractVector} end
 Base.eltype(::NormalGammaDomain) = AbstractVector
 Base.in(v, ::NormalGammaDomain) = length(v) === 2 && isreal(v[1]) && isreal(v[2]) && v[2] > 0
 
-Distributions.support(::Type{NormalGamma}) = NormalGammaDomain()
+BayesBase.support(::Type{NormalGamma}) = NormalGammaDomain()
 
 # Natural parametrization
 isproper(::NaturalParametersSpace, ::Type{NormalGamma}, η, conditioner) =

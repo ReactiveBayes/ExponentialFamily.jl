@@ -4,22 +4,18 @@ import StatsFuns: logit, logistic
 import DomainSets: NaturalNumbers
 using StaticArrays
 
-vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
+BayesBase.vague(::Type{<:NegativeBinomial}, trials::Int) = NegativeBinomial(trials)
+BayesBase.probvec(dist::NegativeBinomial) = (failprob(dist), succprob(dist))
 
-probvec(dist::NegativeBinomial) = (failprob(dist), succprob(dist))
 Distributions.support(::Type{NegativeBinomial}) = NaturalNumbers()
 
-function convert_eltype(
-    ::Type{NegativeBinomial},
-    ::Type{T},
-    distribution::NegativeBinomial{R}
-) where {T <: Real, R <: Real}
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::NegativeBinomial) where {T <: Real}
     n, p = params(distribution)
     return NegativeBinomial(n, convert(AbstractVector{T}, p))
 end
 
 # NOTE: The product of two NegativeBinomial distributions is NOT a NegativeBinomial distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

@@ -26,34 +26,33 @@ GammaShapeRate()                       = GammaShapeRate(1.0, 1.0)
 
 Distributions.@distr_support GammaShapeRate 0 Inf
 
-Distributions.support(dist::GammaShapeRate) = Distributions.RealInterval(minimum(dist), maximum(dist))
+BayesBase.support(dist::GammaShapeRate) = Distributions.RealInterval(minimum(dist), maximum(dist))
+BayesBase.shape(dist::GammaShapeRate) = dist.a
+BayesBase.rate(dist::GammaShapeRate) = dist.b
+BayesBase.scale(dist::GammaShapeRate) = inv(dist.b)
+BayesBase.mean(dist::GammaShapeRate) = shape(dist) / rate(dist)
+BayesBase.var(dist::GammaShapeRate) = shape(dist) / abs2(rate(dist))
+BayesBase.params(dist::GammaShapeRate) = (shape(dist), rate(dist))
 
-Distributions.shape(dist::GammaShapeRate)  = dist.a
-Distributions.rate(dist::GammaShapeRate)   = dist.b
-Distributions.scale(dist::GammaShapeRate)  = inv(dist.b)
-Distributions.mean(dist::GammaShapeRate)   = shape(dist) / rate(dist)
-Distributions.var(dist::GammaShapeRate)    = shape(dist) / abs2(rate(dist))
-Distributions.params(dist::GammaShapeRate) = (shape(dist), rate(dist))
-
-Distributions.mode(d::GammaShapeRate) =
+BayesBase.mode(d::GammaShapeRate) =
     shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))
 
-function Distributions.entropy(dist::GammaShapeRate)
+function BayesBase.entropy(dist::GammaShapeRate)
     a, b = params(dist)
     return a - log(b) + loggamma(a) + (1 - a) * digamma(a)
 end
 
-function mean(::typeof(log), dist::GammaShapeRate)
+function BayesBase.mean(::typeof(log), dist::GammaShapeRate)
     a, b = params(dist)
     return digamma(a) - log(b)
 end
 
-function mean(::typeof(loggamma), dist::GammaShapeRate)
+function BayesBase.mean(::typeof(loggamma), dist::GammaShapeRate)
     a, b = params(dist)
     return 0.5 * (log2π - (digamma(a) - log(b))) + mean(dist) * (-1 + digamma(a + 1) - log(b))
 end
 
-function mean(::typeof(xtlog), dist::GammaShapeRate)
+function BayesBase.mean(::typeof(xtlog), dist::GammaShapeRate)
     a, b = params(dist)
     return mean(dist) * (digamma(a + 1) - log(b))
 end
@@ -63,26 +62,24 @@ Base.eltype(::GammaShapeRate{T}) where {T} = T
 Base.convert(::Type{GammaShapeRate{T}}, a::Real, b::Real) where {T <: Real} =
     GammaShapeRate(convert(T, a), convert(T, b))
 
-vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
+BayesBase.vague(::Type{<:GammaShapeRate}) = GammaShapeRate(1.0, tiny)
+BayesBase.default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ClosedProd()
 
-default_prod_rule(::Type{<:GammaShapeRate}, ::Type{<:GammaShapeRate}) = ClosedProd()
-
-function Base.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeRate)
-    T = promote_samplefloattype(left, right)
-    return GammaShapeRate(shape(left) + shape(right) - one(T), rate(left) + rate(right))
+function BayesBase.prod(::ClosedProd, left::GammaShapeRate, right::GammaShapeRate)
+    return GammaShapeRate(shape(left) + shape(right) - 1, rate(left) + rate(right))
 end
 
-Distributions.pdf(dist::GammaShapeRate, x::Real)    = exp(logpdf(dist, x))
-Distributions.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
+BayesBase.pdf(dist::GammaShapeRate, x::Real)    = exp(logpdf(dist, x))
+BayesBase.logpdf(dist::GammaShapeRate, x::Real) = shape(dist) * log(rate(dist)) - loggamma(shape(dist)) + (shape(dist) - 1) * log(x) - rate(dist) * x
 
-function Random.rand(rng::AbstractRNG, dist::GammaShapeRate)
+function BayesBase.rand(rng::AbstractRNG, dist::GammaShapeRate)
     return convert(eltype(dist), rand(rng, convert(GammaShapeScale, dist)))
 end
 
-function Random.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Int64)
+function BayesBase.rand(rng::AbstractRNG, dist::GammaShapeRate, n::Int64)
     return convert(AbstractArray{eltype(dist)}, rand(rng, convert(GammaShapeScale, dist), n))
 end
 
-function Random.rand!(rng::AbstractRNG, dist::GammaShapeRate, container::AbstractVector)
+function BayesBase.rand!(rng::AbstractRNG, dist::GammaShapeRate, container::AbstractVector)
     return rand!(rng, convert(GammaShapeScale, dist), container)
 end

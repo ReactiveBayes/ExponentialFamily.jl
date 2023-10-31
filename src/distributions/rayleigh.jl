@@ -4,10 +4,10 @@ import Distributions: Rayleigh, params
 using DomainSets
 using StaticArrays
 
-vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
+BayesBase.vague(::Type{<:Rayleigh}) = Rayleigh(Float64(huge))
 
 # NOTE: The product of two Rayleigh distributions is NOT a Rayleigh distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}

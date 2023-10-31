@@ -22,8 +22,9 @@ struct MatrixDirichlet{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDis
     a::A
 end
 
-Distributions.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a; dims = 1)
-function Distributions.cov(dist::MatrixDirichlet)
+BayesBase.mean(dist::MatrixDirichlet) = dist.a ./ sum(dist.a; dims = 1)
+
+function BayesBase.cov(dist::MatrixDirichlet)
     matrices = vmap(
         d -> sparse(cov(Dirichlet(convert(Vector, d)))),
         eachcol(dist.a)
@@ -32,19 +33,19 @@ function Distributions.cov(dist::MatrixDirichlet)
     return vmapreduce(identity, blockdiag, matrices)
 end
 
-Distributions.var(dist::MatrixDirichlet) = diag(cov(dist))
-Distributions.std(dist::MatrixDirichlet) = vmap(sqrt, var(dist))
+BayesBase.var(dist::MatrixDirichlet) = diag(cov(dist))
+BayesBase.std(dist::MatrixDirichlet) = vmap(sqrt, var(dist))
 
-params(dist::MatrixDirichlet) = (dist.a,)
-size(dist::MatrixDirichlet)   = size(dist.a)
+BayesBase.params(dist::MatrixDirichlet) = (dist.a,)
 
+Base.size(dist::MatrixDirichlet) = size(dist.a)
 Base.eltype(::MatrixDirichlet{T}) where {T} = T
 
-vague(::Type{<:MatrixDirichlet}, dims::Int)              = MatrixDirichlet(ones(dims, dims))
-vague(::Type{<:MatrixDirichlet}, dims1::Int, dims2::Int) = MatrixDirichlet(ones(dims1, dims2))
-vague(::Type{<:MatrixDirichlet}, dims::Tuple)            = MatrixDirichlet(ones(dims))
+BayesBase.vague(::Type{<:MatrixDirichlet}, dims::Int)              = MatrixDirichlet(ones(dims, dims))
+BayesBase.vague(::Type{<:MatrixDirichlet}, dims1::Int, dims2::Int) = MatrixDirichlet(ones(dims1, dims2))
+BayesBase.vague(::Type{<:MatrixDirichlet}, dims::Tuple)            = MatrixDirichlet(ones(dims))
 
-function Distributions.entropy(dist::MatrixDirichlet)
+function BayesBase.entropy(dist::MatrixDirichlet)
     return vmapreduce(+, eachcol(dist.a)) do column
         scolumn = sum(column)
         -sum((column .- one(Float64)) .* (digamma.(column) .- digamma.(scolumn))) - loggamma(scolumn) +
@@ -52,18 +53,18 @@ function Distributions.entropy(dist::MatrixDirichlet)
     end
 end
 
-promote_variate_type(::Type{Multivariate}, ::Type{<:Dirichlet})  = Dirichlet
-promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichlet
+BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:Dirichlet})  = Dirichlet
+BayesBase.promote_variate_type(::Type{Matrixvariate}, ::Type{<:Dirichlet}) = MatrixDirichlet
 
-promote_variate_type(::Type{Multivariate}, ::Type{<:MatrixDirichlet})  = Dirichlet
-promote_variate_type(::Type{Matrixvariate}, ::Type{<:MatrixDirichlet}) = MatrixDirichlet
+BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:MatrixDirichlet})  = Dirichlet
+BayesBase.promote_variate_type(::Type{Matrixvariate}, ::Type{<:MatrixDirichlet}) = MatrixDirichlet
 
-function Random.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}) where {T}
     container = similar(dist.a)
     return rand!(rng, dist, container)
 end
 
-function Random.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::Int64) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::Int64) where {T}
     container = Vector{Matrix{T}}(undef, nsamples)
     @inbounds for i in eachindex(container)
         container[i] = Matrix{T}(undef, size(dist))
@@ -72,7 +73,7 @@ function Random.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::Int64
     return container
 end
 
-function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
+function BayesBase.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
     samples = vmap(d -> rand(rng, Dirichlet(convert(Vector, d))), eachcol(dist.a))
     @views for row in 1:isqrt(length(container))
         b = container[:, row]
@@ -82,14 +83,14 @@ function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::Abstra
     return container
 end
 
-function Random.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractVector{T}) where {T <: AbstractMatrix}
+function BayesBase.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractVector{T}) where {T <: AbstractMatrix}
     for i in eachindex(container)
         rand!(rng, dist, container[i])
     end
     return container
 end
 
-function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
+function BayesBase.logpdf(dist::MatrixDirichlet, x::Matrix)
     return vmapreduce(
         d -> logpdf(Dirichlet(convert(Vector, d[1])), convert(Vector, d[2])),
         +,
@@ -97,18 +98,18 @@ function Distributions.logpdf(dist::MatrixDirichlet, x::Matrix)
     )
 end
 
-Distributions.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
+BayesBase.pdf(dist::MatrixDirichlet, x::Matrix) = exp(logpdf(dist, x))
 
-mean(::typeof(log), dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
+BayesBase.mean(::Base.Broadcast.BroadcastFunction{typeof(log)}, dist::MatrixDirichlet) = digamma.(dist.a) .- digamma.(sum(dist.a; dims = 1))
 
-default_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = PreserveTypeProd(Distribution)
+BayesBase.default_prod_rule(::Type{<:MatrixDirichlet}, ::Type{<:MatrixDirichlet}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::MatrixDirichlet, right::MatrixDirichlet)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixDirichlet, right::MatrixDirichlet)
     T = promote_samplefloattype(left, right)
     return MatrixDirichlet(left.a + right.a - Ones{T}(size(left.a)))
 end
 
-function insupport(ef::ExponentialFamilyDistribution{MatrixDirichlet}, x)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{MatrixDirichlet}, x)
     l = length(getnaturalparameters(ef))
     ## The columns of x should be normalized. all(≈(1), sum(eachrow(x))) is a convenient way of doing that
     ## because eachrow(x) will return row slices and sum will take the sum of the row slices along the first dimension

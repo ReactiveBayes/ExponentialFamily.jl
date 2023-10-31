@@ -20,29 +20,27 @@ A continuous univariate gamma distribution parametrized by its shape `α` and sc
 """
 const GammaShapeScale = Gamma
 
-function mean(::typeof(log), dist::GammaShapeScale)
+function BayesBase.mean(::typeof(log), dist::GammaShapeScale)
     k, θ = params(dist)
     return digamma(k) + log(θ)
 end
 
-function mean(::typeof(loggamma), dist::GammaShapeScale)
+function BayesBase.mean(::typeof(loggamma), dist::GammaShapeScale)
     k, θ = params(dist)
     return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-one(k) + digamma(k + one(k)) + log(θ))
 end
 
-function mean(::typeof(xtlog), dist::GammaShapeScale)
+function BayesBase.mean(::typeof(xtlog), dist::GammaShapeScale)
     k, θ = params(dist)
     return mean(dist) * (digamma(k + one(k)) + log(θ))
 end
 
-vague(::Type{<:GammaShapeScale}) = GammaShapeScale(one(Float64), huge)
+BayesBase.vague(::Type{<:GammaShapeScale}) = GammaShapeScale(one(Float64), huge)
+BayesBase.default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
 
-default_prod_rule(::Type{<:GammaShapeScale}, ::Type{<:GammaShapeScale}) = ClosedProd()
-
-function Base.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeScale)
-    T = promote_samplefloattype(left, right)
+function BayesBase.prod(::ClosedProd, left::GammaShapeScale, right::GammaShapeScale)
     return GammaShapeScale(
-        shape(left) + shape(right) - one(T),
+        shape(left) + shape(right) - 1,
         (scale(left) * scale(right)) / (scale(left) + scale(right))
     )
 end

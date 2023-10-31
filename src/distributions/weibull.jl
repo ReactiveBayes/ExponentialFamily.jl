@@ -7,7 +7,7 @@ using HCubature
 using StaticArrays
 
 # NOTE: The product of two Weibull distributions is NOT a Weibull distribution.
-function Base.prod(
+function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
@@ -121,73 +121,3 @@ getfisherinformation(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
 
     return SA[a11 a12; a21 a22]
 end
-
-# check_valid_natural(::Type{<:Weibull}, params) = length(params) === 1
-# check_valid_conditioner(::Type{<:Weibull}, conditioner) = isreal(conditioner) && conditioner > 0
-
-# pack_naturalparameters(dist::Weibull) = [-(1 / scale(dist))^(shape(dist))]
-# function unpack_naturalparameters(ef::ExponentialFamilyDistribution{<:Weibull})
-#     η = getnaturalparameters(ef)
-#     @inbounds η1 = η[1]
-#     return (η1,)
-# end
-
-# function isproper(exponentialfamily::ExponentialFamilyDistribution{Weibull})
-#     (η,) = unpack_naturalparameters(exponentialfamily)
-#     return η < 0
-# end
-
-# function basemeasure(dist::Weibull, x)
-#     return x^(shape(dist) - 1)
-# end
-
-# basemeasureconstant(::ExponentialFamilyDistribution{Weibull}) = NonConstantBaseMeasure()
-# basemeasureconstant(::Type{<:Weibull}) = NonConstantBaseMeasure()
-# basemeasure(ef::ExponentialFamilyDistribution{Weibull}) = basemeasure(ef, x)
-# function basemeasure(weibull::ExponentialFamilyDistribution{Weibull}, x)
-#     return x^(getconditioner(weibull) - 1)
-# end
-# Base.convert(::Type{ExponentialFamilyDistribution}, dist::Weibull) =
-#     ExponentialFamilyDistribution(Weibull, pack_naturalparameters(dist), shape(dist))
-
-# function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Weibull})
-#     k = getconditioner(exponentialfamily)
-#     (η,) = unpack_naturalparameters(exponentialfamily)
-#     return Weibull(k, (-1 / η)^(1 / k))
-# end
-
-# function logpartition(exponentialfamily::ExponentialFamilyDistribution{Weibull})
-#     return -log(-first(unpack_naturalparameters(exponentialfamily))) - log(getconditioner(exponentialfamily))
-# end
-
-# fisherinformation(exponentialfamily::ExponentialFamilyDistribution{Weibull}) =
-#     SA[inv(first(unpack_naturalparameters(exponentialfamily)))^2;;]
-
-# function fisherinformation(dist::Weibull)
-#     α = shape(dist)
-#     θ = scale(dist)
-
-#     # see (Fisher Information and the Combination of RGB Channels, Reiner Lenz & Vasileios Zografos, 2013)
-
-#     γ = -digamma(1) # Euler-Mascheroni constant (see https://en.wikipedia.org/wiki/Euler%E2%80%93Mascheroni_constant)
-#     a11 = (1 - 2γ + γ^2 + π^2 / 6) / (α^2)
-#     a12 = (γ - 1) / θ
-#     a21 = a12
-#     a22 = α^2 / (θ^2)
-
-#     return SA[a11 a12; a21 a22]
-# end
-
-# support(::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}) = ClosedInterval{Real}(0, Inf)
-# insupport(union::Union{<:ExponentialFamilyDistribution{Weibull}, <:Weibull}, x::Real) = x ∈ support(union)
-
-# sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}) = (x) -> sufficientstatistics(ef, x)
-# function sufficientstatistics(ef::ExponentialFamilyDistribution{Weibull}, x)
-#     k = getconditioner(ef)
-#     return SA[x^k]
-# end
-
-# function sufficientstatistics(dist::Weibull, x)
-#     k = shape(dist)
-#     return SA[x^k]
-# end

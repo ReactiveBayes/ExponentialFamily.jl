@@ -11,10 +11,10 @@ which yields a joint probability distribution. Calculating the product of two pr
 p(X\vert D) \propto \underbrace{p(X)p(D|X)}_{\mathrm{product~of~two~distributions}}
 ```
 
-To perform this operation, the ExponentialFamily library employs the `prod` function. This function takes a product [strategy](@ref library-prod-strategies) as its first argument. For instance:
+To perform this operation, the ExponentialFamily library employs the `prod` function. This function takes a product strategy as its first argument. For instance:
 
 ```@example prod-example
-using ExponentialFamily, Distributions
+using ExponentialFamily, Distributions, BayesBase
 
 prior = Bernoulli(0.5)
 likelihood = Bernoulli(0.6)
@@ -50,6 +50,7 @@ prod(PreserveTypeProd(ExponentialFamilyDistribution), prior, likelihood)
 
 Note that the result does not correspond to the `Laplace` distribution and returns a generic univariate `ExponentialFamilyDistribution`.
 This approach ensures consistency and compatibility, especially when dealing with a wide range of probability distributions.
+Refer to the [`BayesBase`](https://github.com/biaslab/BayesBase.jl) for the documentation about available product strategies.
 
 ## Computing various useful attributes of an exponential family member
 
@@ -129,4 +130,4 @@ fisherinformation_of_gamma_in_natural_space(gamma_parameters_in_natural_space)
 
 ## Approximating attributes 
 
-Refer to the `ExpectationApproximations.jl` package for approximating various attributes of the members of the exponential family.
+Refer to the [`ExpectationApproximations.jl`](https://github.com/biaslab/ExpectationApproximations.jl) package for approximating various attributes of the members of the exponential family.

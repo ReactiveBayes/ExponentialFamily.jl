@@ -5,18 +5,17 @@ using DomainSets
 using StaticArrays
 
 ## We use the variant of Geometric distribution that models k failures before the first success
-vague(::Type{<:Geometric}) = Geometric(Float64(tiny))
+BayesBase.vague(::Type{<:Geometric}) = Geometric(Float64(tiny))
+BayesBase.probvec(dist::Geometric) = (failprob(dist), succprob(dist))
 
-probvec(dist::Geometric) = (failprob(dist), succprob(dist))
+BayesBase.default_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = PreserveTypeProd(Distribution)
 
-default_prod_rule(::Type{<:Geometric}, ::Type{<:Geometric}) = PreserveTypeProd(Distribution)
-
-Base.prod(::PreserveTypeProd{Distribution}, left::Geometric, right::Geometric) =
+BayesBase.prod(::PreserveTypeProd{Distribution}, left::Geometric, right::Geometric) =
     Geometric(succprob(left) + succprob(right) - succprob(left) * succprob(right))
 
-getsupport(::Type{Geometric}) = DomainSets.NaturalNumbers()
-
 # Natural parametrization
+
+getsupport(::Type{Geometric}) = DomainSets.NaturalNumbers()
 
 isproper(::NaturalParametersSpace, ::Type{Geometric}, η, conditioner) =
     isnothing(conditioner) && length(η) === 1 && all(!isinf, η) && all(!isnan, η) && all(<=(0), η)

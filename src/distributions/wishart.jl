@@ -1,4 +1,4 @@
-export Wishart
+export Wishart, WishartDistributionsFamily
 
 import Distributions: Wishart
 import Base: ndims, size, convert
@@ -34,57 +34,59 @@ end
 
 WishartFast(ν::Integer, invS::AbstractMatrix{Real}) = WishartFast(float(ν), invS)
 
-Distributions.params(dist::WishartFast)  = (dist.ν, cholinv(dist.invS))
-Distributions.mean(dist::WishartFast)    = mean(convert(Wishart, dist))
-Distributions.var(dist::WishartFast)     = var(convert(Wishart, dist))
-Distributions.cov(dist::WishartFast)     = cov(convert(Wishart, dist))
-Distributions.std(dist::WishartFast)     = vmap(sqrt, var(dist))
-Distributions.mode(dist::WishartFast)    = mode(convert(Wishart, dist))
-Distributions.entropy(dist::WishartFast) = entropy(convert(Wishart, dist))
+BayesBase.params(dist::WishartFast)  = (dist.ν, cholinv(dist.invS))
+BayesBase.mean(dist::WishartFast)    = mean(convert(Wishart, dist))
+BayesBase.var(dist::WishartFast)     = var(convert(Wishart, dist))
+BayesBase.cov(dist::WishartFast)     = cov(convert(Wishart, dist))
+BayesBase.std(dist::WishartFast)     = vmap(sqrt, var(dist))
+BayesBase.mode(dist::WishartFast)    = mode(convert(Wishart, dist))
+BayesBase.entropy(dist::WishartFast) = entropy(convert(Wishart, dist))
 
-mean_cov(dist::WishartFast) = mean_cov(convert(Wishart, dist))
+BayesBase.mean_cov(dist::WishartFast) = mean_cov(convert(Wishart, dist))
 
 Base.size(dist::WishartFast)           = size(dist.invS)
 Base.size(dist::WishartFast, dim::Int) = size(dist.invS, dim)
 
 const WishartDistributionsFamily{T} = Union{Wishart{T}, WishartFast{T}}
 
-to_marginal(dist::WishartFast) = convert(Wishart, dist)
-
 function Base.convert(::Type{WishartFast{T}}, distribution::WishartFast) where {T}
     (ν, invS) = (distribution.ν, distribution.invS)
     return WishartFast(convert(T, ν), convert(AbstractMatrix{T}, invS))
 end
 
-function Distributions.mean(::typeof(logdet), distribution::WishartFast)
+function BayesBase.mean(::typeof(logdet), distribution::WishartFast)
     d       = size(distribution, 1)
     ν, invS = (distribution.ν, distribution.invS)
     T       = promote_type(typeof(ν), eltype(invS))
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(convert(T, 2)) - logdet(invS)
 end
 
-function Distributions.mean(::typeof(logdet), distribution::Wishart)
+function BayesBase.mean(::typeof(logdet), distribution::Wishart)
     d    = size(distribution, 1)
     ν, S = params(distribution)
     T    = promote_type(typeof(ν), eltype(S))
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(convert(T, 2)) + logdet(S)
 end
 
-function Distributions.mean(::typeof(inv), distribution::WishartDistributionsFamily)
+function BayesBase.mean(::typeof(inv), distribution::WishartDistributionsFamily)
     return mean(cholinv, distribution)
 end
 
-function Distributions.mean(::typeof(cholinv), distribution::WishartFast)
+function BayesBase.mean(::typeof(cholinv), distribution::WishartFast)
     ν, invS = (distribution.ν, distribution.invS)
     return mean(InverseWishart(ν, invS))
 end
 
-function Distributions.mean(::typeof(cholinv), distribution::Wishart)
+function BayesBase.mean(::typeof(cholinv), distribution::Wishart)
     ν, S = params(distribution)
     return mean(InverseWishart(ν, cholinv(S)))
 end
 
-vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* Array(Eye(dims)))
+function BayesBase.convert_paramfloattype(::Type{T}, distribution::WishartFast) where {T}
+    return WishartFast(convert_paramfloattype(T, distribution.ν), convert_paramfloattype(T, distribution.invS))
+end
+
+BayesBase.vague(::Type{<:Wishart}, dims::Int) = Wishart(dims, huge .* Array(Eye(dims)))
 
 Base.ndims(dist::Wishart) = size(dist, 1)
 
@@ -98,12 +100,12 @@ function Base.convert(::Type{WishartFast}, dist::Wishart)
     return WishartFast(ν, cholinv(S))
 end
 
-function Distributions.rand(rng::AbstractRNG, sampleable::WishartFast{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, sampleable::WishartFast{T}) where {T}
     container = Matrix{Float64}(undef, size(sampleable))
     rand!(rng, sampleable, container)
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T}, x::AbstractMatrix) where {T}
+function BayesBase.rand!(rng::AbstractRNG, sampleable::WishartFast{T}, x::AbstractMatrix) where {T}
     (df, S) = Distributions.params(sampleable)
     L = Distributions.PDMats.chol_lower(fastcholesky(S))
 
@@ -132,12 +134,12 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast{T}, x::Ab
     return x
 end
 
-function Distributions.rand(rng::AbstractRNG, sampleable::WishartFast{T}, n::Int) where {T}
+function BayesBase.rand(rng::AbstractRNG, sampleable::WishartFast{T}, n::Int) where {T}
     container = [Matrix{T}(undef, size(sampleable)) for _ in 1:n]
     return rand!(rng, sampleable, container)
 end
 
-function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast, x::AbstractVector{<:AbstractMatrix})
+function BayesBase.rand!(rng::AbstractRNG, sampleable::WishartFast, x::AbstractVector{<:AbstractMatrix})
     # This is an adapted version of sampling from Distributions.jl
     (df, S) = Distributions.params(sampleable)
     L = Distributions.PDMats.chol_lower(fastcholesky(S))
@@ -169,7 +171,7 @@ function Distributions.rand!(rng::AbstractRNG, sampleable::WishartFast, x::Abstr
     return x
 end
 
-function logpdf_sample_optimized(dist::Wishart)
+function BayesBase.logpdf_sampling_optimized(dist::Wishart)
     optimized_dist = convert(WishartFast, dist)
     return (optimized_dist, optimized_dist)
 end
@@ -181,10 +183,10 @@ end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartFast` messages as they are significantly faster in creation
-params(::MeanParametersSpace, dist::WishartFast) = (dist.ν, dist.invS)
-default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
+BayesBase.params(::MeanParametersSpace, dist::WishartFast) = (dist.ν, dist.invS)
+BayesBase.default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
     @assert size(left, 1) === size(right, 1) "Cannot compute a product of two Wishart distributions of different sizes"
 
     d = size(left, 1)
@@ -201,11 +203,11 @@ function Base.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::W
     return WishartFast(df, invV)
 end
 
-# Natural parametrization
-
-function insupport(ef::ExponentialFamilyDistribution{WishartFast}, x::Matrix)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{WishartFast}, x::Matrix)
     return size(getindex(unpack_parameters(ef), 2)) == size(x) && isposdef(x)
 end
+
+# Natural parametrization
 
 function isproper(::NaturalParametersSpace, ::Type{WishartFast}, η, conditioner)
     if !isnothing(conditioner) || length(η) <= 4 || any(isnan, η) || any(isinf, η)

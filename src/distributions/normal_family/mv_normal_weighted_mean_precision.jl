@@ -36,27 +36,30 @@ end
 
 Distributions.distrname(::MvNormalWeightedMeanPrecision) = "MvNormalWeightedMeanPrecision"
 
-weightedmean(dist::MvNormalWeightedMeanPrecision) = dist.xi
+BayesBase.weightedmean(dist::MvNormalWeightedMeanPrecision) = dist.xi
 
-function mean_cov(dist::MvNormalWeightedMeanPrecision)
+function BayesBase.mean_cov(dist::MvNormalWeightedMeanPrecision)
     Σ = cov(dist)
     μ = Σ * weightedmean(dist)
     return (μ, Σ)
 end
 
-function Distributions.mean(dist::MvNormalWeightedMeanPrecision)
+function BayesBase.mean(dist::MvNormalWeightedMeanPrecision)
     z = fastcholesky(precision(dist))
     return z \ weightedmean(dist)
 end
-Distributions.mode(dist::MvNormalWeightedMeanPrecision)      = mean(dist)
-Distributions.var(dist::MvNormalWeightedMeanPrecision)       = diag(cov(dist))
-Distributions.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)
-Distributions.invcov(dist::MvNormalWeightedMeanPrecision)    = dist.Λ
-Distributions.std(dist::MvNormalWeightedMeanPrecision)       = cholsqrt(cov(dist))
-Distributions.logdetcov(dist::MvNormalWeightedMeanPrecision) = -chollogdet(invcov(dist))
-Distributions.params(dist::MvNormalWeightedMeanPrecision)    = (weightedmean(dist), invcov(dist))
+BayesBase.mode(dist::MvNormalWeightedMeanPrecision)      = mean(dist)
+BayesBase.var(dist::MvNormalWeightedMeanPrecision)       = diag(cov(dist))
+BayesBase.cov(dist::MvNormalWeightedMeanPrecision)       = cholinv(dist.Λ)
+BayesBase.invcov(dist::MvNormalWeightedMeanPrecision)    = dist.Λ
+BayesBase.std(dist::MvNormalWeightedMeanPrecision)       = cholsqrt(cov(dist))
+BayesBase.logdetcov(dist::MvNormalWeightedMeanPrecision) = -chollogdet(invcov(dist))
+BayesBase.params(dist::MvNormalWeightedMeanPrecision)    = (weightedmean(dist), invcov(dist))
 
-Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) = sqmahal!(similar(x), dist, x)
+function Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) 
+    T = promote_type(eltype(x), paramfloattype(dist))
+    return sqmahal!(similar(x, T), dist, x)
+end
 
 function Distributions.sqmahal!(r, dist::MvNormalWeightedMeanPrecision, x::AbstractVector)
     μ = mean(dist)
@@ -83,13 +86,13 @@ function Base.convert(
     MvNormalWeightedMeanPrecision(convert(AbstractArray{T}, xi), convert(AbstractArray{T}, Λ))
 end
 
-vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) =
+BayesBase.vague(::Type{<:MvNormalWeightedMeanPrecision}, dims::Int) =
     MvNormalWeightedMeanPrecision(zeros(Float64, dims), fill(convert(Float64, tiny), dims))
 
-default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
+BayesBase.default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:MvNormalWeightedMeanPrecision}) =
     PreserveTypeProd(Distribution)
 
-function Base.prod(::PreserveTypeProd{Distribution}, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)
     Λ  = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)

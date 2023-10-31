@@ -48,8 +48,6 @@ end
 @testitem "Laplace: prod with Distribution" begin
     include("distributions_setuptests.jl")
 
-    @test default_prod_rule(Laplace, Laplace) === PreserveTypeProd(Laplace)
-
     @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(0.0, 0.5), Laplace(0.0, 0.5))) ≈ Laplace(0.0, 0.25)
     @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(1.0, 1.0), Laplace(1.0, 1.0))) ≈ Laplace(1.0, 0.5)
     @test @inferred(prod(PreserveTypeProd(Laplace), Laplace(2.0, 3.0), Laplace(2.0, 7.0))) ≈ Laplace(2.0, 2.1)

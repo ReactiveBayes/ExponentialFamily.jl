@@ -1,5 +1,6 @@
 module ExponentialFamily
 
+using BayesBase
 using TinyHugeNumbers
 using FastCholesky
 
@@ -30,9 +31,7 @@ using IrrationalConstants:
 import Base: show, maximum, minimum
 import Base: convert, promote_rule
 
-include("statsfuns.jl")
-include("prod.jl")
-include("distributions.jl")
+include("common.jl")
 include("exponential_family.jl")
 
 include("distributions/bernoulli.jl")
