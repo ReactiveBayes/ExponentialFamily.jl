@@ -84,7 +84,7 @@ end
 function BayesBase.rand!(rng::AbstractRNG, sampleable::InverseWishartFast{T}, x::AbstractMatrix) where {T}
     (df, S⁻¹) = Distributions.params(sampleable)##Why is the inverse here?
     S = cholinv(S⁻¹)
-    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+    L = fastcholesky(S).L
 
     p = size(S, 1)
     singular = df <= p - 1
@@ -120,7 +120,7 @@ function BayesBase.rand!(rng::AbstractRNG, sampleable::InverseWishartFast, x::Ab
     # This is an adapted version of sampling from Distributions.jl
     (df, S⁻¹) = Distributions.params(sampleable)
     S = cholinv(S⁻¹)
-    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+    L = fastcholesky(S).L
 
     p = size(S, 1)
     singular = df <= p - 1
