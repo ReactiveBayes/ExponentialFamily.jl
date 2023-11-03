@@ -461,19 +461,11 @@ function BayesBase.compute_logscale(
     return -(v_logdet + n * log2π) / 2 - dot3arg(m, v_inv, m) / 2
 end
 
-BayesBase.logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
-BayesBase.logpdf_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
+BayesBase.logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(NormalMeanPrecision, dist)
+BayesBase.logpdf_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormalMeanPrecision, dist)
 
 BayesBase.sampling_optimized(dist::UnivariateNormalDistributionsFamily) = convert(Normal, dist)
 BayesBase.sampling_optimized(dist::MultivariateNormalDistributionsFamily) = convert(MvNormal, dist)
-
-function BayesBase.logpdf_sampling_optimized(
-    dist::Union{UnivariateNormalDistributionsFamily, MultivariateNormalDistributionsFamily}
-)
-    # For Gaussian both sample and logpdf are the same in terms of optimality
-    optimal = logpdf_optimized(dist)
-    return (optimal, optimal)
-end
 
 # Sample related
 
