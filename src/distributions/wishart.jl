@@ -107,7 +107,7 @@ end
 
 function BayesBase.rand!(rng::AbstractRNG, sampleable::WishartFast{T}, x::AbstractMatrix) where {T}
     (df, S) = Distributions.params(sampleable)
-    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+    L = fastcholesky(S).L
 
     p = size(S, 1)
     singular = df <= p - 1
@@ -142,7 +142,7 @@ end
 function BayesBase.rand!(rng::AbstractRNG, sampleable::WishartFast, x::AbstractVector{<:AbstractMatrix})
     # This is an adapted version of sampling from Distributions.jl
     (df, S) = Distributions.params(sampleable)
-    L = Distributions.PDMats.chol_lower(fastcholesky(S))
+    L = fastcholesky(S).L
 
     p = size(S, 1)
     singular = df <= p - 1
