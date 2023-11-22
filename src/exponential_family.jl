@@ -475,18 +475,62 @@ isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
-function BayesBase.logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
-    # TODO: Think of what to do with this assert
-    @assert insupport(ef, x)
+function BayesBase.logpdf(ef::ExponentialFamilyDistribution, container)
+    BayesBase.logpdf(variate_form(typeof(ef)), typeof(container), eltype(container), ef, container)
+end
 
+function BayesBase.logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
     η = getnaturalparameters(ef)
-
-    # Use `_` to avoid name collisions with the actual functions
     _statistics = sufficientstatistics(ef, x)
     _basemeasure = basemeasure(ef, x)
-    _logpartition = logpartition(ef)
+    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - logpartition
+end
 
-    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - _logpartition
+function BayesBase.logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x)
+    _logpartition = logpartition(ef)
+    return BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartition)
+end
+
+function BayesBase.logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container)
+    _logpartion = logpartition(ef)
+    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), container)
+end
+
+function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container, logpartion)
+    _statistics = sufficientstatistics(ef, x)
+    _basemeasure = basemeasure(ef, x)
+    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - logpartition
+end
+
+function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container)
+    _logpartion = logpartition(ef)
+    return BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion)
+end
+
+function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container)
+    _logpartion = logpartition(ef)
+    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), container)
+end
+
+function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container)
+    _logpartion = logpartition(ef)
+    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), eachcol(container))
+end
+
+function BayesBase.logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container, logpartion)
+    _statistics = sufficientstatistics(ef, x)
+    _basemeasure = basemeasure(ef, x)
+    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - logpartition
+end
+
+function BayesBase.logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container)
+    _logpartion = logpartition(ef)
+    return BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion)
+end
+
+function BayesBase.logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container)
+    _logpartion = logpartition(ef)
+    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), container)
 end
 
 """
