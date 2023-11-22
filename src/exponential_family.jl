@@ -475,8 +475,8 @@ isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
-function BayesBase.logpdf(ef::ExponentialFamilyDistribution, container)
-    BayesBase.logpdf(variate_form(typeof(ef)), typeof(container), eltype(container), ef, container)
+function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
+    BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
 end
 
 function BayesBase.logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
