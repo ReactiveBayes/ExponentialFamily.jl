@@ -475,9 +475,12 @@ isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
+function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
+    return _logpdf(ef, x)
+end
 
 """
-    `PointBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it from the distrubution domain.
+    `PointBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it a point from the distrubution domain.
 """
 struct PointBasedLogpdfCall end
 
@@ -485,10 +488,6 @@ struct PointBasedLogpdfCall end
     `MapBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it is a container of points from the distrubution domain.
 """
 struct MapBasedLogpdfCall end
-
-function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
-    return _logpdf(ef, x)
-end
 
 function _logpdf(::PointBasedLogpdfCall, ef, x)
     _plogpdf(ef, x)
@@ -509,10 +508,12 @@ function _plogpdf(ef, x)
 end
 
 _scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
+_scalarproduct(::Type{Univariate}, η, statistics) = dot(η, flatten_parameters(statistics))
 _scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
 _scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
 
 function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
+    # TODO: Think of what to do with this assert
     @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
