@@ -513,7 +513,7 @@ function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
     _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + sum(η .* pack_parameters(T, _statistics)) - logpartition
+    return log(_basemeasure) + dot(η, pack_parameters(T, _statistics)) - logpartition
 end
 
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (Call(), x)
