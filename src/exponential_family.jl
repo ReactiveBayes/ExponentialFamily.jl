@@ -477,12 +477,12 @@ Evaluates and returns the log-density of the exponential family distribution for
 """
 
 """
-    `Call` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it from the distrubution domain.
+    `PointBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it from the distrubution domain.
 """
 struct PointBasedLogpdfCall end
 
 """
-    `Map` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it is a container of points from the distrubution domain.
+    `MapBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it is a container of points from the distrubution domain.
 """
 struct MapBasedLogpdfCall end
 
