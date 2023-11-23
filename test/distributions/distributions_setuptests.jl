@@ -57,7 +57,8 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
-    option_assume_no_allocations = false
+    option_assume_no_allocations = false,
+    option_test_samples_logpdf = true
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -70,7 +71,7 @@ function test_exponentialfamily_interface(distribution;
     test_distribution_conversion && run_test_distribution_conversion(distribution; assume_no_allocations = option_assume_no_allocations)
     test_packing_unpacking && run_test_packing_unpacking(distribution)
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
-    test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations, test_samples_logpdf = option_test_samples_logpdf)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
@@ -192,7 +193,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     end
 end
 
-function run_test_basic_functions(distribution; nsamples = 10, test_gradients = true, assume_no_allocations = true)
+function run_test_basic_functions(distribution; nsamples = 10, test_gradients = true, assume_no_allocations = true, test_samples_logpdf = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
@@ -265,6 +266,11 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @allocated(basemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
+    end
+
+    if test_samples_logpdf
+        @test @inferred(logpdf(ef, samples)) ≈ map((s) -> logpdf(distribution, s), samples)
+        @test @inferred(pdf(ef, samples)) ≈ map((s) -> pdf(distribution, s), samples)
     end
 end
 

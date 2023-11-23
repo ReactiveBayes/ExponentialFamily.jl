@@ -475,76 +475,82 @@ isbasemeasureconstant(::Function) = NonConstantBaseMeasure()
 
 Evaluates and returns the log-density of the exponential family distribution for the input `x`.
 """
+
+"""
+    `Call` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it from the distrubution domain.
+"""
+struct Call end
+
+"""
+    `Map` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it is a container of points from the distrubution domain.
+"""
+struct Map end
+
 function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
-    BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    return _logpdf(ef, x)
 end
 
-function BayesBase.logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x)
-    _logpartition = logpartition(ef)
-    return BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartition)
+function _logpdf(::Call, ef, x)
+    _plogpdf(ef, x)
 end
 
-function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container)
-    _logpartion = logpartition(ef)
-    return BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion)
+function _logpdf(::Map, ef, container)
+    _vlogpdf(ef, container)
 end
 
-
-function BayesBase.logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x)
-    _logpartion = logpartition(ef)
-    return BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion)
+function _logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
+    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    _logpdf(vartype, ef, _x)
 end
 
-"""
-    logpdf(ef::ExponentialFamilyDistribution, x, logpartion)
-
-Evaluates and returns the log-density of the exponential family distribution for the input `x` with pre-computed `logpartition`.
-"""
-function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x, logpartion)
-    BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, logpartion)
+function _plogpdf(ef, x)
+    @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
+    return _plogpdf(ef, x, logpartition(ef))
 end
 
-function BayesBase.logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
+function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
+    @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
     _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - logpartition
-end
- 
-function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef::ExponentialFamilyDistribution{T}, container, logpartion) where {T}
-    _statistics = sufficientstatistics(ef, x)
-    _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + dot(η, flatten_parameters(T, _statistics)) - logpartition
+    return log(_basemeasure) + sum(η .* pack_parameters(T, _statistics)) - logpartition
 end
 
-# list of samples
+check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (Call(), x)
+check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (Call(), x)
+check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (Call(), x)
 
-function BayesBase.logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container)
-    _logpartion = logpartition(ef)
-    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), container)
+
+function _vlogpdf(ef, container)
+    _logpartition = logpartition(ef)
+    return map(x -> _plogpdf(ef, x, _logpartition), container)
 end
 
-function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container)
-    _logpartion = logpartition(ef)
-    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), container)
-end
-
-function BayesBase.logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container)
-    _logpartion = logpartition(ef)
-    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), eachcol(container))
-end
-
-function BayesBase.logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container)
-    _logpartion = logpartition(ef)
-    return map(x -> BayesBase.logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x, _logpartion), container)
-end
+check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (Map(), container)
+check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container) = (Map(), container)
+check_logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container) = (Map(), eachcol(container))
+check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container) = (Map(), container)
 
 """
     pdf(ef::ExponentialFamilyDistribution, x)
 
 Evaluates and returns the probability density function of the exponential family distribution for the input `x`.
 """
-BayesBase.pdf(ef::ExponentialFamilyDistribution, x) = exp(logpdf(ef, x))
+BayesBase.pdf(ef::ExponentialFamilyDistribution, x) = _pdf(ef, x)
+
+function _pdf(ef, x)
+    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    _pdf(vartype, ef, _x)
+end
+
+function _pdf(::Call, ef, x)
+    exp(logpdf(ef, x))
+end
+
+function _pdf(::Map, ef, x)
+    exp.(logpdf(ef, x))
+end
+
 
 """
     cdf(ef::ExponentialFamilyDistribution{D}, x) where { D <: Distribution }

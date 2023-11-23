@@ -19,9 +19,10 @@ end
         @testset let (d = MvNormalWishart(rand(dim), invS, rand(), ν))
             ef = test_exponentialfamily_interface(
                 d;
+                option_test_samples_logpdf = false, 
                 option_assume_no_allocations = false,
                 test_fisherinformation_against_hessian = false,
-                test_fisherinformation_against_jacobian = false
+                test_fisherinformation_against_jacobian = false,
             )
         end
     end
