@@ -479,22 +479,22 @@ Evaluates and returns the log-density of the exponential family distribution for
 """
     `Call` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it from the distrubution domain.
 """
-struct Call end
+struct PointBasedLogpdfCall end
 
 """
     `Map` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it is a container of points from the distrubution domain.
 """
-struct Map end
+struct MapBasedLogpdfCall end
 
 function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
     return _logpdf(ef, x)
 end
 
-function _logpdf(::Call, ef, x)
+function _logpdf(::PointBasedLogpdfCall, ef, x)
     _plogpdf(ef, x)
 end
 
-function _logpdf(::Map, ef, container)
+function _logpdf(::MapBasedLogpdfCall, ef, container)
     _vlogpdf(ef, container)
 end
 
@@ -508,17 +508,21 @@ function _plogpdf(ef, x)
     return _plogpdf(ef, x, logpartition(ef))
 end
 
+_scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
+_scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
+_scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
+
 function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
     @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
     _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + dot(η, pack_parameters(T, _statistics)) - logpartition
+    return log(_basemeasure) + _scalarproduct(T, η, _statistics) - logpartition
 end
 
-check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (Call(), x)
-check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (Call(), x)
-check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (Call(), x)
+check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
+check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
+check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 
 
 function _vlogpdf(ef, container)
@@ -526,10 +530,10 @@ function _vlogpdf(ef, container)
     return map(x -> _plogpdf(ef, x, _logpartition), container)
 end
 
-check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (Map(), container)
-check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container) = (Map(), container)
-check_logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container) = (Map(), eachcol(container))
-check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container) = (Map(), container)
+check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), container)
+check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container) = (MapBasedLogpdfCall(), container)
+check_logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), eachcol(container))
+check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container) = (MapBasedLogpdfCall(), container)
 
 """
     pdf(ef::ExponentialFamilyDistribution, x)
@@ -543,11 +547,11 @@ function _pdf(ef, x)
     _pdf(vartype, ef, _x)
 end
 
-function _pdf(::Call, ef, x)
+function _pdf(::PointBasedLogpdfCall, ef, x)
     exp(logpdf(ef, x))
 end
 
-function _pdf(::Map, ef, x)
+function _pdf(::MapBasedLogpdfCall, ef, x)
     exp.(logpdf(ef, x))
 end
 
