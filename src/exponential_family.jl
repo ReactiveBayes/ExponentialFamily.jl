@@ -480,12 +480,12 @@ function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
 end
 
 """
-    `PointBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it a point from the distrubution domain.
+A trait object, signifying that the _logpdf method should treat it second argument as one point from the distrubution domain.
 """
 struct PointBasedLogpdfCall end
 
 """
-    `MapBasedLogpdfCall` struct is used to dispatch the `_logpdf` for evluation of the log-density of the exponential family distribution for the input `x` like it is a container of points from the distrubution domain.
+A trait object, signifying that the _logpdf method should treat it second argument as a container of points from the distrubution domain.
 """
 struct MapBasedLogpdfCall end
 
