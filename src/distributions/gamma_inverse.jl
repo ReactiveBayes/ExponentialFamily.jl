@@ -66,7 +66,7 @@ end
 getfisherinformation(::NaturalParametersSpace, ::Type{GammaInverse}) =
     (η) -> begin
         (η₁, η₂) = unpack_parameters(GammaInverse, η)
-        return SA[polygamma(1, -η₁ - one(η₁)) -inv(-η₂); -inv(-η₂) (-η₁-one(η₁))/(η₂^2) ]
+        return SA[polygamma(1, -η₁ - one(η₁)) -inv(-η₂); -inv(-η₂) (-η₁-one(η₁))/(η₂^2)]
     end
 
 # Mean parametrization
@@ -79,5 +79,5 @@ end
 getfisherinformation(::MeanParametersSpace, ::Type{GammaInverse}) =
     (θ) -> begin
         (shape, scale) = unpack_parameters(Gamma, θ)
-        return SA[polygamma(1, shape) -inv(scale); -inv(scale) shape/(scale^2) ]
+        return SA[polygamma(1, shape) -inv(scale); -inv(scale) shape/(scale^2)]
     end

@@ -31,7 +31,11 @@ end
 BayesBase.default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Pareto} =
     PreserveTypeProd(ExponentialFamilyDistribution{Pareto})
 
-function BayesBase.prod!(container::ExponentialFamilyDistribution{Pareto}, left::ExponentialFamilyDistribution{Pareto}, right::ExponentialFamilyDistribution{Pareto})
+function BayesBase.prod!(
+    container::ExponentialFamilyDistribution{Pareto},
+    left::ExponentialFamilyDistribution{Pareto},
+    right::ExponentialFamilyDistribution{Pareto}
+)
     (η_container, conditioner_container) = (getnaturalparameters(container), getconditioner(container))
     (η_left, conditioner_left) = (getnaturalparameters(left), getconditioner(left))
     (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))

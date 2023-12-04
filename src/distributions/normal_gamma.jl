@@ -34,10 +34,10 @@ BayesBase.location(d::NormalGamma) = first(params(d))
 BayesBase.scale(d::NormalGamma)    = getindex(params(d), 2)
 BayesBase.shape(d::NormalGamma)    = getindex(params(d), 3)
 BayesBase.rate(d::NormalGamma)     = getindex(params(d), 4)
-BayesBase.mean(d::NormalGamma) = [d.μ, d.α / d.β]
-BayesBase.var(d::NormalGamma) = d.α > one(d.α) ? [d.β / (d.λ * (d.α - one(d.α))), d.α / (d.β^2)] : error("`var` of `NormalGamma` is not defined for `α < 1`")
-BayesBase.cov(d::NormalGamma) = d.α > one(d.α) ? [d.β/(d.λ*(d.α-one(d.α))) 0.0; 0.0 d.α/(d.β^2)] : error("`cov` of `NormalGamma` is not defined for `α < 1`")
-BayesBase.std(d::NormalGamma) = d.α > one(d.α) ? sqrt.(var(d)) : error("`std` of `NormalGamma` is not defined for `α < 1`")
+BayesBase.mean(d::NormalGamma)     = [d.μ, d.α / d.β]
+BayesBase.var(d::NormalGamma)      = d.α > one(d.α) ? [d.β / (d.λ * (d.α - one(d.α))), d.α / (d.β^2)] : error("`var` of `NormalGamma` is not defined for `α < 1`")
+BayesBase.cov(d::NormalGamma)      = d.α > one(d.α) ? [d.β/(d.λ*(d.α-one(d.α))) 0.0; 0.0 d.α/(d.β^2)] : error("`cov` of `NormalGamma` is not defined for `α < 1`")
+BayesBase.std(d::NormalGamma)      = d.α > one(d.α) ? sqrt.(var(d)) : error("`std` of `NormalGamma` is not defined for `α < 1`")
 
 function BayesBase.rand!(rng::AbstractRNG, dist::NormalGamma, container::AbstractVector)
     container[2] = rand(rng, GammaShapeRate(dist.α, dist.β))

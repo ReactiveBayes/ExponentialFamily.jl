@@ -105,7 +105,6 @@ end
         @test all(@inferred(sufficientstatistics(_similar, 2.0)) .≈ (2.0, log(2.0)))
         @test @inferred(logpartition(_similar, η)) ≈ 0.25
         @test @inferred(getsupport(_similar)) == RealInterval(0, Inf)
-
     end
 end
 
