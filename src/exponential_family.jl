@@ -497,6 +497,43 @@ function _logpdf(::MapBasedLogpdfCall, ef, container)
     _vlogpdf(ef, container)
 end
 
+"""
+    _logpdf(ef::ExponentialFamilyDistribution, x)
+
+Evaluates and returns the log-density of the exponential family distribution for the input `x`.
+
+This inner function dispatches to the appropriate version of `_logpdf` based on the types of `x` and `ef`, utilizing the `check_logpdf` function. The dispatch mechanism ensures that `_logpdf` correctly handles the input `x`, whether it is a single point or a container of points, according to the nature of the exponential family distribution and `x`.
+
+For instance, with a `Univariate` distribution, `_logpdf` evaluates the log-density for a single point if `x` is a `Number`, and for a container of points if `x` is an `AbstractVector`.
+
+### Examples
+Evaluate the log-density of a Gamma distribution at a single point:
+
+```jldoctest
+using ExponentialFamily, Distributions;
+gamma = convert(ExponentialFamilyDistribution, Gamma(1, 1))
+ExponentialFamily._logpdf(gamma, 1.0)
+# output
+-1.0
+```
+
+Evaluate the log-density of a Gamma distribution at multiple points:
+
+```jldoctest
+using ExponentialFamily, Distributions
+gamma = convert(ExponentialFamilyDistribution, Gamma(1, 1))
+ExponentialFamily._logpdf(gamma, [1, 2, 3])
+# output
+3-element Vector{Float64}:
+ -1.0
+ -2.0
+ -3.0
+```
+
+For details on the dispatch mechanism of `_logpdf`, refer to the `check_logpdf` function.
+
+See also: [`check_logpdf`](@ref)
+"""
 function _logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
     vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
     _logpdf(vartype, ef, _x)
@@ -521,10 +558,47 @@ function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {
     return log(_basemeasure) + _scalarproduct(T, η, _statistics) - logpartition
 end
 
+"""
+    check_logpdf(variate_form, typeof(x), eltype(x), ef, x)
+
+Determines an appropriate strategy of evaluation of `_logpdf` (`PointBasedLogpdfCall` or `MapBasedLogpdfCall`) to use based on the types of `x` and `ef`. This function employs a dispatch mechanism that adapts to the input `x`, whether it is a single point or a container of points, in accordance with the characteristics of the exponential family distribution (`ef`) and the variate form of `x`.
+
+### Strategies
+- For a `Univariate` distribution:
+  - If `x` is a `Number`, `_logpdf` is invoked with `PointBasedLogpdfCall()`.
+  - If `x` is an `AbstractVector` containing `Number`s, `_logpdf` is invoked with `MapBasedLogpdfCall()`.
+
+- For a `Multivariate` distribution:
+  - If `x` is an `AbstractVector` containing `Number`s, `_logpdf` is invoked with `PointBasedLogpdfCall()`.
+  - If `x` is an `AbstractVector` containing `AbstractVector`s, `_logpdf` is invoked with `MapBasedLogpdfCall()`.
+  - If `x` is an `AbstractMatrix` containing `Number`s, `_logpdf` is invoked with `MapBasedLogpdfCall()`, transforming `x` to `eachcol(x)`.
+
+- For a `Matrixvariate` distribution:
+  - If `x` is an `AbstractMatrix` containing `Number`s, `_logpdf` is invoked with `PointBasedLogpdfCall()`.
+  - If `x` is an `AbstractVector` containing `AbstractMatrix`s, `_logpdf` is invoked with `MapBasedLogpdfCall()`.
+
+### Examples
+```jldoctest
+using ExponentialFamily
+ExponentialFamily.check_logpdf(Univariate, typeof(1.0), eltype(1.0), Gamma(1, 1), 1.0)
+# output
+(ExponentialFamily.PointBasedLogpdfCall(), 1.0)
+```
+
+```jldoctest
+using ExponentialFamily
+ExponentialFamily.check_logpdf(Univariate, typeof([1.0, 2.0, 3.0]), eltype([1.0, 2.0, 3.0]), Gamma(1, 1), [1.0, 2.0, 3.0])
+# output
+(ExponentialFamily.MapBasedLogpdfCall(), [1.0, 2.0, 3.0])
+```
+
+See also: [`_logpdf`](@ref) [`PointBasedLogpdfCall`](@ref) [`MapBasedLogpdfCall`](@ref)
+"""
+function check_logpdf end
+
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
-
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
@@ -555,7 +629,6 @@ end
 function _pdf(::MapBasedLogpdfCall, ef, x)
     exp.(logpdf(ef, x))
 end
-
 
 """
     cdf(ef::ExponentialFamilyDistribution{D}, x) where { D <: Distribution }
