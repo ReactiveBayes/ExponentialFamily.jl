@@ -46,7 +46,7 @@ end
 
 @testitem "MatrixDirichlet: mean(::typeof(log))" begin
     include("distributions_setuptests.jl")
-    
+
     import Base.Broadcast: BroadcastFunction
 
     @test mean(BroadcastFunction(log), MatrixDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ [

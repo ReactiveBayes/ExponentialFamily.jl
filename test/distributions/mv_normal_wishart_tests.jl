@@ -20,9 +20,12 @@ end
             ef = test_exponentialfamily_interface(
                 d;
                 option_assume_no_allocations = false,
+                test_basic_functions = false,
                 test_fisherinformation_against_hessian = false,
                 test_fisherinformation_against_jacobian = false
             )
+
+            run_test_basic_functions(ef; assume_no_allocations = false, test_samples_logpdf = false)
         end
     end
 end

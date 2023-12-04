@@ -272,3 +272,24 @@ getfisherinformation(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> b
 
     # return blockdiag(sparse(ν*κ*T) , sparse((ν/2)*kronT) , sparse(Diagonal([d/(2κ^2), mvtrigamma(d, ν/2)/4])))
 end
+
+function _logpdf(ef::ExponentialFamilyDistribution{MvNormalWishart}, x)
+    # TODO: Think of what to do with this assert
+    @assert insupport(ef, x)
+    _logpartition = logpartition(ef)
+    return _logpdf(ef, x, _logpartition)
+end
+
+function _logpdf(ef::ExponentialFamilyDistribution{MvNormalWishart}, x, logpartition)
+    # TODO: Think of what to do with this assert
+    @assert insupport(ef, x)
+    η = getnaturalparameters(ef)
+    # Use `_` to avoid name collisions with the actual functions
+    _statistics = sufficientstatistics(ef, x)
+    _basemeasure = basemeasure(ef, x)
+    return log(_basemeasure) + dot(η, flatten_parameters(MvNormalWishart, _statistics)) - logpartition
+end
+
+function _pdf(ef::ExponentialFamilyDistribution{MvNormalWishart}, x)
+    exp(_logpdf(ef, x))
+end

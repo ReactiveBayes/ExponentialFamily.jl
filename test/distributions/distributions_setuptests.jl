@@ -57,7 +57,7 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
-    option_assume_no_allocations = false
+    option_assume_no_allocations = false,
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -192,7 +192,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     end
 end
 
-function run_test_basic_functions(distribution; nsamples = 10, test_gradients = true, assume_no_allocations = true)
+function run_test_basic_functions(distribution; nsamples = 10, test_gradients = true, test_samples_logpdf = true, assume_no_allocations = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
@@ -265,6 +265,11 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @allocated(basemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
+    end
+
+    if test_samples_logpdf
+        @test @inferred(logpdf(ef, samples)) ≈ map((s) -> logpdf(distribution, s), samples)
+        @test @inferred(pdf(ef, samples)) ≈ map((s) -> pdf(distribution, s), samples)
     end
 end
 

@@ -47,6 +47,10 @@ fisherinformation
 isbasemeasureconstant
 ConstantBaseMeasure
 NonConstantBaseMeasure
+ExponentialFamily._logpdf
+ExponentialFamily.check_logpdf
+ExponentialFamily.PointBasedLogpdfCall
+ExponentialFamily.MapBasedLogpdfCall
 ```
 
 ## Interfacing with Distributions Defined in the `Distributions.jl` Package

@@ -10,5 +10,4 @@
         @test all(ForwardDiff.hessian((x) -> dot3arg(x, A, x), x) .!== 0)
         @test all(ForwardDiff.hessian((x) -> dot3arg(x, A, x), y) .!== 0)
     end
-
 end

@@ -56,7 +56,7 @@ BayesBase.std(dist::MvNormalWeightedMeanPrecision)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalWeightedMeanPrecision) = -chollogdet(invcov(dist))
 BayesBase.params(dist::MvNormalWeightedMeanPrecision)    = (weightedmean(dist), invcov(dist))
 
-function Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector) 
+function Distributions.sqmahal(dist::MvNormalWeightedMeanPrecision, x::AbstractVector)
     T = promote_type(eltype(x), paramfloattype(dist))
     return sqmahal!(similar(x, T), dist, x)
 end
