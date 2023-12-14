@@ -54,7 +54,7 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking = true,
     test_isproper = true,
     test_basic_functions = true,
-    test_gradlogpartion_against_expectation = true,
+    test_gradlogpartition_against_expectation = true,
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
@@ -72,7 +72,7 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking && run_test_packing_unpacking(distribution)
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
     test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
-    test_gradlogpartion_against_expectation && run_test_gradlogpartition_against_expectation(distribution)
+    test_gradlogpartition_against_expectation && run_test_gradlogpartition_against_expectation(distribution)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
@@ -304,12 +304,12 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     end
 end
 
-function run_test_gradlogpartition_against_expectation(distribution)
+function run_test_gradlogpartition_against_expectation(distribution; nsamples = 1000)
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
 
-    samples = rand(distribution, 1000)
+    samples = rand(distribution, nsamples)
     _, samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
     sample_sufficient_statistics = map((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
     expectation_of_sufficient_statistics = mean(sample_sufficient_statistics)
