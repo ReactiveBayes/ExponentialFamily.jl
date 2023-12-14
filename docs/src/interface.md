@@ -38,11 +38,13 @@ isproper
 getbasemeasure
 getsufficientstatistics
 getlogpartition
+getgradlogpartition
 getfisherinformation
 getsupport
 basemeasure
 sufficientstatistics
 logpartition
+gradlogpartition
 fisherinformation
 isbasemeasureconstant
 ConstantBaseMeasure
