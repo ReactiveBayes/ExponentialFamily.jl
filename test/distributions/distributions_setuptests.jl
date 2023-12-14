@@ -304,7 +304,7 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     end
 end
 
-function run_test_gradlogpartition_against_expectation(distribution; nsamples = 1000)
+function run_test_gradlogpartition_against_expectation(distribution; nsamples = 5000)
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
@@ -316,7 +316,7 @@ function run_test_gradlogpartition_against_expectation(distribution; nsamples = 
     gradient = gradlogpartition(ef)
     inverse_fisher = cholinv(fisherinformation(ef))
     @test length(gradient) === length(η)
-    @test dot(gradient, inverse_fisher, gradient) / dot(expectation_of_sufficient_statistics, inverse_fisher, expectation_of_sufficient_statistics) ≈ 1.0 atol =
+    @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
         0.01
 end
 
