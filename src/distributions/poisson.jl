@@ -60,6 +60,10 @@ getlogpartition(::NaturalParametersSpace, ::Type{Poisson}) = (η) -> begin
     return exp(η1)
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Poisson}) = (η) -> begin
+    return getlogpartition(η, Poisson)
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Poisson}) = (η) -> begin
     (η1,) = unpack_parameters(Poisson, η)
     SA[exp(η1);;]
