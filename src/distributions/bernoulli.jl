@@ -96,7 +96,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
     (η₁,) = unpack_parameters(Bernoulli, η)
-    return logistic(η₁)
+    return SA[logistic(η₁)]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
