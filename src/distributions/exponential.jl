@@ -46,7 +46,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
     (η₁,) = unpack_parameters(Exponential, η)
-    return -1/η₁
+    return SA[-1/η₁]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
