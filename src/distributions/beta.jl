@@ -62,6 +62,16 @@ getlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
     return logbeta(η₁ + one(η₁), η₂ + one(η₂))
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(Beta, η)
+    η₁p = η₁ + one(η₁)
+    η₂p = η₂ + one(η₂)
+    ηsum = η₁p + η₂p
+    dig = digamma(ηsum)
+
+    return SA[digamma(η₁p) - dig, digamma(η₂p) - dig]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Beta, η)
     psia = trigamma(η₁ + one(η₁))
