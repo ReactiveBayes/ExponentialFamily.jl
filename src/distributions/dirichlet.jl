@@ -62,6 +62,12 @@ getlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin
     return firstterm - secondterm
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin
+    (η1, ) = unpack_parameters(Dirichlet, η)
+    sumη1 = digamma(sum(η1) + length(η1))
+    return map(d->digamma(d+one(d))-sumη1, η1)
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Dirichlet}) =
     (η) -> begin
         (η1,) = unpack_parameters(Dirichlet, η)
