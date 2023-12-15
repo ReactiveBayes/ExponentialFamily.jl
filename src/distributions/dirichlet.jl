@@ -69,6 +69,11 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Dirichlet}) =
         return Diagonal(map(d -> trigamma(d + 1), η1)) - Ones{Float64}(n, n) * trigamma(sum(η1) + n)
     end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin
+    (η1,) = unpack_parameters(Dirichlet, η)
+    digamma.(η1 .+ 1) .- digamma(sum(η1 .+ 1))
+end
+
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
@@ -82,4 +87,9 @@ getfisherinformation(::MeanParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
     (α,) = unpack_parameters(Dirichlet, θ)
     n = length(α)
     return Diagonal(map(d -> trigamma(d), α)) - Ones{Float64}(n, n) * trigamma(sum(α))
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
+    (α,) = unpack_parameters(Dirichlet, θ)
+    return digamma.(α) .- digamma(sum(α))
 end

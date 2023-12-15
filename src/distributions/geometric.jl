@@ -49,6 +49,11 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Geometric}) = (η) -> begi
     return SA[exp(η1) / (one(η1) - exp(η1))^2;;]
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Geometric}) = (η) -> begin
+    (η1,) = unpack_parameters(Geometric, η)
+    return SA[exp(η1) / (one(η1) - exp(η1));]
+end
+
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
@@ -59,4 +64,9 @@ end
 getfisherinformation(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
     (p,) = unpack_parameters(Geometric, θ)
     return SA[one(p) / (p^2 * (one(p) - p));;]
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
+    (p,) = unpack_parameters(Geometric, θ)
+    return SA[one(p) / (p^2 - p);]
 end

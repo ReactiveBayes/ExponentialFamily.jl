@@ -100,6 +100,11 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Gamma}) = (η) -> begin
     SA[trigamma(η₁ + one(η₁)) -inv(η₂); -inv(η₂) (η₁+one(η₁))/(η₂^2)]
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Gamma}) = (η) -> begin
+    (η₁, η₂) = unpack_parameters(Gamma, η)
+    return SA[digamma(η₁ + one(η₁)) - log(-η₂), - (η₁ + one(η₁)) / η₂]
+end
+
 # Mean parametrization
 
 getlogpartition(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
@@ -113,4 +118,9 @@ getfisherinformation(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
         trigamma(shape) inv(scale)
         inv(scale) shape/abs2(scale)
     ]
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
+    (shape, scale) = unpack_parameters(Gamma, θ)
+    return SA[digamma(shape) - log(scale), - shape / scale]
 end
