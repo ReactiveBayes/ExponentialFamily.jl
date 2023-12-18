@@ -79,6 +79,19 @@ getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
         return logsumexp(η)
     end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) = 
+    (η) -> begin
+        if (conditioner !== length(η))
+            throw(
+                DimensionMismatch(
+                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                )
+            )
+        end
+        sumη = vmapreduce(exp, +, η)
+        return vmap(d->exp(d)/sumη ,η)
+    end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
     (η) -> begin
         if (conditioner !== length(η))
