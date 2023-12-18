@@ -83,7 +83,7 @@ getlogpartition(::MeanParametersSpace, ::Type{Chisq}) = (θ) -> begin
 end
 
 getgradlogpartition(::MeanParametersSpace, ::Type{Chisq}) = (θ) -> begin
-    (ν,) = unpack_parameters(Chisq, η)
+    (ν,) = unpack_parameters(Chisq, θ)
     return SA[digamma(ν/2)/2 + logtwo/2; ]
 end
 
