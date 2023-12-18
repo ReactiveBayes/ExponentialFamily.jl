@@ -304,7 +304,7 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     end
 end
 
-function run_test_gradlogpartition_against_expectation(distribution; nsamples = 5000)
+function run_test_gradlogpartition_against_expectation(distribution; nsamples = 6000)
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
