@@ -283,7 +283,6 @@ getlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> 
     return term1 + term2
 end
 
-mvdigamma(η,p) = sum( digamma(η + (one(d) - d)/2) for d=1:p)
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(InverseWishartFast, η)
