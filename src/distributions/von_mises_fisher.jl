@@ -80,6 +80,15 @@ getlogpartition(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begi
     return log(besseli((p / 2) - 1, κ)) - ((p / 2) - 1) * log(κ)
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
+    κ = sqrt(dot(η, η))
+    p = length(η)
+    term1 = - ((p / 2) - 1) / κ
+    term2 = ((p / 2) - 1)/κ  +  besseli((p / 2), κ)/besseli((p / 2) - 1, κ)
+    term3 = (term1 + term2)/(κ)
+    return term3*η
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
     u = norm(η)
     p = length(η)
