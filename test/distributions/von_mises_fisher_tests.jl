@@ -15,7 +15,7 @@ end
 @testitem "VonMisesFisher: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for len in 3, b in (0.5)
+    for len in 3:5, b in (0.5)
         a_unnormalized = rand(len)
         a = a_unnormalized ./ norm(a_unnormalized)
         @testset let d = VonMisesFisher(a, b)
