@@ -291,7 +291,16 @@ getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
 getlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     (ν, invS) = unpack_parameters(WishartFast, θ)
     p = first(size(invS))
-    return (ν / 2) * (p * log(2.0) - logdet(invS)) + mvtrigamma(p, ν / 2)
+    return (ν / 2) * (p * log(2.0) - logdet(invS)) + logmvgamma(p, ν / 2)
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+    ν, invS = unpack_parameters(WishartFast, θ)
+    p = first(size(invS))
+    term1 = ((p * log(2.0) - logdet(invS)) + mvdigamma(ν/2,p))/2
+    term2 = vec((-ν/2)*cholinv(invS))
+
+    return [term1; term2]
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
