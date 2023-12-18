@@ -261,6 +261,17 @@ getlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
     return term1 + term2
 end
 
+mvdigamma(η,p) = sum( digamma(η + (one(d) - d)/2) for d=1:p)
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
+    η1, η2 = unpack_parameters(WishartFast, η)
+    p = first(size(η2))
+    term1 = -logdet(-η2) + mvdigamma(η1 + (p + one(η1)) /2 , p)
+    term2 = vec(((η1+(p+one(p))/2))*cholinv(η2))
+
+    return [term1; term2]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
     (η) -> begin
         η1, η2 = unpack_parameters(WishartFast, η)
@@ -280,7 +291,16 @@ getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
 getlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     (ν, invS) = unpack_parameters(WishartFast, θ)
     p = first(size(invS))
-    return (ν / 2) * (p * log(2.0) - logdet(invS)) + mvtrigamma(p, ν / 2)
+    return (ν / 2) * (p * log(2.0) - logdet(invS)) + logmvgamma(p, ν / 2)
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+    ν, invS = unpack_parameters(WishartFast, θ)
+    p = first(size(invS))
+    term1 = ((p * log(2.0) - logdet(invS)) + mvdigamma(ν/2,p))/2
+    term2 = vec((-ν/2)*cholinv(invS))
+
+    return [term1; term2]
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
