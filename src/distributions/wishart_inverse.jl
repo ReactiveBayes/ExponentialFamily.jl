@@ -278,9 +278,20 @@ getsufficientstatistics(::Type{InverseWishartFast}) = (chollogdet, cholinv)
 getlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(InverseWishartFast, η)
     p = first(size(η2))
-    term1 = (η1 + (p + 1) / 2) * logdet(-η2)
-    term2 = logmvgamma(p, -(η1 + (p + 1) / 2))
+    term1 = (η1 + (p + one(η1)) / 2) * logdet(-η2)
+    term2 = logmvgamma(p, -(η1 + (p + one(η1)) / 2))
     return term1 + term2
+end
+
+mvdigamma(η,p) = sum( digamma(η + (one(d) - d)/2) for d=1:p)
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
+    η1, η2 = unpack_parameters(InverseWishartFast, η)
+    p = first(size(η2))
+    term1 = logdet(-η2) - mvdigamma(-(η1 + (p + one(η1)) /2) , p)
+    term2 = vec(-((η1+(p+one(p))/2))*cholinv(-η2))
+
+    return [term1; term2]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{InverseWishartFast}) =
