@@ -71,7 +71,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Dirichlet}) =
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin
     (η1,) = unpack_parameters(Dirichlet, η)
-    digamma.(η1 .+ 1) .- digamma(sum(η1 .+ 1))
+    return digamma.(η1 .+ 1) .- digamma(sum(η1 .+ 1))
 end
 
 # Mean parametrization
