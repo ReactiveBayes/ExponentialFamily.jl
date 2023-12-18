@@ -148,6 +148,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{Pareto}, conditioner) = (η) ->
     return log(conditioner^(one(η1) + η1) / (-one(η1) - η1))
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Pareto}, conditioner) = (η) -> begin
+    (η1,) = unpack_parameters(Pareto, η)
+    return SA[log(conditioner) - one(η1)/(one(η1)+η1);]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Pareto}, _) = (η) -> begin
     (η1,) = unpack_parameters(Pareto, η)
     return SA[1 / (-1 - η1)^2;;]
@@ -158,6 +163,11 @@ end
 getlogpartition(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (shape,) = unpack_parameters(Pareto, θ)
     return -log(shape) - shape * log(conditioner)
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+    (shape,) = unpack_parameters(Pareto, θ)
+    return SA[-inv(shape) - log(conditioner);]
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
