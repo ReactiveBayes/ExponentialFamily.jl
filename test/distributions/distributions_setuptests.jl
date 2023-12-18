@@ -312,12 +312,12 @@ function run_test_gradlogpartition_against_expectation(distribution; nsamples = 
     samples = rand(distribution, nsamples)
     _, samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
     sample_sufficient_statistics = map((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
-    expectation_of_sufficient_statistics = mean(sample_sufficient_statistics)
-    gradient = gradlogpartition(ef)
+    @show mean(samples) - mean(distribution)
+    @show expectation_of_sufficient_statistics = mean(sample_sufficient_statistics)
+    @show gradient = gradlogpartition(ef)
     inverse_fisher = cholinv(fisherinformation(ef))
     @test length(gradient) === length(η)
     @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
-        0.01
 end
 
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)
