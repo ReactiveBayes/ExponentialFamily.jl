@@ -168,6 +168,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
     return log(-2 / η₁)
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
+    (η₁,) = unpack_parameters(Laplace, η)
+    return SA[-inv(η₁);]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
     (η₁,) = unpack_parameters(Laplace, η)
     return SA[inv(η₁^2);;]
