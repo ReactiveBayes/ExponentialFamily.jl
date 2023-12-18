@@ -578,7 +578,7 @@ end
 getgradlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
     (η) -> begin
         (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
-        return SA[-η₁ * η₂ / 2, abs2(η₁) / ( 4 * abs2(η₂)) - 1 / (2 * η₂)]
+        return SA[-η₁ * inv(η₂*2), abs2(η₁) / ( 4 * abs2(η₂)) - 1 / (2 * η₂)]
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
