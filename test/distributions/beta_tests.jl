@@ -31,7 +31,7 @@ end
 @testitem "Beta: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for a in 0.1:0.2:0.9, b in 0.1:0.2:0.9
+    for a in 0.1:0.1:0.9, b in 1.1:0.2:2.0
         @testset let d = Beta(a, b)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
