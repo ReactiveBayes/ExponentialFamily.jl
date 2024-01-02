@@ -1,7 +1,7 @@
 export Beta
 
 import Distributions: Beta, params
-import SpecialFunctions: digamma, logbeta, loggamma, trigamma
+import SpecialFunctions: digamma, logbeta, loggamma, trigamma, beta, beta_inc 
 import StatsFuns: betalogpdf
 
 using StaticArrays
@@ -56,6 +56,23 @@ isbasemeasureconstant(::Type{Beta}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Beta}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Beta}) = (log, mirrorlog)
+
+getgradcdf(::NaturalParametersSpace, ::Type{Beta}) = (η, a) -> begin
+    (η1, η2) = unpack_parameters(Beta, η)
+    sumη = η1 + η2 - 2
+    digs = digamma(sumη)
+    digη1 = digamma(η1 + one(η1))
+    digη2 = digamma(η2 + one(η2))
+    bp1   = beta(η1 + one(η1) ,η2+one(η2))
+    bη1   = first(beta_inc(η1, η2+one(η2),a))
+    bη2   = first(beta_inc(η1 + one(η1), η2,a))
+    bη12  = first(beta_inc(η1+one(η1), η2+one(η2), a))
+
+    term1 = (η1*bη1 - bη12*(digη1 - digs))/bp1
+    term2 = (η2*bη2 - bη12*(digη2 - digs))/bp1
+
+    return SA[term1, term2]
+end
 
 getlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Beta, η)
