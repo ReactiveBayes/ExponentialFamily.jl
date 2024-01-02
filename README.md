@@ -42,4 +42,4 @@ pkg> add ExponentialFamily
 
 # License
 
-[MIT License](LICENSE) Copyright (c) 2023 BIASlab
+[MIT License](LICENSE) Copyright (c) 2023-2024 BIASlab
