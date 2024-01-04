@@ -1,11 +1,12 @@
 export Beta
 
 import Distributions: Beta, params
-import SpecialFunctions: digamma, logbeta, loggamma, trigamma, beta, beta_inc 
+import SpecialFunctions: digamma, logbeta, loggamma, trigamma, beta, beta_inc
 import StatsFuns: betalogpdf
 
 using StaticArrays
 using LogExpFunctions
+using HypergeometricFunctions
 
 BayesBase.vague(::Type{<:Beta}) = Beta(one(Float64), one(Float64))
 BayesBase.default_prod_rule(::Type{<:Beta}, ::Type{<:Beta}) = PreserveTypeProd(Distribution)
@@ -59,19 +60,24 @@ getsufficientstatistics(::Type{Beta}) = (log, mirrorlog)
 
 getgradcdf(::NaturalParametersSpace, ::Type{Beta}) = (η, a) -> begin
     (η1, η2) = unpack_parameters(Beta, η)
-    sumη = η1 + η2 - 2
+    α = η1 + one(η1)
+    β = η2 + one(η2)
+    sumη = α + β
     digs = digamma(sumη)
-    digη1 = digamma(η1 + one(η1))
-    digη2 = digamma(η2 + one(η2))
-    bp1   = beta(η1 + one(η1) ,η2+one(η2))
-    bη1   = first(beta_inc(η1, η2+one(η2),a))
-    bη2   = first(beta_inc(η1 + one(η1), η2,a))
-    bη12  = first(beta_inc(η1+one(η1), η2+one(η2), a))
-
-    term1 = (η1*bη1 - bη12*(digη1 - digs))/bp1
-    term2 = (η2*bη2 - bη12*(digη2 - digs))/bp1
-
-    return SA[term1, term2]
+    digη1 = digamma(α)
+    digη2 = digamma(β)
+    binc  = first(beta_inc(α, β, a))
+    bincm1 = first(beta_inc(β,α,1-a))
+    const1 = (log(a) - digη1 + digs)*binc
+    const3 = loggamma(sumη) + loggamma(α) - loggamma(β)
+    const5 = α*log(a) + log(pFq((α,α,1-β),(α+1,α+1),(a))) - 2loggamma(α+1)
+    
+    const2 = (digη2 - digs - mirrorlog(a))*(bincm1)
+    const4 = loggamma(sumη) + loggamma(β) - loggamma(α)
+    const6 = β*mirrorlog(a) + log(pFq((β,β,1-α),(β+1,β+1),(1-a))) - 2loggamma(β+1)
+    
+    return SA[const1 - exp(const3 + const5), const2 + exp(const4+const6)]
+    
 end
 
 getlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
@@ -112,3 +118,5 @@ getfisherinformation(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
 
     return SA[psia-psiab -psiab; -psiab psib-psiab]
 end
+
+

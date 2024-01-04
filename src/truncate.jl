@@ -68,6 +68,25 @@ function BayesBase.insupport(d::TruncatedExponentialFamilyDistribution{<:Univari
     return _in_closed_interval(x, d.lower, d.upper) && insupport(d.untruncated, x)
 end
 
+function BayesBase.rand(rng::AbstractRNG, d::TruncatedExponentialFamilyDistribution)
+    d0 = convert(Distribution, d.untruncated)
+    tp = d.tp
+    lower = d.lower
+    upper = d.upper
+    if tp > 0.25
+        while true
+            r = rand(rng, d0)
+            if _in_closed_interval(r, lower, upper)
+                return r
+            end
+        end
+    elseif tp > sqrt(eps(typeof(float(tp))))
+        return quantile(d0, d.lcdf + rand(rng) * d.tp)
+    else
+        return invlogcdf(d0, logaddexp(d.loglcdf, d.logtp - randexp(rng)))
+    end
+end
+
 ### evaluation
 
 function Distributions.quantile(d::TruncatedExponentialFamilyDistribution, p::Real)
@@ -134,34 +153,38 @@ end
 
 getlogpartition(::NaturalParametersSpace, tef::TruncatedExponentialFamilyDistribution) = (η) -> begin
     ef = tef.untruncated
+    T  = exponential_family_typetag(ef)
     lp = getlogpartition(ef)(η)
-    return log(tef.ucdf - tef.lcdf) - lp
+    ucdf = cdf(ExponentialFamilyDistribution(T, η), tef.upper)
+    lcdf = cdf(ExponentialFamilyDistribution(T, η), tef.lower)
+    return log(ucdf - lcdf) + lp
 end
 
 getgradlogpartition(::NaturalParametersSpace, tef::TruncatedExponentialFamilyDistribution) = (η) -> begin
     ef = tef.untruncated
-    c  = tef.ucdf - tef.lcdf
+
+    d = convert(Distribution, ef)
+    @show logc  = logdiffcdf(d, tef.upper, tef.lower)
     T  = exponential_family_typetag(ef)
     space = NaturalParametersSpace()
     uf  = getgradcdf(space, T)(η, tef.upper)
     lf  = getgradcdf(space, T)(η, tef.lower)
-    grad =  getgradlogpartition(ef)(η)
-    return (uf - lf)/c - grad 
+    @show grad =  getgradlogpartition(ef)(η)
+    @show uf, lf
+    @show log.(abs.(uf - lf)) 
+    return sign.(uf - lf).*exp.(log.(abs.(uf - lf)) .- logc) + grad
 end
 
-getfisherinformation(::NaturalParametersSpace, tef::TruncatedExponentialFamilyDistribution) = (η) -> begin
-    ef = tef.untruncated
-    T  = exponential_family_typetag(ef)
-    c = tef.ucdf - tef.lcdf
-    space = NaturalParametersSpace()
-    uf  = getgradcdf(space, T)(η, tef.upper)
-    lf  = getgradcdf(space, T)(η, tef.lower)
-    hessu = gethessiancdf(space, T)(η, tef.upper)
-    hessl = gethessiancdf(space, T)(η, tef.lower)
+# getfisherinformation(::NaturalParametersSpace, tef::TruncatedExponentialFamilyDistribution) = (η) -> begin
+#     ef = tef.untruncated
+#     T  = exponential_family_typetag(ef)
+#     c = tef.ucdf - tef.lcdf
+#     space = NaturalParametersSpace()
+#     uf  = getgradcdf(space, T)(η, tef.upper)
+#     lf  = getgradcdf(space, T)(η, tef.lower)
+#     hessu = gethessiancdf(space, T)(η, tef.upper)
+#     hessl = gethessiancdf(space, T)(η, tef.lower)
 
-    return (hessu - hessl)/c - kron(uf -lf, (uf -lf)')/c^2 - getfisherinformation(ef)(η)
-end
-
-
-
+#     # return (hessu - hessl)/c - kron(uf -lf, (uf -lf)')/c^2 - getfisherinformation(ef)(η)
+# end
 
