@@ -36,6 +36,8 @@ BayesBase.cov(dist::NormalMeanPrecision)     = var(dist)
 BayesBase.invcov(dist::NormalMeanPrecision)  = dist.w
 BayesBase.entropy(dist::NormalMeanPrecision) = (1 + log2π - log(precision(dist))) / 2
 BayesBase.params(dist::NormalMeanPrecision)  = (mean(dist), precision(dist))
+BayesBase.kurtosis(dist::NormalMeanPrecision) = kurtosis(convert(Normal, dist))
+BayesBase.skewness(dist::NormalMeanPrecision) = skewness(convert(Normal, dist))
 
 BayesBase.pdf(dist::NormalMeanPrecision, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) * precision(dist) / 2)) * sqrt(precision(dist))
 BayesBase.logpdf(dist::NormalMeanPrecision, x::Real) = -(log2π - log(precision(dist)) + abs2(x - mean(dist)) * precision(dist)) / 2
