@@ -66,6 +66,12 @@ end
     @test ndims(MvNormalMeanCovariance([0.0, 0.0, 0.0])) === 3
     @test size(MvNormalMeanCovariance([0.0, 0.0])) === (2,)
     @test size(MvNormalMeanCovariance([0.0, 0.0, 0.0])) === (3,)
+
+    distribution = MvNormalMeanCovariance([0.0, 0.0], [2.0 0.0; 0.0 3.0])
+
+    @test distribution ≈ distribution
+    @test distribution ≈ convert(MvNormalMeanPrecision, distribution)
+    @test distribution ≈ convert(MvNormalWeightedMeanPrecision, distribution)
 end
 
 @testitem "MvNormalMeanCovariance: vague" begin

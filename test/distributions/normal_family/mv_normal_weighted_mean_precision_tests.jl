@@ -67,6 +67,12 @@ end
     @test ndims(MvNormalWeightedMeanPrecision([0.0, 0.0, 0.0])) === 3
     @test size(MvNormalWeightedMeanPrecision([0.0, 0.0])) === (2,)
     @test size(MvNormalWeightedMeanPrecision([0.0, 0.0, 0.0])) === (3,)
+
+    distribution = MvNormalWeightedMeanPrecision([0.0, 0.0], [2.0 0.0; 0.0 3.0])
+
+    @test distribution ≈ distribution
+    @test distribution ≈ convert(MvNormalMeanCovariance, distribution)
+    @test distribution ≈ convert(MvNormalMeanPrecision, distribution)
 end
 
 @testitem "MvNormalWeightedMeanPrecision: vague" begin

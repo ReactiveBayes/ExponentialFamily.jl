@@ -396,10 +396,18 @@ end
 # isapprox
 
 function Base.isapprox(left::UnivariateNormalDistributionsFamily, right::UnivariateNormalDistributionsFamily; kwargs...)
+    return all(p -> isapprox(p[1], p[2]; kwargs...), zip(mean_var(left), mean_var(right)))
+end
+
+function Base.isapprox(left::D, right::D; kwargs...) where { D <: UnivariateNormalDistributionsFamily }
     return all(p -> isapprox(p[1], p[2]; kwargs...), zip(params(left), params(right)))
 end
 
 function Base.isapprox(left::MultivariateNormalDistributionsFamily, right::MultivariateNormalDistributionsFamily; kwargs...)
+    return all(p -> isapprox(p[1], p[2]; kwargs...), zip(mean_cov(left), mean_cov(right)))
+end
+
+function Base.isapprox(left::D, right::D; kwargs...) where { D <: MultivariateNormalDistributionsFamily }
     return all(p -> isapprox(p[1], p[2]; kwargs...), zip(params(left), params(right)))
 end
 
