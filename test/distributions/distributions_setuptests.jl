@@ -214,7 +214,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         kurtosis
     )
 
-    argument_type = Tuple{ typeof(distribution) }
+    argument_type = Tuple{typeof(distribution)}
 
     for x in samples
         # We believe in the implementation in the `Distributions.jl`

@@ -32,17 +32,17 @@ function BayesBase.weightedmean_invcov(dist::NormalMeanVariance)
     return (xi, w)
 end
 
-BayesBase.mean(dist::NormalMeanVariance)            = dist.μ
-BayesBase.median(dist::NormalMeanVariance)          = mean(dist)
-BayesBase.mode(dist::NormalMeanVariance)            = mean(dist)
-BayesBase.var(dist::NormalMeanVariance)             = dist.v
-BayesBase.std(dist::NormalMeanVariance)             = sqrt(var(dist))
-BayesBase.cov(dist::NormalMeanVariance)             = var(dist)
-BayesBase.invcov(dist::NormalMeanVariance)          = inv(cov(dist))
-BayesBase.entropy(dist::NormalMeanVariance)         = (1 + log2π + log(var(dist))) / 2
-BayesBase.params(dist::NormalMeanVariance)          = (dist.μ, dist.v)
-BayesBase.kurtosis(dist::NormalMeanVariance)        = kurtosis(convert(Normal, dist))
-BayesBase.skewness(dist::NormalMeanVariance)        = skewness(convert(Normal, dist))
+BayesBase.mean(dist::NormalMeanVariance)     = dist.μ
+BayesBase.median(dist::NormalMeanVariance)   = mean(dist)
+BayesBase.mode(dist::NormalMeanVariance)     = mean(dist)
+BayesBase.var(dist::NormalMeanVariance)      = dist.v
+BayesBase.std(dist::NormalMeanVariance)      = sqrt(var(dist))
+BayesBase.cov(dist::NormalMeanVariance)      = var(dist)
+BayesBase.invcov(dist::NormalMeanVariance)   = inv(cov(dist))
+BayesBase.entropy(dist::NormalMeanVariance)  = (1 + log2π + log(var(dist))) / 2
+BayesBase.params(dist::NormalMeanVariance)   = (dist.μ, dist.v)
+BayesBase.kurtosis(dist::NormalMeanVariance) = kurtosis(convert(Normal, dist))
+BayesBase.skewness(dist::NormalMeanVariance) = skewness(convert(Normal, dist))
 
 BayesBase.pdf(dist::NormalMeanVariance, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) / 2cov(dist))) / std(dist)
 BayesBase.logpdf(dist::NormalMeanVariance, x::Real) = -(log2π + log(var(dist)) + abs2(x - mean(dist)) / var(dist)) / 2
