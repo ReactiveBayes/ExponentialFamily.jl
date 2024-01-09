@@ -57,7 +57,7 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
-    option_assume_no_allocations = false,
+    option_assume_no_allocations = false
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -212,7 +212,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         kurtosis
     )
 
-    argument_type = Tuple{ typeof(distribution) }
+    argument_type = Tuple{typeof(distribution)}
 
     for x in samples
         # We believe in the implementation in the `Distributions.jl`
