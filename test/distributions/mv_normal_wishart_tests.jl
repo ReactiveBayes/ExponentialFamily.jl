@@ -14,7 +14,7 @@ end
 @testitem "MvNormalWishart: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for dim in (3), invS in rand(Wishart(10, Array(Eye(dim))), 4)
+    for dim in (3,), invS in rand(Wishart(10, Array(Eye(dim))), 4)
         ν = dim + 2
         @testset let (d = MvNormalWishart(rand(dim), invS, rand(), ν))
             ef = test_exponentialfamily_interface(
@@ -25,7 +25,7 @@ end
                 test_fisherinformation_against_jacobian = false
             )
 
-            run_test_basic_functions(ef; assume_no_allocations = false, test_samples_logpdf = false)
+            run_test_basic_functions(d; assume_no_allocations = false, test_samples_logpdf = false)
         end
     end
 end

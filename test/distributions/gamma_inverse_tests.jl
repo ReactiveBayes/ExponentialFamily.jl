@@ -45,7 +45,7 @@ end
 @testitem "GammaInverse: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for α in 10rand(4), θ in 10rand(4)
+    for α in (10rand(4) .+ 4.0), θ in 10rand(4)
         @testset let d = InverseGamma(α, θ)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 

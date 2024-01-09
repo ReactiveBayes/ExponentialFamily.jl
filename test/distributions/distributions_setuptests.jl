@@ -57,7 +57,7 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
-    option_assume_no_allocations = false,
+    option_assume_no_allocations = false
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -203,6 +203,17 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     # ! do not use fixed RNG
     samples = [rand(distribution) for _ in 1:nsamples]
 
+    # Not all methods are defined for all objects in Distributions.jl 
+    # For this methods we first test if the method is defined for the distribution
+    # And only then we test the method for the exponential family form
+    potentially_missing_methods = (
+        cov,
+        skewness,
+        kurtosis
+    )
+
+    argument_type = Tuple{typeof(distribution)}
+
     for x in samples
         # We believe in the implementation in the `Distributions.jl`
         @test @inferred(logpdf(ef, x)) ≈ logpdf(distribution, x)
@@ -213,6 +224,12 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
         @test all(rand!(StableRNG(42), ef, [deepcopy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [deepcopy(x) for _ in 1:10]))
+
+        for method in potentially_missing_methods
+            if hasmethod(method, argument_type)
+                @test @inferred(method(ef)) ≈ method(distribution)
+            end
+        end
 
         @test @inferred(isbasemeasureconstant(ef)) === isbasemeasureconstant(T)
         @test @inferred(basemeasure(ef, x)) == getbasemeasure(T, conditioner)(x)
