@@ -57,6 +57,8 @@ BayesBase.invcov(dist::MvNormalMeanCovariance)    = cholinv(dist.Σ)
 BayesBase.std(dist::MvNormalMeanCovariance)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalMeanCovariance) = chollogdet(cov(dist))
 BayesBase.params(dist::MvNormalMeanCovariance)    = (mean(dist), cov(dist))
+BayesBase.diagonal_skewness(dist::MvNormalMeanCovariance) = zeros(length(dist.μ))
+BayesBase.diagonal_kurtosis(dist::MvNormalMeanCovariance) = 3*var(dist).^2
 
 function Distributions.sqmahal(dist::MvNormalMeanCovariance, x::AbstractVector)
     T = promote_type(eltype(x), paramfloattype(dist))

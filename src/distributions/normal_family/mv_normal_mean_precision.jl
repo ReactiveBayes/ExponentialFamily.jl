@@ -47,6 +47,8 @@ BayesBase.invcov(dist::MvNormalMeanPrecision)    = dist.Λ
 BayesBase.std(dist::MvNormalMeanPrecision)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalMeanPrecision) = -chollogdet(invcov(dist))
 BayesBase.params(dist::MvNormalMeanPrecision)    = (mean(dist), invcov(dist))
+BayesBase.diagonal_skewness(dist::MvNormalMeanPrecision) = zeros(length(dist.μ))
+BayesBase.diagonal_kurtosis(dist::MvNormalMeanPrecision) = 3*var(dist).^2
 
 function Distributions.sqmahal(dist::MvNormalMeanPrecision, x::AbstractVector)
     T = promote_type(eltype(x), paramfloattype(dist))
