@@ -104,6 +104,12 @@ end
     @test convert(NormalMeanVariance, 0, 1) == NormalMeanVariance{Float64}(0.0, 1.0)
     @test convert(NormalMeanVariance, 0, 10) == NormalMeanVariance{Float64}(0.0, 10.0)
     @test convert(NormalMeanVariance, 0, 0.1) == NormalMeanVariance{Float64}(0.0, 0.1)
+
+    distribution = NormalMeanVariance(-2.0, 3.0)
+
+    @test distribution ≈ distribution
+    @test distribution ≈ convert(NormalMeanPrecision, distribution)
+    @test distribution ≈ convert(NormalWeightedMeanPrecision, distribution)
 end
 
 @testitem "NormalMeanVariance: vague" begin
