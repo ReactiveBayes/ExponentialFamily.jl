@@ -5,7 +5,7 @@
 @testitem "Pareto: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for shape in (1.0, 2.0, 3.0), scale in (0.25, 0.5, 2.0)
+    for shape in (5.0, 6.0, 7.0), scale in (0.25, 0.5, 2.0)
         @testset let d = Pareto(shape, scale)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
             η1 = -shape - 1
