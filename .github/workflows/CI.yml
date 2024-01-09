@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.9'
+          - '1.10'
         os:
           - ubuntu-latest
         arch:
@@ -55,7 +55,7 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest          
         with:
-          version: '1.9'
+          version: '1.10'
       - run: make docs
         env:
           PYTHON: ""
