@@ -26,6 +26,10 @@ function check_basic_statistics(left::UnivariateNormalDistributionsFamily, right
     @test var(left) ≈ var(right)
     @test std(left) ≈ std(right)
     @test entropy(left) ≈ entropy(right)
+    @test skewness(left) ≈ skewness(right)
+    @test kurtosis(left) ≈ kurtosis(right)
+    @test diagonal_skewness(left) ≈ diagonal_skewness(right)
+    @test diagonal_kurtosis(left) ≈ diagonal_kurtosis(right)
 
     for value in (1.0, -1.0, 0.0, mean(left), mean(right), rand())
         @test pdf(left, value) ≈ pdf(right, value)
@@ -64,7 +68,7 @@ function check_basic_statistics(left::MultivariateNormalDistributionsFamily, rig
     @test length(left) === length(right)
     @test size(left) === size(right)
     @test entropy(left) ≈ entropy(right)
-
+    
     dims = length(mean(left))
 
     for value in (
@@ -107,5 +111,8 @@ function check_basic_statistics(left::MultivariateNormalDistributionsFamily, rig
         @test all(weightedmean_cov(left) .≈ weightedmean_cov(right))
         @test all(weightedmean_invcov(left) .≈ weightedmean_invcov(right))
         @test all(weightedmean_precision(left) .≈ weightedmean_precision(right))
+        @test diagonal_skewness(left) ≈ diagonal_skewness(right)
+        @test diagonal_kurtosis(left) ≈ diagonal_kurtosis(right)
+
     end
 end

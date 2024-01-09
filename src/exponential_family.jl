@@ -5,6 +5,7 @@ export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
 export getbasemeasure, getsufficientstatistics, getlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
 export basemeasure, sufficientstatistics, logpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
+export diagonal_kurtosis, diagonal_skewness
 
 using LoopVectorization
 using Distributions, LinearAlgebra, StaticArrays, Random
