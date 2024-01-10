@@ -50,7 +50,7 @@ prod(PreserveTypeProd(ExponentialFamilyDistribution), prior, likelihood)
 
 Note that the result does not correspond to the `Laplace` distribution and returns a generic univariate `ExponentialFamilyDistribution`.
 This approach ensures consistency and compatibility, especially when dealing with a wide range of probability distributions.
-Refer to the [`BayesBase`](https://github.com/biaslab/BayesBase.jl) for the documentation about available product strategies.
+Refer to the [`BayesBase`](https://github.com/ReactiveBayes/BayesBase.jl) for the documentation about available product strategies.
 
 ## Computing various useful attributes of an exponential family member
 
@@ -130,4 +130,4 @@ fisherinformation_of_gamma_in_natural_space(gamma_parameters_in_natural_space)
 
 ## Approximating attributes 
 
-Refer to the [`ExpectationApproximations.jl`](https://github.com/biaslab/ExpectationApproximations.jl) package for approximating various attributes of the members of the exponential family.
+Refer to the [`ExpectationApproximations.jl`](https://github.com/ReactiveBayes/ExpectationApproximations.jl) package for approximating various attributes of the members of the exponential family.
