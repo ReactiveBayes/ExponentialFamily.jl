@@ -19,6 +19,6 @@ makedocs(
 
 if get(ENV, "CI", nothing) == "true"
     deploydocs(
-        repo = "github.com/biaslab/ExponentialFamily.jl.git"
+        repo = "github.com/ReactiveBayes/ExponentialFamily.jl.git"
     )
 end
