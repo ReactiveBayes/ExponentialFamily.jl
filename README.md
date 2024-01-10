@@ -4,17 +4,17 @@
 |:-------------------------------------------------------------------------:|:------------------------------------------------------:|:---------------------------------------:|
 | [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI][ci-img]][ci-url] [![Aqua][aqua-img]][aqua-url]  | [![CodeCov][codecov-img]][codecov-url]  |
 
-[ci-img]: https://github.com/biaslab/ExponentialFamily.jl/actions/workflows/CI.yml/badge.svg?branch=main
-[ci-url]: https://github.com/biaslab/ExponentialFamily.jl/actions
+[ci-img]: https://github.com/reactivebayes/ExponentialFamily.jl/actions/workflows/CI.yml/badge.svg?branch=main
+[ci-url]: https://github.com/reactivebayes/ExponentialFamily.jl/actions
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
-[docs-dev-url]: https://biaslab.github.io/ExponentialFamily.jl/dev
+[docs-dev-url]: https://reactivebayes.github.io/ExponentialFamily.jl/dev
 
-[codecov-img]: https://codecov.io/gh/biaslab/ExponentialFamily.jl/branch/main/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/biaslab/ExponentialFamily.jl?branch=main
+[codecov-img]: https://codecov.io/gh/reactivebayes/ExponentialFamily.jl/branch/main/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/reactivebayes/ExponentialFamily.jl?branch=main
 
 [docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
-[docs-stable-url]: https://biaslab.github.io/ExponentialFamily.jl/stable
+[docs-stable-url]: https://reactivebayes.github.io/ExponentialFamily.jl/stable
 
 [aqua-img]: https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg
 [aqua-url]: https://github.com/JuliaTesting/Aqua.jl
@@ -32,7 +32,7 @@ ExponentialFamily.jl is a Julia package that extends the functionality of Distri
 
 - **Fisher Information**: ExponentialFamily.jl also offers computation of the [Fisher Information (FI)](https://en.wikipedia.org/wiki/Fisher_information) for various distributions. FI is a crucial quantity in statistical inference, providing insights into the sensitivity of a model's parameters to changes in the data. Essentially FI is the hessian of logpartition with respect to vectorized natural parameters. FI allows users to gain a deeper understanding of the behavior and performance of their probabilistic models.
 
-Read more about the package in the [documentation](https://biaslab.github.io/ExponentialFamily.jl/stable/).
+Read more about the package in the [documentation](https://reactivebayes.github.io/ExponentialFamily.jl/stable/).
 
 ## Installation
 ExponentialFamily.jl can be installed through the Julia package manager. In the Julia REPL, type `]` to enter the package manager mode and run:
@@ -42,4 +42,4 @@ pkg> add ExponentialFamily
 
 # License
 
-[MIT License](LICENSE) Copyright (c) 2023-2024 BIASlab
+[MIT License](LICENSE) Copyright (c) 2023-2024 BIASlab, 2024-present ReactiveBayes
