@@ -27,6 +27,9 @@
     @test eltype(NormalMeanPrecision(0.0f0)) === Float32
     @test eltype(NormalMeanPrecision(0.0f0, 1.0f0)) === Float32
     @test eltype(NormalMeanPrecision(0.0f0, 1.0)) === Float64
+    
+    @test NormalMeanPrecision(3, 5I) == NormalMeanPrecision(3, 5)
+    @test NormalMeanPrecision(2, 7.0I) == NormalMeanPrecision(2.0, 7.0)
 end
 
 @testitem "NormalMeanPrecision: Stats methods" begin

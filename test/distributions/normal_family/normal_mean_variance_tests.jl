@@ -27,6 +27,9 @@
     @test eltype(NormalMeanVariance(0.0f0)) === Float32
     @test eltype(NormalMeanVariance(0.0f0, 1.0f0)) === Float32
     @test eltype(NormalMeanVariance(0.0f0, 1.0)) === Float64
+    
+    @test NormalMeanVariance(3, 5I) == NormalMeanVariance(3, 5)
+    @test NormalMeanVariance(2, 7.0I) == NormalMeanVariance(2.0, 7.0)
 end
 
 @testitem "NormalMeanVariance: Stats methods" begin

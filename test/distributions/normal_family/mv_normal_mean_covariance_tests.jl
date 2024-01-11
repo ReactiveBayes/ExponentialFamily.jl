@@ -15,6 +15,9 @@
     @test eltype(MvNormalMeanCovariance([1, 1], [1, 1])) === Float64
     @test eltype(MvNormalMeanCovariance([1.0f0, 1.0f0])) === Float32
     @test eltype(MvNormalMeanCovariance([1.0f0, 1.0f0], [1.0f0, 1.0f0])) === Float32
+
+    @test MvNormalMeanCovariance(ones(3), 5I) == MvNormalMeanCovariance(ones(3), Diagonal(5 * ones(3)))
+    @test MvNormalMeanCovariance([1, 2, 3, 4], 7.0I) == MvNormalMeanCovariance([1.0, 2.0, 3.0, 4.0], Diagonal(7.0 * ones(4)))
 end
 
 @testitem "MvNormalMeanCovariance: distrname" begin
