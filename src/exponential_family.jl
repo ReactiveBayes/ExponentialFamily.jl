@@ -831,7 +831,7 @@ BayesBase.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = 
 BayesBase.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
 BayesBase.cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
 BayesBase.skewness(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = skewness(convert(T, ef))
-BayesBase.kurtosis(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = kurtosis(convert(T, ef))
+BayesBase.kurtosis(ef::ExponentialFamilyDistribution{T},correction::Bool) where {T <: Distribution} = kurtosis(convert(T, ef),correction)
 
 BayesBase.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
 BayesBase.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)

@@ -41,7 +41,7 @@ BayesBase.cov(dist::NormalMeanVariance)      = var(dist)
 BayesBase.invcov(dist::NormalMeanVariance)   = inv(cov(dist))
 BayesBase.entropy(dist::NormalMeanVariance)  = (1 + log2π + log(var(dist))) / 2
 BayesBase.params(dist::NormalMeanVariance)   = (dist.μ, dist.v)
-BayesBase.kurtosis(dist::NormalMeanVariance) = kurtosis(convert(Normal, dist))
+BayesBase.kurtosis(dist::NormalMeanVariance,correction::Bool) = kurtosis(convert(Normal, dist),correction)
 BayesBase.skewness(dist::NormalMeanVariance) = skewness(convert(Normal, dist))
 
 BayesBase.pdf(dist::NormalMeanVariance, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) / 2cov(dist))) / std(dist)
