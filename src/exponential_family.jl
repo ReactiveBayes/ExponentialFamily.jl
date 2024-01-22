@@ -344,14 +344,16 @@ getlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::Exponenti
 getgradlogpartition(ef::ExponentialFamilyDistribution) = getgradlogpartition(ef.attributes, ef)
 getgradlogpartition(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
     getgradlogpartition(T, getconditioner(ef))
+# TODO: Implement Monte Carlo estimation for gradlogpartition.
 getgradlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
-    error("TODO: not implemented. Should we use monte-carlo estimator here: the mean of the sufficient statistics here?")
+    error("Generic gradlogpartition is not implemented.")
 
 getfisherinformation(ef::ExponentialFamilyDistribution) = getfisherinformation(ef.attributes, ef)
 getfisherinformation(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
     getfisherinformation(T, getconditioner(ef))
+# TODO: Implement a generic fisherinformation.
 getfisherinformation(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
-    error("TODO: not implemented. Should we call ForwardDiff here?")
+    error("Generic getfisherinformation is not implemented.")
 
 getsupport(ef::ExponentialFamilyDistribution) = getsupport(ef.attributes, ef)
 getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsupport(T)
