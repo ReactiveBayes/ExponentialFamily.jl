@@ -326,7 +326,8 @@ function run_test_gradlogpartition_against_expectation(distribution; nsamples = 
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
 
-    samples = rand(distribution, nsamples)
+    rng = StableRNG(42)
+    samples = rand(rng, distribution, nsamples)
     _, samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
     sample_sufficient_statistics = map((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
     expectation_of_sufficient_statistics = mean(sample_sufficient_statistics)
