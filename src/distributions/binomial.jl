@@ -92,6 +92,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> b
     return ntrials * log1pexp(η₁)
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
+    (η₁,) = unpack_parameters(Binomial, η)
+    return SA[ntrials*exp(η₁) / (one(η₁) + exp(η₁))]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
     (η₁,) = unpack_parameters(Binomial, η)
     aux = logistic(η₁)

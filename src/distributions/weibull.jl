@@ -99,6 +99,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -
     return -log(-η1) - log(conditioner)
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Weibull},conditioner) = (η) -> begin
+    (η1,) = unpack_parameters(Weibull, η)
+    return SA[-inv(η1);]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Weibull}, _) = (η) -> begin
     (η1,) = unpack_parameters(Weibull, η)
     SA[inv(η1)^2;;]
@@ -108,8 +113,14 @@ end
 
 getlogpartition(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
     (λ,) = unpack_parameters(Weibull, θ)
-    return k * log(λ) - log(k)
+    return SA[k/λ;]
 end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{Weibull},conditioner) = (θ) -> begin
+    (λ,) = unpack_parameters(Weibull, θ)
+    return SA[-inv(η1);]
+end
+
 
 getfisherinformation(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
     (λ,) = unpack_parameters(MeanParametersSpace(), Weibull, θ)

@@ -583,6 +583,12 @@ getlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> 
     return -abs2(η₁) / 4η₂ - log(-2η₂) / 2
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
+        return SA[-η₁ * inv(η₂*2), abs2(η₁) / ( 4 * abs2(η₂)) - 1 / (2 * η₂)]
+    end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
     (η) -> begin
         (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
@@ -598,6 +604,12 @@ getlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> beg
     (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
     return μ / 2σ² + log(sqrt(σ²))
 end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) =
+    (θ) -> begin
+        (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
+        return SA[μ / σ², - abs2(μ) / (2σ²^2) + 1 / σ²]
+    end
 
 getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
@@ -685,6 +697,13 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η)
     Cinv, l = cholinv_logdet(-η₂)
     return (dot(η₁, Cinv, η₁) / 2 - (k * log(2) + l)) / 2
 end
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
+        Cinv, _ = cholinv_logdet(-η₂)
+        return pack_parameters(MvNormalMeanCovariance, (0.5 * Cinv * η₁, 0.25 * Cinv * η₁ * η₁' * Cinv + 0.5 * Cinv))
+    end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
     (η) -> begin

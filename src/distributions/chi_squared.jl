@@ -64,6 +64,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
     return loggamma(η1 + o) + (η1 + o) * logtwo
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
+    (η1,) = unpack_parameters(Chisq, η)
+    return SA[digamma(η1 + one(η1)) + logtwo]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
     (η1,) = unpack_parameters(Chisq, η)
     SA[trigamma(η1 + one(η1));;]

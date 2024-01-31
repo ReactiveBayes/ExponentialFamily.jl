@@ -56,6 +56,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
     return -log(-2 * η1)
 end
 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
+    (η1, ) = unpack_parameters(Rayleigh, η)
+    return SA[-inv(η1);]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
     (η1,) = unpack_parameters(Rayleigh, η)
     SA[inv(η1^2);;]
@@ -66,6 +71,11 @@ end
 getlogpartition(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
     (σ,) = unpack_parameters(Rayleigh, θ)
     return 2 * log(σ)
+end
+
+getgradlogpartition(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
+    (σ,) = unpack_parameters(Rayleigh, θ)
+    return SA[2/σ;]
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin

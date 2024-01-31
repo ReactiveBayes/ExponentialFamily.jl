@@ -106,6 +106,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{NegativeBinomial}, conditioner)
     return -conditioner * log(one(η1) - exp(η1))
 end
 
+getgradlogpartition(::NaturalParametersSpace,::Type{NegativeBinomial}, conditioner) = (η) -> begin
+    (η1,) = unpack_parameters(NegativeBinomial, η)
+    return SA[-conditioner*(-exp(η1)/(one(η1)-exp(η1)));]
+end
+
 getfisherinformation(::NaturalParametersSpace, ::Type{NegativeBinomial}, r) = (η) -> begin
     (η1,) = unpack_parameters(NegativeBinomial, η)
     return SA[r * exp(η1) / (one(η1) - exp(η1))^2;;]
@@ -116,6 +121,11 @@ end
 getlogpartition(::MeanParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
     (p,) = unpack_parameters(NegativeBinomial, θ)
     return -conditioner * log(one(p) - p)
+end
+
+getgradlogpartition(::MeanParametersSpace,::Type{NegativeBinomial}, conditioner) = (θ) -> begin
+    (p,) = unpack_parameters(NegativeBinomial, η)
+    return SA[conditioner*inv(one(p) - p);]
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{NegativeBinomial}, r) = (θ) -> begin

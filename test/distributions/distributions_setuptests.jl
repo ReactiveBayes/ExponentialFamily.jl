@@ -54,6 +54,7 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking = true,
     test_isproper = true,
     test_basic_functions = true,
+    test_gradlogpartition_properties = true,
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
@@ -71,6 +72,7 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking && run_test_packing_unpacking(distribution)
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
     test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_gradlogpartition_properties && run_test_gradlogpartition_properties(distribution)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
@@ -316,6 +318,27 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
         @test size(F, 1) === size(F, 2)
         @test size(F, 1) === isqrt(length(F))
         @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
+    end
+end
+
+function run_test_gradlogpartition_properties(distribution; nsamples = 6000, test_against_forwardiff = true)
+    ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
+
+    (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
+
+    rng = StableRNG(42)
+    # Some distributions do not use a vector to store a collection of samples (e.g. matrix for MvGaussian)
+    collection_of_samples = rand(rng, distribution, nsamples)
+    # The `check_logpdf` here converts the collection to a vector like iterable
+    _, samples = ExponentialFamily.check_logpdf(ef, collection_of_samples)
+    expectation_of_sufficient_statistics = mean((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
+    gradient = gradlogpartition(ef)
+    inverse_fisher = cholinv(fisherinformation(ef))
+    @test length(gradient) === length(η)
+    @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
+
+    if test_against_forwardiff
+        @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
     end
 end
 

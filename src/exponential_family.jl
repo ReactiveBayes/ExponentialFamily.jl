@@ -2,8 +2,8 @@ export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
-export getbasemeasure, getsufficientstatistics, getlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
-export basemeasure, sufficientstatistics, logpartition, fisherinformation, insupport, isproper
+export getbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+export basemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
@@ -302,6 +302,18 @@ function logpartition(ef::ExponentialFamilyDistribution, η = getnaturalparamete
 end
 
 """
+    gradlogpartition(::ExponentialFamilyDistribution, η)
+
+Return the computed value of `gradlogpartition` of the exponential family distribution at the point `η`.
+By default `η = getnaturalparameters(ef)`.
+
+See also: [`getgradlogpartition`](@ref)
+"""
+function gradlogpartition(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef))
+    return getgradlogpartition(ef)(η)
+end
+
+"""
     fisherinformation(distribution, η)
 
 Return the computed value of `fisherinformation` of the exponential family distribution at the point `η`
@@ -329,11 +341,19 @@ getlogpartition(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = get
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getlogpartition(attributes)
 
+getgradlogpartition(ef::ExponentialFamilyDistribution) = getgradlogpartition(ef.attributes, ef)
+getgradlogpartition(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
+    getgradlogpartition(T, getconditioner(ef))
+# TODO: Implement Monte Carlo estimation for gradlogpartition.
+getgradlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
+    error("Generic gradlogpartition is not implemented.")
+
 getfisherinformation(ef::ExponentialFamilyDistribution) = getfisherinformation(ef.attributes, ef)
 getfisherinformation(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
     getfisherinformation(T, getconditioner(ef))
+# TODO: Implement a generic fisherinformation.
 getfisherinformation(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
-    error("TODO: not implemented. Should we call ForwardDiff here?")
+    error("Generic getfisherinformation is not implemented.")
 
 getsupport(ef::ExponentialFamilyDistribution) = getsupport(ef.attributes, ef)
 getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsupport(T)
@@ -422,6 +442,22 @@ getlogpartition(
     ::Type{T},
     ::Nothing
 ) where {T <: Distribution} = getlogpartition(space, T)
+
+"""
+    getgradlogpartition([ space = NaturalParametersSpace() ], ::Type{T}, [ conditioner ]) where { T <: Distribution }
+
+A specific verion of `getgradlogpartition` defined particularly for distribution types from `Distributions.jl` package.
+Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
+Optionally, accepts the `space` parameter, which defines the parameters space.
+For conditional exponential family distributions requires an extra `conditioner` argument.
+"""
+getgradlogpartition(::Type{T}, conditioner = nothing) where {T <: Distribution} =
+    getgradlogpartition(NaturalParametersSpace(), T, conditioner)
+getgradlogpartition(
+    space::Union{MeanParametersSpace, NaturalParametersSpace},
+    ::Type{T},
+    ::Nothing
+) where {T <: Distribution} = getgradlogpartition(space, T)
 
 """
     getfisherinformation([ space = NaturalParametersSpace() ], ::Type{T}) where { T <: Distribution }
@@ -535,7 +571,7 @@ For details on the dispatch mechanism of `_logpdf`, refer to the `check_logpdf` 
 See also: [`check_logpdf`](@ref)
 """
 function _logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
-    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    vartype, _x = check_logpdf(ef, x)
     _logpdf(vartype, ef, _x)
 end
 
@@ -595,6 +631,8 @@ ExponentialFamily.check_logpdf(Univariate, typeof([1.0, 2.0, 3.0]), eltype([1.0,
 See also: [`_logpdf`](@ref) [`PointBasedLogpdfCall`](@ref) [`MapBasedLogpdfCall`](@ref)
 """
 function check_logpdf end
+
+check_logpdf(ef::ExponentialFamilyDistribution, x) = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
 
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
