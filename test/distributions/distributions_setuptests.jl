@@ -221,7 +221,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test @inferred(mean(ef)) ≈ mean(distribution)
         @test @inferred(var(ef)) ≈ var(distribution)
         @test @inferred(std(ef)) ≈ std(distribution)
-        @test size(rand(ef, 10))[end] === 10
+        @test last(size(rand(ef, 10))) === 10 # Test that `rand` without explicit `rng` works
         @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
         @test all(rand!(StableRNG(42), ef, [deepcopy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [deepcopy(x) for _ in 1:10]))
