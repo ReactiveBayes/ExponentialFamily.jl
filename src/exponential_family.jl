@@ -874,6 +874,8 @@ BayesBase.kurtosis(ef::ExponentialFamilyDistribution{T}) where {T <: Distributio
 BayesBase.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
 BayesBase.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)
 
+BayesBase.rand(ef::ExponentialFamilyDistribution, args::Integer...) = rand(Random.default_rng(), ef, args...)
+
 BayesBase.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args::Integer...) where {T <: Distribution} =
     rand(rng, convert(T, ef), args...)
 
