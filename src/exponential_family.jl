@@ -571,7 +571,7 @@ For details on the dispatch mechanism of `_logpdf`, refer to the `check_logpdf` 
 See also: [`check_logpdf`](@ref)
 """
 function _logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
-    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    vartype, _x = check_logpdf(ef, x)
     _logpdf(vartype, ef, _x)
 end
 
@@ -631,6 +631,8 @@ ExponentialFamily.check_logpdf(Univariate, typeof([1.0, 2.0, 3.0]), eltype([1.0,
 See also: [`_logpdf`](@ref) [`PointBasedLogpdfCall`](@ref) [`MapBasedLogpdfCall`](@ref)
 """
 function check_logpdf end
+
+check_logpdf(ef::ExponentialFamilyDistribution, x) = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
 
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)

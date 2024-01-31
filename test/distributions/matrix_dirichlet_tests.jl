@@ -70,12 +70,12 @@ end
     include("distributions_setuptests.jl")
 
     for len in 3:5
-        α = rand(len, len)
+        α = rand(1.0:2.0, len, len)
         @testset let d = MatrixDirichlet(α)
             ef = test_exponentialfamily_interface(d; test_basic_functions = true, option_assume_no_allocations = false)
             η1 = getnaturalparameters(ef)
 
-            for x in [rand(len, len) for _ in 1:3]
+            for x in [rand(1.0:2.0, len, len) for _ in 1:3]
                 x = x ./ sum(x)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === 1.0

@@ -23,7 +23,7 @@ end
                 test_basic_functions = false,
                 test_fisherinformation_against_hessian = false,
                 test_fisherinformation_against_jacobian = false,
-                test_gradlogpartition_against_expectation = false
+                test_gradlogpartition_properties = false
             )
 
             run_test_basic_functions(d; assume_no_allocations = false, test_samples_logpdf = false)
