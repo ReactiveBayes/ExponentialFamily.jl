@@ -54,9 +54,9 @@ getlogpartition(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
-    (η₁, η₂) = unpack_parameters(LogNormal, η) 
-    dη1 =  -(η₁ + 1)/(2η₂)
-    dη2 = (η₁ + 1)^2/(4η₂^2) - inv(η₂)/2
+    (η₁, η₂) = unpack_parameters(LogNormal, η)
+    dη1 = -(η₁ + 1) / (2η₂)
+    dη2 = (η₁ + 1)^2 / (4η₂^2) - inv(η₂) / 2
     return SA[dη1, dη2]
 end
 
@@ -73,10 +73,10 @@ getlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     return abs2(μ) / (2abs2(σ)) + log(σ)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin    
+getgradlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
     dμ = abs(μ) / (abs2(σ))
-    dσ = -abs2(μ) / (σ^3) + 1/σ
+    dσ = -abs2(μ) / (σ^3) + 1 / σ
     return SA[dμ, dσ]
 end
 

@@ -79,7 +79,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
         return logsumexp(η)
     end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) = 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
     (η) -> begin
         if (conditioner !== length(η))
             throw(
@@ -89,7 +89,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) 
             )
         end
         sumη = vmapreduce(exp, +, η)
-        return vmap(d->exp(d)/sumη ,η)
+        return vmap(d -> exp(d) / sumη, η)
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
