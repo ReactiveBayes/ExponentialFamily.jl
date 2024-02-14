@@ -55,6 +55,10 @@ isbasemeasureconstant(::Type{Poisson}) = NonConstantBaseMeasure()
 getbasemeasure(::Type{Poisson}) = (x) -> one(x) / factorial(x)
 getsufficientstatistics(::Type{Poisson}) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Poisson}) = (_) -> begin
+    error("Expectation of log base measure is not implemented for Poisson distribution")
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Poisson}) = (η) -> begin
     (η1,) = unpack_parameters(Poisson, η)
     return exp(η1)

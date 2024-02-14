@@ -48,6 +48,10 @@ isbasemeasureconstant(::Type{LogNormal}) = ConstantBaseMeasure()
 getbasemeasure(::Type{LogNormal}) = (x) -> invsqrt2π
 getsufficientstatistics(::Type{LogNormal}) = (log, x -> abs2(log(x)))
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{LogNormal}) = (_) -> begin
+    log(invsqrt2π)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(LogNormal, η)
     return -(η₁ + 1)^2 / (4η₂) - log(-2η₂) / 2

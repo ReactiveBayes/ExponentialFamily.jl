@@ -67,6 +67,10 @@ isbasemeasureconstant(::Type{Categorical}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Categorical}, _) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Categorical}, conditioner) = ((x) -> OneElement(x, conditioner),)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Categorical}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
     (η) -> begin
         if (conditioner !== length(η))

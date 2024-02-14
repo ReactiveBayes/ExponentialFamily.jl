@@ -163,6 +163,10 @@ getsufficientstatistics(::Type{Laplace}, conditioner) = (
     (x) -> abs(x - conditioner),
 )
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Laplace}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
     (η₁,) = unpack_parameters(Laplace, η)
     return log(-2 / η₁)

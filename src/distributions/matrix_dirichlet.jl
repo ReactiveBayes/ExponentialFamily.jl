@@ -143,6 +143,10 @@ isbasemeasureconstant(::Type{MatrixDirichlet}) = ConstantBaseMeasure()
 getbasemeasure(::Type{MatrixDirichlet}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{MatrixDirichlet}) = (x -> vmap(log, x),)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{MatrixDirichlet}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
     (η) -> begin
         (η1,) = unpack_parameters(MatrixDirichlet, η)

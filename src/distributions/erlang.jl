@@ -51,6 +51,10 @@ isbasemeasureconstant(::Type{Erlang}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Erlang}) = (x) -> one(x)
 getsufficientstatistics(::Type{Erlang}) = (log, identity)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Erlang}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Erlang}) = (η) -> begin
     (η1, η2) = unpack_parameters(Erlang, η)
 

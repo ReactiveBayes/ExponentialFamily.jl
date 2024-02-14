@@ -89,6 +89,10 @@ isbasemeasureconstant(::Type{Bernoulli}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Bernoulli}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Bernoulli}) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Exponential}) = (_) -> begin
+    return log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
     (η₁,) = unpack_parameters(Bernoulli, η)
     return -log(logistic(-η₁))

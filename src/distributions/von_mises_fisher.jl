@@ -74,6 +74,10 @@ isbasemeasureconstant(::Type{VonMisesFisher}) = ConstantBaseMeasure()
 getbasemeasure(::Type{VonMisesFisher}) = (x) -> (inv2π)^(length(x) / 2)
 getsufficientstatistics(::Type{VonMisesFisher}) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
+    length(η)/2 * log(inv2π)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
     κ = sqrt(η' * η)
     p = length(η)

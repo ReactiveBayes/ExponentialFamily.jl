@@ -64,6 +64,10 @@ getlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
     return loggamma(η1 + o) + (η1 + o) * logtwo
 end
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
+    η/2
+end
+
 getgradlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
     (η1,) = unpack_parameters(Chisq, η)
     return SA[digamma(η1 + one(η1)) + logtwo]

@@ -341,6 +341,8 @@ function run_test_gradlogpartition_properties(distribution; nsamples = 6000, tes
     if test_against_forwardiff
         @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
     end
+
+    @test entropy(ef) ≈ entropy(distribution)
 end
 
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)
