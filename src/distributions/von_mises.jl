@@ -83,7 +83,7 @@ isbasemeasureconstant(::Type{VonMises}) = ConstantBaseMeasure()
 getbasemeasure(::Type{VonMises}, _) = (x) -> inv(twoπ)
 getsufficientstatistics(::Type{VonMises}, _) = (cos, sin)
 
-getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{VonMises}) = (_) -> begin
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{VonMises}, _) = (_) -> begin
     return log(twoπ)
 end
 

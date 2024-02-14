@@ -137,8 +137,8 @@ getbasemeasure(::Type{NormalGamma}) = (x) -> invsqrt2π
 # x is a 2d vector where first dimension is mean and the second dimension is precision component
 getsufficientstatistics(::Type{NormalGamma}) = (x -> x[1] * x[2], x -> x[2] * x[1]^2, x -> log(x[2]), x -> x[2])
 
-getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{NormalGamma}, conditioner) = (_) -> begin
-    log(invsqrt2π)
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{NormalGamma}) = (_) -> begin
+    0.5*log2π
 end
 
 getlogpartition(::NaturalParametersSpace, ::Type{NormalGamma}) = (η) -> begin
