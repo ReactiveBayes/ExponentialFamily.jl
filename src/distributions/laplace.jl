@@ -163,7 +163,7 @@ getsufficientstatistics(::Type{Laplace}, conditioner) = (
     (x) -> abs(x - conditioner),
 )
 
-getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Laplace}) = (_) -> begin
+getexpectationlogbasemeasure(::Type{Laplace}, conditioner) = (_) -> begin
     log(1)
 end
 
