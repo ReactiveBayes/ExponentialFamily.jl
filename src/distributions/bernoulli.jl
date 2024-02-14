@@ -89,7 +89,7 @@ isbasemeasureconstant(::Type{Bernoulli}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Bernoulli}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Bernoulli}) = (identity,)
 
-getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Exponential}) = (_) -> begin
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Bernoulli}) = (_) -> begin
     return log(1)
 end
 
