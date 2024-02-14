@@ -49,7 +49,7 @@ getbasemeasure(::Type{LogNormal}) = (x) -> invsqrt2π
 getsufficientstatistics(::Type{LogNormal}) = (log, x -> abs2(log(x)))
 
 getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{LogNormal}) = (_) -> begin
-    log(invsqrt2π)
+    0.5*log2π
 end
 
 getlogpartition(::NaturalParametersSpace, ::Type{LogNormal}) = (η) -> begin
