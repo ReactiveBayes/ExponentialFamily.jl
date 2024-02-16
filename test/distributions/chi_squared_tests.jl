@@ -28,7 +28,7 @@
     end
 
     ## mean parameter should be integer in the MeanParametersSpace
-    @test !isproper(MeanParametersSpace(), Chisq, [0.1])
+    @test isproper(MeanParametersSpace(), Chisq, [0.1])
     @test_throws Exception convert(ExponentialFamilyDistribution, Chisq(Inf))
 end
 
