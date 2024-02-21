@@ -11,12 +11,14 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMises, right:
     μright, κright = params(right)
 
     a = κleft * cos(μleft) + κright * cos(μright)
-    b = κleft * sin(μleft) + κright * sin(μright)
+    b = (κleft * sin(μleft) + κright * sin(μright))
 
     R = sqrt(a^2 + b^2)
-    α = atan(b / a)
+    α = asin(b / R)
 
-    return VonMises(α, R)
+    phase = ((μleft - asin(sin(μleft))) + (μright - asin(sin(μright)))) / pi
+
+    return VonMises(α+ π*phase, R)
 end
 
 function BayesBase.prod!(
@@ -38,9 +40,12 @@ function BayesBase.prod(
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
 ) where {T <: VonMises}
+    conditionerleft = getconditioner(left)
+    conditionerright = getconditioner(right)
     F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
-    container = ExponentialFamilyDistribution(VonMises, zeros(F, 2), zero(F), nothing)
+    container = ExponentialFamilyDistribution(VonMises, zeros(F, 2), conditionerleft + conditionerright, nothing)
     return BayesBase.prod!(container, left, right)
+     
 end
 
 BayesBase.insupport(ef::ExponentialFamilyDistribution{T}, value) where {T <: VonMises} = insupport(convert(Distribution, ef), value)
@@ -68,7 +73,6 @@ function (::NaturalToMean{VonMises})(tuple_of_η::Tuple{Any, Any}, conditioner)
     (η1, η2) = tuple_of_η
     κ = sqrt(η1^2 + η2^2)
     μ = asin(η2 / κ)
-
     return (conditioner * π + μ, κ)
 end
 

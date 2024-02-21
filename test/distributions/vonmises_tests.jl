@@ -1,4 +1,3 @@
-
 # VonMises comes from Distributions.jl and most of the things should be covered there
 # Here we test some extra ExponentialFamily.jl specific functionality
 
@@ -42,25 +41,13 @@ end
 
 @testitem "VonMises: prod with Distributions" begin
     include("distributions_setuptests.jl")
-
-    function prod_result_parameters(paramsleft, paramsright)
-        (μleft, κleft) = paramsleft
-        (μright, κright) = paramsright
-        a = κleft * cos(μleft) + κright * cos(μright)
-        b = κleft * sin(μleft) + κright * sin(μright)
-
-        R = sqrt(a^2 + b^2)
-        α = atan(b / a)
-
-        return α, R
-    end
-    (μ1, κ1) = prod_result_parameters((3.0, 2.0), (2.0, 1.0))
-    (μ2, κ2) = prod_result_parameters((7.0, 1.0), (0.1, 4.5))
-    (μ3, κ3) = prod_result_parameters((1.0, 3.0), (0.2, 0.4))
-    for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
-        @test prod(strategy, VonMises(3.0, 2.0), VonMises(2.0, 1.0)) ≈ VonMises(μ1, κ1)
-        @test prod(strategy, VonMises(7.0, 1.0), VonMises(0.1, 4.5)) ≈ VonMises(μ2, κ2)
-        @test prod(strategy, VonMises(1.0, 3.0), VonMises(0.2, 0.4)) ≈ VonMises(μ3, κ3)
+    for dist1 in [VonMises(10randn(),10rand()) for _=1:20], dist2 in [VonMises(10randn(),10rand()) for _=1:20]
+        ef1 = convert(ExponentialFamilyDistribution,dist1)
+        ef2 = convert(ExponentialFamilyDistribution,dist2)
+        prod_ef = prod(GenericProd(),ef1,ef2)
+        for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
+            @test prod(strategy, dist1, dist2) ≈ convert(Distribution,prod_ef)
+        end
     end
 end
 
