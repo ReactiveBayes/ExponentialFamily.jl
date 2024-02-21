@@ -21,20 +21,6 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMises, right:
     return VonMises(α+ π*phase, R)
 end
 
-function BayesBase.prod!(
-    container::ExponentialFamilyDistribution{T},
-    left::ExponentialFamilyDistribution{T},
-    right::ExponentialFamilyDistribution{T}
-) where {T <: VonMises}
-    LoopVectorization.vmap!(
-        +,
-        getnaturalparameters(container),
-        getnaturalparameters(left),
-        getnaturalparameters(right)
-    )
-    return container
-end
-
 function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
     left::ExponentialFamilyDistribution{T},
@@ -42,9 +28,10 @@ function BayesBase.prod(
 ) where {T <: VonMises}
     conditionerleft = getconditioner(left)
     conditionerright = getconditioner(right)
-    F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
-    container = ExponentialFamilyDistribution(VonMises, zeros(F, 2), conditionerleft + conditionerright, nothing)
-    return BayesBase.prod!(container, left, right)
+    ηleft = getnaturalparameters(left)
+    ηright = getnaturalparameters(right)
+   
+    return ExponentialFamilyDistribution(VonMises,ηright + ηleft , conditionerleft + conditionerright, nothing)
      
 end
 
