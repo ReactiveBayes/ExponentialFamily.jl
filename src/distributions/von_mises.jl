@@ -11,7 +11,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMises, right:
     μright, κright = params(right)
 
     a = κleft * cos(μleft) + κright * cos(μright)
-    b = (κleft * sin(μleft) + κright * sin(μright))
+    b = κleft * sin(μleft) + κright * sin(μright)
 
     R = sqrt(a^2 + b^2)
     α = asin(b / R)
