@@ -55,6 +55,10 @@ isbasemeasureconstant(::Type{Dirichlet}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Dirichlet}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{Dirichlet}) = (x -> vmap(log, x),)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Dirichlet}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin
     (η1,) = unpack_parameters(Dirichlet, η)
     firstterm = mapreduce(x -> loggamma(x + 1), +, η1)

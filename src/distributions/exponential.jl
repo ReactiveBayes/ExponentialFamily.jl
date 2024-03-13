@@ -39,6 +39,10 @@ isbasemeasureconstant(::Type{Exponential}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Exponential}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Exponential}) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Exponential}) = (_) -> begin
+    return log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Exponential}) = (η) -> begin
     (η₁,) = unpack_parameters(Exponential, η)
     return -log(-η₁)

@@ -253,6 +253,10 @@ isbasemeasureconstant(::Type{WishartFast}) = ConstantBaseMeasure()
 getbasemeasure(::Type{WishartFast}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{WishartFast}) = (chollogdet, identity)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
+    return log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(WishartFast, η)
     p = first(size(η2))

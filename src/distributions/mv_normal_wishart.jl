@@ -185,6 +185,10 @@ function getsufficientstatistics(::Type{MvNormalWishart})
     )
 end
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> begin
     η1, η2, η3, η4 = unpack_parameters(MvNormalWishart, η)
     d = length(η1)

@@ -39,6 +39,10 @@ isbasemeasureconstant(::Type{Geometric}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Geometric}) = (x) -> one(x)
 getsufficientstatistics(::Type{Geometric}) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Geometric}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Geometric}) = (η) -> begin
     (η1,) = unpack_parameters(Geometric, η)
     return -log(one(η1) - exp(η1))

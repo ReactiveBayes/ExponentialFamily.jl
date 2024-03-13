@@ -87,6 +87,10 @@ isbasemeasureconstant(::Type{Binomial}) = NonConstantBaseMeasure()
 getbasemeasure(::Type{Binomial}, ntrials) = Base.Fix1(binomial, ntrials)
 getsufficientstatistics(::Type{Binomial}, _) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Binomial}) = (_) -> begin
+    error("Expectation of log base measure is not defined for Binomial distribution")
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
     (η₁,) = unpack_parameters(Binomial, η)
     return ntrials * log1pexp(η₁)

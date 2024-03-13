@@ -94,6 +94,10 @@ isbasemeasureconstant(::Type{Weibull}) = NonConstantBaseMeasure()
 getbasemeasure(::Type{Weibull}, conditioner) = x -> x^(conditioner - 1)
 getsufficientstatistics(::Type{Weibull}, conditioner) = (x -> x^conditioner,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -> begin
+    error("Expectation of log base measure is not implemented for Weibull distribution")
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -> begin
     (η1,) = unpack_parameters(Weibull, η)
     return -log(-η1) - log(conditioner)

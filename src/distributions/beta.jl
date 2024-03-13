@@ -57,6 +57,10 @@ isbasemeasureconstant(::Type{Beta}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Beta}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Beta}) = (log, mirrorlog)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Beta}) = (_) -> begin
+    return log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Beta, η)
     return logbeta(η₁ + one(η₁), η₂ + one(η₂))

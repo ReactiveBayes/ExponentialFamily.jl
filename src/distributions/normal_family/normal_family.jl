@@ -578,6 +578,10 @@ isbasemeasureconstant(::Type{NormalMeanVariance}) = ConstantBaseMeasure()
 getbasemeasure(::Type{NormalMeanVariance}) = (x) -> convert(typeof(x), invsqrt2π)
 getsufficientstatistics(::Type{NormalMeanVariance}) = (identity, abs2)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> begin
+    0.5*log2π
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
     return -abs2(η₁) / 4η₂ - log(-2η₂) / 2
@@ -690,6 +694,11 @@ isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
 # It is a constant base measure with respect to `x`, only depends on its length, but we consider the length fixed
 getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(length(x) / -2)
 getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * x')
+
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
+    k = div(-1 + isqrt(1 + 4 * length(η)), 2)
+    return k * log2π / 2
+end
 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)

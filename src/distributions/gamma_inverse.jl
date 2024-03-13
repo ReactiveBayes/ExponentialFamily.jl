@@ -58,6 +58,10 @@ isbasemeasureconstant(::Type{GammaInverse}) = ConstantBaseMeasure()
 getbasemeasure(::Type{GammaInverse}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{GammaInverse}) = (log, inv)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{GammaInverse}) = (_) -> begin
+    log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{GammaInverse}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(GammaInverse, η)
     return loggamma(-η₁ - one(η₁)) - (-η₁ - one(η₁)) * log(-η₂)

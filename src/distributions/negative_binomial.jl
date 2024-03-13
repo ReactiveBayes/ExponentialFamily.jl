@@ -101,6 +101,10 @@ isbasemeasureconstant(::Type{NegativeBinomial}) = NonConstantBaseMeasure()
 getbasemeasure(::Type{NegativeBinomial}, conditioner) = (x) -> binomial(Int(x + conditioner - 1), x)
 getsufficientstatistics(::Type{NegativeBinomial}, conditioner) = (identity,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{NegativeBinomial}, conditioner) = (η) -> begin
+    error("Expectation of log base measure is not implemented for NegativeBinomial distribution")
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{NegativeBinomial}, conditioner) = (η) -> begin
     (η1,) = unpack_parameters(NegativeBinomial, η)
     return -conditioner * log(one(η1) - exp(η1))

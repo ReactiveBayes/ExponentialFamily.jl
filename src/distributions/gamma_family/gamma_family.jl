@@ -90,6 +90,10 @@ isbasemeasureconstant(::Type{Gamma}) = ConstantBaseMeasure()
 getbasemeasure(::Type{Gamma}) = (x) -> oneunit(x)
 getsufficientstatistics(::Type{Gamma}) = (log, identity)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Gamma}) = (_) -> begin
+    return log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Gamma}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Gamma, η)
     return loggamma(η₁ + one(η₁)) - (η₁ + one(η₁)) * log(-η₂)
