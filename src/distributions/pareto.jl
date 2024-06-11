@@ -61,7 +61,7 @@ function BayesBase.prod(
     return prod!(similar(left), left, right)
 end
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{Pareto}, x)
-    return x ∈ ClosedInterval{Real}(getconditioner(ef), Inf)
+    return x ∈ ClosedInterval(getconditioner(ef), Inf)
 end
 
 function BayesBase.prod(
