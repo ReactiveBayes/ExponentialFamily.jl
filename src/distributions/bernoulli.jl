@@ -14,7 +14,7 @@ function Base.prod(::PreserveTypeProd{Distribution}, left::Bernoulli, right::Ber
 
     pprod = left_p * right_p
     norm  = pprod + (one(left_p) - left_p) * (one(right_p) - right_p)
-    @assert norm > zero(norm) "Product of $(left) and $(right) results in non-normalizable distribution"
+    @assert norm > zero(norm) lazy"Product of $(left) and $(right) results in non-normalizable distribution"
     return Bernoulli(pprod / norm)
 end
 
