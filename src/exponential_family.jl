@@ -225,7 +225,7 @@ function ExponentialFamilyDistribution(
     conditioner = nothing
 ) where {T <: Distribution, P}
     if !isproper(NaturalParametersSpace(), T, naturalparameters, conditioner)
-        error("Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
+        error(lazy"Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
     end
     return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
 end

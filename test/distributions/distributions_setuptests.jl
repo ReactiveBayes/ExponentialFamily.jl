@@ -1,5 +1,5 @@
 using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
-using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET
 
 import BayesBase: compute_logscale
 
@@ -64,6 +64,8 @@ function test_exponentialfamily_interface(distribution;
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
+    @test_opt convert(ExponentialFamilyDistribution, distribution)
+
     @test ef isa ExponentialFamilyDistribution{T}
 
     test_parameters_conversion && run_test_parameters_conversion(distribution)
@@ -87,6 +89,10 @@ function run_test_parameters_conversion(distribution)
 
     @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(MeanParametersSpace(), distribution))
 
+    @test_opt ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    @test_opt ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner)
+    @test_opt params(MeanParametersSpace(), distribution)
+
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test conditioner === getconditioner(ef)
@@ -98,6 +104,11 @@ function run_test_parameters_conversion(distribution)
     @test all(MeanToNatural(T)(tuple_of_θ, conditioner) .≈ tuple_of_η)
     @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
     @test all(MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
+
+    @test_opt NaturalToMean(T)(tuple_of_η, conditioner)
+    @test_opt MeanToNatural(T)(tuple_of_θ, conditioner)
+    @test_opt NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner)
+    @test_opt MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner)
 
     @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ, conditioner) .≈ tuple_of_η)
@@ -137,6 +148,9 @@ function run_test_parameters_conversion(distribution)
     @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η)) .== tuple_of_η)
     @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .== tuple_of_θ)
 
+    @test_opt unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
+    @test_opt unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
+
     # Extra methods for conditioner free distributions
     if isnothing(conditioner)
         @test all(
@@ -156,6 +170,7 @@ function run_test_similar_creation(distribution)
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test similar(ef) isa ExponentialFamilyDistribution{T}
+    @test_opt similar(ef)
 end
 
 function run_test_distribution_conversion(distribution; assume_no_allocations = true)
@@ -164,6 +179,7 @@ function run_test_distribution_conversion(distribution; assume_no_allocations = 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test @inferred(convert(Distribution, ef)) ≈ distribution
+    @test_opt convert(Distribution, ef)
 
     if assume_no_allocations
         @test @allocated(convert(Distribution, ef)) === 0
@@ -180,6 +196,9 @@ function run_test_packing_unpacking(distribution)
 
     @test all(unpack_parameters(ef) .≈ tuple_of_η)
     @test @allocated(unpack_parameters(ef)) === 0
+
+    @test_opt ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    @test_opt unpack_parameters(ef)
 end
 
 function run_test_isproper(distribution; assume_no_allocations = true)
@@ -188,6 +207,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     exponential_family_form = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test @inferred(isproper(exponential_family_form))
+    @test_opt isproper(exponential_family_form)
 
     if assume_no_allocations
         @test @allocated(isproper(exponential_family_form)) === 0
@@ -215,6 +235,22 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     )
 
     argument_type = Tuple{typeof(distribution)}
+
+    @test_opt logpdf(ef, first(samples))
+    @test_opt pdf(ef, first(samples))
+    @test_opt mean(ef)
+    @test_opt var(ef)
+    @test_opt std(ef)
+    @test_opt rand(ef)
+    @test_opt rand(ef, 10)
+    @test_opt rand!(ef, rand(ef, 10))
+
+    @test_opt isbasemeasureconstant(ef)
+    @test_opt basemeasure(ef, first(samples))
+    @test_opt sufficientstatistics(ef, first(samples))
+    @test_opt logpartition(ef)
+    @test_opt gradlogpartition(ef)
+    @test_opt fisherinformation(ef)
 
     for x in samples
         # We believe in the implementation in the `Distributions.jl`
@@ -303,6 +339,8 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     if test_properties_in_natural_space
         F = getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
 
+        @test_opt getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
+
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
         @test size(F, 1) === size(F, 2)
@@ -313,6 +351,8 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     if test_properties_in_mean_space
         θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
         F = getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
+
+        @test_opt getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
 
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
@@ -451,6 +491,8 @@ function test_generic_simple_exponentialfamily_product(
     end
 
     prod_dist = prod(GenericProd(), left, right)
+
+    @test_opt prod(GenericProd(), left, right)
 
     # We check against the `prod_dist` only if we have the proper solution, and skip if the result is of type `ProductOf`
     if test_against_distributions_prod_if_possible && (prod_dist isa ProductOf || !(typeof(prod_dist) <: T))
