@@ -225,7 +225,7 @@ function ExponentialFamilyDistribution(
     conditioner = nothing
 ) where {T <: Distribution, P}
     if !isproper(NaturalParametersSpace(), T, naturalparameters, conditioner)
-        error("Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
+        error(lazy"Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
     end
     return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
 end
@@ -576,7 +576,7 @@ function _logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
 end
 
 function _plogpdf(ef, x)
-    @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
+    @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
     return _plogpdf(ef, x, logpartition(ef))
 end
 
@@ -587,7 +587,7 @@ _scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters
 
 function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
     # TODO: Think of what to do with this assert
-    @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
+    @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
     _basemeasure = basemeasure(ef, x)

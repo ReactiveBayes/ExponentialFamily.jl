@@ -72,7 +72,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
@@ -84,7 +84,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) 
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
@@ -97,7 +97,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner)
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
@@ -124,7 +124,7 @@ getlogpartition(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(θ))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
                 )
             )
         end
@@ -136,7 +136,7 @@ getfisherinformation(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(θ))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                    lazy"Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
                 )
             )
         end
