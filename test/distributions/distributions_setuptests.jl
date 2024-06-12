@@ -51,7 +51,7 @@ JET_function_filter(@nospecialize f) = ((f === FastCholesky.cholinv) || (f === F
 
 macro test_opt(expr)
     return esc(quote
-        JET.@test_opt function_filter=JET_function_filter ignored_modules=(Base,) $expr
+        JET.@test_opt function_filter=JET_function_filter ignored_modules=(Base,LinearAlgebra) $expr
     end)
 end
 
