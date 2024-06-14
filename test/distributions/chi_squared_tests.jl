@@ -30,6 +30,7 @@
     ## mean parameter should be integer in the MeanParametersSpace
     @test isproper(MeanParametersSpace(), Chisq, [0.1])
     @test isproper(NaturalParametersSpace(), Chisq, [-0.5])
+    @test convert(ExponentialFamilyDistribution, Chisq(0.5)) ≈ ExponentialFamilyDistribution(Chisq, [-0.75])
     @test_throws Exception convert(ExponentialFamilyDistribution, Chisq(Inf))
 end
 
