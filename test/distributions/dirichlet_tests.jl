@@ -32,7 +32,7 @@ end
     include("distributions_setuptests.jl")
 
     for len in 3:5
-        α = rand(len)
+        α = rand(StableRNG(42), len)
         @testset let d = Dirichlet(α)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
             η1 = getnaturalparameters(ef)
