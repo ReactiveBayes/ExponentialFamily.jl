@@ -17,7 +17,9 @@ end
 
     import ExponentialFamily: InverseWishartFast
 
-    @testset for dim in (3), S in rand(InverseWishart(10, Array(Eye(dim))), 2)
+    rng = StableRNG(42)
+
+    @testset for dim in (3), S in rand(rng, InverseWishart(10, Array(Eye(dim))), 2)
         ν = dim + 4
         @testset let (d = InverseWishartFast(ν, S))
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
