@@ -37,7 +37,7 @@ end
 
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{Chisq}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(>(-1 / 2), η) && all(!isinf, η)
+isproper(::NaturalParametersSpace, ::Type{Chisq}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(>(-1), η) && all(!isinf, η)
 isproper(::MeanParametersSpace, ::Type{Chisq}, θ, conditioner) =
     isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ)
 

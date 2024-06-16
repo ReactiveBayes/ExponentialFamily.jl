@@ -44,9 +44,11 @@ end
 
     import ExponentialFamily: WishartFast
 
+    rng = StableRNG(42)
+
     for d in (2, 3, 4, 5)
-        v = rand() + d
-        L = rand(d, d)
+        v = rand(rng) + d
+        L = rand(rng, d, d)
         S = L' * L + d * Eye(d)
         invS = inv(S)
         cS = copy(S)
@@ -74,7 +76,9 @@ end
 
     import ExponentialFamily: WishartFast
 
-    for dim in (3, 4), invS in rand(Wishart(10, Array(Eye(dim))), 2)
+    rng = StableRNG(42)
+
+    for dim in (3, 4), invS in rand(rng, Wishart(10, Array(Eye(dim))), 2)
         ν = dim + 2
         @testset let (d = WishartFast(ν, invS))
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
