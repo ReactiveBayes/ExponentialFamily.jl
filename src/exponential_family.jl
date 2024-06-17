@@ -325,10 +325,26 @@ function fisherinformation(ef::ExponentialFamilyDistribution, η = getnaturalpar
     return getfisherinformation(ef)(η)
 end
 
+"""
+    expectationlogbasemeasure(distribution, η)
+
+Return the computed value of the expectation of the log base measure of the exponential family distribution at the point `η`.
+By default `η = getnaturalparameters(ef)`.
+"""
+function expectationlogbasemeasure(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef))
+    return getexpectationlogbasemeasure(ef)(η)
+end
+
 getbasemeasure(ef::ExponentialFamilyDistribution) = getbasemeasure(ef.attributes, ef)
 getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getbasemeasure(T, getconditioner(ef))
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getbasemeasure(attributes)
+
+getexpectationlogbasemeasure(ef::ExponentialFamilyDistribution) = getexpectationlogbasemeasure(ef.attributes, ef)
+getexpectationlogbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
+    getexpectationlogbasemeasure(T, getconditioner(ef))
+getexpectationlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
+    getexpectationlogbasemeasure(attributes)
 
 getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.attributes, ef)
 getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
@@ -415,6 +431,15 @@ Does not require an instance of the `ExponentialFamilyDistribution` and can be c
 For conditional exponential family distributions requires an extra `conditioner` argument.
 """
 getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(T)
+
+"""
+getexpectationlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
+
+A specific verion of `getexpectationlogbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
+For conditional exponential family distributions requires an extra `conditioner` argument.
+"""
+getexpectationlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getexpectationlogbasemeasure(NaturalParametersSpace(), T)
 
 """
     getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])
@@ -674,6 +699,21 @@ end
 Evaluates and returns the cumulative distribution function of the exponential family distribution for the input `x`.
 """
 BayesBase.cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution} = cdf(Base.convert(Distribution, ef), x)
+
+
+function _entropy(η, _logpartition, _grad_logpartition, _expectionlogbasemeasure)
+    return _logpartition - dot(η, _grad_logpartition) + _expectionlogbasemeasure
+end
+
+"""
+    entropy(ef::ExponentialFamilyDistribution)
+
+Evaluates and returns the entropy of the exponential family distribution.
+"""
+function BayesBase.entropy(ef::ExponentialFamilyDistribution)
+    return _entropy(getnaturalparameters(ef), logpartition(ef), gradlogpartition(ef), expectationlogbasemeasure(ef))
+end
+
 
 BayesBase.variate_form(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = variate_form(D)
 BayesBase.variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm} = V

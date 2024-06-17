@@ -275,6 +275,10 @@ isbasemeasureconstant(::Type{InverseWishartFast}) = ConstantBaseMeasure()
 getbasemeasure(::Type{InverseWishartFast}) = (x) -> one(Float64)
 getsufficientstatistics(::Type{InverseWishartFast}) = (chollogdet, cholinv)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
+    return log(1)
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(InverseWishartFast, η)
     p = first(size(η2))

@@ -51,6 +51,10 @@ isbasemeasureconstant(::Type{Rayleigh}) = NonConstantBaseMeasure()
 getbasemeasure(::Type{Rayleigh}) = identity
 getsufficientstatistics(::Type{Rayleigh}) = (x -> x^2,)
 
+getexpectationlogbasemeasure(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
+    error("Expectation of log base measure is not implemented for Rayleigh distribution")
+end
+
 getlogpartition(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
     (η1,) = unpack_parameters(Rayleigh, η)
     return -log(-2 * η1)
