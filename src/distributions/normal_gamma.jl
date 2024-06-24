@@ -103,7 +103,7 @@ BayesBase.support(::Type{NormalGamma}) = NormalGammaDomain()
 
 # Natural parametrization
 isproper(::NaturalParametersSpace, ::Type{NormalGamma}, η, conditioner) =
-    isnothing(conditioner) && length(η) === 4 && getindex(η, 2) < 0 && getindex(η, 3) > -1 / 2 && getindex(η, 4) < 0 && all(!isinf, η) && all(!isnan, η)
+    isnothing(conditioner) && length(η) === 4 && getindex(η, 2) < 0 && getindex(η, 3) > -1 / 2 &&  getindex(η, 1)^2/(4*getindex(η,2))  - getindex(η, 4) > 0 && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{NormalGamma}, θ, conditioner) =
     isnothing(conditioner) && length(θ) === 4 && all(>(0), getindex(θ, 2:4)) && all(!isinf, θ) && all(!isnan, θ)
 
