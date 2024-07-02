@@ -577,7 +577,7 @@ end
 
 function _plogpdf(ef, x)
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
-    return _plogpdf(ef, x, logpartition(ef))
+    return _plogpdf(ef, x, logpartition(ef), basemeasure(ef,x))
 end
 
 _scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
@@ -585,13 +585,13 @@ _scalarproduct(::Type{Univariate}, η, statistics) = dot(η, flatten_parameters(
 _scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
 _scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
 
-function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
+
+function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition, basemeasure) where {T}
     # TODO: Think of what to do with this assert
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
-    _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + _scalarproduct(T, η, _statistics) - logpartition
+    return log(basemeasure) + _scalarproduct(T, η, _statistics) - logpartition
 end
 
 """
