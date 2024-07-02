@@ -640,7 +640,7 @@ check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, 
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
-    return map(x -> _plogpdf(ef, x, _logpartition), container)
+    return map(x -> _plogpdf(ef, x, _logpartition, basemeasure(ef,x)), container)
 end
 
 check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), container)
