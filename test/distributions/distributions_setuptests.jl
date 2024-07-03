@@ -334,6 +334,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @allocated(mean(ef)) === 0
             @test @allocated(var(ef)) === 0
             @test @allocated(basemeasure(ef, x)) === 0
+            @test @allocated(logbasemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
     end
