@@ -85,6 +85,7 @@ end
 isbasemeasureconstant(::Type{Binomial}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Binomial}, ntrials) = Base.Fix1(binomial, ntrials)
+getlogbasemeasure(::Type{Binomial}, ntrials) = (x) -> log(getbasemeasure(Binomial, ntrials)(x))
 getsufficientstatistics(::Type{Binomial}, _) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
