@@ -136,19 +136,28 @@ A structure to represent the attributes of an exponential family member.
 - `logpartition::L`: The log-partition (cumulant) of the exponential family member.
 - `support::P`: The support of the exponential family member.
 
+# Optionally
+- `logbasemeasure::LB`: The log of the  basemeasure of the exponential family member.
+
 See also: [`ExponentialFamilyDistribution`](@ref), [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
-struct ExponentialFamilyDistributionAttributes{B, S, L, P}
+struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB}
     basemeasure::B
     sufficientstatistics::S
     logpartition::L
     support::P
+    logbasemeasure::LB
+end
+function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P) where {B, S, L, P}
+    logbasemeasure = (x) -> log(basemeasure(x))
+    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support, logbasemeasure)
 end
 
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.basemeasure
 getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = attributes.sufficientstatistics
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
+getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.logbasemeasure
 
 BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
 BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
@@ -341,10 +350,10 @@ getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getb
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getbasemeasure(attributes)
 
-getlogbasemeasure(ef::ExponentialFamilyDistribution) = (x) -> log(getbasemeasure(ef.attributes, ef)(x))
+getlogbasemeasure(ef::ExponentialFamilyDistribution) = getlogbasemeasure(ef.attributes, ef)
 getlogbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getlogbasemeasure(T, getconditioner(ef))
 getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
-    (x) -> log(getbasemeasure(attributes)(x))
+    getlogbasemeasure(attributes)
 
 getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.attributes, ef)
 getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
@@ -436,18 +445,16 @@ getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(
 """
     getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
-A specific verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
-Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
-For conditional exponential family distributions requires an extra `conditioner` argument.
+A generic verion of `getlogbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+Just computes log of basemeasure.
 """
 getlogbasemeasure(::Type{T}) where {T <: Distribution} = (x) -> log(getbasemeasure(T)(x))
 
 """
     getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
-A specific verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
-Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
-For conditional exponential family distributions requires an extra `conditioner` argument.
+A generic verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
 """
 getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = (x) -> getlogbasemeasure(T)(x)
 
