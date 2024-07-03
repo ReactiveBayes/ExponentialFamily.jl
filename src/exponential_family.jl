@@ -456,7 +456,7 @@ getlogbasemeasure(::Type{T}) where {T <: Distribution} = (x) -> log(getbasemeasu
 A generic verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
 For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
 """
-getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = (x) -> getlogbasemeasure(T)(x)
+getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbasemeasure(T)
 
 
 """
