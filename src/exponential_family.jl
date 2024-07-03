@@ -3,7 +3,7 @@ export ExponentialFamilyDistribution
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
 export getbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
-export basemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
+export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
@@ -278,6 +278,15 @@ See also: [`getbasemeasure`](@ref)
 """
 function basemeasure(ef::ExponentialFamilyDistribution, x)
     return getbasemeasure(ef)(x)
+end
+
+"""
+    logbasemeasure(::ExponentialFamilyDistribution, x)
+
+Returns the computed value of logarithm of `basemeasure` of the exponential family distribution at the point `x`.
+"""
+function logbasemeasure(ef::ExponentialFamilyDistribution, x)
+    return log(basemeasure(ef, x))
 end
 
 """
@@ -590,8 +599,8 @@ function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
-    _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + _scalarproduct(T, η, _statistics) - logpartition
+    _logbasemeasure = logbasemeasure(ef, x)
+    return _logbasemeasure + _scalarproduct(T, η, _statistics) - logpartition
 end
 
 """

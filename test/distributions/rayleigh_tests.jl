@@ -13,6 +13,7 @@
             for x in 10rand(4)
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === x
+                @test @inferred(logbasemeasure(ef, x)) === log(x)
                 @test @inferred(sufficientstatistics(ef, x)) === (x^2,)
                 @test @inferred(logpartition(ef)) ≈ -log(-2 * η1)
             end

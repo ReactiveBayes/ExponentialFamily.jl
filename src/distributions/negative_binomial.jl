@@ -99,6 +99,10 @@ end
 isbasemeasureconstant(::Type{NegativeBinomial}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{NegativeBinomial}, conditioner) = (x) -> binomial(Int(x + conditioner - 1), x)
+function logbasemeasure(ef::ExponentialFamilyDistribution{NegativeBinomial}, x)
+    conditioner = getconditioner(ef)
+    return loggamma(x + conditioner) - (loggamma(conditioner) + loggamma(x+one(x)))
+end
 getsufficientstatistics(::Type{NegativeBinomial}, conditioner) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{NegativeBinomial}, conditioner) = (η) -> begin

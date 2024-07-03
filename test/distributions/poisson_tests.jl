@@ -13,6 +13,7 @@
             for x in 1:5
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === 1 / factorial(x)
+                @test @inferred(logbasemeasure(ef, x)) === -loggamma(x+one(x))
                 @test @inferred(sufficientstatistics(ef, x)) === (x,)
                 @test @inferred(logpartition(ef)) ≈ exp(η1)
             end

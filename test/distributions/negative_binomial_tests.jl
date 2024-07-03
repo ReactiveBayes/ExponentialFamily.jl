@@ -30,6 +30,7 @@ end
             for x in 2:4
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === binomial(Int(x + r - 1), x)
+                @test @inferred(logbasemeasure(ef, x)) === loggamma(x+r) - (loggamma(r) + loggamma(x+1))
                 @test @inferred(sufficientstatistics(ef, x)) === (x,)
                 @test @inferred(logpartition(ef)) ≈ -r * log(1 - exp(getnaturalparameters(ef)[1]))
             end

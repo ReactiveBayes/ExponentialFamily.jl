@@ -13,6 +13,7 @@
             for x in (0.1, 0.5, 1.0)
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === exp(-x / 2)
+                @test @inferred(logbasemeasure(ef, x)) === -x/2
                 @test @inferred(sufficientstatistics(ef, x)) === (log(x),)
                 @test @inferred(logpartition(ef)) ≈ loggamma(η₁ + 1) + (η₁ + 1) * log(2.0)
             end

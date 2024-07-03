@@ -19,6 +19,7 @@
             for x in scale:1.0:scale+3.0
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === x^(shape - 1)
+                @test @inferred(logbasemeasure(ef, x)) === (shape - 1)*log(x)
                 @test @inferred(sufficientstatistics(ef, x)) === (x^shape,)
                 @test @inferred(logpartition(ef)) ≈ -log(-η1) - log(shape)
             end

@@ -92,6 +92,10 @@ end
 isbasemeasureconstant(::Type{Weibull}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Weibull}, conditioner) = x -> x^(conditioner - 1)
+function logbasemeasure(ef::ExponentialFamilyDistribution, x)
+    conditioner = getconditioner(ef)
+    return (conditioner - one(conditioner))*log(x)
+end
 getsufficientstatistics(::Type{Weibull}, conditioner) = (x -> x^conditioner,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -> begin

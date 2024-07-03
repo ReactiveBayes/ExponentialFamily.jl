@@ -49,6 +49,7 @@ unpack_parameters(::Type{Rayleigh}, packed) = (first(packed),)
 isbasemeasureconstant(::Type{Rayleigh}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Rayleigh}) = identity
+logbasemeasure(::ExponentialFamilyDistribution{Rayleigh}, x) = log(x)
 getsufficientstatistics(::Type{Rayleigh}) = (x -> x^2,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin

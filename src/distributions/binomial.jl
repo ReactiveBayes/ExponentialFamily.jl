@@ -85,6 +85,10 @@ end
 isbasemeasureconstant(::Type{Binomial}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Binomial}, ntrials) = Base.Fix1(binomial, ntrials)
+function logbasemeasure(ef::ExponentialFamilyDistribution{Binomial}, x) 
+    ntrials = getconditioner(ef)
+    return loggamma(ntrials + one(ntrials)) - (loggamma(ntrials - x + one(x)) + loggamma(x + one(x)))
+end
 getsufficientstatistics(::Type{Binomial}, _) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
