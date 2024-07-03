@@ -105,6 +105,7 @@ end
         # `similar` most probably returns the un-initialized natural parameters with garbage in it
         # But we do expect the functions to work anyway given proper values
         @test @inferred(basemeasure(_similar, 2.0)) ≈ 0.5
+        @test @inferred(logbasemeasure(_similar, 2.0)) ≈ log(0.5)
         @test all(@inferred(sufficientstatistics(_similar, 2.0)) .≈ (2.0, log(2.0)))
         @test @inferred(logpartition(_similar, η)) ≈ 0.25
         @test @inferred(getsupport(_similar)) == RealInterval(0, Inf)

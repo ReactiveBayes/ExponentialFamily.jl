@@ -286,7 +286,7 @@ end
 Returns the computed value of logarithm of `basemeasure` of the exponential family distribution at the point `x`.
 """
 function logbasemeasure(ef::ExponentialFamilyDistribution, x)
-    return log(basemeasure(ef, x))
+    return log(getbasemeasure(ef)(x))
 end
 
 """

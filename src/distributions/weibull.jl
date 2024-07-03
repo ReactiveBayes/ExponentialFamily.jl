@@ -92,7 +92,7 @@ end
 isbasemeasureconstant(::Type{Weibull}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Weibull}, conditioner) = x -> x^(conditioner - 1)
-function logbasemeasure(ef::ExponentialFamilyDistribution, x)
+function logbasemeasure(ef::ExponentialFamilyDistribution{Weibull}, x)
     conditioner = getconditioner(ef)
     return (conditioner - one(conditioner))*log(x)
 end
