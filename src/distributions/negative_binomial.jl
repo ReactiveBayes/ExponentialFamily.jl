@@ -99,6 +99,10 @@ end
 isbasemeasureconstant(::Type{NegativeBinomial}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{NegativeBinomial}, conditioner) = (x) -> binomial(Int(x + conditioner - 1), x)
+
+lchoose(a,b) = loggamma(a+1) - loggamma(b+1) - loggamma(a-b+1)
+
+getlogbasemeasure(::Type{NegativeBinomial}, conditioner) = (x) -> lchoose(Int(x + conditioner - 1), x)
 getsufficientstatistics(::Type{NegativeBinomial}, conditioner) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{NegativeBinomial}, conditioner) = (η) -> begin

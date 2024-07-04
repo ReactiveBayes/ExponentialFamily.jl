@@ -72,6 +72,7 @@ end
 isbasemeasureconstant(::Type{VonMises}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{VonMises}, _) = (x) -> inv(twoπ)
+getlogbasemeasure(::Type{VonMises}, _) = (x) -> -log(twoπ)
 getsufficientstatistics(::Type{VonMises}, _) = (cos, sin)
 getgradlogpartition(::NaturalParametersSpace, ::Type{VonMises}, _) = (η) -> begin
     u = sqrt(dot(η, η))

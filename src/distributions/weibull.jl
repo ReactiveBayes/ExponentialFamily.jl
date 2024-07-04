@@ -92,6 +92,7 @@ end
 isbasemeasureconstant(::Type{Weibull}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Weibull}, conditioner) = x -> x^(conditioner - 1)
+getlogbasemeasure(::Type{Weibull}, conditioner) = x -> (conditioner - 1)*log(x)
 getsufficientstatistics(::Type{Weibull}, conditioner) = (x -> x^conditioner,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -> begin

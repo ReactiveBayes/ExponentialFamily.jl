@@ -60,6 +60,7 @@ end
 
     @testset let attributes = ArbitraryExponentialFamilyAttributes
         @test @inferred(getbasemeasure(attributes)(2.0)) ≈ 0.5
+        @test @inferred(getlogbasemeasure(attributes)(2.0)) ≈ log(0.5)
         @test @inferred(getsufficientstatistics(attributes)[1](2.0)) ≈ 2.0
         @test @inferred(getsufficientstatistics(attributes)[2](2.0)) ≈ log(2.0)
         @test @inferred(getlogpartition(attributes)([2.0])) ≈ 0.5
