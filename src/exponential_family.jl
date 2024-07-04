@@ -3,7 +3,7 @@ export ExponentialFamilyDistribution
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
 export getbasemeasure, getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
-export basemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
+export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
