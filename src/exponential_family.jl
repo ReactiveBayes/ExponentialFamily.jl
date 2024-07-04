@@ -620,7 +620,7 @@ end
 
 function _plogpdf(ef, x)
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
-    return _plogpdf(ef, x, logpartition(ef), log(basemeasure(ef,x)))
+    return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef,x))
 end
 
 _scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
@@ -683,7 +683,7 @@ check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, 
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
-    return map(x -> _plogpdf(ef, x, _logpartition, log(basemeasure(ef,x))), container)
+    return map(x -> _plogpdf(ef, x, _logpartition, logbasemeasure(ef,x)), container)
 end
 
 check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), container)
