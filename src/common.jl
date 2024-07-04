@@ -1,6 +1,7 @@
 using StatsFuns: logistic
 using StatsFuns: softmax, softmax!
 using SpecialFunctions: gamma, loggamma
+using Distributions
 
 import ForwardDiff
 
@@ -46,3 +47,7 @@ function binomial_prod(n, p, x)
 end
 
 mvdigamma(η,p) = sum( digamma(η + (one(d) - d)/2) for d=1:p)
+
+abstract type VectorMatrixvariate <: VariateForm end
+const VectorMatrixDistribution{S<:ValueSupport} = Distribution{VectorMatrixvariate, S}
+const ContinuousMultivariateMatrixvariateDistribution = Distribution{VectorMatrixvariate, Continuous}
