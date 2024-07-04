@@ -37,7 +37,7 @@ end
 BayesBase.var(dist::VonMisesFisher) = diag(cov(dist))
 BayesBase.std(dist::VonMisesFisher) = sqrt.(var(dist))
 
-function BayesBase.insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x)
     return length(getnaturalparameters(ef)) == length(x) && Distributions.isunitvec(x)
 end
 
