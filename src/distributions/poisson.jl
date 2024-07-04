@@ -53,6 +53,7 @@ unpack_parameters(::Type{Poisson}, packed) = (first(packed),)
 isbasemeasureconstant(::Type{Poisson}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Poisson}) = (x) -> one(x) / factorial(x)
+getlogbasemeasure(::Type{Poisson}) = (x) -> -loggamma(x + one(x))
 getsufficientstatistics(::Type{Poisson}) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Poisson}) = (η) -> begin

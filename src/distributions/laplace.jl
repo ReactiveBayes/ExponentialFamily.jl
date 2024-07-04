@@ -159,6 +159,8 @@ end
 isbasemeasureconstant(::Type{Laplace}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Laplace}, _) = (x) -> oneunit(x)
+getlogbasemeasure(::Type{Laplace}, _) = (x) -> zero(x)
+
 getsufficientstatistics(::Type{Laplace}, conditioner) = (
     (x) -> abs(x - conditioner),
 )

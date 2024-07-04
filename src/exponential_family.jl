@@ -2,8 +2,8 @@ export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
-export getbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
-export basemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
+export getbasemeasure, getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
@@ -136,19 +136,28 @@ A structure to represent the attributes of an exponential family member.
 - `logpartition::L`: The log-partition (cumulant) of the exponential family member.
 - `support::P`: The support of the exponential family member.
 
+# Optionally
+- `logbasemeasure::LB`: The log of the  basemeasure of the exponential family member.
+
 See also: [`ExponentialFamilyDistribution`](@ref), [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
-struct ExponentialFamilyDistributionAttributes{B, S, L, P}
+struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB}
     basemeasure::B
     sufficientstatistics::S
     logpartition::L
     support::P
+    logbasemeasure::LB
+end
+function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P) where {B, S, L, P}
+    logbasemeasure = (x) -> log(basemeasure(x))
+    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support, logbasemeasure)
 end
 
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.basemeasure
 getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = attributes.sufficientstatistics
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
+getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.logbasemeasure
 
 BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
 BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
@@ -281,6 +290,17 @@ function basemeasure(ef::ExponentialFamilyDistribution, x)
 end
 
 """
+    logbasemeasure(::ExponentialFamilyDistribution, x)
+
+Returns the computed value of `log(basemeasure)` of the exponential family distribution at the point `x`.
+
+See also [`basemeasure`](@ref)
+"""
+function logbasemeasure(ef::ExponentialFamilyDistribution, x)
+    return getlogbasemeasure(ef)(x)
+end
+
+"""
     sufficientstatistics(::ExponentialFamilyDistribution)
 
 Returns the computed values of `sufficientstatistics` of the exponential family distribution at the point `x`.
@@ -329,6 +349,11 @@ getbasemeasure(ef::ExponentialFamilyDistribution) = getbasemeasure(ef.attributes
 getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getbasemeasure(T, getconditioner(ef))
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getbasemeasure(attributes)
+
+getlogbasemeasure(ef::ExponentialFamilyDistribution) = getlogbasemeasure(ef.attributes, ef)
+getlogbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getlogbasemeasure(T, getconditioner(ef))
+getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
+    getlogbasemeasure(attributes)
 
 getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.attributes, ef)
 getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
@@ -415,6 +440,24 @@ Does not require an instance of the `ExponentialFamilyDistribution` and can be c
 For conditional exponential family distributions requires an extra `conditioner` argument.
 """
 getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(T)
+
+
+"""
+    getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
+
+A generic verion of `getlogbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+Just computes log of basemeasure.
+"""
+getlogbasemeasure(::Type{T}) where {T <: Distribution} = (x) -> log(getbasemeasure(T)(x))
+
+"""
+    getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
+
+A generic verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
+"""
+getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbasemeasure(T)
+
 
 """
     getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])

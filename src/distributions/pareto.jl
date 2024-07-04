@@ -141,6 +141,7 @@ end
 isbasemeasureconstant(::Type{Pareto}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Pareto}, _) = (x) -> oneunit(x)
+getlogbasemeasure(::Type{Pareto}, _) = (x) -> zero(x)
 getsufficientstatistics(::Type{Pareto}, conditioner) = (log,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Pareto}, conditioner) = (η) -> begin

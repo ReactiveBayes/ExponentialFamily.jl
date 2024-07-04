@@ -9,6 +9,7 @@ import ExponentialFamily:
     getconditioner,
     logpartition,
     basemeasure,
+    logbasemeasure,
     insupport,
     sufficientstatistics,
     fisherinformation,
@@ -268,6 +269,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
 
     @test_opt isbasemeasureconstant(ef)
     @test_opt basemeasure(ef, first(samples))
+    @test_opt logbasemeasure(ef, first(samples))
     @test_opt sufficientstatistics(ef, first(samples))
     @test_opt logpartition(ef)
     @test_opt gradlogpartition(ef)
@@ -293,6 +295,8 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
 
         @test @inferred(isbasemeasureconstant(ef)) === isbasemeasureconstant(T)
         @test @inferred(basemeasure(ef, x)) == getbasemeasure(T, conditioner)(x)
+        @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T, conditioner)(x)
+        @test logbasemeasure(ef, x) ≈ log(basemeasure(ef, x)) atol = 1e-8
         @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T, conditioner)))
         @test @inferred(logpartition(ef)) == getlogpartition(T, conditioner)(η)
         @test @inferred(fisherinformation(ef)) == getfisherinformation(T, conditioner)(η)
@@ -300,6 +304,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         # Double check the `conditioner` free methods
         if isnothing(conditioner)
             @test @inferred(basemeasure(ef, x)) == getbasemeasure(T)(x)
+            @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T)(x)
             @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T)))
             @test @inferred(logpartition(ef)) == getlogpartition(T)(η)
             @test @inferred(fisherinformation(ef)) == getfisherinformation(T)(η)
@@ -340,6 +345,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @allocated(mean(ef)) === 0
             @test @allocated(var(ef)) === 0
             @test @allocated(basemeasure(ef, x)) === 0
+            @test @allocated(logbasemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
     end

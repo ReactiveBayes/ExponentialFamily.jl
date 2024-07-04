@@ -36,12 +36,14 @@ getattributes
 getconditioner
 isproper
 getbasemeasure
+getlogbasemeasure
 getsufficientstatistics
 getlogpartition
 getgradlogpartition
 getfisherinformation
 getsupport
 basemeasure
+logbasemeasure
 sufficientstatistics
 logpartition
 gradlogpartition

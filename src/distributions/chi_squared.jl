@@ -56,6 +56,7 @@ unpack_parameters(::Type{Chisq}, packed) = (first(packed),)
 isbasemeasureconstant(::Type{Chisq}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Chisq}) = (x) -> exp(-x / 2)
+getlogbasemeasure(::Type{Chisq}) = (x) -> -x/2
 getsufficientstatistics(::Type{Chisq}) = (log,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin

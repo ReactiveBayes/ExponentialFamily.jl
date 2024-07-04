@@ -65,6 +65,7 @@ getsupport(ef::ExponentialFamilyDistribution{Categorical}) = ClosedInterval{Int}
 isbasemeasureconstant(::Type{Categorical}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Categorical}, _) = (x) -> oneunit(x)
+getlogbasemeasure(::Type{Categorical}, _) = (x) -> zero(x)
 getsufficientstatistics(::Type{Categorical}, conditioner) = ((x) -> OneElement(x, conditioner),)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
