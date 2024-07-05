@@ -1,5 +1,5 @@
 using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
-using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET, SpecialFunctions
 
 import BayesBase: compute_logscale
 
