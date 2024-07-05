@@ -1,5 +1,5 @@
 using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
-using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET, SpecialFunctions
 
 import BayesBase: compute_logscale
 
@@ -67,6 +67,7 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
+    test_plogpdf_interface = true,
     option_assume_no_allocations = false
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
@@ -87,9 +88,19 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
-
+    test_plogpdf_interface && run_test_plogpdf_interface(distribution)
     return ef
 end
+
+function run_test_plogpdf_interface(distribution)
+    ef = convert(ExponentialFamily.ExponentialFamilyDistribution, distribution)
+    η = getnaturalparameters(ef)
+    samples = rand(StableRNG(42), distribution, 10)
+    _, _samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
+    ss_vectors = map(s -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), _samples)
+    unnormalized_logpdfs = map(v -> dot(v, η), ss_vectors)
+    @test all(unnormalized_logpdfs ≈ map(x -> ExponentialFamily._plogpdf(ef, x, 0, 0), _samples))
+end 
 
 function run_test_parameters_conversion(distribution)
     T = ExponentialFamily.exponential_family_typetag(distribution)
