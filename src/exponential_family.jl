@@ -867,15 +867,13 @@ Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {
 
 # Generic convert from an `ExponentialFamilyDistribution{T}` to its corresponding type `T`
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}
-    typetag = exponential_family_typetag(ef)
-    @show typetag
     tuple_of_η = unpack_parameters(ef)
     conditioner = getconditioner(ef)
     # Map the conditioned natural parameters space into its corresponding mean parameters space
     cparams = map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner)
     # `Distributions.jl` stores the params in a single tuple, so we need to join the parameters and the conditioner
-    params = join_conditioner(typetag, cparams, conditioner)
-    return typetag(params...)
+    params = join_conditioner(T, cparams, conditioner)
+    return T(params...)
 end
 
 # Generic convert from a member of `Distributions` to its equivalent representation in `ExponentialFamilyDistribution`
