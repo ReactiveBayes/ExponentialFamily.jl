@@ -84,6 +84,7 @@ end
     @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 2) # conditioner does not match the length
     @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 1)
     @test !isproper(NaturalParametersSpace(), Categorical, [1], 1) # length should be >=2 
+    @test !isproper(NaturalParametersSpace(), Categorical, [1, 1], 2) # the last natural paramter should be 0
 end
 
 @testitem "Categorical ExponentialFamilyDistribution supports RecursiveArrayTools" begin

@@ -38,7 +38,7 @@ end
 # The default implementation via `@generated` function fails to infer this
 exponential_family_typetag(::Categorical) = Categorical
 
-isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2)
+isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2) && (η[end] ≈ 0)
 isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) =
     isinteger(conditioner) && (conditioner === length(θ)) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
 
