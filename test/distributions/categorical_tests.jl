@@ -86,6 +86,14 @@ end
     @test !isproper(NaturalParametersSpace(), Categorical, [1], 1) # length should be >=2 
 end
 
+@testitem "Categorical ExponentialFamilyDistribution supports RecursiveArrayTools" begin
+    using RecursiveArrayTools
+    include("distributions_setuptests.jl")
+    ef = ExponentialFamilyDistribution(Categorical, ArrayPartition([0, 1, 0]), 3, nothing)
+    part_ef = ExponentialFamilyDistribution(Categorical, ArrayPartition([0, 1], [0]), 3, nothing)
+    @test convert(Distribution, ef) ≈ convert(Distribution, part_ef)
+end
+
 @testitem "Categorical: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
