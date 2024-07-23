@@ -23,6 +23,16 @@ function BayesBase.compute_logscale(new_dist::Categorical, left_dist::Categorica
     return log(dot(probvec(left_dist), probvec(right_dist)))
 end
 
+function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Categorical}
+    tuple_of_η = unpack_parameters(ef)
+    conditioner = getconditioner(ef)
+    # Map the conditioned natural parameters space into its corresponding mean parameters space
+    cparams = map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner)
+    # `Distributions.jl` stores the params in a single tuple, so we need to join the parameters and the conditioner
+    params = join_conditioner(T, cparams, conditioner)
+    return T(collect(params...))
+end
+
 # Natural parametrization
 
 # The default implementation via `@generated` function fails to infer this
