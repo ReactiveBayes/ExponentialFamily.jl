@@ -98,6 +98,11 @@ end
             @test mean(ef) ≈ mean(part_ef)
             @test var(ef) ≈ var(part_ef)
             @test logpartition(ef) ≈ logpartition(part_ef)
+            @test gradlogpartition(ef) ≈ gradlogpartition(part_ef)
+            @test fisherinformation(ef) ≈ fisherinformation(part_ef)
+            for k in 1:s
+                @test logpdf(ef, k) ≈ logpdf(part_ef, k)
+            end
         end
     end
 end
