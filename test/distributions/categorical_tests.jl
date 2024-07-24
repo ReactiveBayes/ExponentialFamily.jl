@@ -90,9 +90,16 @@ end
 @testitem "Categorical ExponentialFamilyDistribution supports RecursiveArrayTools" begin
     using RecursiveArrayTools
     include("distributions_setuptests.jl")
-    ef = ExponentialFamilyDistribution(Categorical, ArrayPartition([0, 1, 0]), 3, nothing)
-    part_ef = ExponentialFamilyDistribution(Categorical, ArrayPartition([0, 1], [0]), 3, nothing)
-    @test convert(Distribution, ef) ≈ convert(Distribution, part_ef)
+    for s in (2, 3, 4, 5)
+        @testset let params = rand(s-1)
+            ef = ExponentialFamilyDistribution(Categorical, [params..., 0], s, nothing)
+            part_ef = ExponentialFamilyDistribution(Categorical, ArrayPartition(params, [0]), s, nothing)
+            @test convert(Distribution, ef) ≈ convert(Distribution, part_ef)
+            @test mean(ef) ≈ mean(part_ef)
+            @test var(ef) ≈ var(part_ef)
+            @test logpartition(ef) ≈ logpartition(part_ef)
+        end
+    end
 end
 
 @testitem "Categorical: prod with ExponentialFamilyDistribution" begin
