@@ -28,7 +28,7 @@ end
 # The default implementation via `@generated` function fails to infer this
 exponential_family_typetag(::Categorical) = Categorical
 
-isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2)
+isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2) && (η[end] ≈ 0)
 isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) =
     isinteger(conditioner) && (conditioner === length(θ)) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
 
@@ -51,9 +51,16 @@ function (::MeanToNatural{Categorical})(tuple_of_θ::Tuple{Any}, _)
     return (LoopVectorization.vmap(pᵢ -> log(pᵢ / pₖ), p),)
 end
 
-function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{Any}, _)
+function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where { V <: Vector }
     (η,) = tuple_of_η
     return (softmax(η),)
+end
+
+# We use `Categorical` from `Distributions.jl` for the `MeanParametersSpace` 
+# and their implementation supports only `Vector`s
+function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where { V <: AbstractVector }
+    (η,) = tuple_of_η
+    return (softmax(convert(Vector, η)),)
 end
 
 function unpack_parameters(::Type{Categorical}, packed)
