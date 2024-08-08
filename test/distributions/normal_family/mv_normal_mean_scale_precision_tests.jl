@@ -17,7 +17,7 @@
     @test eltype(MvNormalMeanScalePrecision([1.0f0, 1.0f0], 1.0f0)) === Float32
 
     @test MvNormalMeanScalePrecision(ones(3), 5) == MvNormalMeanScalePrecision(ones(3), 5)
-    @test MvNormalMeanScalePrecision([1, 2, 3, 4], 7.0) == MvNormalMeanPrecision([1.0, 2.0, 3.0, 4.0], 7.0)
+    @test MvNormalMeanScalePrecision([1, 2, 3, 4], 7.0) == MvNormalMeanScalePrecision([1.0, 2.0, 3.0, 4.0], 7.0)
 end
 
 @testitem "MvNormalMeanScalePrecision: distrname" begin
@@ -36,24 +36,24 @@ end
 
     @test mean(dist) == μ
     @test mode(dist) == μ
-    @test weightedmean(dist) == γ * μ
-    @test invcov(dist) == γ
-    @test precision(dist) == γ
-    @test cov(dist) ≈ inv(Λ)
-    @test std(dist) * std(dist)' ≈ inv(γ)
-    @test all(mean_cov(dist) .≈ (μ, inv(γ)))
-    @test all(mean_invcov(dist) .≈ (μ, γ))
-    @test all(mean_precision(dist) .≈ (μ, γ))
-    @test all(weightedmean_cov(dist) .≈ (Λ * μ, inv(γ)))
-    @test all(weightedmean_invcov(dist) .≈ (γ * μ, γ))
-    @test all(weightedmean_precision(dist) .≈ (γ * μ, γ))
+    @test weightedmean(dist) == weightedmean(rdist)
+    @test invcov(dist) == invcov(rdist)
+    @test precision(dist) == precision(rdist)
+    @test cov(dist) ≈ cov(rdist)
+    @test std(dist) * std(dist)' ≈ std(rdist) * std(rdist)'
+    @test all(mean_cov(dist) .≈ mean_cov(rdist))
+    @test all(mean_invcov(dist) .≈ mean_invcov(rdist))
+    @test all(mean_precision(dist) .≈ mean_precision(rdist))
+    @test all(weightedmean_cov(dist) .≈ weightedmean_cov(rdist))
+    @test all(weightedmean_invcov(dist) .≈ weightedmean_invcov(rdist))
+    @test all(weightedmean_precision(dist) .≈ weightedmean_precision(rdist))
 
     @test length(dist) == 3
     @test entropy(dist) ≈ entropy(rdist)
     @test pdf(dist, [0.2, 3.0, 4.0]) ≈ pdf(rdist, [0.2, 3.0, 4.0])
-    @test pdf(dist, [0.202, 3.002, 4.002]) ≈ pdf(rdist, [0.2, 3.0, 4.0])
-    @test logpdf(dist, [0.2, 3.0, 4.0]) ≈ pdf(rdist, [0.2, 3.0, 4.0])
-    @test logpdf(dist, [0.202, 3.002, 4.002]) ≈ pdf(rdist, [0.2, 3.0, 4.0])
+    @test pdf(dist, [0.202, 3.002, 4.002]) ≈ pdf(rdist, [0.202, 3.002, 4.002])
+    @test logpdf(dist, [0.2, 3.0, 4.0]) ≈ logpdf(rdist, [0.2, 3.0, 4.0])
+    @test logpdf(dist, [0.202, 3.002, 4.002]) ≈ logpdf(rdist, [0.202, 3.002, 4.002])
 end
 
 @testitem "MvNormalMeanScalePrecision: Base methods" begin
@@ -71,7 +71,7 @@ end
     @test size(MvNormalMeanScalePrecision([0.0, 0.0])) === (2,)
     @test size(MvNormalMeanScalePrecision([0.0, 0.0, 0.0])) === (3,)
     
-    distribution = MvNormalMeanScalePrecision([0.0, 0.0], [2.0 0.0; 0.0 3.0])
+    distribution = MvNormalMeanScalePrecision([0.0, 0.0], 2.0)
 
     @test distribution ≈ distribution
     @test distribution ≈ convert(MvNormalMeanCovariance, distribution)
@@ -108,7 +108,7 @@ end
 
         μ    = [1.0, 2.0, 3.0]
         γ    = 2.0
-        dist = MvNormalMeanPrecision(μ, Λ)
+        dist = MvNormalMeanScalePrecision(μ, γ)
 
         @test prod(strategy, dist, dist) ≈
             MvNormalMeanScalePrecision([4.0, 8.0, 12.0], 2γ)

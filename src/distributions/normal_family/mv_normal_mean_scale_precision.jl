@@ -21,7 +21,7 @@ A multivariate normal distribution with mean `μ` and scale parameter `γ` that 
 The precision matrix of this distribution is `γ * I`, where `I` is the identity matrix.
 The covariance matrix is the inverse of the precision matrix, i.e., `(1/γ) * I`.
 """
-struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: AbstractMvNormal
+struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}}
     μ::M
     γ::T
 end
@@ -73,17 +73,16 @@ function Distributions.sqmahal!(r, dist::MvNormalMeanScalePrecision, x::Abstract
 end
 
 Base.eltype(::MvNormalMeanScalePrecision{T}) where {T} = T
-Base.precision(dist::MvNormalMeanScalePrecision) = dist.γ
+Base.precision(dist::MvNormalMeanScalePrecision) = invcov(dist)
 Base.length(dist::MvNormalMeanScalePrecision) = length(mean(dist))
 Base.ndims(dist::MvNormalMeanScalePrecision) = length(dist)
 Base.size(dist::MvNormalMeanScalePrecision) = (length(dist),)
 
-Base.convert(::Type{<:MvNormalMeanScalePrecision}, μ::AbstractVector, γ::Real) = MvNormalMeanScalePrecision(μ, γ)
+# Base.convert(::Type{<:MvNormalMeanScalePrecision}, μ::AbstractVector, γ::Real) = MvNormalMeanScalePrecision(μ, γ)
 
-function Base.convert(::Type{<:MvNormalMeanScalePrecision{T}}, μ::AbstractVector, γ::T) where {T <: Real}
-    @show "hi"
-    MvNormalMeanScalePrecision(convert(AbstractArray{T}, μ), convert(T, γ))
-end
+# function Base.convert(::Type{<:MvNormalMeanScalePrecision{T}}, μ::AbstractVector, γ::T) where {T <: Real}
+#     MvNormalMeanScalePrecision(convert(AbstractArray{T}, μ), convert(T, γ))
+# end
 
 BayesBase.vague(::Type{<:MvNormalMeanScalePrecision}, dims::Int) =
     MvNormalMeanScalePrecision(zeros(Float64, dims), convert(Float64, tiny))
