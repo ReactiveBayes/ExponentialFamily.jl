@@ -21,7 +21,7 @@ A multivariate normal distribution with mean `μ` and scale parameter `γ` that 
 The precision matrix of this distribution is `γ * I`, where `I` is the identity matrix.
 The covariance matrix is the inverse of the precision matrix, i.e., `(1/γ) * I`.
 """
-struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}}
+struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: AbstractMvNormal
     μ::M
     γ::T
 end
@@ -78,11 +78,11 @@ Base.length(dist::MvNormalMeanScalePrecision) = length(mean(dist))
 Base.ndims(dist::MvNormalMeanScalePrecision) = length(dist)
 Base.size(dist::MvNormalMeanScalePrecision) = (length(dist),)
 
-# Base.convert(::Type{<:MvNormalMeanScalePrecision}, μ::AbstractVector, γ::Real) = MvNormalMeanScalePrecision(μ, γ)
+Base.convert(::Type{<:MvNormalMeanScalePrecision}, μ::AbstractVector, γ::Real) = MvNormalMeanScalePrecision(μ, γ)
 
-# function Base.convert(::Type{<:MvNormalMeanScalePrecision{T}}, μ::AbstractVector, γ::T) where {T <: Real}
-#     MvNormalMeanScalePrecision(convert(AbstractArray{T}, μ), convert(T, γ))
-# end
+function Base.convert(::Type{<:MvNormalMeanScalePrecision{T}}, μ::AbstractVector, γ::T) where {T <: Real}
+    MvNormalMeanScalePrecision(convert(AbstractArray{T}, μ), convert(T, γ))
+end
 
 BayesBase.vague(::Type{<:MvNormalMeanScalePrecision}, dims::Int) =
     MvNormalMeanScalePrecision(zeros(Float64, dims), convert(Float64, tiny))
@@ -90,7 +90,7 @@ BayesBase.vague(::Type{<:MvNormalMeanScalePrecision}, dims::Int) =
 BayesBase.default_prod_rule(::Type{<:MvNormalMeanScalePrecision}, ::Type{<:MvNormalMeanScalePrecision}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanScalePrecision, right::MvNormalMeanScalePrecision)
-    w = precision(left) + precision(right)
+    w = left.γ + right.γ
     m = (precision(left) * mean(left) + precision(right) * mean(right)) / w
     return MvNormalMeanScalePrecision(m, w)
 end
@@ -100,13 +100,14 @@ function BayesBase.prod(
     left::MvNormalMeanScalePrecision{T1},
     right::MvNormalMeanScalePrecision{T2}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
-    w = precision(left) + precision(right)
+    w = left.γ + right.γ
 
-    xi = precision(right) * mean(right)
-    T  = promote_type(T1, T2)
-    xi = convert(AbstractVector{T}, xi)
-    w  = convert(T, w)
-    xi = BLAS.gemv!('N', one(T), convert(AbstractMatrix{T}, precision(left)), convert(AbstractVector{T}, mean(left)), one(T), xi)
+    T = promote_type(T1, T2)
+    
+    xi = convert(AbstractVector{T}, right.γ * mean(right))
+    w = convert(T, w)
+    
+    xi .+= convert(T, left.γ) .* convert(AbstractVector{T}, mean(left))
 
     return MvNormalMeanScalePrecision(xi / w, w)
 end

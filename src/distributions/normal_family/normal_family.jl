@@ -307,6 +307,21 @@ function Base.convert(::Type{MvNormalMeanCovariance}, dist::MultivariateNormalDi
 end
 
 
+function Base.convert(
+    ::Type{MvNormalMeanScalePrecision{T, M}},
+    dist::MvNormalMeanScalePrecision
+) where {T <: Real, M <: AbstractArray{T}}
+    m, γ = mean(dist), dist.γ
+    return MvNormalMeanScalePrecision{T, M}(convert(M, m), convert(T, γ))
+end
+
+function Base.convert(
+    ::Type{MvNormalMeanScalePrecision{T}},
+    dist::MvNormalMeanScalePrecision
+) where {T <: Real}
+    return convert(MvNormalMeanScalePrecision{T, AbstractArray{T, 1}}, dist)
+end
+
 # Special case for `MvNormalMeanScalePrecision` to `MvNormalMeanCovariance`
 function Base.convert(::Type{MvNormalMeanCovariance}, dist::MvNormalMeanScalePrecision)
     m, σ  = mean(dist), cov(dist)

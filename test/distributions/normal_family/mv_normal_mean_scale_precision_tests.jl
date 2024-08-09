@@ -111,7 +111,7 @@ end
         dist = MvNormalMeanScalePrecision(μ, γ)
 
         @test prod(strategy, dist, dist) ≈
-            MvNormalMeanScalePrecision([4.0, 8.0, 12.0], 2γ)
+            MvNormalMeanScalePrecision([1.0, 2.0, 3.0], 2γ)
     end
 end
 
@@ -123,6 +123,6 @@ end
     @test begin
         m = rand(5)
         c = rand()
-        convert(MvNormalMeanScalePrecision, m, c) == MvNormalMeanPrecision(m, c)
+        convert(MvNormalMeanScalePrecision, m, c) == MvNormalMeanScalePrecision(m, c)
     end
 end
