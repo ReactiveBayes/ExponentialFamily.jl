@@ -70,7 +70,6 @@ end
     end
 end
 
-
 @testitem "Wishart: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 

@@ -26,7 +26,7 @@
     @test eltype(NormalWeightedMeanPrecision(0.0f0)) === Float32
     @test eltype(NormalWeightedMeanPrecision(0.0f0, 1.0f0)) === Float32
     @test eltype(NormalWeightedMeanPrecision(0.0f0, 1.0)) === Float64
-    
+
     @test NormalWeightedMeanPrecision(3, 5I) == NormalWeightedMeanPrecision(3, 5)
     @test NormalWeightedMeanPrecision(2, 7.0I) == NormalWeightedMeanPrecision(2.0, 7.0)
 end

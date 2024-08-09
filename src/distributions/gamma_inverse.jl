@@ -66,7 +66,7 @@ end
 getgradlogpartition(::NaturalParametersSpace, ::Type{GammaInverse}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(GammaInverse, η)
     dη1 = -digamma(-η₁ - one(η₁)) + log(-η₂)
-    dη2 = - (-η₁ - one(η₁))/η₂
+    dη2 = -(-η₁ - one(η₁)) / η₂
     return SA[dη1, dη2]
 end
 

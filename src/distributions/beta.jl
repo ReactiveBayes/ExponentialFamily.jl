@@ -69,7 +69,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin
     ηsum = η₁p + η₂p
     dig = digamma(ηsum)
 
-    return SA[digamma(η₁p) - dig, digamma(η₂p) - dig]
+    return SA[digamma(η₁p)-dig, digamma(η₂p)-dig]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Beta}) = (η) -> begin

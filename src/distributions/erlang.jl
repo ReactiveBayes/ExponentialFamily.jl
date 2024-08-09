@@ -60,7 +60,7 @@ end
 getgradlogpartition(::NaturalParametersSpace, ::Type{Erlang}) = (η) -> begin
     (η1, η2) = unpack_parameters(Erlang, η)
     dη1 = digamma(η1 + 1) - log(-η2)
-    dη2 = - (η1 + one(η1))*inv(η2)
+    dη2 = -(η1 + one(η1)) * inv(η2)
     return SA[dη1, dη2]
 end
 

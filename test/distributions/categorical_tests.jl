@@ -91,7 +91,7 @@ end
     using RecursiveArrayTools
     include("distributions_setuptests.jl")
     for s in (2, 3, 4, 5)
-        @testset let params = rand(s-1)
+        @testset let params = rand(s - 1)
             ef = ExponentialFamilyDistribution(Categorical, [params..., 0], s, nothing)
             part_ef = ExponentialFamilyDistribution(Categorical, ArrayPartition(params, [0]), s, nothing)
             @test convert(Distribution, ef) ≈ convert(Distribution, part_ef)
