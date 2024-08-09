@@ -10,10 +10,9 @@ const GaussianWeighteMeanPrecision    = NormalWeightedMeanPrecision
 const MvGaussianMeanCovariance        = MvNormalMeanCovariance
 const MvGaussianMeanPrecision         = MvNormalMeanPrecision
 const MvGaussianWeightedMeanPrecision = MvNormalWeightedMeanPrecision
-const MvGaussianMeanScalePrecision    = MvNormalMeanScalePrecision
 
 const UnivariateNormalDistributionsFamily{T}   = Union{NormalMeanPrecision{T}, NormalMeanVariance{T}, NormalWeightedMeanPrecision{T}, Normal{T}}
-const MultivariateNormalDistributionsFamily{T} = Union{MvNormalMeanPrecision{T}, MvNormalMeanScalePrecision{T}, MvNormalMeanCovariance{T}, MvNormalWeightedMeanPrecision{T}, MvNormal{T}}
+const MultivariateNormalDistributionsFamily{T} = Union{MvNormalMeanPrecision{T}, MvNormalMeanCovariance{T}, MvNormalWeightedMeanPrecision{T}, MvNormal{T}}
 const NormalDistributionsFamily{T}             = Union{UnivariateNormalDistributionsFamily{T}, MultivariateNormalDistributionsFamily{T}}
 
 const UnivariateGaussianDistributionsFamily   = UnivariateNormalDistributionsFamily
@@ -252,12 +251,6 @@ function Base.convert(
     return MvNormal(convert(M, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
 end
 
-# Special case for `MvNormalMeanScalePrecision` to `MvNormal`
-function Base.convert(::Type{MvNormal{T, C, M}}, dist::MvNormalMeanScalePrecision) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
-    m, σ = mean(dist), std(dist)
-    return MvNormal(convert(M, m), convert(T, σ))
-end
-
 function Base.convert(::Type{MvNormal{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
     return convert(MvNormal{T, Distributions.PDMats.PDMat{T, Matrix{T}}, Vector{T}}, dist)
 end
@@ -306,28 +299,6 @@ function Base.convert(::Type{MvNormalMeanCovariance}, dist::MultivariateNormalDi
     return convert(MvNormalMeanCovariance{T}, dist)
 end
 
-
-function Base.convert(
-    ::Type{MvNormalMeanScalePrecision{T, M}},
-    dist::MvNormalMeanScalePrecision
-) where {T <: Real, M <: AbstractArray{T}}
-    m, γ = mean(dist), dist.γ
-    return MvNormalMeanScalePrecision{T, M}(convert(M, m), convert(T, γ))
-end
-
-function Base.convert(
-    ::Type{MvNormalMeanScalePrecision{T}},
-    dist::MvNormalMeanScalePrecision
-) where {T <: Real}
-    return convert(MvNormalMeanScalePrecision{T, AbstractArray{T, 1}}, dist)
-end
-
-# Special case for `MvNormalMeanScalePrecision` to `MvNormalMeanCovariance`
-function Base.convert(::Type{MvNormalMeanCovariance}, dist::MvNormalMeanScalePrecision)
-    m, σ  = mean(dist), cov(dist)
-    return MvNormalMeanCovariance(m, σ*diagm(ones(length(m))))
-end
-
 # Conversion to mean - precision parametrisation
 
 function Base.convert(::Type{NormalMeanPrecision{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
@@ -362,11 +333,7 @@ function Base.convert(::Type{MvNormalMeanPrecision}, dist::MultivariateNormalDis
     return convert(MvNormalMeanPrecision{T}, dist)
 end
 
-# Special case for `MvNormalMeanScalePrecision` to `MvNormalMeanPrecision`
-function Base.convert(::Type{MvNormalMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ  = mean(dist), precision(dist)
-    return MvNormalMeanPrecision(m, γ*diagm(ones(length(m))))
-end
+
 
 # Conversion to weighted mean - precision parametrisation
 
@@ -428,12 +395,6 @@ function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::FullNormal)
     mean, cov = mean_cov(dist)
     precision = cholinv(cov)
     return MvNormalWeightedMeanPrecision(precision * mean, precision)
-end
-
-# Special case for `MvNormalMeanScalePrecision` to `MvNormalWeightedMeanPrecision`
-function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ  = mean(dist), precision(dist)
-    return MvNormalWeightedMeanPrecision(γ*m, γ*diagm(ones(length(m))))
 end
 
 # isapprox

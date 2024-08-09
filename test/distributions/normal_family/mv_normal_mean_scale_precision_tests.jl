@@ -36,6 +36,7 @@ end
 
     @test mean(dist) == μ
     @test mode(dist) == μ
+    @test scale(dist) == γ
     @test weightedmean(dist) == weightedmean(rdist)
     @test invcov(dist) == invcov(rdist)
     @test precision(dist) == precision(rdist)
@@ -70,13 +71,14 @@ end
     @test ndims(MvNormalMeanScalePrecision([0.0, 0.0, 0.0])) === 3
     @test size(MvNormalMeanScalePrecision([0.0, 0.0])) === (2,)
     @test size(MvNormalMeanScalePrecision([0.0, 0.0, 0.0])) === (3,)
-    
-    distribution = MvNormalMeanScalePrecision([0.0, 0.0], 2.0)
+
+    μ, γ = zeros(2), 2.0
+    distribution = MvNormalMeanScalePrecision(μ, γ)
 
     @test distribution ≈ distribution
-    @test distribution ≈ convert(MvNormalMeanCovariance, distribution)
-    @test distribution ≈ convert(MvNormalMeanPrecision, distribution)
-    @test distribution ≈ convert(MvNormalWeightedMeanPrecision, distribution)
+    @test convert(MvNormalMeanCovariance, distribution) == MvNormalMeanCovariance(μ, inv(γ)*I(length(μ)))
+    @test convert(MvNormalMeanPrecision, distribution) == MvNormalMeanPrecision(μ, γ*I(length(μ)))
+    @test convert(MvNormalWeightedMeanPrecision, distribution) == MvNormalWeightedMeanPrecision(γ*μ, γ*I(length(μ)))
 end
 
 @testitem "MvNormalMeanScalePrecision: vague" begin
@@ -101,6 +103,7 @@ end
 
 @testitem "MvNormalMeanScalePrecision: prod" begin
     include("./normal_family_setuptests.jl")
+
 
     for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
         @test prod(strategy, MvNormalMeanScalePrecision([-1, -1], 2), MvNormalMeanPrecision([1, 1], [2, 4])) ≈

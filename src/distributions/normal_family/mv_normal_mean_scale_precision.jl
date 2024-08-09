@@ -1,4 +1,4 @@
-export MvNormalMeanScalePrecision
+export MvNormalMeanScalePrecision, MvGaussianMeanScalePrecision
 
 import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
@@ -26,6 +26,8 @@ struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: Abstract
     γ::T
 end
 
+const MvGaussianMeanScalePrecision    = MvNormalMeanScalePrecision
+
 function MvNormalMeanScalePrecision(μ::AbstractVector{<:Real}, γ::Real)
     T = promote_type(eltype(μ), eltype(γ))
     return MvNormalMeanScalePrecision(convert(AbstractArray{T}, μ), convert(T, γ))
@@ -46,6 +48,42 @@ function MvNormalMeanScalePrecision(μ::AbstractVector{T1}, γ::T2) where {T1, T
     return MvNormalMeanScalePrecision(μ_new, γ_new)
 end
 
+# Conversions
+function Base.convert(::Type{MvNormal{T, C, M}}, dist::MvNormalMeanScalePrecision) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
+    m, σ = mean(dist), std(dist)
+    return MvNormal(convert(M, m), convert(T, σ))
+end
+
+function Base.convert(
+    ::Type{MvNormalMeanScalePrecision{T, M}},
+    dist::MvNormalMeanScalePrecision
+) where {T <: Real, M <: AbstractArray{T}}
+    m, γ = mean(dist), dist.γ
+    return MvNormalMeanScalePrecision{T, M}(convert(M, m), convert(T, γ))
+end
+
+function Base.convert(
+    ::Type{MvNormalMeanScalePrecision{T}},
+    dist::MvNormalMeanScalePrecision
+) where {T <: Real}
+    return convert(MvNormalMeanScalePrecision{T, AbstractArray{T, 1}}, dist)
+end
+
+function Base.convert(::Type{MvNormalMeanCovariance}, dist::MvNormalMeanScalePrecision)
+    m, σ  = mean(dist), cov(dist)
+    return MvNormalMeanCovariance(m, σ*diagm(ones(length(m))))
+end
+
+function Base.convert(::Type{MvNormalMeanPrecision}, dist::MvNormalMeanScalePrecision)
+    m, γ  = mean(dist), precision(dist)
+    return MvNormalMeanPrecision(m, γ*diagm(ones(length(m))))
+end
+
+function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MvNormalMeanScalePrecision)
+    m, γ  = mean(dist), precision(dist)
+    return MvNormalWeightedMeanPrecision(γ*m, γ*diagm(ones(length(m))))
+end
+
 Distributions.distrname(::MvNormalMeanScalePrecision) = "MvNormalMeanScalePrecision"
 
 BayesBase.weightedmean(dist::MvNormalMeanScalePrecision) = precision(dist) * mean(dist)
@@ -54,10 +92,11 @@ BayesBase.mean(dist::MvNormalMeanScalePrecision)      = dist.μ
 BayesBase.mode(dist::MvNormalMeanScalePrecision)      = mean(dist)
 BayesBase.var(dist::MvNormalMeanScalePrecision)       = diag(cov(dist))
 BayesBase.cov(dist::MvNormalMeanScalePrecision)       = cholinv(invcov(dist))
-BayesBase.invcov(dist::MvNormalMeanScalePrecision)    = dist.γ * I(length(mean(dist)))
+BayesBase.invcov(dist::MvNormalMeanScalePrecision)    = scale(dist) * I(length(mean(dist)))
 BayesBase.std(dist::MvNormalMeanScalePrecision)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalMeanScalePrecision) = -chollogdet(invcov(dist))
 BayesBase.params(dist::MvNormalMeanScalePrecision)    = (mean(dist), invcov(dist))
+BayesBase.scale(dist::MvNormalMeanScalePrecision)     = dist.γ
 
 function Distributions.sqmahal(dist::MvNormalMeanScalePrecision, x::AbstractVector)
     T = promote_type(eltype(x), paramfloattype(dist))
@@ -90,24 +129,19 @@ BayesBase.vague(::Type{<:MvNormalMeanScalePrecision}, dims::Int) =
 BayesBase.default_prod_rule(::Type{<:MvNormalMeanScalePrecision}, ::Type{<:MvNormalMeanScalePrecision}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanScalePrecision, right::MvNormalMeanScalePrecision)
-    w = left.γ + right.γ
-    m = (precision(left) * mean(left) + precision(right) * mean(right)) / w
+    w = scale(left) + scale(right)
+    m = (scale(left) * mean(left) + scale(right) * mean(right)) / w
     return MvNormalMeanScalePrecision(m, w)
 end
 
+BayesBase.default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MvNormalMeanScalePrecision}) = PreserveTypeProd(Distribution)
+
 function BayesBase.prod(
     ::PreserveTypeProd{Distribution},
-    left::MvNormalMeanScalePrecision{T1},
-    right::MvNormalMeanScalePrecision{T2}
-) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
-    w = left.γ + right.γ
-
-    T = promote_type(T1, T2)
-    
-    xi = convert(AbstractVector{T}, right.γ * mean(right))
-    w = convert(T, w)
-    
-    xi .+= convert(T, left.γ) .* convert(AbstractVector{T}, mean(left))
-
-    return MvNormalMeanScalePrecision(xi / w, w)
+    left::L,
+    right::R
+) where {L <: MultivariateNormalDistributionsFamily, R <: MvNormalMeanScalePrecision}
+    wleft  = convert(MvNormalWeightedMeanPrecision, left)
+    wright = convert(MvNormalWeightedMeanPrecision, right)
+    return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
