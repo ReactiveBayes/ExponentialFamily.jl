@@ -69,7 +69,7 @@ end
     @test ndims(MvNormalMeanPrecision([0.0, 0.0, 0.0])) === 3
     @test size(MvNormalMeanPrecision([0.0, 0.0])) === (2,)
     @test size(MvNormalMeanPrecision([0.0, 0.0, 0.0])) === (3,)
-    
+
     distribution = MvNormalMeanPrecision([0.0, 0.0], [2.0 0.0; 0.0 3.0])
 
     @test distribution ≈ distribution

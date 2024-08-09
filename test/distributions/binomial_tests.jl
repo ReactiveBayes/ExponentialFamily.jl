@@ -34,7 +34,7 @@ end
             for x in 0:n
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === binomial(n, x)
-                @test @inferred(logbasemeasure(ef, x)) === loggamma(n+1) - (loggamma(n - x + 1) + loggamma(x + 1))
+                @test @inferred(logbasemeasure(ef, x)) === loggamma(n + 1) - (loggamma(n - x + 1) + loggamma(x + 1))
                 @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x,))
                 @test @inferred(logpartition(ef)) ≈ (n * log(1 + exp(η₁)))
             end
