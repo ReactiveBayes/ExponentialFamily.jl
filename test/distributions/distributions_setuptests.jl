@@ -52,7 +52,7 @@ JET_function_filter(@nospecialize f) = ((f === FastCholesky.cholinv) || (f === F
 
 macro test_opt(expr)
     return esc(quote
-        JET.@test_opt function_filter=JET_function_filter ignored_modules=(Base,LinearAlgebra) $expr
+        JET.@test_opt function_filter = JET_function_filter ignored_modules = (Base, LinearAlgebra) $expr
     end)
 end
 
@@ -100,7 +100,7 @@ function run_test_plogpdf_interface(distribution)
     ss_vectors = map(s -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), _samples)
     unnormalized_logpdfs = map(v -> dot(v, η), ss_vectors)
     @test all(unnormalized_logpdfs ≈ map(x -> ExponentialFamily._plogpdf(ef, x, 0, 0), _samples))
-end 
+end
 
 function run_test_parameters_conversion(distribution)
     T = ExponentialFamily.exponential_family_typetag(distribution)
