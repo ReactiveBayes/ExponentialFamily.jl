@@ -41,12 +41,12 @@ end
 
 @testitem "VonMises: prod with Distributions" begin
     include("distributions_setuptests.jl")
-    for dist1 in [VonMises(10randn(),10rand()) for _=1:20], dist2 in [VonMises(10randn(),10rand()) for _=1:20]
-        ef1 = convert(ExponentialFamilyDistribution,dist1)
-        ef2 = convert(ExponentialFamilyDistribution,dist2)
-        prod_ef = prod(GenericProd(),ef1,ef2)
+    for dist1 in [VonMises(10randn(), 10rand()) for _ in 1:20], dist2 in [VonMises(10randn(), 10rand()) for _ in 1:20]
+        ef1 = convert(ExponentialFamilyDistribution, dist1)
+        ef2 = convert(ExponentialFamilyDistribution, dist2)
+        prod_ef = prod(GenericProd(), ef1, ef2)
         for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
-            @test prod(strategy, dist1, dist2) ≈ convert(Distribution,prod_ef)
+            @test prod(strategy, dist1, dist2) ≈ convert(Distribution, prod_ef)
         end
     end
 end
