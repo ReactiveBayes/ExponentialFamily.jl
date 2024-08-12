@@ -26,7 +26,7 @@ struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: Abstract
     γ::T
 end
 
-const MvGaussianMeanScalePrecision    = MvNormalMeanScalePrecision
+const MvGaussianMeanScalePrecision = MvNormalMeanScalePrecision
 
 function MvNormalMeanScalePrecision(μ::AbstractVector{<:Real}, γ::Real)
     T = promote_type(eltype(μ), eltype(γ))
@@ -48,8 +48,36 @@ function MvNormalMeanScalePrecision(μ::AbstractVector{T1}, γ::T2) where {T1, T
     return MvNormalMeanScalePrecision(μ_new, γ_new)
 end
 
+function unpack_parameters(::Type{MvNormalMeanScalePrecision}, packed)
+    len = length(packed)
+    n = div(-1 + isqrt(1 + 4 * len), 2)
+
+    p₁ = view(packed, 1:n)
+    p₂ = packed[end]
+
+    return (p₁, p₂)
+end
+
+function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}, η, conditioner)
+    k = length(η) - 1
+    if length(η) < 2 || (length(η) !== k + 1)
+        return false
+    end
+    (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
+    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
+end
+
+function (::MeanToNatural{MvNormalMeanScalePrecision})(tuple_of_θ::Tuple{Any, Any})
+    (μ, γ) = tuple_of_θ
+    Σ⁻¹ = 1 / γ
+    return (Σ⁻¹ * μ, Σ⁻¹ / -2)
+end
+
 # Conversions
-function Base.convert(::Type{MvNormal{T, C, M}}, dist::MvNormalMeanScalePrecision) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
+function Base.convert(
+    ::Type{MvNormal{T, C, M}},
+    dist::MvNormalMeanScalePrecision
+) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
     m, σ = mean(dist), std(dist)
     return MvNormal(convert(M, m), convert(T, σ))
 end
@@ -70,18 +98,18 @@ function Base.convert(
 end
 
 function Base.convert(::Type{MvNormalMeanCovariance}, dist::MvNormalMeanScalePrecision)
-    m, σ  = mean(dist), cov(dist)
-    return MvNormalMeanCovariance(m, σ*diagm(ones(length(m))))
+    m, σ = mean(dist), cov(dist)
+    return MvNormalMeanCovariance(m, σ * diagm(ones(length(m))))
 end
 
 function Base.convert(::Type{MvNormalMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ  = mean(dist), precision(dist)
-    return MvNormalMeanPrecision(m, γ*diagm(ones(length(m))))
+    m, γ = mean(dist), precision(dist)
+    return MvNormalMeanPrecision(m, γ * diagm(ones(length(m))))
 end
 
 function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ  = mean(dist), precision(dist)
-    return MvNormalWeightedMeanPrecision(γ*m, γ*diagm(ones(length(m))))
+    m, γ = mean(dist), precision(dist)
+    return MvNormalWeightedMeanPrecision(γ * m, γ * diagm(ones(length(m))))
 end
 
 Distributions.distrname(::MvNormalMeanScalePrecision) = "MvNormalMeanScalePrecision"
@@ -95,8 +123,8 @@ BayesBase.cov(dist::MvNormalMeanScalePrecision)       = cholinv(invcov(dist))
 BayesBase.invcov(dist::MvNormalMeanScalePrecision)    = scale(dist) * I(length(mean(dist)))
 BayesBase.std(dist::MvNormalMeanScalePrecision)       = cholsqrt(cov(dist))
 BayesBase.logdetcov(dist::MvNormalMeanScalePrecision) = -chollogdet(invcov(dist))
-BayesBase.params(dist::MvNormalMeanScalePrecision)    = (mean(dist), invcov(dist))
 BayesBase.scale(dist::MvNormalMeanScalePrecision)     = dist.γ
+BayesBase.params(dist::MvNormalMeanScalePrecision)    = (mean(dist), scale(dist))
 
 function Distributions.sqmahal(dist::MvNormalMeanScalePrecision, x::AbstractVector)
     T = promote_type(eltype(x), paramfloattype(dist))
