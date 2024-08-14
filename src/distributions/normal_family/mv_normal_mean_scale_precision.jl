@@ -49,10 +49,7 @@ function MvNormalMeanScalePrecision(μ::AbstractVector{T1}, γ::T2) where {T1, T
 end
 
 function unpack_parameters(::Type{MvNormalMeanScalePrecision}, packed)
-    len = length(packed)
-    n = div(-1 + isqrt(1 + 4 * len), 2)
-
-    p₁ = view(packed, 1:n)
+    p₁ = view(packed, 1:length(packed) - 1)
     p₂ = packed[end]
 
     return (p₁, p₂)
@@ -64,13 +61,18 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}, 
         return false
     end
     (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
-    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
+    return isnothing(conditioner) && isone(size(η₂, 1)) && isposdef(-η₂)
 end
 
 function (::MeanToNatural{MvNormalMeanScalePrecision})(tuple_of_θ::Tuple{Any, Any})
     (μ, γ) = tuple_of_θ
-    Σ⁻¹ = 1 / γ
-    return (Σ⁻¹ * μ, Σ⁻¹ / -2)
+    return (Σ⁻¹ * μ, γ / -2)
+end
+
+function (::NaturalToMean{MvNormalMeanScalePrecision})(tuple_of_η::Tuple{Any, Any})
+    (η₁, η₂) = tuple_of_η
+    Σ = -1 / η₂
+    return (Σ * η₁, Σ)
 end
 
 # Conversions
@@ -173,3 +175,22 @@ function BayesBase.prod(
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
+
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
+        invη2 = -cholinv(-η₂)
+        n = size(η₁, 1)
+        ident = Eye(n)
+        Iₙ = PermutationMatrix(1, 1)
+        offdiag =
+            1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
+            kron(ident, kron(Iₙ, ident))
+        G =
+            -1 / 4 *
+            (
+                kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
+                kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
+            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
+        [-1/2*invη2 offdiag; offdiag' G]
+    end
