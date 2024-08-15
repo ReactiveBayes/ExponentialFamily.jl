@@ -271,8 +271,8 @@ end
     include("./exponential_family_setuptests.jl")
     import ExponentialFamily: ExponentialFamilyDistributionAttributes
 
-    ef_left  = ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
-    ef_right = ExponentialFamilyDistribution(Univariate, [-3.0, -2.0], nothing, ArbitraryExponentialFamilyAttributes)
+    ef_left  = ExponentialFamilyDistribution(Univariate, Discrete, [-2.0], nothing, ArbitraryDiscreteExponentialFamilyAttributes)
+    ef_right = ExponentialFamilyDistribution(Univariate, Discrete, [-3.0], nothing, ArbitraryDiscreteExponentialFamilyAttributes)
 
     basemeasure_left  = getbasemeasure(ArbitraryExponentialFamilyAttributes)
     suffstats_left    = getsufficientstatistics(ArbitraryExponentialFamilyAttributes)
@@ -281,23 +281,22 @@ end
     suffstats_prod    = (suffstats_left..., suffstats_right...)
     basemeasure_prod  = (x) -> basemeasure_left(x)*basemeasure_right(x)
     η_prod            = [getnaturalparameters(ef_left); getnaturalparameters(ef_right)]
-
-    logpartition_prod = (η) -> 1.0
-
+    logpartition_prod = (η) -> exp(η)
     ef_prod_atts      = ExponentialFamilyDistributionAttributes(
         basemeasure_prod,
         suffstats_prod,
         logpartition_prod,
-        RealInterval(0, Inf)
+        DomainSets.NaturalNumbers()
     )
     ef_prod           = ExponentialFamilyDistribution(
         Univariate,
+        Discrete,
         nothing,
         η_prod,
         ef_prod_atts
     )
 
-    generic_prod_ef = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
+    generic_prod_ef  = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
 
 end
 
