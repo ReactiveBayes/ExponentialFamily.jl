@@ -91,6 +91,8 @@ end
         @test @inferred(insupport(member, 1.0))
         @test !@inferred(insupport(member, -1.0))
 
+        @test @inferred(value_support(member)) == Continuous
+
         _similar = @inferred(similar(member))
 
         # The standard `@allocated` is not really reliable in this test 
@@ -144,6 +146,8 @@ end
         @test @inferred(getsupport(member)) == RealInterval(0, Inf)
         @test insupport(member, 1.0)
         @test !insupport(member, -1.0)
+
+        @test @inferred(value_support(member)) == Continuous
 
         # Computed by hand
         @test @inferred(logpdf(member, 2.0)) ≈ (3.75 + 2log(2))
