@@ -263,8 +263,6 @@ function Base.convert(::Type{MvNormal{T}}, mean::AbstractVector, cov::AbstractMa
     return MvNormal(convert(AbstractVector{T}, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
 end
 
-
-
 # Conversion to mean - variance parametrisation
 
 function Base.convert(::Type{NormalMeanVariance{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
@@ -332,8 +330,6 @@ end
 function Base.convert(::Type{MvNormalMeanPrecision}, dist::MultivariateNormalDistributionsFamily{T}) where {T <: Real}
     return convert(MvNormalMeanPrecision{T}, dist)
 end
-
-
 
 # Conversion to weighted mean - precision parametrisation
 

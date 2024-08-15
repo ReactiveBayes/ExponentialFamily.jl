@@ -29,8 +29,8 @@ end
 @testitem "MvNormalMeanScalePrecision: Stats methods" begin
     include("./normal_family_setuptests.jl")
 
-    μ    = [0.2, 3.0, 4.0]
-    γ    = 2.0
+    μ = [0.2, 3.0, 4.0]
+    γ = 2.0
     dist = MvNormalMeanScalePrecision(μ, γ)
     rdist = MvNormalMeanPrecision(μ, γ * ones(length(μ)))
 
@@ -61,9 +61,9 @@ end
     include("./normal_family_setuptests.jl")
 
     @test convert(MvNormalMeanScalePrecision{Float32}, MvNormalMeanScalePrecision([0.0, 0.0])) ==
-    MvNormalMeanScalePrecision([0.0f0, 0.0f0], 1.0f0)
+          MvNormalMeanScalePrecision([0.0f0, 0.0f0], 1.0f0)
     @test convert(MvNormalMeanScalePrecision{Float64}, [0.0, 0.0], 2.0) ==
-    MvNormalMeanScalePrecision([0.0, 0.0], 2.0)
+          MvNormalMeanScalePrecision([0.0, 0.0], 2.0)
 
     @test length(MvNormalMeanScalePrecision([0.0, 0.0])) === 2
     @test length(MvNormalMeanScalePrecision([0.0, 0.0, 0.0])) === 3
@@ -76,9 +76,9 @@ end
     distribution = MvNormalMeanScalePrecision(μ, γ)
 
     @test distribution ≈ distribution
-    @test convert(MvNormalMeanCovariance, distribution) == MvNormalMeanCovariance(μ, inv(γ)*I(length(μ)))
-    @test convert(MvNormalMeanPrecision, distribution) == MvNormalMeanPrecision(μ, γ*I(length(μ)))
-    @test convert(MvNormalWeightedMeanPrecision, distribution) == MvNormalWeightedMeanPrecision(γ*μ, γ*I(length(μ)))
+    @test convert(MvNormalMeanCovariance, distribution) == MvNormalMeanCovariance(μ, inv(γ) * I(length(μ)))
+    @test convert(MvNormalMeanPrecision, distribution) == MvNormalMeanPrecision(μ, γ * I(length(μ)))
+    @test convert(MvNormalWeightedMeanPrecision, distribution) == MvNormalWeightedMeanPrecision(γ * μ, γ * I(length(μ)))
 end
 
 @testitem "MvNormalMeanScalePrecision: vague" begin
@@ -104,7 +104,6 @@ end
 @testitem "MvNormalMeanScalePrecision: prod" begin
     include("./normal_family_setuptests.jl")
 
-
     for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
         @test prod(strategy, MvNormalMeanScalePrecision([-1, -1], 2), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
               MvNormalWeightedMeanPrecision([0, 2], [4, 6])
@@ -114,7 +113,7 @@ end
         dist = MvNormalMeanScalePrecision(μ, γ)
 
         @test prod(strategy, dist, dist) ≈
-            MvNormalMeanScalePrecision([1.0, 2.0, 3.0], 2γ)
+              MvNormalMeanScalePrecision([1.0, 2.0, 3.0], 2γ)
     end
 end
 
@@ -122,7 +121,7 @@ end
     include("./normal_family_setuptests.jl")
 
     @test convert(MvNormalMeanScalePrecision, zeros(2), 1.0) ==
-        MvNormalMeanScalePrecision(zeros(2), 1.0)
+          MvNormalMeanScalePrecision(zeros(2), 1.0)
     @test begin
         m = rand(5)
         c = rand()

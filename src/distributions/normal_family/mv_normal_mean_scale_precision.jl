@@ -49,7 +49,7 @@ function MvNormalMeanScalePrecision(μ::AbstractVector{T1}, γ::T2) where {T1, T
 end
 
 function unpack_parameters(::Type{MvNormalMeanScalePrecision}, packed)
-    p₁ = view(packed, 1:length(packed) - 1)
+    p₁ = view(packed, 1:length(packed)-1)
     p₂ = packed[end]
 
     return (p₁, p₂)
@@ -66,13 +66,13 @@ end
 
 function (::MeanToNatural{MvNormalMeanScalePrecision})(tuple_of_θ::Tuple{Any, Any})
     (μ, γ) = tuple_of_θ
-    return (Σ⁻¹ * μ, γ / -2)
+    return (γ * μ, γ / -2)
 end
 
 function (::NaturalToMean{MvNormalMeanScalePrecision})(tuple_of_η::Tuple{Any, Any})
     (η₁, η₂) = tuple_of_η
-    Σ = -1 / η₂
-    return (Σ * η₁, Σ)
+    γ = -2 * η₂
+    return (η₁ / γ, γ)
 end
 
 # Conversions
@@ -182,6 +182,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
         invη2 = -cholinv(-η₂)
         n = size(η₁, 1)
         ident = Eye(n)
+        kronprod = invη2^2 * Eye(n^2)
         Iₙ = PermutationMatrix(1, 1)
         offdiag =
             1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
@@ -189,8 +190,9 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
         G =
             -1 / 4 *
             (
-                kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
-                kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
-            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
-        [-1/2*invη2 offdiag; offdiag' G]
+                kronprod * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
+                kronprod * kron(η₁, ident) * kron(η₁' * invη2 * ident, ident)
+            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kronprod
+
+        [-1/2*invη2*ident offdiag; offdiag' G]
     end
