@@ -195,7 +195,7 @@ For a given member of exponential family:
 
 ```jldoctest
 julia> ef = convert(ExponentialFamilyDistribution, Bernoulli(0.5))
-ExponentialFamily(Bernoulli)
+ExponentialFamily(Bernoulli, Discrete)
 
 julia> getsufficientstatistics(ef)
 (identity,)
@@ -203,7 +203,7 @@ julia> getsufficientstatistics(ef)
 
 ```jldoctest
 julia> ef = convert(ExponentialFamilyDistribution, Laplace(1.0, 0.5))
-ExponentialFamily(Laplace, conditioned on 1.0)
+ExponentialFamily(Laplace, Continuous, conditioned on 1.0)
 
 julia> logpdf(ef, 4.0)
 -6.0
