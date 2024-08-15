@@ -57,7 +57,7 @@ unpack_parameters(::Type{Chisq}, packed) = (first(packed),)
 isbasemeasureconstant(::Type{Chisq}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Chisq}) = (x) -> exp(-x / 2)
-getlogbasemeasure(::Type{Chisq}) = (x) -> -x/2
+getlogbasemeasure(::Type{Chisq}) = (x) -> -x / 2
 getsufficientstatistics(::Type{Chisq}) = (log,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
@@ -68,7 +68,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
     (η1,) = unpack_parameters(Chisq, η)
-    return SA[digamma(η1 + one(η1)) + logtwo]
+    return SA[digamma(η1 + one(η1))+logtwo]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin

@@ -18,7 +18,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::VonMises, right:
 
     phase = ((μleft - asin(sin(μleft))) + (μright - asin(sin(μright)))) / pi
 
-    return VonMises(α+ π*phase, R)
+    return VonMises(α + π * phase, R)
 end
 
 function BayesBase.prod(
@@ -77,7 +77,7 @@ getsufficientstatistics(::Type{VonMises}, _) = (cos, sin)
 getgradlogpartition(::NaturalParametersSpace, ::Type{VonMises}, _) = (η) -> begin
     u = sqrt(dot(η, η))
     same_part = besseli(1, u) / (u * besseli(0, u))
-    return SA[η[1] * same_part, η[2] * same_part]
+    return SA[η[1]*same_part, η[2]*same_part]
 end
 getlogpartition(::NaturalParametersSpace, ::Type{VonMises}, _) = (η) -> begin
     return log(besseli(0, sqrt(dot(η, η))))

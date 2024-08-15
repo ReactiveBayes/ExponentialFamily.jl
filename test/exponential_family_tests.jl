@@ -215,9 +215,9 @@ end
         @test @inferred(getbasemeasure(member)(2.0)) ≈ 2.0^-2
         @test @inferred(getbasemeasure(member)(4.0)) ≈ 4.0^-2
 
-        @test @inferred(logbasemeasure(member, 2.0)) ≈ -2*log(2.0)
-        @test @inferred(getlogbasemeasure(member)(2.0)) ≈ -2*log(2.0)
-        @test @inferred(getlogbasemeasure(member)(4.0)) ≈ -2*log(4.0)
+        @test @inferred(logbasemeasure(member, 2.0)) ≈ -2 * log(2.0)
+        @test @inferred(getlogbasemeasure(member)(2.0)) ≈ -2 * log(2.0)
+        @test @inferred(getlogbasemeasure(member)(4.0)) ≈ -2 * log(4.0)
 
         @test all(@inferred(sufficientstatistics(member, 2.0)) .≈ (log(2.0 + 2),))
         @test all(@inferred(map(f -> f(2.0), getsufficientstatistics(member))) .≈ (log(2.0 + 2),))

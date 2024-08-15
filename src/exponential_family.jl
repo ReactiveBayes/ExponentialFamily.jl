@@ -2,7 +2,8 @@ export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
-export getbasemeasure, getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+export getbasemeasure,
+    getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
 export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
@@ -443,7 +444,6 @@ For conditional exponential family distributions requires an extra `conditioner`
 """
 getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(T)
 
-
 """
     getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
@@ -459,7 +459,6 @@ A generic verion of `getbasemeasure` defined particularly for distribution types
 For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
 """
 getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbasemeasure(T)
-
 
 """
     getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])
@@ -622,14 +621,13 @@ end
 
 function _plogpdf(ef, x)
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
-    return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef,x))
+    return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef, x))
 end
 
 _scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
 _scalarproduct(::Type{Univariate}, η, statistics) = dot(η, flatten_parameters(statistics))
 _scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
 _scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
-
 
 function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition, logbasemeasure) where {T}
     # TODO: Think of what to do with this assert
@@ -685,7 +683,7 @@ check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, 
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
-    return map(x -> _plogpdf(ef, x, _logpartition, logbasemeasure(ef,x)), container)
+    return map(x -> _plogpdf(ef, x, _logpartition, logbasemeasure(ef, x)), container)
 end
 
 check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), container)
