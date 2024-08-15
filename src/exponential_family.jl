@@ -243,7 +243,7 @@ function ExponentialFamilyDistribution(
 end
 
 function Base.show(io::IO, ef::ExponentialFamilyDistribution{Tvar, Tval}) where {Tvar, Tval}
-    print(io, "ExponentialFamily(", Tvar, Tval)
+    print(io, "ExponentialFamily(", Tvar,", ", Tval)
     conditioner = getconditioner(ef)
     if !isnothing(conditioner)
         print(io, ", conditioned on ", conditioner)
