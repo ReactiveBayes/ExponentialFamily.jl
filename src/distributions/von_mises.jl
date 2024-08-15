@@ -31,7 +31,7 @@ function BayesBase.prod(
     ηleft = getnaturalparameters(left)
     ηright = getnaturalparameters(right)
    
-    return ExponentialFamilyDistribution(VonMises,ηright + ηleft , conditionerleft + conditionerright, nothing)
+    return ExponentialFamilyDistribution(VonMises, ηright + ηleft , conditionerleft + conditionerright)
      
 end
 

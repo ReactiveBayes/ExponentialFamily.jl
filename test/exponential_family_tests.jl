@@ -70,7 +70,7 @@ end
     end
 
     @testset let member =
-            ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
+            ExponentialFamilyDistribution(Univariate, Continuous, [2.0, 2.0], nothing, ArbitraryExponentialFamilyAttributes)
         η = @inferred(getnaturalparameters(member))
 
         @test ExponentialFamily.exponential_family_typetag(member) === Univariate
@@ -106,6 +106,7 @@ end
         @test all(@inferred(sufficientstatistics(_similar, 2.0)) .≈ (2.0, log(2.0)))
         @test @inferred(logpartition(_similar, η)) ≈ 0.25
         @test @inferred(getsupport(_similar)) == RealInterval(0, Inf)
+        @test @inferred(value_support(_similar)) == Continuous
     end
 end
 
