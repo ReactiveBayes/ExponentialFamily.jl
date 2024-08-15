@@ -34,7 +34,7 @@ end
             for x in 0:n
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === binomial(n, x)
-                @test @inferred(logbasemeasure(ef, x)) === loggamma(n+1) - (loggamma(n - x + 1) + loggamma(x + 1))
+                @test @inferred(logbasemeasure(ef, x)) === loggamma(n + 1) - (loggamma(n - x + 1) + loggamma(x + 1))
                 @test all(@inferred(sufficientstatistics(ef, x)) .≈ (x,))
                 @test @inferred(logpartition(ef)) ≈ (n * log(1 + exp(η₁)))
             end
@@ -75,7 +75,7 @@ end
                     support = 0:1:max(nleft, nright)
 
                     @test sum(hist_sum, support) ≈ 1.0 atol = 1e-9
-
+                    @test value_support(prod_dist) == Discrete
                     for x in support
                         @test basemeasure(prod_dist, x) ≈ (binomial(nleft, x) * binomial(nright, x))
                         @test all(sufficientstatistics(prod_dist, x) .≈ (x,))

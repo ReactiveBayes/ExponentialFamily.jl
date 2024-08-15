@@ -2,7 +2,8 @@ export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
-export getbasemeasure, getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+export getbasemeasure,
+    getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
 export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
@@ -163,10 +164,11 @@ BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) 
 BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
 
 """
-    ExponentialFamilyDistribution(::Type{T}, naturalparameters, conditioner, attributes)
+    ExponentialFamilyDistribution(::Type{Tvar}, ::Type{Tval}, naturalparameters, conditioner, attributes)
 
 `ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
-Type `T` can be either a distribution type (e.g. from the `Distributions.jl` package) or a variate type (e.g. `Univariate`).
+Type `Tvar` can be either a distribution type (e.g. from the `Distributions.jl` package) or a variate type (e.g. `Univariate`).
+Type `Tval` is can be `Continuous` or `Discrete` of type `Distributions.ValueSupport`. 
 In the context of the package, exponential family distributions are represented in the form:
 
 ```math
@@ -209,18 +211,19 @@ julia> logpdf(ef, 4.0)
 
 See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
-struct ExponentialFamilyDistribution{T, P, C, A}
+struct ExponentialFamilyDistribution{Tvar, Tval, P, C, A}
     naturalparameters::P
     conditioner::C
     attributes::A
 
     ExponentialFamilyDistribution(
-        ::Type{T},
+        ::Type{Tvar},
+        ::Type{Tval},
         naturalparameters::P,
         conditioner::C = nothing,
         attributes::A = nothing
-    ) where {T, P, C, A} = begin
-        new{T, P, C, A}(
+    ) where {Tvar, Tval, P, C, A} = begin
+        new{Tvar, Tval, P, C, A}(
             naturalparameters,
             conditioner,
             attributes
@@ -229,18 +232,18 @@ struct ExponentialFamilyDistribution{T, P, C, A}
 end
 
 function ExponentialFamilyDistribution(
-    ::Type{T},
+    ::Type{Tvar},
     naturalparameters::P,
     conditioner = nothing
-) where {T <: Distribution, P}
-    if !isproper(NaturalParametersSpace(), T, naturalparameters, conditioner)
+) where {Tvar <: Distribution, P}
+    if !isproper(NaturalParametersSpace(), Tvar, naturalparameters, conditioner)
         error(lazy"Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
     end
-    return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
+    return ExponentialFamilyDistribution(Tvar, value_support(Tvar), naturalparameters, conditioner, nothing)
 end
 
-function Base.show(io::IO, ef::ExponentialFamilyDistribution{T}) where {T}
-    print(io, "ExponentialFamily(", T)
+function Base.show(io::IO, ef::ExponentialFamilyDistribution{Tvar, Tval}) where {Tvar, Tval}
+    print(io, "ExponentialFamily(", Tvar, Tval)
     conditioner = getconditioner(ef)
     if !isnothing(conditioner)
         print(io, ", conditioned on ", conditioner)
@@ -441,7 +444,6 @@ For conditional exponential family distributions requires an extra `conditioner`
 """
 getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(T)
 
-
 """
     getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
@@ -457,7 +459,6 @@ A generic verion of `getbasemeasure` defined particularly for distribution types
 For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
 """
 getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbasemeasure(T)
-
 
 """
     getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])
@@ -620,14 +621,13 @@ end
 
 function _plogpdf(ef, x)
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
-    return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef,x))
+    return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef, x))
 end
 
 _scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
 _scalarproduct(::Type{Univariate}, η, statistics) = dot(η, flatten_parameters(statistics))
 _scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
 _scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
-
 
 function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition, logbasemeasure) where {T}
     # TODO: Think of what to do with this assert
@@ -683,7 +683,7 @@ check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, 
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
-    return map(x -> _plogpdf(ef, x, _logpartition, logbasemeasure(ef,x)), container)
+    return map(x -> _plogpdf(ef, x, _logpartition, logbasemeasure(ef, x)), container)
 end
 
 check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), container)
@@ -862,6 +862,8 @@ function BayesBase.params(::NaturalParametersSpace, distribution::Distribution)
     return map(MeanParametersSpace() => NaturalParametersSpace(), exponential_family_typetag(distribution), θ)
 end
 
+BayesBase.value_support(::ExponentialFamilyDistribution{Tvar, Tval}) where {Tvar, Tval} = Tval
+
 Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} =
     error("Cannot convert an arbitrary `ExponentialFamily{$T}` object to a `Distribution`. An explicit approximation method is required.")
 
@@ -897,9 +899,10 @@ function BayesBase.paramfloattype(ef::ExponentialFamilyDistribution)
     return deep_eltype(getnaturalparameters(ef))
 end
 
-function BayesBase.convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{T}) where {F, T}
+function BayesBase.convert_paramfloattype(::Type{F}, ef::ExponentialFamilyDistribution{Tvar, Tval}) where {F, Tvar, Tval}
     return ExponentialFamilyDistribution(
-        T,
+        Tvar,
+        Tval,
         convert_paramfloattype(F, getnaturalparameters(ef)),
         getconditioner(ef),
         getattributes(ef)
@@ -929,10 +932,10 @@ Base.isapprox(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistr
 Base.:(==)(left::ExponentialFamilyDistribution, right::ExponentialFamilyDistribution) = false
 
 function Base.isapprox(
-    left::ExponentialFamilyDistribution{T},
-    right::ExponentialFamilyDistribution{T};
+    left::ExponentialFamilyDistribution{Tvar, Tval},
+    right::ExponentialFamilyDistribution{Tvar, Tval};
     kwargs...
-) where {T}
+) where {Tvar, Tval}
     return getbasemeasure(left) == getbasemeasure(right) &&
            getsufficientstatistics(left) == getsufficientstatistics(right) &&
            getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) &&
@@ -940,7 +943,7 @@ function Base.isapprox(
            isapprox(getnaturalparameters(left), getnaturalparameters(right); kwargs...)
 end
 
-function Base.:(==)(left::ExponentialFamilyDistribution{T}, right::ExponentialFamilyDistribution{T}) where {T}
+function Base.:(==)(left::ExponentialFamilyDistribution{Tvar, Tval}, right::ExponentialFamilyDistribution{Tvar, Tval}) where {Tvar, Tval}
     return getbasemeasure(left) == getbasemeasure(right) &&
            getsufficientstatistics(left) == getsufficientstatistics(right) &&
            getlogpartition(left) == getlogpartition(right) && getsupport(left) == getsupport(right) &&
@@ -968,8 +971,8 @@ end
 
 Base.similar(ef::ExponentialFamilyDistribution) = similar(ef, eltype(getnaturalparameters(ef)))
 
-function Base.similar(ef::ExponentialFamilyDistribution{T}, ::Type{F}) where {T, F}
-    return ExponentialFamilyDistribution(T, similar(getnaturalparameters(ef), F), getconditioner(ef), getattributes(ef))
+function Base.similar(ef::ExponentialFamilyDistribution{Tvar, Tval}, ::Type{F}) where {Tvar, Tval, F}
+    return ExponentialFamilyDistribution(Tvar, Tval, similar(getnaturalparameters(ef), F), getconditioner(ef), getattributes(ef))
 end
 
 BayesBase.vague(::Type{ExponentialFamilyDistribution{T}}, args...) where {T <: Distribution} =
@@ -991,9 +994,9 @@ end
 
 function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution},
-    left::ExponentialFamilyDistribution{T},
-    right::ExponentialFamilyDistribution{T}
-) where {T}
+    left::ExponentialFamilyDistribution{Tvar, Tval},
+    right::ExponentialFamilyDistribution{Tvar, Tval}
+) where {Tvar, Tval}
     # Se here we assume that if both left has the exact same base measure and this base measure is `ConstantBaseMeasure`
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocated more than `similar(left)`)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
@@ -1011,10 +1014,10 @@ function BayesBase.prod(
 end
 
 function BayesBase.prod!(
-    container::ExponentialFamilyDistribution{T},
-    left::ExponentialFamilyDistribution{T},
-    right::ExponentialFamilyDistribution{T}
-) where {T}
+    container::ExponentialFamilyDistribution{Tvar, Tval},
+    left::ExponentialFamilyDistribution{Tvar, Tval},
+    right::ExponentialFamilyDistribution{Tvar, Tval}
+) where {Tvar, Tval}
     # First check if we can actually simply sum-up the natural parameters
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocate in this simple case)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() &&

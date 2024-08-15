@@ -23,6 +23,7 @@ function BayesBase.prod(
 
     return ExponentialFamilyDistribution(
         Univariate,
+        Continuous,
         naturalparameters,
         nothing,
         attributes
@@ -57,7 +58,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Rayleigh}) = (η) -> begin
-    (η1, ) = unpack_parameters(Rayleigh, η)
+    (η1,) = unpack_parameters(Rayleigh, η)
     return SA[-inv(η1);]
 end
 
@@ -75,7 +76,7 @@ end
 
 getgradlogpartition(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
     (σ,) = unpack_parameters(Rayleigh, θ)
-    return SA[2/σ;]
+    return SA[2 / σ;]
 end
 
 getfisherinformation(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin

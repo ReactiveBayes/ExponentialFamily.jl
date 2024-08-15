@@ -53,7 +53,7 @@ end
 ExponentialFamily.isproper(::NaturalParametersSpace, ::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η, conditioner) = isinteger(conditioner)
 ExponentialFamily.isbasemeasureconstant(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) = NonConstantBaseMeasure()
 ExponentialFamily.getbasemeasure(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) = (x) -> x^conditioner
-ExponentialFamily.getlogbasemeasure(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) = (x) -> conditioner*log(x)
+ExponentialFamily.getlogbasemeasure(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) = (x) -> conditioner * log(x)
 ExponentialFamily.getsufficientstatistics(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) =
     ((x) -> log(x - conditioner),)
 ExponentialFamily.getlogpartition(::NaturalParametersSpace, ::Type{ArbitraryConditionedDistributionFromExponentialFamily}, conditioner) =
@@ -64,6 +64,7 @@ BayesBase.vague(::Type{ArbitraryConditionedDistributionFromExponentialFamily}) =
     ArbitraryConditionedDistributionFromExponentialFamily(1.0, -2)
 
 BayesBase.params(dist::ArbitraryConditionedDistributionFromExponentialFamily) = (dist.con, dist.p1)
+BayesBase.value_support(::ArbitraryConditionedDistributionFromExponentialFamily) = Continuous
 
 ExponentialFamily.separate_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, params) = ((params[2],), params[1])
 ExponentialFamily.join_conditioner(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, cparams, conditioner) = (conditioner, cparams...)

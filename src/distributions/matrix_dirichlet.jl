@@ -153,11 +153,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
         )
     end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) = 
+getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
     (η) -> begin
         (η1,) = unpack_parameters(MatrixDirichlet, η)
         return vmapreduce(
-            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),vcat,
+            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)), vcat,
             eachcol(η1))
     end
 
@@ -185,11 +185,11 @@ getlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) =
         )
     end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) = 
+getgradlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) =
     (θ) -> begin
         (α,) = unpack_parameters(MatrixDirichlet, θ)
         return vmapreduce(
-            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),vcat,
+            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)), vcat,
             eachcol(α))
     end
 

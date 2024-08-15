@@ -85,6 +85,7 @@ function BayesBase.prod(
         attributes = ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support)
         return ExponentialFamilyDistribution(
             Univariate,
+            Continuous,
             naturalparameters,
             nothing,
             attributes
@@ -151,7 +152,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Pareto}, conditioner) = (η) -> begin
     (η1,) = unpack_parameters(Pareto, η)
-    return SA[log(conditioner) - one(η1)/(one(η1)+η1);]
+    return SA[log(conditioner) - one(η1) / (one(η1) + η1);]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Pareto}, _) = (η) -> begin
