@@ -730,7 +730,7 @@ BayesBase.value_support(::Type{<:ExponentialFamilyDistribution{D, P, C, A}}) whe
 This function returns the parameters of a distribution of type `T` in a flattened form without actually allocating the container.
 """
 flatten_parameters(params::Tuple) = Iterators.flatten(params)
-
+flatten_parameters(x::Real) = x
 # Ignore the `T` by default, assume all the distribution can be flattened with the generic version 
 # If the assumption does not hold, implement a specific method
 flatten_parameters(::Type{T}, params::Tuple) where {T} = flatten_parameters(params)
@@ -1010,7 +1010,50 @@ function BayesBase.prod(
             return BayesBase.prod!(container, left, right)
         end
     end
-    error("Generic product of two exponential family members is not implemented.")
+
+    basemeasure_left    = getbasemeasure(left)
+    suffstats_left      = getsufficientstatistics(left)
+    basemeasure_right   = getbasemeasure(right)
+    suffstats_right     = getsufficientstatistics(right)
+    suffstats_prod      = (suffstats_left..., suffstats_right...)
+    basemeasure_prod    = (x) -> basemeasure_left(x)*basemeasure_right(x)
+    logbasemeasure_prod = (x) -> log(basemeasure_left(x)) + log(basemeasure_right(x))
+    η_prod              = vcat(getnaturalparameters(left), getnaturalparameters(right))
+    conditioner_prod    = vcat(getconditioner(left), getconditioner(right))
+    
+    __logpdf = (x,η) -> mapreduce((θ, f) -> _scalarproduct(Tvar, θ, f(x)), +, η, suffstats_prod) - logbasemeasure_prod(x)
+    __pdf    = (x,η) -> exp(__logpdf(x, η))
+    
+    if Tvar == Univariate
+        supp     = getsupport(left) ∩ getsupport(right)
+        max_supp = maximum(supp)
+        min_supp = minimum(supp)
+        logpartition_prod = Tval == Discrete && max_supp != Inf && min_supp != -Inf ?
+            (η) -> logsumexp(map(x -> __logpdf(x, η), min_supp:max_supp)) :
+            (η) -> log(first(hquadrature((TangentTransform())(x -> __pdf(x, η)), (2/pi)*atan(min_supp), (2/pi)*atan(max_supp))))
+    elseif Tvar == Multivariate
+        error("not implemented")
+    elseif Tvar == Matrixvariate
+        error("Generic product of two Matrixvariate ExponentialFamilyDistribution is not defined")
+    end
+
+    ef_prod_atts = ExponentialFamilyDistributionAttributes(
+        basemeasure_prod,
+        suffstats_prod,
+        logpartition_prod,
+        supp,
+        logbasemeasure_prod
+    )
+    ef_prod = ExponentialFamilyDistribution(
+        Tvar,
+        Tval,
+        η_prod,
+        all(isnothing.(conditioner_prod)) ? nothing : conditioner_prod,
+        ef_prod_atts
+    )
+
+    return ef_prod
+    
 end
 
 function BayesBase.prod!(

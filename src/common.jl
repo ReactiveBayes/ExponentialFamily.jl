@@ -46,3 +46,7 @@ function binomial_prod(n, p, x)
 end
 
 mvdigamma(η, p) = sum(digamma(η + (one(d) - d) / 2) for d in 1:p)
+
+struct TangentTransform end
+
+(::TangentTransform)(f) = x -> f(tan(x)*pi/2)*sec(x*pi/2)^2

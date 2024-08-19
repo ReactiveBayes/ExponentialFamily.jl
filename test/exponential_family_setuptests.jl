@@ -1,4 +1,4 @@
-using ExponentialFamily, BayesBase, Distributions, Test, StatsFuns, BenchmarkTools, Random, FillArrays, DomainSets
+using ExponentialFamily, BayesBase, Distributions, Test, StatsFuns, BenchmarkTools, Random, FillArrays, DomainSets, SpecialFunctions
 
 import Distributions: RealInterval, ContinuousUnivariateDistribution, Univariate
 import ExponentialFamily: basemeasure, logbasemeasure, sufficientstatistics, logpartition, insupport, ConstantBaseMeasure
@@ -19,11 +19,18 @@ const ArbitraryExponentialFamilyAttributes = ExponentialFamilyDistributionAttrib
     RealInterval(0, Inf)
 )
 
+const ArbitraryContinuousExponentialFamilyAttributes = ExponentialFamilyDistributionAttributes(
+    (x) -> one(x),
+    ((x) -> x, (x) -> x^2),
+    (η) -> 1 / sum(η),
+    DomainSets.Interval(0, Inf)
+)
+
 const ArbitraryDiscreteExponentialFamilyAttributes = ExponentialFamilyDistributionAttributes(
-    (x) -> one(x) / gamma(x + one(x)),
+    (x) -> one(x),
     (identity, ),
-    (η) -> exp(η),
-    DomainSets.NaturalNumbers()
+    (η) -> log(1 - exp(η*100)) - log(1 - exp(η)),
+    DomainSets.ClosedInterval(1:100)
 )
 
 # Arbitrary distribution (un-conditioned)

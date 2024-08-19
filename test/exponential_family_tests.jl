@@ -267,37 +267,66 @@ end
           ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily}
 end
 
-@testitem "Product of unconditioned ExponentialFamilyDistributions with the same support" begin
+@testitem "Product of unconditioned discrete ExponentialFamilyDistributions with the same support" begin
     include("./exponential_family_setuptests.jl")
     import ExponentialFamily: ExponentialFamilyDistributionAttributes
 
-    ef_left  = ExponentialFamilyDistribution(Univariate, Discrete, [-2.0], nothing, ArbitraryDiscreteExponentialFamilyAttributes)
-    ef_right = ExponentialFamilyDistribution(Univariate, Discrete, [-3.0], nothing, ArbitraryDiscreteExponentialFamilyAttributes)
+    ef_left  = ExponentialFamilyDistribution(Univariate, Discrete, -2.0, nothing, ArbitraryDiscreteExponentialFamilyAttributes)
+    ef_right = ExponentialFamilyDistribution(Univariate, Discrete, -3.0, nothing, ArbitraryDiscreteExponentialFamilyAttributes)
 
-    basemeasure_left  = getbasemeasure(ArbitraryExponentialFamilyAttributes)
-    suffstats_left    = getsufficientstatistics(ArbitraryExponentialFamilyAttributes)
+    basemeasure_left  = getbasemeasure(ArbitraryDiscreteExponentialFamilyAttributes)
+    suffstats_left    = getsufficientstatistics(ArbitraryDiscreteExponentialFamilyAttributes)
     basemeasure_right = basemeasure_left
     suffstats_right   = suffstats_left
     suffstats_prod    = (suffstats_left..., suffstats_right...)
     basemeasure_prod  = (x) -> basemeasure_left(x)*basemeasure_right(x)
-    η_prod            = [getnaturalparameters(ef_left); getnaturalparameters(ef_right)]
-    logpartition_prod = (η) -> exp(η)
+    η_prod            = vcat(getnaturalparameters(ef_left), getnaturalparameters(ef_right))
+    logpartition_prod = (η) -> logsumexp(map(x -> mapreduce((θ, f) -> θ*f(x), +, η, suffstats_prod) - log(basemeasure_prod(x)), minimum(getsupport(ef_left)):maximum(getsupport(ef_left))))
     ef_prod_atts      = ExponentialFamilyDistributionAttributes(
         basemeasure_prod,
         suffstats_prod,
         logpartition_prod,
-        DomainSets.NaturalNumbers()
+        DomainSets.ClosedInterval(1:100)
     )
     ef_prod           = ExponentialFamilyDistribution(
         Univariate,
         Discrete,
-        nothing,
         η_prod,
+        nothing,
         ef_prod_atts
     )
 
     generic_prod_ef  = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
 
+    @test @inferred(getnaturalparameters(generic_prod_ef)) == η_prod
+    @test @inferred(getconditioner(generic_prod_ef))       === nothing
+    @testset for  x in 1:5
+        @test @inferred(getbasemeasure(generic_prod_ef)(x)) == basemeasure_prod(x)
+    end 
+    @test @inferred(logpartition(generic_prod_ef)) == logpartition(ef_prod)
+    @test sum(map(x -> pdf(generic_prod_ef, x), 1:100)) ≈ 1
+end
+
+@testitem "Product of unconditioned continuous ExponentialFamilyDistributions with the same support" begin
+    include("./exponential_family_setuptests.jl")
+    using HCubature
+    import ExponentialFamily: ExponentialFamilyDistributionAttributes, TangentTransform
+
+    ef_left  = ExponentialFamilyDistribution(Univariate, Continuous, [-2.0,-0.5], nothing, ArbitraryContinuousExponentialFamilyAttributes)
+    ef_right = ExponentialFamilyDistribution(Univariate, Continuous, [-3.0,-2.0], nothing, ArbitraryContinuousExponentialFamilyAttributes)
+
+    generic_prod_ef  = prod(PreserveTypeProd(ExponentialFamilyDistribution), ef_left, ef_right)
+
+    @test @inferred(getnaturalparameters(generic_prod_ef)) == [-2.0, -0.5, -3.0, -2.0]
+    @test @inferred(getbasemeasure(generic_prod_ef)(0.2)) == 1.0
+    @test map(f -> f(0.1) ,getsufficientstatistics(generic_prod_ef)) ≈ (0.1, 0.01, 0.1, 0.01)
+    @test first(
+        hquadrature(
+            (TangentTransform())(x -> pdf(generic_prod_ef, x)),
+            (2/pi)*atan(minimum(getsupport(ef_left))),
+            (2/pi)*atan(maximum(getsupport(ef_left)))
+        )
+    ) ≈ 1 
 end
 
 @testitem "Product of unconditioned ExponentialFamilyDistributions with different supports" begin
