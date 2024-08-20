@@ -1024,17 +1024,22 @@ function BayesBase.prod(
     __logpdf = (x,η) -> mapreduce((θ, f) -> _scalarproduct(Tvar, θ, f(x)), +, η, suffstats_prod) - logbasemeasure_prod(x)
     __pdf    = (x,η) -> exp(__logpdf(x, η))
     
+    supp     = getsupport(left) ∩ getsupport(right)
+    max_supp = maximum(supp)
+    min_supp = minimum(supp)
+
     if Tvar == Univariate
-        supp     = getsupport(left) ∩ getsupport(right)
-        max_supp = maximum(supp)
-        min_supp = minimum(supp)
-        logpartition_prod = Tval == Discrete && max_supp != Inf && min_supp != -Inf ?
-            (η) -> logsumexp(map(x -> __logpdf(x, η), min_supp:max_supp)) :
-            (η) -> log(first(hquadrature((TangentTransform())(x -> __pdf(x, η)), (2/pi)*atan(min_supp), (2/pi)*atan(max_supp))))
+        if !isinf(min_supp) && !isinf(max_supp) && Tval == Discrete
+            logpartition_prod = logsumexp(map(x -> __logpdf(x, η), min_supp:max_supp))
+        elseif Tval == Discrete
+            error("Generic product of two discrete univariate ExponentialFamilyDistribution is not implemented.
+                    Convergence is not known!")
+        end
+        logpartition_prod = (η) -> log(first(hquadrature((TangentTransform())(x -> __pdf(x, η)), (2/pi)*atan(min_supp), (2/pi)*atan(max_supp))))
     elseif Tvar == Multivariate
-        error("not implemented")
+        error("Generic product of two mulivariate ExponentialFamilyDistribution is not implemented")
     elseif Tvar == Matrixvariate
-        error("Generic product of two Matrixvariate ExponentialFamilyDistribution is not defined")
+        error("Generic product of two matrixvariate ExponentialFamilyDistribution is not implemented")
     end
 
     ef_prod_atts = ExponentialFamilyDistributionAttributes(
