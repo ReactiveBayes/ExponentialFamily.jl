@@ -149,3 +149,23 @@ end
         end
     end
 end
+
+@testitem "MvNormalMeanScalePrecision: rand" begin
+    include("./normal_family_setuptests.jl")
+
+    rng = MersenneTwister(42)
+
+    for T in (Float32, Float64)
+        @testset "Basic functionality" begin
+            μ = [1.0, 2.0, 3.0]
+            γ = 2.0
+            dist = convert(MvNormalMeanScalePrecision{T}, μ, γ)
+
+            @test typeof(rand(dist)) <: Vector{T}
+
+            samples = rand(rng, dist, 5_000)
+
+            @test isapprox(mean(samples), mean(μ), atol = 0.5)
+        end
+    end
+end

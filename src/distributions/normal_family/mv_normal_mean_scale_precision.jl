@@ -149,7 +149,7 @@ Base.size(dist::MvNormalMeanScalePrecision) = (length(dist),)
 
 Base.convert(::Type{<:MvNormalMeanScalePrecision}, μ::AbstractVector, γ::Real) = MvNormalMeanScalePrecision(μ, γ)
 
-function Base.convert(::Type{<:MvNormalMeanScalePrecision{T}}, μ::AbstractVector, γ::T) where {T <: Real}
+function Base.convert(::Type{<:MvNormalMeanScalePrecision{T}}, μ::AbstractVector, γ::Real) where {T <: Real}
     MvNormalMeanScalePrecision(convert(AbstractArray{T}, μ), convert(T, γ))
 end
 
@@ -174,6 +174,33 @@ function BayesBase.prod(
     wleft  = convert(MvNormalWeightedMeanPrecision, left)
     wright = convert(MvNormalWeightedMeanPrecision, right)
     return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
+end
+
+function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}) where {T}
+    μ, γ = mean(dist), scale(dist)
+    return μ + 1 / γ * I(length(μ)) * randn(rng, T, length(μ))
+end
+
+function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}, size::Int64) where {T}
+    container = Matrix{T}(undef, length(dist), size)
+    return rand!(rng, dist, container)
+end
+
+# FIXME: This is not the most efficient way to generate random samples within container
+#        it needs to work with scale method, not with std
+function BayesBase.rand!(
+    rng::AbstractRNG,
+    dist::MvGaussianMeanScalePrecision,
+    container::AbstractArray{T}
+) where {T <: Real}
+    preallocated = similar(container)
+    randn!(rng, reshape(preallocated, length(preallocated)))
+    μ, L = mean_std(dist)
+    @views for i in axes(preallocated, 2)
+        copyto!(container[:, i], μ)
+        mul!(container[:, i], L, preallocated[:, i], 1, 1)
+    end
+    container
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
