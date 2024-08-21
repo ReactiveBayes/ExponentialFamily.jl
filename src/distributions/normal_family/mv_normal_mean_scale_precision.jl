@@ -196,3 +196,11 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
 
         [-1/2*invη2*ident offdiag; offdiag' G]
     end
+
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) = (θ) -> begin
+    μ, γ = unpack_parameters(MvNormalMeanScalePrecision, θ)
+    n = size(μ, 1)
+    offdiag = zeros(n, n^2)
+    G = (1 / 2) * γ^2 * Eye(n^2)
+    [γ*Eye(n) offdiag; offdiag' G]
+end
