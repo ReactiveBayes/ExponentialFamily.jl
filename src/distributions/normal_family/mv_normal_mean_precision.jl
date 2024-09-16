@@ -93,8 +93,8 @@ end
 
 function BayesBase.prod(
     ::PreserveTypeProd{Distribution},
-    left::MvNormalMeanPrecision{T1},
-    right::MvNormalMeanPrecision{T2}
+    left::MvNormalMeanPrecision{T1, <:AbstractVector, <:Matrix},
+    right::MvNormalMeanPrecision{T2, <:AbstractVector, <:Matrix}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     W = precision(left) + precision(right)
 
