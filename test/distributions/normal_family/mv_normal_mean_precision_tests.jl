@@ -110,6 +110,13 @@ end
 
         @test prod(strategy, dist, dist) ≈
               MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+
+        μ    = [1.0, 2.0, 3.0]
+        Λ    = Diagonal(1 ./ [1.0, 2.0, 3.0])
+        dist = MvNormalMeanPrecision(μ, Λ)
+
+        @test prod(strategy, dist, dist) ≈
+              MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
     end
 end
 
