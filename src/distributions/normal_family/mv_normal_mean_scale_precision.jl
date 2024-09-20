@@ -214,7 +214,9 @@ function getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanScalePrecision
     return Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(dim)))
 end
 
-getbasemeasure(::Type{MvNormalMeanScalePrecision}) = (x) -> (2π)^(- length(x) / 2)
+isbasemeasureconstant(::Type{MvNormalMeanScalePrecision}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{MvNormalMeanScalePrecision}) = (x) -> (2π)^(-length(x) / 2)
 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
@@ -238,27 +240,12 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
     (η) -> begin
         (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
         invη2 = -cholinv(-η₂)
-        n = size(η₁, 1)
-        ident = Eye(n)
-        kronprod = invη2^2 * Eye(n^2)
-        Iₙ = PermutationMatrix(1, 1)
-        offdiag =
-            1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
-            kron(ident, kron(Iₙ, ident))
-        G =
-            -1 / 4 *
-            (
-                kronprod * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
-                kronprod * kron(η₁, ident) * kron(η₁' * invη2 * ident, ident)
-            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kronprod
-
-        [-1/2*invη2*ident offdiag; offdiag' G]
+        return Diagonal([η₁..., invη2])
     end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) = (θ) -> begin
-    μ, γ = unpack_parameters(MvNormalMeanScalePrecision, θ)
-    n = size(μ, 1)
-    offdiag = zeros(n, n^2)
-    G = (1 / 2) * γ^2 * Eye(n^2)
-    [γ*Eye(n) offdiag; offdiag' G]
-end
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+    (η) -> begin
+        (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
+        invη2 = -cholinv(-η₂)
+        return Diagonal([η₁..., invη2])
+    end
