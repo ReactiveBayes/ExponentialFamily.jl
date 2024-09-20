@@ -75,6 +75,12 @@ function (::NaturalToMean{MvNormalMeanScalePrecision})(tuple_of_η::Tuple{Any, A
     return (η₁ / γ, γ)
 end
 
+function nabs2(x)
+    return sum(map(abs2, x))
+end
+
+getsufficientstatistics(::Type{MvNormalMeanScalePrecision}) = (identity, nabs2)
+
 # Conversions
 function Base.convert(
     ::Type{MvNormal{T, C, M}},
@@ -202,6 +208,29 @@ function BayesBase.rand!(
     end
     container
 end
+
+function getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanScalePrecision})
+    dim = length(getnaturalparameters(ef)) - 1
+    return Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(dim)))
+end
+
+getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+    (η) -> begin
+        η1 = @view η[1:end-1]
+        η2 = η[end]
+        k = length(η1)
+        Cinv = -inv(η2)
+        l = log(-inv(η2))
+        return (dot(η1, Cinv, η1) / 2 - (k * log(2) + l)) / 2
+    end
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+    (η) -> begin
+        η1 = @view η[1:end-1]
+        η2 = η[end]
+        Cinv = log(-inv(η2))
+        return pack_parameters(MvNormalMeanCovariance, (0.5 * Cinv * η1, 0.25 * Cinv^2 * dot(η1,η1) + 0.5 * Cinv))
+    end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
