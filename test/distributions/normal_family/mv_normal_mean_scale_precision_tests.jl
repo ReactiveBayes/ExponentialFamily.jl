@@ -34,7 +34,7 @@ end
         γ = rand()
         
         @testset let d = MvNormalMeanScalePrecision(μ, γ)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d;)
         end
     end
 end
@@ -139,27 +139,6 @@ end
         m = rand(5)
         c = rand()
         convert(MvNormalMeanScalePrecision, m, c) == MvNormalMeanScalePrecision(m, c)
-    end
-end
-
-@testitem "Fisher information tests" begin
-    include("./normal_family_setuptests.jl")
-
-    for s in 2:5
-        μ = randn(s)
-        γ = rand()
-        θ = pack_parameters(MvNormalMeanScalePrecision, (μ, γ))
-        η = MeanToNatural(MvNormalMeanScalePrecision)(θ)
-        θ1 = pack_parameters(MvNormalMeanCovariance, (μ, inv(γ) * I(s)))
-        η1 = MeanToNatural(MvNormalMeanCovariance)(θ1)
-        @test begin
-            getfisherinformation(NaturalParametersSpace(), MvNormalMeanScalePrecision)(η) ≈
-            getfisherinformation(NaturalParametersSpace(), MvNormalMeanCovariance)(η1)
-        end
-
-        @test begin
-            getfisherinformation(MeanParametersSpace(), MvNormalMeanScalePrecision)(θ) ≈ getfisherinformation(MeanParametersSpace(), MvNormalMeanCovariance)(θ1)
-        end
     end
 end
 

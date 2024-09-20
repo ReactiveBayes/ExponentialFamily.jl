@@ -214,6 +214,8 @@ function getsupport(ef::ExponentialFamilyDistribution{MvNormalMeanScalePrecision
     return Domain(IndicatorFunction{AbstractVector}(MvNormalDomainIndicator(dim)))
 end
 
+getbasemeasure(::Type{MvNormalMeanScalePrecision}) = (x) -> (2π)^(- length(x) / 2)
+
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:end-1]
