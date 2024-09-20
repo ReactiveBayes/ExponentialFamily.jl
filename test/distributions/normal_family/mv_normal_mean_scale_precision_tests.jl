@@ -26,6 +26,19 @@ end
     @test ExponentialFamily.distrname(MvNormalMeanScalePrecision(zeros(2))) === "MvNormalMeanScalePrecision"
 end
 
+@testitem "MvNormalMeanScalePrecision: ExponentialFamilyDistribution" begin
+    include("../distributions_setuptests.jl")
+
+    for s in 2:5
+        μ = randn(s)
+        γ = rand()
+        
+        @testset let d = MvNormalMeanScalePrecision(μ, γ)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+        end
+    end
+end
+
 @testitem "MvNormalMeanScalePrecision: Stats methods" begin
     include("./normal_family_setuptests.jl")
 
