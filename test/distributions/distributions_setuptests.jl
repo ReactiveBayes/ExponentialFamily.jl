@@ -349,11 +349,18 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
     end
-
+    
     if test_samples_logpdf
         @test @inferred(logpdf(ef, samples)) ≈ map((s) -> logpdf(distribution, s), samples)
         @test @inferred(pdf(ef, samples)) ≈ map((s) -> pdf(distribution, s), samples)
     end
+
+    samples = [rand(distribution) for _ in 1:5000]
+    _, collection_of_samples = ExponentialFamily.check_logpdf(ef, samples)
+    expectation_of_sufficient_statistics = mean((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), collection_of_samples)
+    θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
+    @test θ ≈ expectation_of_sufficient_statistics rtol = 0.05
+
 end
 
 function run_test_fisherinformation_properties(distribution; test_properties_in_natural_space = true, test_properties_in_mean_space = true)
