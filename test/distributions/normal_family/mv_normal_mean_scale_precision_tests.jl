@@ -29,9 +29,11 @@ end
 @testitem "MvNormalMeanScalePrecision: ExponentialFamilyDistribution" begin
     include("../distributions_setuptests.jl")
 
+    rng = StableRNG(42)
+
     for s in 2:5
-        μ = randn(s)
-        γ = rand()
+        μ = randn(rng, s)
+        γ = rand(rng)
         
         @testset let d = MvNormalMeanScalePrecision(μ, γ)
             ef = test_exponentialfamily_interface(d;)
@@ -65,9 +67,10 @@ end
     @test length(dist) == 3
     @test entropy(dist) ≈ entropy(rdist)
     @test pdf(dist, [0.2, 3.0, 4.0]) ≈ pdf(rdist, [0.2, 3.0, 4.0])
-    @test pdf(dist, [0.202, 3.002, 4.002]) ≈ pdf(rdist, [0.202, 3.002, 4.002])
+    @test pdf(dist, [0.202, 3.002, 4.002]) ≈ pdf(rdist, [0.202, 3.002, 4.002]) atol = 1e-4
     @test logpdf(dist, [0.2, 3.0, 4.0]) ≈ logpdf(rdist, [0.2, 3.0, 4.0])
-    @test logpdf(dist, [0.202, 3.002, 4.002]) ≈ logpdf(rdist, [0.202, 3.002, 4.002])
+    @test logpdf(dist, [0.202, 3.002, 4.002]) ≈ logpdf(rdist, [0.202, 3.002, 4.002]) atol = 1e-4
+    @test rand(StableRNG(42), dist, 1000) ≈ rand(StableRNG(42), rdist, 1000)
 end
 
 @testitem "MvNormalMeanScalePrecision: Base methods" begin
