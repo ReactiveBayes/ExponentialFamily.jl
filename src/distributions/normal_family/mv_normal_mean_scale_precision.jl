@@ -263,7 +263,5 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
     end
     
 
-    getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
-        (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
-        return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
-    end
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+    error("MeanParametersSpaceFisher is not implemented for MvNormalMeanScalePrecision")
