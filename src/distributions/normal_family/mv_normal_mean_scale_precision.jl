@@ -3,6 +3,7 @@ export MvNormalMeanScalePrecision, MvGaussianMeanScalePrecision
 import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
 import Base: ndims, precision, length, size, prod
+import BlockArrays: Block, BlockArray, undef_blocks
 
 """
     MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: AbstractMvNormal
@@ -66,7 +67,7 @@ end
 
 function (::MeanToNatural{MvNormalMeanScalePrecision})(tuple_of_θ::Tuple{Any, Any})
     (μ, γ) = tuple_of_θ
-    return (γ * μ, γ / -2)
+    return (γ * μ, - γ / 2)
 end
 
 function (::NaturalToMean{MvNormalMeanScalePrecision})(tuple_of_η::Tuple{Any, Any})
@@ -140,11 +141,11 @@ function Distributions.sqmahal(dist::MvNormalMeanScalePrecision, x::AbstractVect
 end
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanScalePrecision, x::AbstractVector)
-    μ = mean(dist)
+    μ, γ = params(dist)
     @inbounds @simd for i in 1:length(r)
         r[i] = μ[i] - x[i]
     end
-    return dot3arg(r, invcov(dist), r) # x' * A * x
+    return dot3arg(r, γ, r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanScalePrecision{T}) where {T} = T
@@ -184,7 +185,7 @@ end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}) where {T}
     μ, γ = mean(dist), scale(dist)
-    return μ + 1 / γ * I(length(μ)) * randn(rng, T, length(μ))
+    return μ + 1 / γ .* randn(rng, T, length(μ))
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}, size::Int64) where {T}
@@ -218,34 +219,51 @@ isbasemeasureconstant(::Type{MvNormalMeanScalePrecision}) = ConstantBaseMeasure(
 
 getbasemeasure(::Type{MvNormalMeanScalePrecision}) = (x) -> (2π)^(-length(x) / 2)
 
+getlogbasemeasure(::Type{MvNormalMeanScalePrecision}) = (x) -> -length(x) / 2 * log2π
+
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:end-1]
         η2 = η[end]
         k = length(η1)
-        Cinv = -inv(η2)
-        l = log(-inv(η2))
-        return (dot(η1, Cinv, η1) / 2 - (k * log(2) + l)) / 2
+        Cinv = inv(η2)
+        return -dot(η1, 1/4*Cinv, η1) - (k / 2)*log(-2*η2)
     end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
     (η) -> begin
         η1 = @view η[1:end-1]
         η2 = η[end]
-        Cinv = log(-inv(η2))
-        return pack_parameters(MvNormalMeanCovariance, (0.5 * Cinv * η1, 0.25 * Cinv^2 * dot(η1,η1) + 0.5 * Cinv))
+        inv2 = inv(η2)
+        k = length(η1)
+        return pack_parameters(MvNormalMeanCovariance, (-1/(2*η2) * η1,  dot(η1,η1) / 4*inv2^2 - k/2 * inv2))
     end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
     (η) -> begin
-        (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
-        invη2 = -cholinv(-η₂)
-        return Diagonal([η₁..., invη2])
-    end
+        η1 = @view η[1:end-1]
+        η2 = η[end]
+        k = length(η1)
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
-    (η) -> begin
-        (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
-        invη2 = -cholinv(-η₂)
-        return Diagonal([η₁..., invη2])
+        inv_η2 = inv(η2)
+        η1_part = -1/(2*inv_η2)* I(length(η1))
+        η1η2 = zeros(k, 1)
+        η1η2 .= 2*η1/inv_η2^2
+        
+        η2_part = zeros(1, 1)
+        η2_part .= -dot(η1,η1) / 2*inv_η2^3 + k/(2inv_η2)
+        
+        fisher = BlockArray{eltype(η)}(undef_blocks, [k, 1], [k, 1])
+
+        fisher[Block(1), Block(1)] = η1_part
+        fisher[Block(1), Block(2)] = η1η2
+        fisher[Block(2), Block(1)] = η1η2'
+        fisher[Block(2), Block(2)] = η2_part
+        return fisher
+    end
+    
+
+    getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+        (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
+        return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
     end
