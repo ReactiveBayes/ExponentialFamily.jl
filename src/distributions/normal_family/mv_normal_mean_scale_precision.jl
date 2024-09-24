@@ -263,5 +263,26 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
     end
     
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
-    error("MeanParametersSpaceFisher is not implemented for MvNormalMeanScalePrecision")
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+    (θ) -> begin
+        μ = @view θ[1:end-1]
+        γ = θ[end]
+        k = length(μ)
+
+        μ_part = γ * I(k)
+
+        μγ_part = zeros(k, 1)
+        μγ_part .= μ
+
+        γ_part = zeros(1, 1)
+        γ_part .= k/(2*γ^2)
+
+        fisher = BlockArray{eltype(θ)}(undef_blocks, [k, 1], [k, 1])
+
+        fisher[Block(1), Block(1)] = μ_part
+        fisher[Block(1), Block(2)] = μγ_part
+        fisher[Block(2), Block(1)] = μγ_part'
+        fisher[Block(2), Block(2)] = γ_part
+        
+        return fisher
+    end
