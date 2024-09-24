@@ -31,7 +31,7 @@ end
 
     rng = StableRNG(42)
 
-    for s in 2:5
+    for s in 1:6
         μ = randn(rng, s)
         γ = rand(rng)
         
@@ -39,6 +39,19 @@ end
             ef = test_exponentialfamily_interface(d;)
         end
     end
+
+    μ = randn(rng, 1)
+    γ = rand(rng)
+
+    d = MvNormalMeanScalePrecision(μ, γ)
+    ef = convert(ExponentialFamilyDistribution, d)
+    
+    d1d = NormalMeanPrecision(μ[1], γ)
+    ef1d = convert(ExponentialFamilyDistribution, d1d)
+    
+    @test logpartition(ef) ≈ logpartition(ef1d)
+    @test gradlogpartition(ef) ≈ gradlogpartition(ef1d)
+    @test fisherinformation(ef) ≈ fisherinformation(ef1d)
 end
 
 @testitem "MvNormalMeanScalePrecision: Stats methods" begin
@@ -162,5 +175,54 @@ end
 
             @test isapprox(mean(samples), mean(μ), atol = 0.5)
         end
+    end
+end
+
+@testitem "MvNormalMeanScalePrecision: Fisher is faster then for full parametrization" begin
+    include("./normal_family_setuptests.jl")
+    using BenchmarkTools
+    using LinearAlgebra
+    using JET
+
+    rng = StableRNG(42)
+    for k in 20:40
+        μ = randn(rng, k)
+        γ = rand(rng)
+        cov = γ * I(k)
+
+        ef_small = convert(ExponentialFamilyDistribution, MvNormalMeanScalePrecision(μ, γ))
+        ef_full = convert(ExponentialFamilyDistribution, MvNormalMeanCovariance(μ, cov))
+
+        fi_small = fisherinformation(ef_small)
+        fi_full = fisherinformation(ef_full)
+
+        @test_opt fisherinformation(ef_small)
+        @test_opt fisherinformation(ef_full)
+
+        fi_mvsp_time = @elapsed fisherinformation(ef_small)
+        fi_mvsp_alloc = @allocated fisherinformation(ef_small)
+
+        fi_full_time = @elapsed fisherinformation(ef_full)
+        fi_full_alloc = @allocated fisherinformation(ef_full)
+
+        @test_opt cholinv(fi_small)
+        @test_opt cholinv(fi_full)
+
+        cholinv_time_small = @elapsed cholinv(fi_small)
+        cholinv_alloc_small = @allocated fisherinformation(ef_small)
+
+        cholinv_time_full = @elapsed cholinv(fi_full)
+        cholinv_alloc_full = @allocated cholinv(fi_full)
+
+        fi_small = fisherinformation(ef_small)
+        fi_full = fisherinformation(ef_full)
+
+        # small time is supposed to be O(k) and full time is supposed to O(k^2)
+        # the constant C is selected to account to fluctuations in test runs
+        C = 0.9
+        @test fi_mvsp_time < fi_full_time/(C*k)
+        @test fi_mvsp_alloc < fi_full_alloc/(C*k)
+        @test cholinv_time_small < cholinv_time_full/(C*k)
+        @test cholinv_alloc_small < cholinv_alloc_full/(C*k)
     end
 end

@@ -245,13 +245,14 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
         η2 = η[end]
         k = length(η1)
 
-        inv_η2 = inv(η2)
-        η1_part = -1/(2*inv_η2)* I(length(η1))
+        η1_part = -inv(2*η2)* I(length(η1))
         η1η2 = zeros(k, 1)
-        η1η2 .= 2*η1/inv_η2^2
+        η1η2 .= η1*inv(2*η2^2)
+        #η₁/(2abs2(η₂))
         
         η2_part = zeros(1, 1)
-        η2_part .= -dot(η1,η1) / 2*inv_η2^3 + k/(2inv_η2)
+        η2_part .= k*inv(2abs2(η2)) - dot(η1,η1) / (2*η2^3)
+        #  inv(2abs2(η₂))-abs2(η₁)/(2(η₂^3))
         
         fisher = BlockArray{eltype(η)}(undef_blocks, [k, 1], [k, 1])
 
@@ -272,10 +273,10 @@ getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) 
         μ_part = γ * I(k)
 
         μγ_part = zeros(k, 1)
-        μγ_part .= μ
+        μγ_part .= 0
 
         γ_part = zeros(1, 1)
-        γ_part .= k/(2*γ^2)
+        γ_part .= k*inv(2abs2(γ))
 
         fisher = BlockArray{eltype(θ)}(undef_blocks, [k, 1], [k, 1])
 
