@@ -209,7 +209,7 @@ end
         @test_opt cholinv(fi_full)
 
         cholinv_time_small = @elapsed cholinv(fi_small)
-        cholinv_alloc_small = @allocated fisherinformation(ef_small)
+        cholinv_alloc_small = @allocated cholinv(ef_small)
 
         cholinv_time_full = @elapsed cholinv(fi_full)
         cholinv_alloc_full = @allocated cholinv(fi_full)
