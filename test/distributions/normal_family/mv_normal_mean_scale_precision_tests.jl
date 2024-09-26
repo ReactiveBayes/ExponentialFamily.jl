@@ -209,13 +209,10 @@ end
         @test_opt cholinv(fi_full)
 
         cholinv_time_small = @elapsed cholinv(fi_small)
-        cholinv_alloc_small = @allocated cholinv(ef_small)
+        cholinv_alloc_small = @allocated cholinv(fi_small)
 
         cholinv_time_full = @elapsed cholinv(fi_full)
         cholinv_alloc_full = @allocated cholinv(fi_full)
-
-        fi_small = fisherinformation(ef_small)
-        fi_full = fisherinformation(ef_full)
 
         # small time is supposed to be O(k) and full time is supposed to O(k^2)
         # the constant C is selected to account to fluctuations in test runs

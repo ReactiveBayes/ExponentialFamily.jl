@@ -248,7 +248,6 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
         η1_part = -inv(2*η2)* I(length(η1))
         η1η2 = zeros(k, 1)
         η1η2 .= η1*inv(2*η2^2)
-        #η₁/(2abs2(η₂))
         
         η2_part = zeros(1, 1)
         η2_part .= k*inv(2abs2(η2)) - dot(η1,η1) / (2*η2^3)
