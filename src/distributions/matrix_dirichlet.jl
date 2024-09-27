@@ -74,12 +74,9 @@ function BayesBase.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::In
 end
 
 function BayesBase.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
-    samples = vmap(d -> rand(rng, Dirichlet(convert(Vector, d))), eachcol(dist.a))
-    @views for row in 1:size(container, 2)
-        b = container[:, row]
-        b[:] .= samples[row]
+    @views for (i, col) in enumerate(eachcol(dist.a))
+        rand!(rng, Dirichlet(col), container[:, i])
     end
-
     return container
 end
 
