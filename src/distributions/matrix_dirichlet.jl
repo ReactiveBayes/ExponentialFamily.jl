@@ -75,7 +75,7 @@ end
 
 function BayesBase.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
     samples = vmap(d -> rand(rng, Dirichlet(convert(Vector, d))), eachcol(dist.a))
-    @views for row in 1:size(container,2)
+    @views for row in 1:size(container, 2)
         b = container[:, row]
         b[:] .= samples[row]
     end

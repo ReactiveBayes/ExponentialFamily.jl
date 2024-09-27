@@ -148,3 +148,13 @@ end
     @test promote_variate_type(Multivariate, MatrixDirichlet) === Dirichlet
     @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
 end
+
+@testitem "MatrixDirichlet: rand" begin
+    include("distributions_setuptests.jl")
+
+    @test_throws DimensionMismatch sum(rand(MatrixDirichlet(ones(3, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0]
+
+    @test sum(rand(MatrixDirichlet(ones(3, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0;; 1.0;; 1.0]
+    @test sum(rand(MatrixDirichlet(ones(5, 3))), dims = 1) ≈ [1.0;; 1.0;; 1.0]
+    @test sum(rand(MatrixDirichlet(ones(5, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0;; 1.0;; 1.0]
+end
