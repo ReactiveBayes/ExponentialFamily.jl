@@ -269,20 +269,8 @@ getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) 
         γ = θ[end]
         k = length(μ)
 
-        μ_part = γ * I(k)
-
-        μγ_part = zeros(k, 1)
-        μγ_part .= 0
-
-        γ_part = zeros(1, 1)
-        γ_part .= k*inv(2abs2(γ))
-
-        fisher = BlockArray{eltype(θ)}(undef_blocks, [k, 1], [k, 1])
-
-        fisher[Block(1), Block(1)] = μ_part
-        fisher[Block(1), Block(2)] = μγ_part
-        fisher[Block(2), Block(1)] = μγ_part'
-        fisher[Block(2), Block(2)] = γ_part
-        
-        return fisher
+        matrix = zeros(eltype(μ), (k+1))
+        matrix[1:k] .= γ
+        matrix[k+1] = k*inv(2abs2(γ))
+        return Diagonal(matrix)
     end
