@@ -3,7 +3,6 @@ export MvNormalMeanScalePrecision, MvGaussianMeanScalePrecision
 import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
 import Base: ndims, precision, length, size, prod
-import BlockArrays: Block, BlockArray, undef_blocks
 
 """
     MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: AbstractMvNormal
@@ -249,17 +248,9 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
         η1η2 = zeros(k, 1)
         η1η2 .= η1*inv(2*η2^2)
         
-        η2_part = zeros(1, 1)
-        η2_part .= k*inv(2abs2(η2)) - dot(η1,η1) / (2*η2^3)
-        #  inv(2abs2(η₂))-abs2(η₁)/(2(η₂^3))
-        
-        fisher = BlockArray{eltype(η)}(undef_blocks, [k, 1], [k, 1])
+        η2_part = k*inv(2abs2(η2)) - dot(η1,η1) / (2*η2^3)
 
-        fisher[Block(1), Block(1)] = η1_part
-        fisher[Block(1), Block(2)] = η1η2
-        fisher[Block(2), Block(1)] = η1η2'
-        fisher[Block(2), Block(2)] = η2_part
-        return fisher
+        return ArrowheadMatrix(η2_part, η1η2, diag(η1_part))
     end
     
 
