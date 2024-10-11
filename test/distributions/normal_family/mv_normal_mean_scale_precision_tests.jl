@@ -185,7 +185,7 @@ end
     using JET
 
     rng = StableRNG(42)
-    for k in 20:40
+    for k in 10:40
         μ = randn(rng, k)
         γ = rand(rng)
         cov = γ * I(k)
