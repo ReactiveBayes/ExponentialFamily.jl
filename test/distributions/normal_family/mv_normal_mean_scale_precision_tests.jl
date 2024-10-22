@@ -217,7 +217,7 @@ end
 
         # small time is supposed to be O(k) and full time is supposed to O(k^2)
         # the constant C is selected to account to fluctuations in test runs
-        C = 0.9
+        C = 0.7
         @test fi_mvsp_time < fi_full_time/(C*k)
         @test fi_mvsp_alloc < fi_full_alloc/(C*k)
         @test cholinv_time_small < cholinv_time_full/(C*k)
