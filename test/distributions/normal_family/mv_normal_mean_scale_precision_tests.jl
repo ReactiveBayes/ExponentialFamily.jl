@@ -200,10 +200,10 @@ end
         @test_opt fisherinformation(ef_small)
         @test_opt fisherinformation(ef_full)
 
-        fi_mvsp_time = @elapsed fisherinformation(ef_small)
+        fi_mvsp_time = min((@benchmark fisherinformation($ef_small)).times...)
         fi_mvsp_alloc = @allocated fisherinformation(ef_small)
 
-        fi_full_time = @elapsed fisherinformation(ef_full)
+        fi_full_time = min((@benchmark  fisherinformation($ef_full)).times...)
         fi_full_alloc = @allocated fisherinformation(ef_full)
 
         @test_opt cholinv(fi_small)
