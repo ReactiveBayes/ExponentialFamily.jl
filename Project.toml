@@ -28,7 +28,7 @@ TinyHugeNumbers = "783c9a47-75a3-44ac-a16b-f1ab7b3acf04"
 
 [compat]
 Aqua = "0.8.7"
-BayesBase = "1.4.0"
+BayesBase = "1.5.0"
 Distributions = "0.25"
 DomainSets = "0.5.2, 0.6, 0.7"
 FastCholesky = "1.0"

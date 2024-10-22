@@ -181,6 +181,7 @@ end
 @testitem "MvNormalMeanScalePrecision: Fisher is faster then for full parametrization" begin
     include("./normal_family_setuptests.jl")
     using BenchmarkTools
+    using FastCholesky
     using LinearAlgebra
     using JET
 
