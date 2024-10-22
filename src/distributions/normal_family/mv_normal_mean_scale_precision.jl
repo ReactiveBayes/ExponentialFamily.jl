@@ -183,8 +183,9 @@ function BayesBase.prod(
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}) where {T}
-    μ, γ = mean(dist), scale(dist)
-    return μ + 1 / γ .* randn(rng, T, length(μ))
+    μ, γ = params(dist)
+    d = length(μ)
+    return rand!(rng, dist, Vector{T}(undef, d))
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}, size::Int64) where {T}
