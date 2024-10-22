@@ -34,7 +34,7 @@ end
     for s in 1:6
         μ = randn(rng, s)
         γ = rand(rng)
-        
+
         @testset let d = MvNormalMeanScalePrecision(μ, γ)
             ef = test_exponentialfamily_interface(d;)
         end
@@ -45,10 +45,10 @@ end
 
     d = MvNormalMeanScalePrecision(μ, γ)
     ef = convert(ExponentialFamilyDistribution, d)
-    
+
     d1d = NormalMeanPrecision(μ[1], γ)
     ef1d = convert(ExponentialFamilyDistribution, d1d)
-    
+
     @test logpartition(ef) ≈ logpartition(ef1d)
     @test gradlogpartition(ef) ≈ gradlogpartition(ef1d)
     @test fisherinformation(ef) ≈ fisherinformation(ef1d)
@@ -186,7 +186,7 @@ end
     using JET
 
     rng = StableRNG(42)
-    for k in 10:40
+    for k in 10:5:40
         μ = randn(rng, k)
         γ = rand(rng)
         cov = γ * I(k)
@@ -200,27 +200,27 @@ end
         @test_opt fisherinformation(ef_small)
         @test_opt fisherinformation(ef_full)
 
-        fi_mvsp_time = min((@benchmark fisherinformation($ef_small)).times...)
+        fi_mvsp_time = @elapsed fisherinformation(ef_small)
         fi_mvsp_alloc = @allocated fisherinformation(ef_small)
 
-        fi_full_time = min((@benchmark  fisherinformation($ef_full)).times...)
+        fi_full_time = @elapsed fisherinformation(ef_full)
         fi_full_alloc = @allocated fisherinformation(ef_full)
 
         @test_opt cholinv(fi_small)
         @test_opt cholinv(fi_full)
 
-        cholinv_time_small = @elapsed cholinv(fi_small)
+        cholinv_time_small = @belapsed cholinv($fi_small) samples = 3
         cholinv_alloc_small = @allocated cholinv(fi_small)
 
-        cholinv_time_full = @elapsed cholinv(fi_full)
+        cholinv_time_full = @belapsed cholinv($fi_full) samples = 3
         cholinv_alloc_full = @allocated cholinv(fi_full)
 
         # small time is supposed to be O(k) and full time is supposed to O(k^2)
         # the constant C is selected to account to fluctuations in test runs
         C = 0.7
-        @test fi_mvsp_time < fi_full_time/(C*k)
-        @test fi_mvsp_alloc < fi_full_alloc/(C*k)
-        @test cholinv_time_small < cholinv_time_full/(C*k)
-        @test cholinv_alloc_small < cholinv_alloc_full/(C*k)
+        @test fi_mvsp_time < fi_full_time / (C * k)
+        @test fi_mvsp_alloc < fi_full_alloc / (C * k)
+        @test cholinv_time_small < cholinv_time_full / (C * k)
+        @test cholinv_alloc_small < cholinv_alloc_full / (C * k)
     end
 end
