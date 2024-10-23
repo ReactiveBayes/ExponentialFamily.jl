@@ -116,9 +116,9 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{MatrixDirichlet}, η, conditioner) =
-    isnothing(conditioner) && length(η) > 1 && typeof(isqrt(length(η))) <: Integer && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
+    isnothing(conditioner) && length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{MatrixDirichlet}, θ, conditioner) =
-    isnothing(conditioner) && length(θ) > 1 && typeof(isqrt(length(θ))) <: Integer && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
+    isnothing(conditioner) && length(θ) > 1 &&all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{MatrixDirichlet})(tuple_of_θ::Tuple{Any})
     (α,) = tuple_of_θ
