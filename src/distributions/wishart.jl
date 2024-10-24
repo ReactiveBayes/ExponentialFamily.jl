@@ -203,6 +203,12 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::WishartFast, rig
     return WishartFast(df, invV)
 end
 
+BayesBase.default_prod_rule(::Type{<:Wishart}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
+
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Wishart, right::WishartFast)
+    return prod(PreserveTypeProd(Distribution), convert(WishartFast, left), right)
+end
+
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{WishartFast}, x::Matrix)
     return size(getindex(unpack_parameters(ef), 2)) == size(x) && isposdef(x)
 end

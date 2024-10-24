@@ -228,3 +228,37 @@ end
         end
     end
 end
+
+@testitem "InverseWishart: prod between InverseWishart and InverseWishartFast" begin
+    include("distributions_setuptests.jl")
+
+    import ExponentialFamily: InverseWishartFast
+    import Distributions: InverseWishart
+
+    for Sleft in rand(InverseWishart(10, Array(Eye(2))), 2), Sright in rand(InverseWishart(10, Array(Eye(2))), 2), νright in (6, 7), νleft in (4, 5)
+        let left = InverseWishart(νleft, Sleft), right = InverseWishart(νleft, Sleft), right_fast = convert(InverseWishartFast, right)
+            # Test commutativity of the product
+            prod_result1 = prod(PreserveTypeProd(Distribution), left, right_fast)
+            prod_result2 = prod(PreserveTypeProd(Distribution), right_fast, left)
+            
+            @test prod_result1.ν ≈ prod_result2.ν
+            @test prod_result1.S ≈ prod_result2.S
+            
+            # Test that the product preserves type
+            @test prod_result1 isa InverseWishartFast
+            @test prod_result2 isa InverseWishartFast
+
+            # prod stays if we convert fisrt and then do product
+            left_fast = convert(InverseWishartFast, left)
+            prod_fast = prod(ClosedProd(), left_fast, right_fast)
+
+            @test prod_fast.ν ≈ prod_result1.ν
+            @test prod_fast.S ≈ prod_result2.S
+
+            # prod for Inverse Wishart is defenied 
+            prod_result_not_fast = prod(PreserveTypeProd(Distribution), left, right)
+            @test prod_result_not_fast.ν ≈ prod_result1.ν
+            @test prod_result_not_fast.S ≈ prod_result1.S
+        end
+    end
+end
