@@ -151,7 +151,7 @@ end
             @test prod_result1 isa WishartFast
             @test prod_result2 isa WishartFast
 
-            # prod the same before conversion
+            # prod stays the same if we convert fisrt and then do product
             left_fast = convert(WishartFast, left)
             prod_fast = prod(ClosedProd(), left_fast, right)
 
@@ -160,3 +160,4 @@ end
         end
     end
 end
+
