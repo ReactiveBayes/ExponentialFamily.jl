@@ -131,3 +131,32 @@ end
         end
     end
 end
+
+@testitem "Wishart: prod between Wishart and WishartFast" begin
+    include("distributions_setuptests.jl")
+
+    import ExponentialFamily: WishartFast
+    import Distributions: Wishart
+
+    for Sleft in rand(Wishart(10, Array(Eye(2))), 2), Sright in rand(Wishart(10, Array(Eye(2))), 2), νright in (6, 7), νleft in (4, 5)
+        let left = Wishart(νleft, Sleft), right = WishartFast(νright, Sright)
+            # Test commutativity of the product
+            prod_result1 = prod(PreserveTypeProd(Distribution), left, right)
+            prod_result2 = prod(PreserveTypeProd(Distribution), right, left)
+            
+            @test prod_result1.ν ≈ prod_result2.ν
+            @test prod_result1.invS ≈ prod_result2.invS
+            
+            # Test that the product preserves type
+            @test prod_result1 isa WishartFast
+            @test prod_result2 isa WishartFast
+
+            # prod the same before conversion
+            left_fast = convert(WishartFast, left)
+            prod_fast = prod(ClosedProd(), left_fast, right)
+
+            @test prod_fast.ν ≈ prod_result1.ν
+            @test prod_fast.invS ≈ prod_result2.invS
+        end
+    end
+end
