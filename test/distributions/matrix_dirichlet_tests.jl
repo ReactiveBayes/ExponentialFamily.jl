@@ -90,15 +90,14 @@ end
     end
 
     for space in (MeanParametersSpace(), NaturalParametersSpace())
-        @test !isproper(space, MatrixDirichlet, [Inf Inf; Inf 1.0], 1.0)
+        @test !isproper(space, MatrixDirichlet, [Inf Inf; Inf 1.0])
         @test !isproper(space, MatrixDirichlet, [1.0], Inf)
-        @test !isproper(space, MatrixDirichlet, [NaN], 1.0)
+        @test !isproper(space, MatrixDirichlet, [NaN],)
         @test !isproper(space, MatrixDirichlet, [1.0], NaN)
         @test !isproper(space, MatrixDirichlet, [0.5, 0.5], 1.0)
         @test isproper(space, MatrixDirichlet, [2.0, 3.0])
         @test !isproper(space, MatrixDirichlet, [-1.0, -1.2])
-    end
-
+    end 
     @test_throws Exception convert(ExponentialFamilyDistribution, MatrixDirichlet([Inf Inf; 2 3]))
 end
 
