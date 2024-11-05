@@ -168,13 +168,13 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanScal
     return MvNormalMeanScalePrecision(m, w)
 end
 
-function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MvNormalMeanScalePrecision{T}) where {T}
     μ, γ = params(dist)
     d = length(μ)
     return rand!(rng, dist, Vector{T}(undef, d))
 end
 
-function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}, size::Int64) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MvNormalMeanScalePrecision{T}, size::Int64) where {T}
     container = Matrix{T}(undef, length(dist), size)
     return rand!(rng, dist, container)
 end
@@ -183,7 +183,7 @@ end
 #        it needs to work with scale method, not with std
 function BayesBase.rand!(
     rng::AbstractRNG,
-    dist::MvGaussianMeanScalePrecision,
+    dist::MvNormalMeanScalePrecision,
     container::AbstractArray{T}
 ) where {T <: Real}
     preallocated = similar(container)
