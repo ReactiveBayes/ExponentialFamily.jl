@@ -168,18 +168,6 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanScal
     return MvNormalMeanScalePrecision(m, w)
 end
 
-BayesBase.default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MvNormalMeanScalePrecision}) = PreserveTypeProd(Distribution)
-
-function BayesBase.prod(
-    ::PreserveTypeProd{Distribution},
-    left::L,
-    right::R
-) where {L <: MultivariateNormalDistributionsFamily, R <: MvNormalMeanScalePrecision}
-    wleft  = convert(MvNormalWeightedMeanPrecision, left)
-    wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
-end
-
 function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}) where {T}
     μ, γ = params(dist)
     d = length(μ)
