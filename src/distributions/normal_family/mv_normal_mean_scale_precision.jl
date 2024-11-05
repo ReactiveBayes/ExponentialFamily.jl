@@ -64,7 +64,7 @@ end
 
 function (::MeanToNatural{MvNormalMeanScalePrecision})(tuple_of_θ::Tuple{Any, Any})
     (μ, γ) = tuple_of_θ
-    return (γ * μ, - γ / 2)
+    return (γ * μ, -γ / 2)
 end
 
 function (::NaturalToMean{MvNormalMeanScalePrecision})(tuple_of_η::Tuple{Any, Any})
@@ -213,42 +213,41 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
         η2 = η[end]
         k = length(η1)
         Cinv = inv(η2)
-        return -dot(η1, 1/4*Cinv, η1) - (k / 2)*log(-2*η2)
+        return -dot(η1, 1 / 4 * Cinv, η1) - (k / 2) * log(-2 * η2)
     end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:end-1]
         η2 = η[end]
         inv2 = inv(η2)
         k = length(η1)
-        return pack_parameters(MvNormalMeanCovariance, (-1/(2*η2) * η1,  dot(η1,η1) / 4*inv2^2 - k/2 * inv2))
+        return pack_parameters(MvNormalMeanCovariance, (-1 / (2 * η2) * η1, dot(η1, η1) / 4 * inv2^2 - k / 2 * inv2))
     end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:end-1]
         η2 = η[end]
         k = length(η1)
 
-        η1_part = -inv(2*η2)* I(length(η1))
+        η1_part = -inv(2 * η2) * I(length(η1))
         η1η2 = zeros(k, 1)
-        η1η2 .= η1*inv(2*η2^2)
-        
-        η2_part = k*inv(2abs2(η2)) - dot(η1,η1) / (2*η2^3)
+        η1η2 .= η1 * inv(2 * η2^2)
+
+        η2_part = k * inv(2abs2(η2)) - dot(η1, η1) / (2 * η2^3)
 
         return ArrowheadMatrix(η2_part, η1η2, diag(η1_part))
     end
-    
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (θ) -> begin
         μ = @view θ[1:end-1]
         γ = θ[end]
         k = length(μ)
 
-        matrix = zeros(eltype(μ), (k+1))
+        matrix = zeros(eltype(μ), (k + 1))
         matrix[1:k] .= γ
-        matrix[k+1] = k*inv(2abs2(γ))
+        matrix[k+1] = k * inv(2abs2(γ))
         return Diagonal(matrix)
     end
