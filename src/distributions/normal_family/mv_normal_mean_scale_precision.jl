@@ -1,4 +1,4 @@
-export MvNormalMeanScalePrecision, MvGaussianMeanScalePrecision
+export MvNormalMeanScalePrecision
 
 import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
@@ -25,8 +25,6 @@ struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: Abstract
     μ::M
     γ::T
 end
-
-const MvGaussianMeanScalePrecision = MvNormalMeanScalePrecision
 
 function MvNormalMeanScalePrecision(μ::AbstractVector{<:Real}, γ::Real)
     T = promote_type(eltype(μ), eltype(γ))
