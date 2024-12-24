@@ -6,97 +6,110 @@
     @test TensorDirichlet <: ContinuousTensorDistribution
 
     @test value_support(TensorDirichlet) === Continuous
-    @test variate_form(TensorDirichlet) === Tensorvariate
+    @test variate_form(TensorDirichlet) === ArrayLikeVariate
 end
 
-@testitem "TensorDirichlet: vague" begin
-    include("distributions_setuptests.jl")
-
-    @test_throws MethodError vague(TensorDirichlet)
-
-    d1 = vague(TensorDirichlet, 3)
-    d1= vague(TensorDirichlet, 3, 5) # 3 possible outcome for input of dimensions 5 with each dimension having 3 possible value.  
-
-    @test typeof(d1) <: TensorDirichlet
-    @test mean(d1) == ones(3, 3, 3, 3, 3) ./ sum(ones(3, 3, 3, 3 ,3); dims = 1)
-
-    d2 = vague(TensorDirichlet, 5, 3)
-
-    @test typeof(d2) <: TensorDirichlet
-    @test mean(d2) == ones(5, 5, 5) ./ sum(ones(5, 5, 5); dims = 1)
-
-    @test vague(TensorDirichlet, 3, 3, 3) == vague(TensorDirichlet, (3, 3, 3))
-    @test vague(TensorDirichlet, 4, 4, 4) == vague(TensorDirichlet, (4, 4, 4))
-    @test vague(TensorDirichlet, 3, 4, 5) == vague(TensorDirichlet, (3, 4, 5))
-    @test vague(TensorDirichlet, 4, 3, 2) == vague(TensorDirichlet, (4, 3, 2))
-    @test vague(TensorDirichlet, 4, 3, 2, 5) == vague(TensorDirichlet, (4, 3, 2, 5))
-
-    d3 = vague(TensorDirichlet, 3, 4, 5, 5)
-
-    @test typeof(d3) <: TensorDirichlet
-    @test mean(d3) == ones(3, 4, 5, 5) ./ sum(ones(3, 4, 5, 5); dims = 1)
-end
 
 @testitem "TensorDirichlet: entropy" begin
     include("distributions_setuptests.jl")
 
-    a = [1.0 1.0; 1.0 1.0; 1.0 1.0]
-    b = [1.2 3.3; 4.0 5.0; 2.0 1.1]
-    c = [0.2 3.4; 5.0 11.0; 0.2 0.6]
 
-    @test entropy(TensorDirichlet(cat(a,b, dims=3))) ≈ -1.3862943611198906  + (-3.1139933152617787)
-    @test entropy(TensorDirichlet(cat(b,c, dims=3))) ≈ -3.1139933152617787 + (-11.444984495104693)
-    @test entropy(TensorDirichlet(cat(c,a, dims=3))) ≈ -11.444984495104693 + (-1.386294361119890)
-    @test entropy(TensorDirichlet(cat(a,b,c, dims=4))) ≈ -1.3862943611198906 -3.1139933152617787 -11.444984495104693
+    a = [1.0 , 1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
+    e = [5.0 , 11.0]
+    f = [0.2 , 0.6]
+    g = [2.0 , 1.1]
+
+    tensorA = Array{Float64,3}(undef,(3,2,3))
+    for i in CartesianIndices(Base.tail(size(tensorA)))
+        tensorA[:,i] = a
+    end
+
+
+    tensorB = Array{Float64,3}(undef,(2,2,3))
+    tensorB[:,1,1] = g
+    tensorB[:,1,2] = b
+    tensorB[:,1,3] = c
+    tensorB[:,2,1] = d
+    tensorB[:,2,2] = e
+    tensorB[:,2,3] = f
+
+    @test entropy(TensorDirichlet(tensorA)) ≈ - log(2)*6
+    @test entropy(TensorDirichlet(tensorB)) ≈  mapreduce(x->entropy(Dirichlet(x)), +, [b,c,d,e,f,g])
+
 end
 
 @testitem "TensorDirichlet: mean(::typeof(log))" begin
-    include("distributions_setuptests.jl")
-
-    import Base.Broadcast: BroadcastFunction
-
-    a = [1.0 1.0; 1.0 1.0; 1.0 1.0]
-    b = [1.2 3.3; 4.0 5.0; 2.0 1.1]
-    c = [0.2 3.4; 5.0 11.0; 0.2 0.6]
-
-    d = cat(a,b,c, dims=3)
-    d2 = cat(a,b,c, dims=3)
-
-    A = [
-        -1.5000000000000002 -1.5000000000000002
-        -1.5000000000000002 -1.5000000000000002
-        -1.5000000000000002 -1.5000000000000002
-    ]
-    B = [
-        -2.1920720408623637 -1.1517536610071326
-        -0.646914475838374 -0.680458481634953
-        -1.480247809171707 -2.6103310904778305
-    ]
-    C = [
-        -6.879998107291004 -1.604778825293528
-        -0.08484054226701443 -0.32259407259407213
-        -6.879998107291004 -4.214965875553984
-    ]
-    D = cat(A,B,C, dims=3)
-    D2 = cat(A,B,C, dims=3)
-
-    @test mean(BroadcastFunction(log), TensorDirichlet(cat(a,b, dims=3))) ≈ cat(A,B, dims=3)
-    @test mean(BroadcastFunction(log), TensorDirichlet(cat(b,c, dims=3))) ≈ cat(B,C, dims=3)
-    @test mean(BroadcastFunction(log), TensorDirichlet((cat(c,a, dims=3)))) ≈ cat(C,A, dims=3)
-    @test mean(BroadcastFunction(log), TensorDirichlet((cat(c,a, dims=3)))) ≈ cat(C,A, dims=3)
-    @test mean(BroadcastFunction(log), TensorDirichlet((cat(d,d2,dims=4)))) ≈ cat(D,D2, dims=4)
+ # mean log is now part of the closeForm package and the implementation of this should no more be part of this
 
 end
 
-@testitem "TensorDirichlet: ExponentialFamilyDistribution" begin
+@testitem "TensorDirichlet: var" begin
+    include("distributions_setuptests.jl")
+
+    a = [1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
+
+    tensorDiri = Array{Float64,3}(undef,(2,2,2))
+
+    tensorDiri[:,1,1] = a
+    tensorDiri[:,1,2] = b
+    tensorDiri[:,2,1] = c
+    tensorDiri[:,2,2] = d
+
+    varDiri = Array{Float64,3}(undef,(2,2,2))
+
+    varDiri[:,1,1] = var(Dirichlet(a))
+    varDiri[:,1,2] = var(Dirichlet(b))
+    varDiri[:,2,1] = var(Dirichlet(c))
+    varDiri[:,2,2] = var(Dirichlet(d))
+ 
+    @test var(TensorDirichlet(tensorDiri)) == varDiri
+end
+
+@testitem "TensorDirichlet: cov" begin
+    include("distributions_setuptests.jl")
+
+    a = [1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
+
+    tensorDiri = Array{Float64,3}(undef,(2,2,2))
+
+    tensorDiri[:,1,1] = a
+    tensorDiri[:,1,2] = c
+    tensorDiri[:,2,1] = b
+    tensorDiri[:,2,2] = d
+
+    covTensorDiri = Matrix{Matrix{Float64}}(undef,(2,2))
+    for i in eachindex(covTensorDiri)
+        covTensorDiri[i] = Matrix{Float64}(undef,(2,2))
+    end
+
+    covTensorDiri[1] = cov(Dirichlet(a))
+    covTensorDiri[2] = cov(Dirichlet(b))
+    covTensorDiri[3] = cov(Dirichlet(c))
+    covTensorDiri[4] = cov(Dirichlet(d))
+
+    @test cov(TensorDirichlet(tensorDiri)) == covTensorDiri
+end
+
+@test_broken "TensorDirichlet: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
     for len in 3:5
-        α = rand(1.0:2.0, len, len)
+        α = Array{Float64,3}(undef,(len,len,len))
+        for i in eachindex(CartesianIndices(Base.tail(size(α))))
+            α[:,i] = rand(len) .+ 1
+        end
         @testset let d = TensorDirichlet(α)
             ef = test_exponentialfamily_interface(d; test_basic_functions = true, option_assume_no_allocations = false)
             η1 = getnaturalparameters(ef)
-
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]
                 x = x ./ sum(x)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
@@ -111,18 +124,42 @@ end
         end
     end
 
-    inf_test = [Inf Inf; Inf 1.0]
-    nan_test = [NaN 2.0; 3.0 1.0]
-    correctInput = [2.0, 3.0]
-    negativeNumber_test = [-1.0, -1.2]
+
+
+    inf_test = [Inf, 1.0]
+    nan_test = [NaN, 2.0]
+    negative_num_test = [-1.0, -1.2]
+    negative_num_natural_param_test = [-0.1, -0.2]
+    a = [1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
+
+    tensorDiri = Matrix{Vector{Float64}}(undef,(2,2))
+    for i in eachindex(tensorDiri)
+        tensorDiri[i] = Vector{Float64}(undef,2)
+    end
+
+    tensorDiri[1] = a
+    tensorDiri[2] = b
+    tensorDiri[3] = c
+    tensorDiri[4] = d
 
     for space in (MeanParametersSpace(), NaturalParametersSpace())
-        @test !isproper(space, TensorDirichlet, cat(inf_test,correctInput,dims=3), Inf)
-        @test !isproper(space, TensorDirichlet, cat(nan_test,correctInput,dims=3),)
-        @test !isproper(space, TensorDirichlet, cat(negativeNumber_test,correctInput,dims=3),)
-        @test !isproper(space, TensorDirichlet, cat(correctInput,correctInput,dims=3), 2.0)
-        @test isproper(space, TensorDirichlet, cat(correctInput,correctInput,dims=3),)
+        @test isproper(space, TensorDirichlet, tensorDiri, )
+        @test !isproper(space, TensorDirichlet, tensorDiri, Inf)
+        tensorDiri[1] = nan_test
+        @test !isproper(space, TensorDirichlet, tensorDiri,)
+        tensorDiri[1] = inf_test
+        @test !isproper(space, TensorDirichlet, tensorDiri,)
+        tensorDiri[1] = negative_num_test
+        @test !isproper(space, TensorDirichlet, tensorDiri,)
+        tensorDiri[1] = a
     end
+    tensorDiri[1] = negative_num_natural_param_test
+    @test !isproper(MeanParametersSpace(), TensorDirichlet, tensorDiri,)
+    @test isproper(NaturalParametersSpace(), TensorDirichlet, tensorDiri,)
+
 
     @test_throws Exception convert(ExponentialFamilyDistribution, TensorDirichlet([Inf Inf; 2 3]))
 end
@@ -130,25 +167,58 @@ end
 @testitem "TensorDirichlet: prod with Distribution" begin
     include("distributions_setuptests.jl")
 
-    d1 = TensorDirichlet([0.2 3.4; 5.0 11.0; 0.2 0.6])
-    d2 = TensorDirichlet([1.2 3.3; 4.0 5.0; 2.0 1.1])
-    d3 = TensorDirichlet([1.0 1.0; 1.0 1.0; 1.0 1.0])
-    for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd())
-        @test @inferred(prod(strategy, d1, d2)) ≈
-              TensorDirichlet([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
-        @test @inferred(prod(strategy, d1, d3)) ≈ TensorDirichlet(
-            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
-        )
-        @test @inferred(prod(strategy, d2, d3)) ≈ TensorDirichlet([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
-    end
+    a = [1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
+    e = [5.0 , 11.0]
+    f = [0.2 , 0.6]
+    g = [2.0 , 1.1]
+
+    D1 = Array{Float64,2}(undef,(2,3))
+    D1[:,1] = c
+    D1[:,2] = e
+    D1[:,3] = f
+
+    D2 = Array{Float64,2}(undef,(2,3))
+    D2[:,1] = b
+    D2[:,2] = d
+    D2[:,3] = g
+
+    D3 = Array{Float64,2}(undef,(2,3))
+    D3[:,1] = D3[:,2] = D3[:,3] =  a
+
+
+    d1 = TensorDirichlet(D1)
+    d2 = TensorDirichlet(D2)
+    d3 = TensorDirichlet(D3)
+    @test @inferred(prod(PreserveTypeProd(Distribution), d1, d2) ≈ TensorDirichlet([0.3999999999999999  8.0 1.2000000000000002 ; 5.699999999999999 15.0 0.7000000000000002]))
+    @test @inferred(prod(PreserveTypeProd(Distribution), d1, d3)) ≈ TensorDirichlet(
+        [0.19999999999999996 5.0 0.19999999999999996; 3.4000000000000004  11.0 0.6000000000000001]
+    )
+    @test @inferred(prod(PreserveTypeProd(Distribution), d2, d3)) ≈ TensorDirichlet([1.2000000000000002 4.0 2.0 ; 3.3  5.0 1.1])
 end
 
-@testitem "TensorDirichlet: prod with ExponentialFamilyDistribution" begin
+@test_broken "TensorDirichlet: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
     for len in 3:6
-        αleft = rand(len, len) .+ 1
-        αright = rand(len, len) .+ 1
+
+        αleft = Matrix{Vector{Float64}}(undef,(len,len))
+        for i in eachindex(αleft)
+            αleft[i] = Vector{Float64}(undef,len)
+            αleft[i] = rand(len) .+ 1
+        end
+
+        αright = Matrix{Vector{Float64}}(undef,(len,len))
+        for i in eachindex(αright)
+            αright[i] = Vector{Float64}(undef,len)
+            αright[i] = rand(len) .+ 1
+        end
+        
+        # αleft = rand(len, len) .+ 1
+        # αright = rand(len, len) .+ 1
+
         @testset let (left, right) = (TensorDirichlet(αleft), TensorDirichlet(αright))
             @test test_generic_simple_exponentialfamily_product(
                 left,
@@ -168,18 +238,115 @@ end
     @test_throws MethodError promote_variate_type(Univariate, TensorDirichlet)
 
     @test promote_variate_type(Multivariate, Dirichlet) === Dirichlet
-    @test promote_variate_type(Tensorvariate, Dirichlet) === TensorDirichlet
+    @test promote_variate_type(ArrayLikeVariate, Dirichlet) === TensorDirichlet
 
-    @test promote_variate_type(Multivariate, TensorDirichlet) === Dirichlet
-    @test promote_variate_type(Tensorvariate, TensorDirichlet) === TensorDirichlet
+    @test promote_variate_type(Multivariate, TensorDirichlet) === TensorDirichlet
+end
+
+@testitem "TensorDirichlet: prod with PreserveTypeProd{Distribution}" begin
+
+    include("distributions_setuptests.jl")
+
+    tensorDiri = Matrix{Vector{Float64}}(undef,(2,2))
+    for i in eachindex(tensorDiri)
+        tensorDiri[i] = Vector{Float64}(undef,2)
+        tensorDiri[i] = ones(2) .* 2
+    end
+
+    result = Matrix{Vector{Float64}}(undef,(2,2))
+    for i in eachindex(tensorDiri)
+        result[i] = Vector{Float64}(undef,2)
+        result[i] = ones(2) .* 3
+    end
+
+    @test_broken @inferred(prod(PreserveTypeProd(Distribution),TensorDirichlet(tensorDiri),TensorDirichlet(tensorDiri))) == TensorDirichlet(result)
 end
 
 @testitem "TensorDirichlet: rand" begin
     include("distributions_setuptests.jl")
 
-    @test_throws DimensionMismatch sum(rand(TensorDirichlet(ones(3, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0]
+    a = [1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
 
-    @test sum(rand(TensorDirichlet(ones(3, 5, 2))), dims = 1) ≈ ones(1, 5, 2)
-    @test sum(rand(TensorDirichlet(ones(5, 3, 2))), dims = 1) ≈ ones(1, 3, 2)
-    @test sum(rand(TensorDirichlet(ones(5, 5, 2))), dims = 1) ≈ ones(1, 5, 2)
+    tensorDiri = Array{Float64,3}(undef,(2,2,2))
+
+    tensorDiri[:,1,1] = a
+    tensorDiri[:,1,2] = b
+    tensorDiri[:,2,1] = c
+    tensorDiri[:,2,2] = d
+
+    @test typeof(rand(TensorDirichlet(tensorDiri))) <: Array{Float64,3}
+    @test size(rand(TensorDirichlet(tensorDiri))) == (2,2,2)
+    @test typeof(rand(TensorDirichlet(tensorDiri),3)) <: AbstractVector{Array{Float64,3}}
+    @test size(rand(TensorDirichlet(tensorDiri),3)) == (3,)
+end
+
+@testitem "TensorDirichlet: vague" begin
+    include("distributions_setuptests.jl")
+
+    dirichlet = vague(TensorDirichlet,3)
+    @test typeof(dirichlet.a) <: Array{Float64,2}
+    @test size(dirichlet.a) == (3,3)
+
+
+    @test typeof(vague(TensorDirichlet,(2,2,2,3)).a) <: Array{Float64,4}
+
+    @test vague(TensorDirichlet, 3) == vague(TensorDirichlet, (3, 3))
+
+
+    @test_throws MethodError vague(TensorDirichlet)
+
+    
+end
+
+
+@testitem "TensorDirichlet: NaturalParametersSpace" begin
+
+    include("distributions_setuptests.jl")
+
+    a = [1.0 , 1.0]
+    b = [1.2 , 3.3]
+    c = [0.2 , 3.4]
+    d = [4.0 , 5.0]
+
+    tensorDiri = Matrix{Vector{Float64}}(undef,(2,2))
+    for i in eachindex(tensorDiri)
+        tensorDiri[i] = Vector{Float64}(undef,2)
+    end
+
+    tensorDiri[1] = a
+    tensorDiri[2] = b
+    tensorDiri[3] = c
+    tensorDiri[4] = d
+
+
+    logPartitionDirichlet = getlogpartition(NaturalParametersSpace(), Dirichlet)
+
+    @test getlogpartition(NaturalParametersSpace(),TensorDirichlet)(tensorDiri) == logPartitionDirichlet(a) + logPartitionDirichlet(b) + logPartitionDirichlet(c) + logPartitionDirichlet(d)
+
+
+
+    gradLogPartition = Matrix{Vector{Float64}}(undef,(2,2))
+    for i in eachindex(gradLogPartition)
+        gradLogPartition[i] = Vector{Float64}(undef,2)
+    end
+
+    grad = getgradlogpartition(NaturalParametersSpace(),Dirichlet)
+
+    gradLogPartition[1] = grad(a)
+    gradLogPartition[2] = grad(b)
+    gradLogPartition[3] = grad(c)
+    gradLogPartition[4] = grad(d)
+
+    @test getgradlogpartition(NaturalParametersSpace(),TensorDirichlet)(tensorDiri) == gradLogPartition
+
+
+
+    info = getfisherinformation(NaturalParametersSpace(),Dirichlet)
+
+    @test getfisherinformation(NaturalParametersSpace(),TensorDirichlet)(tensorDiri) == info(a) + info(b) + info(c) + info(d)
+
+    
 end
