@@ -72,5 +72,6 @@ include("distributions/poisson.jl")
 include("distributions/chi_squared.jl")
 include("distributions/mv_normal_wishart.jl")
 include("distributions/normal_gamma.jl")
+include("distributions/tensor_dirichlet.jl")
 
 end
