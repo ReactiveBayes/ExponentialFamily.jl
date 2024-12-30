@@ -7,6 +7,9 @@ authors:
   - family-names: "Bagaev"
     given-names: "Dmitry"
     orcid: "https://orcid.org/0000-0001-9655-7986"
+  - family-names: "Lukashchuk"
+    given-names: "Mykola"
+    orcid: "https://orcid.org/0009-0003-3011-0825"
 title: "ExponentialFamily.jl"
 version: 1.6.0
 date-released: "2023-10-31"
