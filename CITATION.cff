@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Şenöz"
+    given-names: "İsmail"
+    orcid: "https://orcid.org/0000-0001-7355-2138"
+  - family-names: "Bagaev"
+    given-names: "Dmitry"
+    orcid: "https://orcid.org/0000-0001-9655-7986"
+title: "ExponentialFamily.jl"
+version: 1.6.0
+date-released: "2023-10-31"
+repository-code: "https://github.com/ReactiveBayes/ExponentialFamily.jl"
+abstract: "ExponentialFamily.jl provides a comprehensive framework for working with exponential family distributions in Julia. The key feature of the package is the implementation of exponential family distributions in their natural parameterization. Through a unified interface, it exposes fundamental properties like sufficient statistics, log partition functions, and Fisher information matrices, while leveraging Julia's type system for both intuitive modeling and high performance."
+keywords:
+  - distributions
+  - "exponential family"
+  - interface
+  - Julia
+  - "probabilistic programming"
+license: MIT
+url: "https://github.com/ReactiveBayes/ExponentialFamily.jl"
+type: software
