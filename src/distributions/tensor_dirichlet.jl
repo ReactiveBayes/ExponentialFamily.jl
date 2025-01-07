@@ -97,7 +97,7 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::
 end
 
 function BayesBase.logpdf(dist::TensorDirichlet, x::AbstractArray{T,N}) where {T <: Real, N}
-    out = 0
+    out = zero(eltype(x))
     for i in CartesianIndices(extract_collection(dist.a))
         out =+ logpdf(Dirichlet(dist.a[:,i]), @view x[:,i])
     end
