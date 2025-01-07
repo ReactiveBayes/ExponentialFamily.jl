@@ -1,5 +1,6 @@
 using BenchmarkTools
 using ExponentialFamily, Distributions, Random
+using ExponentialFamily.BayesBase
 
 const SUITE = BenchmarkGroup()
 
