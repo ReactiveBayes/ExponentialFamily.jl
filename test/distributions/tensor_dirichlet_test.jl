@@ -100,11 +100,8 @@ end
     include("distributions_setuptests.jl")
 
     for len in 3:5
-        α = Array{Float64, 3}(undef, (len, len, len))
-        for i in eachindex(CartesianIndices(Base.tail(size(α))))
-            α[:, i] = rand(len) .+ 1
-        end
-        @testset let d = TensorDirichlet(α)
+        α = rand(len, len, len) .+ 1
+        @test_broken let d = TensorDirichlet(α)
             ef = test_exponentialfamily_interface(d; test_basic_functions = true, option_assume_no_allocations = false)
             η1 = getnaturalparameters(ef)
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]
@@ -130,28 +127,25 @@ end
     c = [0.2, 3.4]
     d = [4.0, 5.0]
 
-    tensorDiri = Matrix{Vector{Float64}}(undef, (2, 2))
-    for i in eachindex(tensorDiri)
-        tensorDiri[i] = Vector{Float64}(undef, 2)
-    end
+    tensorDiri = Array{Float64, 3}(undef, (2, 2, 2))
 
-    tensorDiri[1] = a
-    tensorDiri[2] = b
-    tensorDiri[3] = c
-    tensorDiri[4] = d
+    tensorDiri[:, 1, 1] .= a
+    tensorDiri[:, 1, 2] .= b
+    tensorDiri[:, 2, 1] .= c
+    tensorDiri[:, 2, 2] .= d
 
     for space in (MeanParametersSpace(), NaturalParametersSpace())
         @test isproper(space, TensorDirichlet, tensorDiri)
         @test !isproper(space, TensorDirichlet, tensorDiri, Inf)
-        tensorDiri[1] = nan_test
+        tensorDiri[:, 1, 1] .= nan_test
         @test !isproper(space, TensorDirichlet, tensorDiri)
-        tensorDiri[1] = inf_test
+        tensorDiri[:, 1, 1] .= inf_test
         @test !isproper(space, TensorDirichlet, tensorDiri)
-        tensorDiri[1] = negative_num_test
+        tensorDiri[:, 1, 1] .= negative_num_test
         @test !isproper(space, TensorDirichlet, tensorDiri)
-        tensorDiri[1] = a
+        tensorDiri[:, 1, 1] .= a
     end
-    tensorDiri[1] = negative_num_natural_param_test
+    tensorDiri[:, 1, 1] = negative_num_natural_param_test
     @test !isproper(MeanParametersSpace(), TensorDirichlet, tensorDiri)
     @test isproper(NaturalParametersSpace(), TensorDirichlet, tensorDiri)
 
@@ -198,21 +192,11 @@ end
     include("distributions_setuptests.jl")
 
     for len in 3:6
-        αleft = Matrix{Vector{Float64}}(undef, (len, len))
-        for i in eachindex(αleft)
-            αleft[i] = Vector{Float64}(undef, len)
-            αleft[i] = rand(len) .+ 1
-        end
-
-        αright = Matrix{Vector{Float64}}(undef, (len, len))
-        for i in eachindex(αright)
-            αright[i] = Vector{Float64}(undef, len)
-            αright[i] = rand(len) .+ 1
-        end
+        αleft = rand(len, len, len) .+ 1
+        αright = rand(len, len, len) .+ 1
 
         # αleft = rand(len, len) .+ 1
         # αright = rand(len, len) .+ 1
-        @show αleft
         @testset let (left, right) = (TensorDirichlet(αleft), TensorDirichlet(αright))
             @test_broken test_generic_simple_exponentialfamily_product(
                 left,

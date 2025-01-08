@@ -148,9 +148,9 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditioner) =
-    isnothing(conditioner) && length(η) > 1 && all(map(x -> isproper(NaturalParametersSpace(), Dirichlet, x), unpack_parameters(TensorDirichlet, η)))
+    isnothing(conditioner) && length(η) > 1 && all(map(x -> isproper(NaturalParametersSpace(), Dirichlet, x), eachslice(η, dims = Tuple(2:ndims(η)))))
 isproper(::MeanParametersSpace, ::Type{TensorDirichlet}, θ, conditioner) =
-    isnothing(conditioner) && length(θ) > 1 && all(map(x -> isproper(MeanParametersSpace(), Dirichlet, x), unpack_parameters(TensorDirichlet, θ)))
+    isnothing(conditioner) && length(θ) > 1 && all(map(x -> isproper(MeanParametersSpace(), Dirichlet, x), eachslice(θ, dims = Tuple(2:ndims(θ)))))
 isproper(p, ::Type{TensorDirichlet}, η, conditioner) =
     isnothing(conditioner) && all(x -> isproper(p, Type{Dirichlet}, x), unpack_parameters(TensorDirichlet, η))
 
