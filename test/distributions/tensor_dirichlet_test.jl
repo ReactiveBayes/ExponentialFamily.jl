@@ -336,17 +336,19 @@ end
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
-        for d in (2, 5)
-            alpha = rand([d for _ in 1:rank]...)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
 
-            distribution = TensorDirichlet(alpha)
-            mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
-            sample = rand(distribution)
-            sample ./= sum(sample, dims = 1)
+                sample = rand(distribution)
+                sample ./= sum(sample, dims = 1)
 
-            mat_logpdf = sum(logpdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
-            @test logpdf(distribution, sample) ≈ mat_logpdf
+                mat_logpdf = sum(logpdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
+                @test logpdf(distribution, sample) ≈ mat_logpdf
+            end
         end
     end
 end
