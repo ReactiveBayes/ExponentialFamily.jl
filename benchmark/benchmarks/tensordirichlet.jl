@@ -21,13 +21,13 @@ end
 # end
 # ==============================================
 
-for rank in (3,)
-    for d in (2,)
+for rank in (3, 4)
+    for d in (2, 5, 10, 20)
         distribution = TensorDirichlet(rand([d for _ in 1:rank]...))
-        sample = rand(d)
+        sample = rand(distribution)
         SUITE["tensordirichlet"]["mean"]["rank=$rank, d=$d"] = @benchmarkable mean($distribution)
         SUITE["tensordirichlet"]["rand"]["rank=$rank, d=$d"] = @benchmarkable rand($distribution)
-        # SUITE["tensordirichlet"]["logpdf"]["rank=$rank, d=$d"] = @benchmarkable logpdf($distribution, $sample)
+        SUITE["tensordirichlet"]["logpdf"]["rank=$rank, d=$d"] = @benchmarkable logpdf($distribution, $sample)
         SUITE["tensordirichlet"]["var"]["rank=$rank, d=$d"] = @benchmarkable var($distribution)
         SUITE["tensordirichlet"]["cov"]["rank=$rank, d=$d"] = @benchmarkable cov($distribution)
     end
