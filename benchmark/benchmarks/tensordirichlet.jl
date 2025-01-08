@@ -6,7 +6,7 @@ SUITE["tensordirichlet"] = BenchmarkGroup(
 )
 
 # `prod` BenchmarkGroup ========================
-for rank in (3, 5)
+for rank in (3, 5, 10)
     for d in (2, 5, 10, 20)
         left = TensorDirichlet(rand([d for _ in 1:rank]...))
         right = TensorDirichlet(rand([d for _ in 1:rank]...))
