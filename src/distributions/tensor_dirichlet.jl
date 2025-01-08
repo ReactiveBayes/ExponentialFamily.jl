@@ -108,21 +108,7 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::
 end
 
 function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
-    out = zero(eltype(x))
-    for i in CartesianIndices(extract_collection(dist))
-        out += logpdf(Dirichlet(dist.a[:, i]), @view x[:, i])
-    end
-    return out
-end
-
-function _dirichlet_logpdf(α::AbstractVector{T}, x::AbstractVector{T}) where {T}
-    α0 = sum(α)
-    lmB = loggamma(α0) - sum(loggamma.(α))
-    if length(α) != length(x) || sum(x) != 1 || any(x -> x < 0, x)
-        return xlogy(one(eltype(α)), zero(eltype(x))) - lmB
-    end
-    s = sum(xlogy(αi - 1, xi) for (αi, xi) in zip(α, x))
-    return s - lmB
+    return sum(logpdf.(Dirichlet.(get_dirichlet_parameters(dist)), eachslice(x, dims = Tuple(2:N))))
 end
 
 BayesBase.pdf(dist::TensorDirichlet, x::Array{T, N}) where {T <: Real, N} = exp(logpdf(dist, x))
