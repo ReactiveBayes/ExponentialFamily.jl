@@ -58,6 +58,7 @@ end
         @test !isproper(space, Dirichlet, [0.5, 0.5], 1.0)
         @test isproper(space, Dirichlet, [2.0, 3.0])
         @test !isproper(space, Dirichlet, [-1.0, -1.2])
+        @test !isproper(space, Dirichlet, [NaN, 1.0, 1.0])
     end
 
     @test_throws Exception convert(ExponentialFamilyDistribution, Dirichlet([Inf, Inf]))
