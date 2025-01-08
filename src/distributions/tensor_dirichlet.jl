@@ -38,7 +38,13 @@ getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
 
 BayesBase.mean(dist::TensorDirichlet) = dist.a ./ sum(dist.a; dims = 1)
 BayesBase.cov(dist::TensorDirichlet) = map(d -> cov(Dirichlet(d)), extract_collection(dist))
-BayesBase.var(dist::TensorDirichlet) = map(d -> var(Dirichlet(d)), extract_collection(dist))
+function BayesBase.var(dist::TensorDirichlet)
+    v = similar(dist.a)
+    for i in CartesianIndices(Base.tail(size(dist.a)))
+        v[:, i] .= var(Dirichlet(dist.a[:, i]))
+    end
+    return v
+end
 BayesBase.std(dist::TensorDirichlet) = map(d -> std(Dirichlet(d)), extract_collection(dist))
 
 BayesBase.params(dist::TensorDirichlet) = (dist.a,)
