@@ -24,8 +24,13 @@ The `a` field stores the matrix parameter of the distribution.
 - a[:,m,n] are the parameters of a Dirichlet distribution
 - a[:,m_1,n_1] and a[:,m_2,n_2] are supposed independent if (m_1,n_1) not equal to (m_2,n_2).
 """
-struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}} <: ContinuousTensorDistribution
+struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: ContinuousTensorDistribution
     a::A
+    α0::Ts
+    function TensorDirichlet(alpha::AbstractArray{T, N}) where {T, N}
+        alpha0 = sum(alpha; dims = 1)
+        new{T, N, typeof(alpha), typeof(alpha0)}(alpha, alpha0)
+    end
 end
 
 get_dirichlet_parameters(dist::TensorDirichlet{T, N, A}) where {T, N, A} = eachslice(dist.a, dims = Tuple(2:N))
