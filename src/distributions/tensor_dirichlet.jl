@@ -130,19 +130,7 @@ BayesBase.pdf(dist::TensorDirichlet, x::Array{T, N}) where {T <: Real, N} = exp(
 BayesBase.default_prod_rule(::Type{<:TensorDirichlet}, ::Type{<:TensorDirichlet}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::TensorDirichlet, right::TensorDirichlet)
-    paramL = extract_collection(left)
-    paramR = extract_collection(right)
-    Ones = ones(size(left.a))
-    Ones = extract_collection(TensorDirichlet(Ones))
-    param = copy(Ones)
-    for i in eachindex(paramL)
-        param[i] .= paramL[i] .+ paramR[i] .- Ones[i]
-    end
-    out = similar(left.a)
-    for i in CartesianIndices(param)
-        out[:, i] = param[i]
-    end
-    return TensorDirichlet(out)
+    return TensorDirichlet(left.a .+ right.a .- 1)
 end
 
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{TensorDirichlet}, x)
