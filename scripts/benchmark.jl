@@ -11,5 +11,5 @@ if isempty(ARGS)
 else
     name = first(ARGS)
     result = BenchmarkTools.judge(ExponentialFamily, name; judgekwargs = Dict(:time_tolerance => 0.1, :memory_tolerance => 0.05))
-    export_markdown("benchmark_vs_$(name)_result.md", result)
+    export_markdown("./benchmark_logs/benchmark_vs_$(name)_result.md", result)
 end
