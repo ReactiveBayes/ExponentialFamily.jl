@@ -23,7 +23,6 @@ The `a` field stores the matrix parameter of the distribution.
 
 # Model
 - a[:,m,n] are the parameters of a Dirichlet distribution
-- a[:,m_1,n_1] and a[:,m_2,n_2] are supposed independent if (m_1,n_1) not equal to (m_2,n_2).
 """
 struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: ContinuousTensorDistribution
     a::A
