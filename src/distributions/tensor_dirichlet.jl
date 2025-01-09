@@ -51,13 +51,10 @@ function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
     return v
 end
 function BayesBase.var(dist::TensorDirichlet{T, N, A, Ts}) where {T, N, A, Ts}
-    v = similar(dist.a)
-    for (vel, α, α0) in zip(eachslice(v, dims = Tuple(2:N)), get_dirichlet_parameters(dist), dist.α0)
-        c = inv(α0^2 * (α0 + 1))
-        for (i, _) in enumerate(vel)
-            vel[i] = α[i] * (α0 - α[i]) * c
-        end
-    end
+    α = dist.a
+    α0 = dist.α0
+    c = inv.(α0 .^ 2 .* (α0 .+ 1))
+    v = α .* (α0 .- α) .* c
     return v
 end
 BayesBase.std(dist::TensorDirichlet) = map(d -> std(Dirichlet(d)), extract_collection(dist))
