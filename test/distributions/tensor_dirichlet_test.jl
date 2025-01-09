@@ -12,29 +12,21 @@ end
 @testitem "TensorDirichlet: entropy" begin
     include("distributions_setuptests.jl")
 
-    a = [1.0, 1.0, 1.0]
-    b = [1.2, 3.3]
-    c = [0.2, 3.4]
-    d = [4.0, 5.0]
-    e = [5.0, 11.0]
-    f = [0.2, 0.6]
-    g = [2.0, 1.1]
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
 
-    tensorA = Array{Float64, 3}(undef, (3, 2, 3))
-    for i in CartesianIndices(Base.tail(size(tensorA)))
-        tensorA[:, i] = a
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+
+                mat_entropy = sum(entropy.(mat_of_dir))
+                @test entropy(distribution) ≈ mat_entropy
+            end
+        end
     end
 
-    tensorB = Array{Float64, 3}(undef, (2, 2, 3))
-    tensorB[:, 1, 1] = g
-    tensorB[:, 1, 2] = b
-    tensorB[:, 1, 3] = c
-    tensorB[:, 2, 1] = d
-    tensorB[:, 2, 2] = e
-    tensorB[:, 2, 3] = f
 
-    @test entropy(TensorDirichlet(tensorA)) ≈ -log(2) * 6
-    @test entropy(TensorDirichlet(tensorB)) ≈ mapreduce(x -> entropy(Dirichlet(x)), +, [b, c, d, e, f, g])
 end
 
 @testitem "TensorDirichlet: mean(::typeof(log))" begin
@@ -45,55 +37,48 @@ end
 @testitem "TensorDirichlet: var" begin
     include("distributions_setuptests.jl")
 
-    a = [1.0, 1.0]
-    b = [1.2, 3.3]
-    c = [0.2, 3.4]
-    d = [4.0, 5.0]
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
 
-    tensorDiri = Array{Float64, 3}(undef, (2, 2, 2))
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
-    tensorDiri[:, 1, 1] = a
-    tensorDiri[:, 1, 2] = b
-    tensorDiri[:, 2, 1] = c
-    tensorDiri[:, 2, 2] = d
+                temp = var.(mat_of_dir)
+                mat_var = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_var[:, i] = temp[i]
+                end
+                @test var(distribution) ≈ mat_var
+            end
+        end
+    end
 
-    varDiri = Array{Float64, 3}(undef, (2, 2, 2))
-
-    varDiri[:, 1, 1] = var(Dirichlet(a))
-    varDiri[:, 1, 2] = var(Dirichlet(b))
-    varDiri[:, 2, 1] = var(Dirichlet(c))
-    varDiri[:, 2, 2] = var(Dirichlet(d))
-    @show var(TensorDirichlet(tensorDiri))
-    @show varDiri
-    @test var(TensorDirichlet(tensorDiri)) == varDiri
 end
 
 @testitem "TensorDirichlet: cov" begin
     include("distributions_setuptests.jl")
 
-    a = [1.0, 1.0]
-    b = [1.2, 3.3]
-    c = [0.2, 3.4]
-    d = [4.0, 5.0]
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
 
-    tensorDiri = Array{Float64, 3}(undef, (2, 2, 2))
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
-    tensorDiri[:, 1, 1] = a
-    tensorDiri[:, 1, 2] = c
-    tensorDiri[:, 2, 1] = b
-    tensorDiri[:, 2, 2] = d
-
-    covTensorDiri = Matrix{Matrix{Float64}}(undef, (2, 2))
-    for i in eachindex(covTensorDiri)
-        covTensorDiri[i] = Matrix{Float64}(undef, (2, 2))
+                temp = cov.(mat_of_dir)
+                old_shape = size(alpha)
+                new_shape = (first(old_shape),first(old_shape),Base.tail(old_shape)...)
+                mat_cov = ones(new_shape)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_cov[:,:, i] = temp[i]
+                end
+                @test cov(distribution) ≈ mat_cov
+            end
+        end
     end
-
-    covTensorDiri[1] = cov(Dirichlet(a))
-    covTensorDiri[2] = cov(Dirichlet(b))
-    covTensorDiri[3] = cov(Dirichlet(c))
-    covTensorDiri[4] = cov(Dirichlet(d))
-
-    @test cov(TensorDirichlet(tensorDiri)) == covTensorDiri
 end
 
 @testitem "TensorDirichlet: ExponentialFamilyDistribution" begin
