@@ -79,11 +79,10 @@ function BayesBase.vague(::Type{<:TensorDirichlet}, dims::Tuple)
 end
 
 function BayesBase.entropy(dist::TensorDirichlet)
-    return vmapreduce(+, extract_collection(dist)) do column
-        scolumn = sum(column)
-        -sum((column .- one(Float64)) .* (digamma.(column) .- digamma.(scolumn))) - loggamma(scolumn) +
-        sum(loggamma.(column))
-    end
+    α = dist.a
+    α0 = dist.α0
+    lmnB = dist.lmnB
+    return sum(-sum((α .- one(eltype(α))) .* (digamma.(α) .- digamma.(α0)); dims = 1) .+ lmnB)
 end
 
 BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:TensorDirichlet}) = TensorDirichlet
