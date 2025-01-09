@@ -35,6 +35,7 @@ for rank in (3, 4, 5, 6)
         SUITE["tensordirichlet"]["logpdf"]["rank=$rank, d=$d"] = @benchmarkable logpdf($distribution, $sample)
         SUITE["tensordirichlet"]["var"]["rank=$rank, d=$d"] = @benchmarkable var($distribution)
         SUITE["tensordirichlet"]["cov"]["rank=$rank, d=$d"] = @benchmarkable cov($distribution)
+        SUITE["tensordirichlet"]["entropy"]["rank=$rank, d=$d"] = @benchmarkable entropy($distribution)
     end
 end
 
