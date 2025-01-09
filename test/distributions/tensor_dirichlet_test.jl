@@ -355,6 +355,9 @@ end
 
                 mat_logpdf = sum(logpdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
                 @test logpdf(distribution, sample) ≈ mat_logpdf
+                sample = ones(size(sample))
+                mat_logpdf = sum(logpdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
+                @test logpdf(distribution, sample) ≈ mat_logpdf
             end
         end
     end

@@ -118,6 +118,9 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::
 end
 
 function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
+    if !insupport(dist, x)
+        return sum(xlogy.(one(eltype(dist.a)), zero(eltype(x))))
+    end
     α = dist.a
     α0 = dist.α0
     s = sum(xlogy.(α .- 1, x); dims = 1)
@@ -130,6 +133,10 @@ BayesBase.default_prod_rule(::Type{<:TensorDirichlet}, ::Type{<:TensorDirichlet}
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::TensorDirichlet, right::TensorDirichlet)
     return TensorDirichlet(left.a .+ right.a .- 1)
+end
+
+function BayesBase.insupport(dist::TensorDirichlet{T, N, A, Ts}, x::AbstractArray{T, N}) where {T, N, A, Ts}
+    return size(dist) == size(x) && !any(x -> x < zero(x), x) && all(z -> z ≈ 1, sum(x; dims = 1))
 end
 
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{TensorDirichlet}, x)
