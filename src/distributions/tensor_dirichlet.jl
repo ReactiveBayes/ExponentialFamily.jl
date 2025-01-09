@@ -63,7 +63,7 @@ function BayesBase.var(dist::TensorDirichlet{T, N, A, Ts}) where {T, N, A, Ts}
     v = α .* (α0 .- α) .* c
     return v
 end
-BayesBase.std(dist::TensorDirichlet) = map(d -> std(Dirichlet(d)), extract_collection(dist))
+BayesBase.std(dist::TensorDirichlet) = sqrt.(var(dist))
 
 BayesBase.params(dist::TensorDirichlet) = (dist.a,)
 
