@@ -8,8 +8,8 @@ SUITE["tensordirichlet"] = BenchmarkGroup(
 # `prod` BenchmarkGroup ========================
 for rank in (3, 4, 5, 6)
     for d in (5, 10, 20)
-        left = TensorDirichlet(rand([d for _ in 1:rank]...))
-        right = TensorDirichlet(rand([d for _ in 1:rank]...))
+        left = TensorDirichlet(rand([d for _ in 1:rank]...) .+ 1)
+        right = TensorDirichlet(rand([d for _ in 1:rank]...) .+ 1)
         SUITE["tensordirichlet"]["prod"]["Closed(rank=$rank, d=$d)"] = @benchmarkable prod(ClosedProd(), $left, $right)
     end
 end

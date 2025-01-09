@@ -4,6 +4,7 @@ import SpecialFunctions: digamma, loggamma
 import Base: eltype
 import Distributions: pdf, logpdf
 using Distributions
+using SpecialFunctions, LogExpFunctions
 
 import FillArrays: Ones, Eye
 import LoopVectorization: vmap, vmapreduce
@@ -24,8 +25,18 @@ The `a` field stores the matrix parameter of the distribution.
 - a[:,m,n] are the parameters of a Dirichlet distribution
 - a[:,m_1,n_1] and a[:,m_2,n_2] are supposed independent if (m_1,n_1) not equal to (m_2,n_2).
 """
-struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}} <: ContinuousTensorDistribution
+struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: ContinuousTensorDistribution
     a::A
+    α0::Ts
+    lmnB::Ts
+    function TensorDirichlet(alpha::AbstractArray{T, N}) where {T, N}
+        if !all(x -> x > zero(x), alpha)
+            throw(ArgumentError("All elements of the alpha tensor should be positive"))
+        end
+        alpha0 = sum(alpha; dims = 1)
+        lmnB = sum(loggamma, alpha; dims = 1) - loggamma.(alpha0)
+        new{T, N, typeof(alpha), typeof(alpha0)}(alpha, alpha0, lmnB)
+    end
 end
 
 get_dirichlet_parameters(dist::TensorDirichlet{T, N, A}) where {T, N, A} = eachslice(dist.a, dims = Tuple(2:N))
@@ -35,7 +46,7 @@ BayesBase.params(::MeanParametersSpace, dist::TensorDirichlet) = (reduce(vcat, e
 getbasemeasure(::Type{TensorDirichlet}) = (x) -> sum([x[:, i] for i in CartesianIndices(Base.tail(size(x)))])
 getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
 
-BayesBase.mean(dist::TensorDirichlet) = dist.a ./ sum(dist.a; dims = 1)
+BayesBase.mean(dist::TensorDirichlet) = dist.a ./ dist.α0
 function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
     s = size(dist.a)
     news = (first(s), first(s), Base.tail(s)...)
@@ -45,12 +56,11 @@ function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
     end
     return v
 end
-
-function BayesBase.var(dist::TensorDirichlet)
-    v = similar(dist.a)
-    for i in CartesianIndices(Base.tail(size(dist.a)))
-        v[:, i] .= var(Dirichlet(dist.a[:, i]))
-    end
+function BayesBase.var(dist::TensorDirichlet{T, N, A, Ts}) where {T, N, A, Ts}
+    α = dist.a
+    α0 = dist.α0
+    c = inv.(α0 .^ 2 .* (α0 .+ 1))
+    v = α .* (α0 .- α) .* c
     return v
 end
 BayesBase.std(dist::TensorDirichlet) = map(d -> std(Dirichlet(d)), extract_collection(dist))
@@ -108,21 +118,10 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::
 end
 
 function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
-    out = zero(eltype(x))
-    for i in CartesianIndices(extract_collection(dist))
-        out += logpdf(Dirichlet(dist.a[:, i]), @view x[:, i])
-    end
-    return out
-end
-
-function _dirichlet_logpdf(α::AbstractVector{T}, x::AbstractVector{T}) where {T}
-    α0 = sum(α)
-    lmB = loggamma(α0) - sum(loggamma.(α))
-    if length(α) != length(x) || sum(x) != 1 || any(x -> x < 0, x)
-        return xlogy(one(eltype(α)), zero(eltype(x))) - lmB
-    end
-    s = sum(xlogy(αi - 1, xi) for (αi, xi) in zip(α, x))
-    return s - lmB
+    α = dist.a
+    α0 = dist.α0
+    s = sum(xlogy.(α .- 1, x); dims = 1)
+    return sum(s .- dist.lmnB)
 end
 
 BayesBase.pdf(dist::TensorDirichlet, x::Array{T, N}) where {T <: Real, N} = exp(logpdf(dist, x))
@@ -130,19 +129,7 @@ BayesBase.pdf(dist::TensorDirichlet, x::Array{T, N}) where {T <: Real, N} = exp(
 BayesBase.default_prod_rule(::Type{<:TensorDirichlet}, ::Type{<:TensorDirichlet}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::TensorDirichlet, right::TensorDirichlet)
-    paramL = extract_collection(left)
-    paramR = extract_collection(right)
-    Ones = ones(size(left.a))
-    Ones = extract_collection(TensorDirichlet(Ones))
-    param = copy(Ones)
-    for i in eachindex(paramL)
-        param[i] .= paramL[i] .+ paramR[i] .- Ones[i]
-    end
-    out = similar(left.a)
-    for i in CartesianIndices(param)
-        out[:, i] = param[i]
-    end
-    return TensorDirichlet(out)
+    return TensorDirichlet(left.a .+ right.a .- 1)
 end
 
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{TensorDirichlet}, x)
