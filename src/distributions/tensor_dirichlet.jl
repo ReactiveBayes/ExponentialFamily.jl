@@ -4,6 +4,7 @@ import SpecialFunctions: digamma, loggamma
 import Base: eltype
 import Distributions: pdf, logpdf
 using Distributions
+using SpecialFunctions, LogExpFunctions
 
 import FillArrays: Ones, Eye
 import LoopVectorization: vmap, vmapreduce
@@ -27,9 +28,11 @@ The `a` field stores the matrix parameter of the distribution.
 struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: ContinuousTensorDistribution
     a::A
     α0::Ts
+    lmnB::Ts
     function TensorDirichlet(alpha::AbstractArray{T, N}) where {T, N}
         alpha0 = sum(alpha; dims = 1)
-        new{T, N, typeof(alpha), typeof(alpha0)}(alpha, alpha0)
+        lmnB = sum(loggamma, alpha; dims = 1) - loggamma.(alpha0)
+        new{T, N, typeof(alpha), typeof(alpha0)}(alpha, alpha0, lmnB)
     end
 end
 
@@ -112,7 +115,10 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::
 end
 
 function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
-    return sum(logpdf.(Dirichlet.(get_dirichlet_parameters(dist)), eachslice(x, dims = Tuple(2:N))))
+    α = dist.a
+    α0 = dist.α0
+    s = sum(xlogy.(α .- 1, x); dims = 1)
+    return sum(s .- dist.lmnB)
 end
 
 BayesBase.pdf(dist::TensorDirichlet, x::Array{T, N}) where {T <: Real, N} = exp(logpdf(dist, x))
