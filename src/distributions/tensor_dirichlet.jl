@@ -40,7 +40,7 @@ BayesBase.params(::MeanParametersSpace, dist::TensorDirichlet) = (reduce(vcat, e
 getbasemeasure(::Type{TensorDirichlet}) = (x) -> sum([x[:, i] for i in CartesianIndices(Base.tail(size(x)))])
 getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
 
-BayesBase.mean(dist::TensorDirichlet) = dist.a ./ sum(dist.a; dims = 1)
+BayesBase.mean(dist::TensorDirichlet) = dist.a ./ dist.α0
 function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
     s = size(dist.a)
     news = (first(s), first(s), Base.tail(s)...)
@@ -50,11 +50,13 @@ function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
     end
     return v
 end
-
-function BayesBase.var(dist::TensorDirichlet)
+function BayesBase.var(dist::TensorDirichlet{T, N, A, Ts}) where {T, N, A, Ts}
     v = similar(dist.a)
-    for i in CartesianIndices(Base.tail(size(dist.a)))
-        v[:, i] .= var(Dirichlet(dist.a[:, i]))
+    for (vel, α, α0) in zip(eachslice(v, dims = Tuple(2:N)), get_dirichlet_parameters(dist), dist.α0)
+        c = inv(α0^2 * (α0 + 1))
+        for (i, _) in enumerate(vel)
+            vel[i] = α[i] * (α0 - α[i]) * c
+        end
     end
     return v
 end
