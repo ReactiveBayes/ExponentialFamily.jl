@@ -5,7 +5,6 @@ import Base: eltype
 import Distributions: pdf, logpdf
 using Distributions
 
-import SparseArrays: blockdiag, sparse
 import FillArrays: Ones, Eye
 import LoopVectorization: vmap, vmapreduce
 using LinearAlgebra, Random
@@ -37,7 +36,16 @@ getbasemeasure(::Type{TensorDirichlet}) = (x) -> sum([x[:, i] for i in Cartesian
 getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
 
 BayesBase.mean(dist::TensorDirichlet) = dist.a ./ sum(dist.a; dims = 1)
-BayesBase.cov(dist::TensorDirichlet) = map(d -> cov(Dirichlet(d)), extract_collection(dist))
+function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
+    s = size(dist.a)
+    news = (first(s), first(s), Base.tail(s)...)
+    v = zeros(T, news)
+    for i in CartesianIndices(Base.tail(size(dist.a)))
+        v[:, :, i] .= cov(Dirichlet(dist.a[:, i]))
+    end
+    return v
+end
+
 function BayesBase.var(dist::TensorDirichlet)
     v = similar(dist.a)
     for i in CartesianIndices(Base.tail(size(dist.a)))
