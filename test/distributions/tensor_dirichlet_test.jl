@@ -282,11 +282,6 @@ end
                 distribution = TensorDirichlet(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
-                temp = var.(mat_of_dir)
-                mat_var = similar(alpha)
-                for i in CartesianIndices(Base.tail(size(alpha)))
-                    mat_var[:, i] = temp[i]
-                end
                 @test typeof(rand(distribution)) <: Array{Float64, rank}
                 @test size(rand(distribution)) == size(alpha)
                 @test typeof(rand(distribution, 3)) <: AbstractVector{Array{Float64, rank}}
