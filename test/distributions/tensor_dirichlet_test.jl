@@ -29,10 +29,6 @@ end
 
 end
 
-@testitem "TensorDirichlet: mean(::typeof(log))" begin
-    # mean log is now part of the closeForm package and the implementation of this should no more be part of this
-
-end
 
 @testitem "TensorDirichlet: var" begin
     include("distributions_setuptests.jl")
@@ -51,6 +47,52 @@ end
                     mat_var[:, i] = temp[i]
                 end
                 @test var(distribution) ≈ mat_var
+            end
+        end
+    end
+
+end
+
+@testitem "TensorDirichlet: mean" begin
+    include("distributions_setuptests.jl")
+
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
+
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+
+                temp = mean.(mat_of_dir)
+                mat_mean = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_mean[:, i] = temp[i]
+                end
+                @test mean(distribution) ≈ mat_mean
+            end
+        end
+    end
+
+end
+
+@testitem "TensorDirichlet: std" begin
+    include("distributions_setuptests.jl")
+
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
+
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+
+                temp = std.(mat_of_dir)
+                mat_std = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_std[:, i] = temp[i]
+                end
+                @test std(distribution) ≈ mat_std
             end
         end
     end
@@ -209,40 +251,56 @@ end
 @testitem "TensorDirichlet: prod with PreserveTypeProd{Distribution}" begin
     include("distributions_setuptests.jl")
 
-    tensorDiri = Matrix{Vector{Float64}}(undef, (2, 2))
-    for i in eachindex(tensorDiri)
-        tensorDiri[i] = Vector{Float64}(undef, 2)
-        tensorDiri[i] = ones(2) .* 2
-    end
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha1 = rand([d for _ in 1:rank]...) .+ 1
+                alpha2 = rand([d for _ in 1:rank]...) .+ 1
+                distribution1 = TensorDirichlet(alpha1)
+                distribution2 = TensorDirichlet(alpha2)
+            
+                mat_of_dir_1 = Dirichlet.(eachslice(alpha1, dims = Tuple(2:rank)))
+                mat_of_dir_2 = Dirichlet.(eachslice(alpha2, dims = Tuple(2:rank)))
+                dim = rank-1
 
-    result = Matrix{Vector{Float64}}(undef, (2, 2))
-    for i in eachindex(tensorDiri)
-        result[i] = Vector{Float64}(undef, 2)
-        result[i] = ones(2) .* 3
+                prod_temp = Array{Dirichlet,dim}(undef, Base.tail(size(alpha1)))
+                for i in CartesianIndices(Base.tail(size(alpha1)))
+                    prod_temp[i] = prod(PreserveTypeProd(Distribution),mat_of_dir_1[i],mat_of_dir_2[i])
+                end
+                mat_prod = similar(alpha1)
+                for i in CartesianIndices(Base.tail(size(alpha1)))
+                    mat_prod[:,i] = prod_temp[i].alpha
+                end
+                @test @inferred(prod(PreserveTypeProd(Distribution),distribution1,distribution2)) ≈ TensorDirichlet(mat_prod)
+            end
+        end
     end
-
-    @test_broken @inferred(prod(PreserveTypeProd(Distribution), TensorDirichlet(tensorDiri), TensorDirichlet(tensorDiri))) == TensorDirichlet(result)
 end
 
 @testitem "TensorDirichlet: rand" begin
     include("distributions_setuptests.jl")
 
-    a = [1.0, 1.0]
-    b = [1.2, 3.3]
-    c = [0.2, 3.4]
-    d = [4.0, 5.0]
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
 
-    tensorDiri = Array{Float64, 3}(undef, (2, 2, 2))
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
-    tensorDiri[:, 1, 1] = a
-    tensorDiri[:, 1, 2] = b
-    tensorDiri[:, 2, 1] = c
-    tensorDiri[:, 2, 2] = d
-
-    @test typeof(rand(TensorDirichlet(tensorDiri))) <: Array{Float64, 3}
-    @test size(rand(TensorDirichlet(tensorDiri))) == (2, 2, 2)
-    @test typeof(rand(TensorDirichlet(tensorDiri), 3)) <: AbstractVector{Array{Float64, 3}}
-    @test size(rand(TensorDirichlet(tensorDiri), 3)) == (3,)
+                temp = var.(mat_of_dir)
+                mat_var = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_var[:, i] = temp[i]
+                end
+                @test typeof(rand(distribution)) <: Array{Float64, rank}
+                @test size(rand(distribution)) == size(alpha)
+                @test typeof(rand(distribution, 3)) <: AbstractVector{Array{Float64, rank}}
+                @test size(rand(distribution, 3)) == (3,)
+            end
+        end
+    end
+    
 end
 
 @testitem "TensorDirichlet: vague" begin
@@ -262,43 +320,31 @@ end
 @testitem "TensorDirichlet: NaturalParametersSpace" begin
     include("distributions_setuptests.jl")
 
-    a = [1.0, 1.0]
-    b = [1.2, 3.3]
-    c = [0.2, 3.4]
-    d = [4.0, 5.0]
-
-    tensorDiri = Matrix{Vector{Float64}}(undef, (2, 2))
-    for i in eachindex(tensorDiri)
-        tensorDiri[i] = Vector{Float64}(undef, 2)
-    end
-
-    tensorDiri[1] = a
-    tensorDiri[2] = b
-    tensorDiri[3] = c
-    tensorDiri[4] = d
-
     logPartitionDirichlet = getlogpartition(NaturalParametersSpace(), Dirichlet)
+    logPartitionTensor    = getlogpartition(NaturalParametersSpace(), TensorDirichlet)
+    grad                  = getgradlogpartition(NaturalParametersSpace(), Dirichlet)
+    gradTensor            = getgradlogpartition(NaturalParametersSpace(), TensorDirichlet)
+    info                  = getfisherinformation(NaturalParametersSpace(), Dirichlet)
+    infoTensor            = getfisherinformation(NaturalParametersSpace(), TensorDirichlet)
 
-    @test getlogpartition(NaturalParametersSpace(), TensorDirichlet)(tensorDiri) ==
-          logPartitionDirichlet(a) + logPartitionDirichlet(b) + logPartitionDirichlet(c) + logPartitionDirichlet(d)
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                
+                alpha = rand([d for _ in 1:rank]...)
+                distribution = TensorDirichlet(alpha)
+                (naturalParam,) = unpack_parameters(TensorDirichlet, alpha)
+                
+                mat_logPartition = sum(logPartitionDirichlet.(eachslice(alpha, dims = Tuple(2:rank))))
+                mat_grad = grad.(eachslice(alpha, dims = Tuple(2:rank)))
+                mat_info = sum(info.(eachslice(alpha, dims = Tuple(2:rank))))
 
-    gradLogPartition = Matrix{Vector{Float64}}(undef, (2, 2))
-    for i in eachindex(gradLogPartition)
-        gradLogPartition[i] = Vector{Float64}(undef, 2)
+                @test logPartitionTensor(naturalParam) ≈ mat_logPartition
+                @test gradTensor(naturalParam) ≈ mat_grad
+                @test infoTensor(naturalParam) ≈ mat_info
+            end
+        end
     end
-
-    grad = getgradlogpartition(NaturalParametersSpace(), Dirichlet)
-
-    gradLogPartition[1] = grad(a)
-    gradLogPartition[2] = grad(b)
-    gradLogPartition[3] = grad(c)
-    gradLogPartition[4] = grad(d)
-
-    @test getgradlogpartition(NaturalParametersSpace(), TensorDirichlet)(tensorDiri) == gradLogPartition
-
-    info = getfisherinformation(NaturalParametersSpace(), Dirichlet)
-
-    @test getfisherinformation(NaturalParametersSpace(), TensorDirichlet)(tensorDiri) == info(a) + info(b) + info(c) + info(d)
 end
 
 @testitem "TensorDirichlet: logpdf" begin
