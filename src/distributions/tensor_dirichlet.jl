@@ -38,10 +38,10 @@ struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: Continuous
     end
 end
 
-get_dirichlet_parameters(dist::TensorDirichlet{T, N, A}) where {T, N, A} = eachslice(dist.a, dims = Tuple(2:N))
-extract_collection(dist::TensorDirichlet) = [dist.a[:, i] for i in CartesianIndices(Base.tail(size(dist.a)))]
-unpack_parameters(::Type{TensorDirichlet}, packed) = ([packed[:, i] for i in CartesianIndices(Base.tail(size(packed)))],)
-BayesBase.params(::MeanParametersSpace, dist::TensorDirichlet) = (reduce(vcat, extract_collection(dist)),)
+BayesBase.params(dist::TensorDirichlet) = error("Not implemented")
+
+unpack_parameters(::Type{TensorDirichlet}, packed) = error("Not implemented")
+
 getbasemeasure(::Type{TensorDirichlet}) = (x) -> sum([x[:, i] for i in CartesianIndices(Base.tail(size(x)))])
 getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
 
