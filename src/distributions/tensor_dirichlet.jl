@@ -70,8 +70,6 @@ function BayesBase.var(dist::TensorDirichlet{T, N, A, Ts}) where {T, N, A, Ts}
 end
 BayesBase.std(dist::TensorDirichlet) = sqrt.(var(dist))
 
-BayesBase.params(dist::TensorDirichlet) = (dist.a,)
-
 Base.size(dist::TensorDirichlet) = size(dist.a)
 Base.eltype(::TensorDirichlet{T}) where {T} = T
 
@@ -108,7 +106,7 @@ function BayesBase.rand(rng::AbstractRNG, dist::TensorDirichlet{T}, nsamples::In
 end
 
 function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::AbstractArray{T, N}) where {T <: Real, N}
-    for index in CartesianIndices(extract_collection(dist))
+    for index in CartesianIndices(Base.tail(size(dist.a)))
         rand!(rng, Dirichlet(dist.a[:, index]), @view container[:, index])
     end
     return container
@@ -153,12 +151,17 @@ end
 
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditioner) =
-    isnothing(conditioner) && length(η) > 1 && all(map(x -> isproper(NaturalParametersSpace(), Dirichlet, x), eachslice(η, dims = Tuple(2:ndims(η)))))
+function isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditioner::NTuple{N, Int}) where {N}
+    param_dim = conditioner[1]
+    n_distributions = prod(Base.tail(conditioner))
+    
+    if !(length(η) == param_dim * n_distributions)
+        return false
+    end 
+    return all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
+end
 isproper(::MeanParametersSpace, ::Type{TensorDirichlet}, θ, conditioner) =
     isnothing(conditioner) && length(θ) > 1 && all(map(x -> isproper(MeanParametersSpace(), Dirichlet, x), eachslice(θ, dims = Tuple(2:ndims(θ)))))
-isproper(p, ::Type{TensorDirichlet}, η, conditioner) =
-    isnothing(conditioner) && all(x -> isproper(p, Type{Dirichlet}, x), unpack_parameters(TensorDirichlet, η))
 
 function (::MeanToNatural{TensorDirichlet})(tuple_of_θ, _)
     (α,) = tuple_of_θ
