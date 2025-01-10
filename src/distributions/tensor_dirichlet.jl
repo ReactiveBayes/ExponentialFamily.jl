@@ -38,9 +38,15 @@ struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: Continuous
     end
 end
 
-BayesBase.params(dist::TensorDirichlet) = error("Not implemented")
+BayesBase.params(dist::TensorDirichlet) = (dist.a,)
 
-unpack_parameters(::Type{TensorDirichlet}, packed) = error("Not implemented")
+function unpack_parameters(::Type{TensorDirichlet}, packed)
+    return (packed,)
+end
+
+function separate_conditioner(::Type{TensorDirichlet}, tuple_of_θ)
+    return (tuple_of_θ, size(tuple_of_θ[1]))
+end
 
 getbasemeasure(::Type{TensorDirichlet}) = (x) -> sum([x[:, i] for i in CartesianIndices(Base.tail(size(x)))])
 getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
@@ -154,21 +160,39 @@ isproper(::MeanParametersSpace, ::Type{TensorDirichlet}, θ, conditioner) =
 isproper(p, ::Type{TensorDirichlet}, η, conditioner) =
     isnothing(conditioner) && all(x -> isproper(p, Type{Dirichlet}, x), unpack_parameters(TensorDirichlet, η))
 
-function (::MeanToNatural{TensorDirichlet})(tuple_of_θ::Tuple{Any})
+function (::MeanToNatural{TensorDirichlet})(tuple_of_θ, _)
     (α,) = tuple_of_θ
-    out = copy(α)
-    for i in CartesianIndices(Base.tail(size(α)))
-        out[:, i] = α[:, i] - ones(length(α[:, i]))
+    T = eltype(α)
+    dims = size(α)
+    k = dims[1]
+    n_distributions = prod(Base.tail(dims))
+    
+    # Create a flat output vector to hold all natural parameters
+    out = Vector{T}(undef, k * n_distributions)
+    ones_vec = ones(T, k)
+    
+    # Transform each slice into natural parameters and store in flattened form
+    for (idx, i) in enumerate(CartesianIndices(Base.tail(dims)))
+        @views out[(idx-1)*k + 1 : idx*k] = α[:, i] .- ones_vec
     end
-    return out
+    
+    return (out,)
 end
 
-function (::NaturalToMean{TensorDirichlet})(tuple_of_η::Tuple{Any})
-    (α,) = tuple_of_η
-    out = copy(α)
-    for i in CartesianIndices(Base.tail(size(α)))
-        out[:, i] = α[:, i] + ones(length(α[:, i]))
+function (::NaturalToMean{TensorDirichlet})(tuple_of_η, conditioner::Tuple)
+    (η,) = tuple_of_η
+    
+    k = length(η) ÷ prod(Base.tail(conditioner))
+    reshaped_η = reshape(η, k, Base.tail(conditioner)...)
+    
+    out = similar(reshaped_η)
+    ones_vec = ones(T, k)
+    
+    # Transform back to mean parameters
+    for i in CartesianIndices(Base.tail(size(reshaped_η)))
+        @views out[:, i] = reshaped_η[:, i] .+ ones_vec
     end
+    
     return out
 end
 
