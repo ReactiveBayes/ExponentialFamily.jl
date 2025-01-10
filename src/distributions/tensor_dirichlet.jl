@@ -54,9 +54,10 @@ end
 
 isbasemeasureconstant(::Type{TensorDirichlet}) = ConstantBaseMeasure()
 
-getbasemeasure(::Type{TensorDirichlet}) = (x) -> one(Float64)
+getbasemeasure(::Type{TensorDirichlet}, conditioner) = (x) -> one(Float64)
+getlogbasemeasure(::Type{TensorDirichlet}, conditioner) = (x) -> zero(Float64)
 
-getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
+getsufficientstatistics(::Type{TensorDirichlet}, conditioner) = (x -> vmap(log, x),)
 
 BayesBase.mean(dist::TensorDirichlet) = dist.a ./ dist.α0
 function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
@@ -214,12 +215,9 @@ function getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, cond
     return function(η::AbstractVector)
         result = zero(eltype(η))
         for i in 1:n_distributions
-            # Extract parameters for i-th distribution
             idx_start = (i-1)*k + 1
             idx_end = i*k
             @views params = η[idx_start:idx_end]
-            
-            # Add log partition for this distribution
             result += dirichlet_logpartition(params)
         end
         
@@ -227,15 +225,18 @@ function getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, cond
     end
 end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}) =
-    (η) -> begin
-        return map(d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(d), η)
+function getgradlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
+    k = conditioner[1]  # Number of parameters per distribution
+    n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+    dirichlet_gradlogpartition = getgradlogpartition(NaturalParametersSpace(), Dirichlet)
+    
+    return function(η::AbstractVector)
+        # Just concatenate the gradients from each Dirichlet distribution
+        vcat([dirichlet_gradlogpartition(@view η[(i-1)*k + 1:i*k]) for i in 1:n_distributions]...)
     end
+end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{TensorDirichlet}) =
-    (η) -> begin
-        return mapreduce(d -> getfisherinformation(NaturalParametersSpace(), Dirichlet)(d), +, η)
-    end
+getfisherinformation(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner) = error("Not implemented getfisherinformation for TensorDirichlet")
 
 # Mean parametrization
 
