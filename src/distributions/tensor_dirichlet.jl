@@ -206,10 +206,26 @@ function (::NaturalToMean{TensorDirichlet})(tuple_of_η, conditioner::Tuple)
     return (out,)
 end
 
-getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}) =
-    (η) -> begin
-        return mapreduce(x -> getlogpartition(NaturalParametersSpace(), Dirichlet)(x), +, η)
+function getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
+    k = conditioner[1]  # Number of parameters per distribution
+    n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+    dirichlet_logpartition = getlogpartition(NaturalParametersSpace(), Dirichlet)
+    
+    return function(η::AbstractVector)
+        result = zero(eltype(η))
+        for i in 1:n_distributions
+            # Extract parameters for i-th distribution
+            idx_start = (i-1)*k + 1
+            idx_end = i*k
+            @views params = η[idx_start:idx_end]
+            
+            # Add log partition for this distribution
+            result += dirichlet_logpartition(params)
+        end
+        
+        return result
     end
+end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}) =
     (η) -> begin
