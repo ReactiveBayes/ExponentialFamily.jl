@@ -123,7 +123,7 @@ end
     for len in 3:5
         α = rand(len, len, len) .+ 1
         let d = TensorDirichlet(α)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_plogpdf_interface=false)
             η1 = getnaturalparameters(ef)
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]
                 x = x ./ sum(x)

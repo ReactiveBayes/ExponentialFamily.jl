@@ -44,11 +44,18 @@ function unpack_parameters(::Type{TensorDirichlet}, packed)
     return (packed,)
 end
 
+function join_conditioner(::Type{TensorDirichlet}, cparams, _)
+    return cparams
+end
+
 function separate_conditioner(::Type{TensorDirichlet}, tuple_of_θ)
     return (tuple_of_θ, size(tuple_of_θ[1]))
 end
 
-getbasemeasure(::Type{TensorDirichlet}) = (x) -> sum([x[:, i] for i in CartesianIndices(Base.tail(size(x)))])
+isbasemeasureconstant(::Type{TensorDirichlet}) = ConstantBaseMeasure()
+
+getbasemeasure(::Type{TensorDirichlet}) = (x) -> one(Float64)
+
 getsufficientstatistics(::TensorDirichlet) = (x -> vmap(log, x),)
 
 BayesBase.mean(dist::TensorDirichlet) = dist.a ./ dist.α0
@@ -184,7 +191,7 @@ end
 
 function (::NaturalToMean{TensorDirichlet})(tuple_of_η, conditioner::Tuple)
     (η,) = tuple_of_η
-    
+    T = eltype(η)
     k = length(η) ÷ prod(Base.tail(conditioner))
     reshaped_η = reshape(η, k, Base.tail(conditioner)...)
     
@@ -196,7 +203,7 @@ function (::NaturalToMean{TensorDirichlet})(tuple_of_η, conditioner::Tuple)
         @views out[:, i] = reshaped_η[:, i] .+ ones_vec
     end
     
-    return out
+    return (out,)
 end
 
 getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}) =
