@@ -40,8 +40,8 @@ end
 
 BayesBase.params(dist::TensorDirichlet) = (dist.a,)
 
-function unpack_parameters(::Type{TensorDirichlet}, packed)
-    return (packed,)
+function unpack_parameters(::Type{TensorDirichlet}, packed, conditioner)
+    return (reshape(packed, conditioner),)
 end
 
 function join_conditioner(::Type{TensorDirichlet}, cparams, _)
@@ -170,44 +170,18 @@ function isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditi
     return all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
 end
 isproper(::MeanParametersSpace, ::Type{TensorDirichlet}, θ, conditioner) =
-    isnothing(conditioner) && length(θ) > 1 && all(map(x -> isproper(MeanParametersSpace(), Dirichlet, x), eachslice(θ, dims = Tuple(2:ndims(θ)))))
+isnothing(conditioner) && length(θ) > 1 && all(map(x -> isproper(MeanParametersSpace(), Dirichlet, x), eachslice(θ, dims = Tuple(2:ndims(θ)))))
 
-function (::MeanToNatural{TensorDirichlet})(tuple_of_θ, _)
+function (::MeanToNatural{TensorDirichlet})(tuple_of_θ::Tuple{Any}, _)
     (α,) = tuple_of_θ
-    T = eltype(α)
-    dims = size(α)
-    k = dims[1]
-    n_distributions = prod(Base.tail(dims))
-    
-    # Create a flat output vector to hold all natural parameters
-    out = Vector{T}(undef, k * n_distributions)
-    ones_vec = ones(T, k)
-    
-    # Transform each slice into natural parameters and store in flattened form
-    for (idx, i) in enumerate(CartesianIndices(Base.tail(dims)))
-        @views out[(idx-1)*k + 1 : idx*k] = α[:, i] .- ones_vec
-    end
-    
-    return (out,)
+    return (α - Ones{Float64}(size(α)),)
 end
 
-function (::NaturalToMean{TensorDirichlet})(tuple_of_η, conditioner::Tuple)
+function (::NaturalToMean{TensorDirichlet})(tuple_of_η::Tuple{Any}, _)
     (η,) = tuple_of_η
-    T = eltype(η)
-    k = length(η) ÷ prod(Base.tail(conditioner))
-    reshaped_η = reshape(η, k, Base.tail(conditioner)...)
-    
-    out = similar(reshaped_η)
-    ones_vec = ones(T, k)
-    
-    # Transform back to mean parameters
-    for i in CartesianIndices(Base.tail(size(reshaped_η)))
-        @views out[:, i] = reshaped_η[:, i] .+ ones_vec
-    end
-    
-    return (out,)
+    return (η + Ones{Float64}(size(η)),)
 end
-
+    
 function getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
