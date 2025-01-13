@@ -40,6 +40,25 @@ struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: Continuous
     end
 end
 
+function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
+    α = dist.a
+    α0 = dist.α0
+    s = sum(xlogy.(α .- 1, x); dims = 1)
+    return sum(s .- dist.lmnB)
+end
+
+function BayesBase.logpdf(dist::TensorDirichlet, xs::AbstractVector)
+    return map(x -> logpdf(dist, x), xs)
+end
+
+function BayesBase.pdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
+    return exp(logpdf(dist, x))
+end
+
+function BayesBase.pdf(dist::TensorDirichlet, xs::AbstractVector)
+    return map(x -> pdf(dist, x), xs)
+end
+
 BayesBase.params(dist::TensorDirichlet) = (dist.a,)
 
 function unpack_parameters(::Type{TensorDirichlet}, packed, conditioner)
@@ -115,7 +134,7 @@ function BayesBase.rand(rng::AbstractRNG, dist::TensorDirichlet{T}, nsamples::In
     return container
 end
 
-function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::AbstractArray{T, N}) where {T <: Real, N}
+function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::AbstractArray)
     for index in CartesianIndices(Base.tail(size(dist.a)))
         rand!(rng, Dirichlet(dist.a[:, index]), @view container[:, index])
     end
@@ -126,6 +145,19 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::
     for i in container
         rand!(rng, dist, @view container[i])
     end
+    return container
+end
+
+# Add method for handling vector of arrays
+function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::Vector{<:AbstractArray})
+    for c in container
+        size(c) == size(dist.a) || error("Size mismatch")
+    end
+    
+    @inbounds for c in container
+        rand!(rng, dist, c)
+    end
+    
     return container
 end
 
