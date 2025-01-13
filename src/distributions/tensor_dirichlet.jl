@@ -211,7 +211,24 @@ function getgradlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, 
     end
 end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner) = error("Not implemented getfisherinformation for TensorDirichlet")
+function getfisherinformation(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner)
+    k = conditioner[1]  # Number of parameters per distribution
+    n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+    dirichlet_fisher = getfisherinformation(NaturalParametersSpace(), Dirichlet)
+    
+    return function(η::AbstractVector)
+        blocks = Vector{Matrix{Float64}}(undef, n_distributions)
+        
+        for i in 1:n_distributions
+            idx_start = (i-1)*k + 1
+            idx_end = i*k
+            @views params = η[idx_start:idx_end]
+            blocks[i] = dirichlet_fisher(params)
+        end
+        
+        return BlockDiagonal(blocks)
+    end
+end
 
 # Mean parametrization
 
