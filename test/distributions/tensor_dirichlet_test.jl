@@ -222,7 +222,7 @@ end
         # αleft = rand(len, len) .+ 1
         # αright = rand(len, len) .+ 1
         @testset let (left, right) = (TensorDirichlet(αleft), TensorDirichlet(αright))
-            @test_broken test_generic_simple_exponentialfamily_product(
+            test_generic_simple_exponentialfamily_product(
                 left,
                 right,
                 strategies = (
