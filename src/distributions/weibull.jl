@@ -85,6 +85,10 @@ function (::NaturalToMean{Weibull})(tuple_of_η::Tuple{Any}, conditioner)
     return ((-η)^inv(-conditioner),)
 end
 
+function unpack_parameters(::Type{Weibull}, packed, _)
+    return (first(packed),)
+end
+
 function unpack_parameters(::Type{Weibull}, packed)
     return (first(packed),)
 end

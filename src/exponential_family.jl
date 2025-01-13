@@ -805,6 +805,10 @@ function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace},
     unpack_parameters(T, packed, conditioner)
 end
 
+function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, ::Nothing) where {T}
+    unpack_parameters(T, packed)
+end
+
 # Assume that for the most distributions the `unpack_parameters` does not depend on the `space` parameter
 unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)
 

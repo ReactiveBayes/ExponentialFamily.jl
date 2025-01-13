@@ -78,6 +78,10 @@ function (::NaturalToMean{Binomial})(tuple_of_η::Tuple{Any}, _)
     return (logistic(η₁),)
 end
 
+function unpack_parameters(::Type{Binomial}, packed, _)
+    return unpack_parameters(Binomial, packed)
+end
+
 function unpack_parameters(::Type{Binomial}, packed)
     return (first(packed),)
 end

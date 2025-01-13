@@ -40,13 +40,6 @@ struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: Continuous
     end
 end
 
-function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}) where {R, A, T <: Real, N}
-    α = dist.a
-    α0 = dist.α0
-    s = sum(xlogy.(α .- 1, x); dims = 1)
-    return sum(s .- dist.lmnB)
-end
-
 function BayesBase.logpdf(dist::TensorDirichlet, xs::AbstractVector)
     return map(x -> logpdf(dist, x), xs)
 end
