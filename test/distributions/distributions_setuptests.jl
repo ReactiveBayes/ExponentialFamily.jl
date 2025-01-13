@@ -300,7 +300,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test logbasemeasure(ef, x) ≈ log(basemeasure(ef, x)) atol = 1e-8
         @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T, conditioner)))
         @test @inferred(logpartition(ef)) == getlogpartition(T, conditioner)(η)
-        @test @inferred(gradlogpartition(ef)) == getgradlogpartition(T, conditioner)(η)
+        @test @inferred(gradlogpartition(ef)) == getgradlogpartition(NaturalParametersSpace(), T, conditioner)(η)
         @test @inferred(fisherinformation(ef)) == getfisherinformation(T, conditioner)(η)
 
         # Double check the `conditioner` free methods
@@ -309,7 +309,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T)(x)
             @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T)))
             @test @inferred(logpartition(ef)) == getlogpartition(T)(η)
-            @test @inferred(gradlogpartition(ef)) == getgradlogpartition(T)(η)
+            @test @inferred(gradlogpartition(ef)) == getgradlogpartition(NaturalParametersSpace(), T)(η)
             @test @inferred(fisherinformation(ef)) == getfisherinformation(T)(η)
         end
 
