@@ -697,7 +697,7 @@ Evaluates and returns the probability density function of the exponential family
 BayesBase.pdf(ef::ExponentialFamilyDistribution, x) = _pdf(ef, x)
 
 function _pdf(ef, x)
-    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    vartype, _x = check_logpdf(ef, x)
     _pdf(vartype, ef, _x)
 end
 
