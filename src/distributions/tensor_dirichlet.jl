@@ -137,7 +137,9 @@ function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}
     return sum(s .- dist.lmnB)
 end
 
-BayesBase.pdf(dist::TensorDirichlet, x::Array{T, N}) where {T <: Real, N} = exp(logpdf(dist, x))
+BayesBase.logpdf(ef::ExponentialFamilyDistribution{TensorDirichlet}, x::AbstractVector) = _logpdf(MapBasedLogpdfCall(), ef, x)
+BayesBase.logpdf(ef::ExponentialFamilyDistribution{TensorDirichlet}, x) = _logpdf(PointBasedLogpdfCall(), ef, x)
+
 
 BayesBase.default_prod_rule(::Type{<:TensorDirichlet}, ::Type{<:TensorDirichlet}) = PreserveTypeProd(Distribution)
 
@@ -150,11 +152,12 @@ function BayesBase.insupport(dist::TensorDirichlet{T, N, A, Ts}, x::AbstractArra
 end
 
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{TensorDirichlet}, x)
-    l = size(getnaturalparameters(ef))
-    values = [x[:, i] for i in CartesianIndices(Base.tail(size(x)))]
-    ## The element of the array should be the a categorical distribution (an vector of postive value that sum to 1)
-    ## and all catagorical distribution should have the same size than the corresponding disrichlet prior (not checked).
-    return l == size(x) && all(x -> sum(x) ≈ 1, values) && all(!any(x -> x < 0), values)
+    l = getconditioner(ef)
+    values = map(CartesianIndices(Base.tail(size(x)))) do i
+        slice = @view x[:, i]
+        sum(slice) ≈ 1 && all(y -> y > 0, slice)
+    end
+    return l == size(x) && all(values)
 end
 
 # Natural parametrization
@@ -162,7 +165,6 @@ end
 function isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditioner::NTuple{N, Int}) where {N}
     param_dim = conditioner[1]
     n_distributions = prod(Base.tail(conditioner))
-    
     if !(length(η) == param_dim * n_distributions)
         return false
     end 
