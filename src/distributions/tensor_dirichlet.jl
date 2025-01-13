@@ -198,14 +198,33 @@ function getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, cond
     end
 end
 
-function getgradlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
+function getgradlogpartition(
+    ::NaturalParametersSpace, 
+    ::Type{TensorDirichlet}, 
+    conditioner::NTuple{N, Int}
+) where {N}
+
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+
+    # Get the "gradlogpartition" function for a standard Dirichlet
     dirichlet_gradlogpartition = getgradlogpartition(NaturalParametersSpace(), Dirichlet)
-    
-    return function(η::AbstractVector)
-        # Just concatenate the gradients from each Dirichlet distribution
-        vcat([dirichlet_gradlogpartition(@view η[(i-1)*k + 1:i*k]) for i in 1:n_distributions]...)
+
+    return function(η::AbstractVector{T}) where {T}
+        # Preallocate the output. We know we need `k * n_distributions` entries,
+        # of the same element type as `η`.
+        out = Vector{T}(undef, k * n_distributions)
+
+        for i in 1:n_distributions
+            @inbounds begin
+                # For the i-th distribution, grab the slice of η
+                # and apply the Dirichlet gradlogpartition.
+                out[(i-1)*k+1 : i*k] = dirichlet_gradlogpartition(
+                    @view η[(i-1)*k + 1 : i*k]
+                )
+            end
+        end
+        return out
     end
 end
 
