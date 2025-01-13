@@ -123,8 +123,11 @@ end
     for len in 3:5
         α = rand(len, len, len) .+ 1
         let d = TensorDirichlet(α)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_plogpdf_interface=false)
+            ef = test_exponentialfamily_interface(d;
+                option_assume_no_allocations = false,
+                nsamples_for_gradlogpartition_properties=20000)
             η1 = getnaturalparameters(ef)
+            conditioner = getconditioner(ef)
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]
                 x = x ./ sum(x)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
@@ -133,7 +136,7 @@ end
                 @test @inferred(logpartition(ef)) ≈ mapreduce(
                     d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),
                     +,
-                    eachcol(first(unpack_parameters(TensorDirichlet, η1)))
+                    eachcol(reshape(first(unpack_parameters(TensorDirichlet, η1, conditioner)), len, len*len))
                 )
             end
         end
@@ -157,7 +160,7 @@ end
 
     for space in (MeanParametersSpace(), NaturalParametersSpace())
         @test isproper(space, TensorDirichlet, tensorDiri)
-        @test !isproper(space, TensorDirichlet, tensorDiri, Inf)
+        @test !isproper(space, TensorDirichlet, Inf)
         tensorDiri[:, 1, 1] .= nan_test
         @test !isproper(space, TensorDirichlet, tensorDiri)
         tensorDiri[:, 1, 1] .= inf_test

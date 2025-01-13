@@ -281,17 +281,50 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{TensorDirichlet}) =
+getlogpartition(::MeanParametersSpace, ::Type{TensorDirichlet}, conditioner) =
     (η) -> begin
         return mapreduce(x -> getlogpartition(MeanParametersSpace(), Dirichlet)(x), +, η)
     end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{TensorDirichlet}) =
-    (η) -> begin
-        return map(d -> getgradlogpartition(MeanParametersSpace(), Dirichlet)(d), η)
+function getgradlogpartition(::MeanParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
+    k = conditioner[1]  # Number of parameters per distribution
+    n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+    dirichlet_gradlogpartition = getgradlogpartition(MeanParametersSpace(), Dirichlet)
+    
+    return function(θ::AbstractVector{T}) where {T}
+        # Preallocate the output
+        out = Vector{T}(undef, k * n_distributions)
+        
+        for i in 1:n_distributions
+            @inbounds begin
+                # For each distribution, compute its gradient
+                out[(i-1)*k+1 : i*k] = dirichlet_gradlogpartition(
+                    @view θ[(i-1)*k + 1 : i*k]
+                )
+            end
+        end
+        return out
     end
+end
 
-getfisherinformation(::MeanParametersSpace, ::Type{TensorDirichlet}) =
-    (η) -> begin
-        return mapreduce(d -> getfisherinformation(MeanParametersSpace(), Dirichlet)(d), +, η)
+function getfisherinformation(::MeanParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
+    k = conditioner[1]  # Number of parameters per distribution
+    n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+    dirichlet_fisher = getfisherinformation(MeanParametersSpace(), Dirichlet)
+    
+    return function(θ::AbstractVector{T}) where {T}
+        # Create blocks for block diagonal matrix
+        blocks = Vector{Matrix{Float64}}(undef, n_distributions)
+        
+        for i in 1:n_distributions
+            @inbounds begin
+                # For each distribution, compute its Fisher information
+                blocks[i] = dirichlet_fisher(
+                    @view θ[(i-1)*k + 1 : i*k]
+                )
+            end
+        end
+        
+        return BlockDiagonal(blocks)
     end
+end
