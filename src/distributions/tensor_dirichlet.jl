@@ -137,9 +137,8 @@ function BayesBase.logpdf(dist::TensorDirichlet{R, N, A}, x::AbstractArray{T, N}
     return sum(s .- dist.lmnB)
 end
 
-BayesBase.logpdf(ef::ExponentialFamilyDistribution{TensorDirichlet}, x::AbstractVector) = _logpdf(MapBasedLogpdfCall(), ef, x)
-BayesBase.logpdf(ef::ExponentialFamilyDistribution{TensorDirichlet}, x) = _logpdf(PointBasedLogpdfCall(), ef, x)
-
+check_logpdf(::ExponentialFamilyDistribution{TensorDirichlet}, x::AbstractVector) = (MapBasedLogpdfCall(), x)
+check_logpdf(::ExponentialFamilyDistribution{TensorDirichlet}, x) = (PointBasedLogpdfCall(), x)
 
 BayesBase.default_prod_rule(::Type{<:TensorDirichlet}, ::Type{<:TensorDirichlet}) = PreserveTypeProd(Distribution)
 
