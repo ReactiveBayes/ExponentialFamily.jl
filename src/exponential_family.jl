@@ -401,7 +401,7 @@ function (transformation::NaturalToMean{T})(v::AbstractVector, ::Nothing) where 
 end
 
 function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v), conditioner))
+    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner))
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
@@ -413,7 +413,7 @@ function (transformation::MeanToNatural{T})(v::AbstractVector, ::Nothing) where 
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v), conditioner))
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v, conditioner), conditioner))
 end
 
 """
@@ -798,7 +798,12 @@ See also: [`MeanParametersSpace`](@ref), [`NaturalParametersSpace`](@ref)
 """
 function unpack_parameters end
 
-unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef))
+unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = 
+    unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
+
+function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, conditioner) where {T}
+    unpack_parameters(T, packed, conditioner)
+end
 
 # Assume that for the most distributions the `unpack_parameters` does not depend on the `space` parameter
 unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)

@@ -10,6 +10,8 @@ import FillArrays: Ones, Eye
 import LoopVectorization: vmap, vmapreduce
 using LinearAlgebra, Random
 
+using BlockArrays: BlockDiagonal
+
 const ContinuousTensorDistribution = Distribution{ArrayLikeVariate, Continuous}
 
 """
@@ -161,16 +163,12 @@ end
 
 # Natural parametrization
 
-function isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditioner::NTuple{N, Int}) where {N}
-    param_dim = conditioner[1]
-    n_distributions = prod(Base.tail(conditioner))
-    if !(length(η) == param_dim * n_distributions)
-        return false
-    end 
-    return all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
+function isproper(::NaturalParametersSpace, ::Type{TensorDirichlet}, η, conditioner)
+    return length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
 end
-isproper(::MeanParametersSpace, ::Type{TensorDirichlet}, θ, conditioner) =
-isnothing(conditioner) && length(θ) > 1 && all(map(x -> isproper(MeanParametersSpace(), Dirichlet, x), eachslice(θ, dims = Tuple(2:ndims(θ)))))
+function isproper(::MeanParametersSpace, ::Type{TensorDirichlet}, θ, conditioner)
+    return length(θ) > 1 && all(>(0), θ) && all(!isinf, θ)
+end
 
 function (::MeanToNatural{TensorDirichlet})(tuple_of_θ::Tuple{Any}, _)
     (α,) = tuple_of_θ
