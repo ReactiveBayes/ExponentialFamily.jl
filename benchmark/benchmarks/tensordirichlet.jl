@@ -16,14 +16,14 @@ end
 
 # ==============================================
 
-# # `convert` BenchmarkGroup =====================
-# SUITE["tensordirichlet"]["convert"]["Convert from D to EF"] = @benchmarkable convert(ExponentialFamilyDistribution, dist) setup = begin
-#     dist = TensorDirichlet(rand(5, 5, 5))
-# end
+# `convert` BenchmarkGroup =====================
+SUITE["tensordirichlet"]["convert"]["Convert from D to EF"] = @benchmarkable convert(ExponentialFamilyDistribution, dist) setup = begin
+    dist = TensorDirichlet(rand(5, 5, 5))
+end
 
-# SUITE["tensordirichlet"]["convert"]["Convert from EF to D"] = @benchmarkable convert(Distribution, efdist) setup = begin
-#     efdist = convert(ExponentialFamilyDistribution, TensorDirichlet(rand(5, 5, 5)))
-# end
+SUITE["tensordirichlet"]["convert"]["Convert from EF to D"] = @benchmarkable convert(Distribution, efdist) setup = begin
+    efdist = convert(ExponentialFamilyDistribution, TensorDirichlet(rand(5, 5, 5)))
+end
 # ==============================================
 
 for rank in (3, 4, 5, 6)
