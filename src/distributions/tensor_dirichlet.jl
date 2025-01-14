@@ -132,15 +132,12 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::Abs
     container .= container ./ sum(container; dims = 1)
 end
 
-function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::AbstractArray{A, N}) where {T <: Real, N, A <: AbstractArray{T, N}}
-    for i in container
-        rand!(rng, dist, @view container[i])
-    end
-    return container
-end
-
 # Add method for handling vector of arrays
-function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::Vector{<:AbstractArray})
+function BayesBase.rand!(
+    rng::AbstractRNG,
+    dist::TensorDirichlet{T, N, A, Ts},
+    container::AbstractArray{A, M}
+) where {T <: Real, N, A <: AbstractArray{T, N}, Ts, M}
     for c in container
         size(c) == size(dist.a) || error("Size mismatch")
     end
