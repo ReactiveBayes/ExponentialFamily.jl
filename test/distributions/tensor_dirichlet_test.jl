@@ -214,22 +214,20 @@ end
 
 @testitem "TensorDirichlet: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
-
-    for len in 3:6
-        αleft = rand(len, len, len) .+ 1
-        αright = rand(len, len, len) .+ 1
-
-        # αleft = rand(len, len) .+ 1
-        # αright = rand(len, len) .+ 1
-        @testset let (left, right) = (TensorDirichlet(αleft), TensorDirichlet(αright))
-            test_generic_simple_exponentialfamily_product(
-                left,
-                right,
-                strategies = (
-                    ClosedProd(),
-                    GenericProd()
+    for rank in 3:6
+        for d in 3:6
+            αleft = rand([d for _ in 1:rank]...) .+ 1
+            αright = rand([d for _ in 1:rank]...) .+ 1
+            @testset let (left, right) = (TensorDirichlet(αleft), TensorDirichlet(αright))
+                test_generic_simple_exponentialfamily_product(
+                    left,
+                    right,
+                    strategies = (
+                        ClosedProd(),
+                        GenericProd()
+                    )
                 )
-            )
+            end
         end
     end
 end
@@ -276,20 +274,25 @@ end
 
 @testitem "TensorDirichlet: rand" begin
     include("distributions_setuptests.jl")
+    using StableRNGs
+    import Random: seed!
+    rng = StableRNG(1234)
 
     for rank in (3, 5)
-        for d in (2, 5, 10)
-            for _ in 1:10
-                alpha = rand([d for _ in 1:rank]...)
-
-                distribution = TensorDirichlet(alpha)
-                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
-
-                @test typeof(rand(distribution)) <: Array{Float64, rank}
-                @test size(rand(distribution)) == size(alpha)
-                @test typeof(rand(distribution, 3)) <: AbstractVector{Array{Float64, rank}}
-                @test size(rand(distribution, 3)) == (3,)
+        for d in (2, 3, 4, 5)
+            seed!(rng, 1234)
+            alpha = rand([d for _ in 1:rank]...) .+ 2
+            distribution = TensorDirichlet(alpha)
+            seed!(rng, 1234)
+            sample = rand(rng, distribution)
+            mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+            mat_sample = Array{Float64, rank}(undef, size(alpha))
+            seed!(rng, 1234)
+            for i in CartesianIndices(Base.tail(size(alpha)))
+                mat_sample[:, i] = rand(rng, mat_of_dir[i])
             end
+
+            @test sample ≈ mat_sample
         end
     end
 end
