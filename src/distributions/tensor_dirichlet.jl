@@ -40,7 +40,7 @@ struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: Continuous
     end
 end
 
-function BayesBase.logpdf(dist::TensorDirichlet, xs::AbstractVector)
+function BayesBase.logpdf(dist::TensorDirichlet{T, N, A, Ts}, xs::AbstractVector{A}) where {T, N, A, Ts}
     return map(x -> logpdf(dist, x), xs)
 end
 
@@ -132,8 +132,7 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::Abs
     for (i, αi) in zip(eachindex(container), dist.a)
         @inbounds container[i] = rand(rng, Gamma(αi))
     end
-    container = container ./ sum(container; dims = 1)
-    return container
+    container .= container ./ sum(container; dims = 1)
 end
 
 function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet{A}, container::AbstractArray{A, N}) where {T <: Real, N, A <: AbstractArray{T, N}}

@@ -7,6 +7,8 @@
 
     @test value_support(TensorDirichlet) === Continuous
     @test variate_form(TensorDirichlet) === ArrayLikeVariate
+
+    @test_throws "ArgumentError: All elements of the alpha tensor should be positive" TensorDirichlet(zeros(3, 3, 3))
 end
 
 @testitem "TensorDirichlet: entropy" begin
@@ -285,6 +287,10 @@ end
             distribution = TensorDirichlet(alpha)
             seed!(rng, 1234)
             sample = rand(rng, distribution)
+
+            @test size(sample) == size(alpha)
+            @test all(sum(sample; dims = 1) .≈ 1)
+
             mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
             mat_sample = Array{Float64, rank}(undef, size(alpha))
             seed!(rng, 1234)
@@ -293,6 +299,12 @@ end
             end
 
             @test sample ≈ mat_sample
+
+            seed!(rng, 1234)
+            sample = rand(rng, distribution, 10)
+            @test size(sample) == (10,)
+            @test(all(x -> all(sum(x; dims = 1) .≈ 1), sample))
+            @test(all(x -> size(x) == size(alpha), sample))
         end
     end
 end
