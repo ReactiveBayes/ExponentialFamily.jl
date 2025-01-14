@@ -678,6 +678,7 @@ check_logpdf(ef::ExponentialFamilyDistribution, x) = check_logpdf(variate_form(t
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
+check_logpdf(::Type{VectorMatrixvariate},  ::Type{<:AbstractVector}, ::Type{<:Tuple}, ef, x) = (PointBasedLogpdfCall(), x)
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
@@ -688,7 +689,6 @@ check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef,
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container) = (MapBasedLogpdfCall(), container)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), eachcol(container))
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container) = (MapBasedLogpdfCall(), container)
-
 """
     pdf(ef::ExponentialFamilyDistribution, x)
 
