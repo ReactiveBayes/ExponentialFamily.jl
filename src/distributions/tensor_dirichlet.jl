@@ -15,16 +15,16 @@ using BlockArrays: BlockDiagonal
 const ContinuousTensorDistribution = Distribution{ArrayLikeVariate, Continuous}
 
 """
-    TensorDirichlet{T <: Real, A <: AbstractArrray{T,3}} <: ContinuousTensorDistribution
+    TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: ContinuousTensorDistribution
 
-A tensor-valued TensorDirichlet distribution, where `T` is the element type of the tensor `A`.
-The `a` field stores the matrix parameter of the distribution.
+A tensor-valued Dirichlet distribution, where `T` is the element type of the tensor `A`. The distribution generalizes the Dirichlet distribution to handle multiple sets of parameters organized in a tensor structure.
 
 # Fields
-- `a::A`: The matrix parameter of the TensorDirichlet distribution.
+- `a::A`: The tensor parameter of the distribution, where each slice represents parameters of a Dirichlet distribution
+- `α0::Ts`: The sum of parameters along the first dimension
+- `lmnB::Ts`: The log multinomial beta function values for each slice
 
-# Model
-- a[:,m,n] are the parameters of a Dirichlet distribution
+The distribution models multiple independent Dirichlet distributions organized in a tensor structure, where each slice `a[:,i,j,...]` represents the parameters of an independent Dirichlet distribution.
 """
 struct TensorDirichlet{T <: Real, N, A <: AbstractArray{T, N}, Ts} <: ContinuousTensorDistribution
     a::A
