@@ -327,7 +327,7 @@ end
     include("distributions_setuptests.jl")
 
     for rank in (3, 4, 5, 6)
-        for d in (2, 4, 5, 10)
+        for d in (2, 3, 5, 10)
             for i in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
@@ -339,9 +339,14 @@ end
 
                 mat_logpdf = sum(logpdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
                 @test logpdf(distribution, sample) ≈ mat_logpdf
+                @test pdf(distribution, sample) ≈ prod(pdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
                 sample = ones(size(sample))
                 mat_logpdf = sum(logpdf.(mat_of_dir, eachslice(sample, dims = Tuple(2:rank))))
                 @test logpdf(distribution, sample) ≈ mat_logpdf
+
+                sample = rand(distribution, 10)
+                lpdf = logpdf(distribution, sample)
+                @test all(lpdf .≈ map(s -> sum(logpdf.(mat_of_dir, eachslice(s, dims = Tuple(2:rank)))), sample))
             end
         end
     end

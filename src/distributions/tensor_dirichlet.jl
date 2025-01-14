@@ -120,11 +120,8 @@ function BayesBase.rand(rng::AbstractRNG, dist::TensorDirichlet{T}) where {T}
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::TensorDirichlet{T}, nsamples::Int64) where {T}
-    container = Vector{typeof(dist.a)}(undef, nsamples)
-    @inbounds for i in eachindex(container)
-        container[i] = similar(dist.a)
-        rand!(rng, dist, container[i])
-    end
+    container = [similar(dist.a) for _ in 1:nsamples]
+    rand!(rng, dist, container)
     return container
 end
 
