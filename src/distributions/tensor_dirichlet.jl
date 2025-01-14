@@ -55,6 +55,7 @@ end
 BayesBase.params(dist::TensorDirichlet) = (dist.a,)
 
 function unpack_parameters(::Type{TensorDirichlet}, packed, conditioner)
+    packed = view(packed, 1:length(packed))
     return (reshape(packed, conditioner),)
 end
 
@@ -146,11 +147,11 @@ function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::Vec
     for c in container
         size(c) == size(dist.a) || error("Size mismatch")
     end
-    
+
     @inbounds for c in container
         rand!(rng, dist, c)
     end
-    
+
     return container
 end
 
@@ -204,38 +205,37 @@ function (::NaturalToMean{TensorDirichlet})(tuple_of_η::Tuple{Any}, _)
     (η,) = tuple_of_η
     return (η + Ones{Float64}(size(η)),)
 end
-    
+
 function getlogpartition(::NaturalParametersSpace, ::Type{TensorDirichlet}, conditioner::NTuple{N, Int}) where {N}
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
     dirichlet_logpartition = getlogpartition(NaturalParametersSpace(), Dirichlet)
-    
-    return function(η::AbstractVector)
+
+    return function (η::AbstractVector)
         result = zero(eltype(η))
         for i in 1:n_distributions
-            idx_start = (i-1)*k + 1
-            idx_end = i*k
+            idx_start = (i - 1) * k + 1
+            idx_end = i * k
             @views params = η[idx_start:idx_end]
             result += dirichlet_logpartition(params)
         end
-        
+
         return result
     end
 end
 
 function getgradlogpartition(
-    ::NaturalParametersSpace, 
-    ::Type{TensorDirichlet}, 
+    ::NaturalParametersSpace,
+    ::Type{TensorDirichlet},
     conditioner::NTuple{N, Int}
 ) where {N}
-
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
 
     # Get the "gradlogpartition" function for a standard Dirichlet
     dirichlet_gradlogpartition = getgradlogpartition(NaturalParametersSpace(), Dirichlet)
 
-    return function(η::AbstractVector{T}) where {T}
+    return function (η::AbstractVector{T}) where {T}
         # Preallocate the output. We know we need `k * n_distributions` entries,
         # of the same element type as `η`.
         out = Vector{T}(undef, k * n_distributions)
@@ -244,8 +244,8 @@ function getgradlogpartition(
             @inbounds begin
                 # For the i-th distribution, grab the slice of η
                 # and apply the Dirichlet gradlogpartition.
-                out[(i-1)*k+1 : i*k] = dirichlet_gradlogpartition(
-                    @view η[(i-1)*k + 1 : i*k]
+                out[(i-1)*k+1:i*k] = dirichlet_gradlogpartition(
+                    @view η[(i-1)*k+1:i*k]
                 )
             end
         end
@@ -257,17 +257,17 @@ function getfisherinformation(::NaturalParametersSpace, ::Type{TensorDirichlet},
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
     dirichlet_fisher = getfisherinformation(NaturalParametersSpace(), Dirichlet)
-    
-    return function(η::AbstractVector)
+
+    return function (η::AbstractVector)
         blocks = Vector{Matrix{Float64}}(undef, n_distributions)
-        
+
         for i in 1:n_distributions
-            idx_start = (i-1)*k + 1
-            idx_end = i*k
+            idx_start = (i - 1) * k + 1
+            idx_end = i * k
             @views params = η[idx_start:idx_end]
             blocks[i] = dirichlet_fisher(params)
         end
-        
+
         return BlockDiagonal(blocks)
     end
 end
@@ -283,16 +283,16 @@ function getgradlogpartition(::MeanParametersSpace, ::Type{TensorDirichlet}, con
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
     dirichlet_gradlogpartition = getgradlogpartition(MeanParametersSpace(), Dirichlet)
-    
-    return function(θ::AbstractVector{T}) where {T}
+
+    return function (θ::AbstractVector{T}) where {T}
         # Preallocate the output
         out = Vector{T}(undef, k * n_distributions)
-        
+
         for i in 1:n_distributions
             @inbounds begin
                 # For each distribution, compute its gradient
-                out[(i-1)*k+1 : i*k] = dirichlet_gradlogpartition(
-                    @view θ[(i-1)*k + 1 : i*k]
+                out[(i-1)*k+1:i*k] = dirichlet_gradlogpartition(
+                    @view θ[(i-1)*k+1:i*k]
                 )
             end
         end
@@ -304,20 +304,20 @@ function getfisherinformation(::MeanParametersSpace, ::Type{TensorDirichlet}, co
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
     dirichlet_fisher = getfisherinformation(MeanParametersSpace(), Dirichlet)
-    
-    return function(θ::AbstractVector{T}) where {T}
+
+    return function (θ::AbstractVector{T}) where {T}
         # Create blocks for block diagonal matrix
         blocks = Vector{Matrix{Float64}}(undef, n_distributions)
-        
+
         for i in 1:n_distributions
             @inbounds begin
                 # For each distribution, compute its Fisher information
                 blocks[i] = dirichlet_fisher(
-                    @view θ[(i-1)*k + 1 : i*k]
+                    @view θ[(i-1)*k+1:i*k]
                 )
             end
         end
-        
+
         return BlockDiagonal(blocks)
     end
 end

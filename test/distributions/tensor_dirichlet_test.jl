@@ -125,7 +125,7 @@ end
         let d = TensorDirichlet(α)
             ef = test_exponentialfamily_interface(d;
                 option_assume_no_allocations = false,
-                nsamples_for_gradlogpartition_properties=20000)
+                nsamples_for_gradlogpartition_properties = 20000)
             η1 = getnaturalparameters(ef)
             conditioner = getconditioner(ef)
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]
@@ -136,7 +136,7 @@ end
                 @test @inferred(logpartition(ef)) ≈ mapreduce(
                     d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),
                     +,
-                    eachcol(reshape(first(unpack_parameters(TensorDirichlet, η1, conditioner)), len, len*len))
+                    eachcol(reshape(first(unpack_parameters(TensorDirichlet, η1, conditioner)), len, len * len))
                 )
             end
         end
