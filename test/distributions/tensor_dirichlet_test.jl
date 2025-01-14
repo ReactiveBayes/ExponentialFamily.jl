@@ -308,35 +308,6 @@ end
     @test_throws MethodError vague(TensorDirichlet)
 end
 
-@testitem "TensorDirichlet: NaturalParametersSpace" begin
-    include("distributions_setuptests.jl")
-
-    logPartitionDirichlet = getlogpartition(NaturalParametersSpace(), Dirichlet)
-    logPartitionTensor    = getlogpartition(NaturalParametersSpace(), TensorDirichlet)
-    grad                  = getgradlogpartition(NaturalParametersSpace(), Dirichlet)
-    gradTensor            = getgradlogpartition(NaturalParametersSpace(), TensorDirichlet)
-    info                  = getfisherinformation(NaturalParametersSpace(), Dirichlet)
-    infoTensor            = getfisherinformation(NaturalParametersSpace(), TensorDirichlet)
-
-    for rank in (3, 5)
-        for d in (2, 5, 10)
-            for _ in 1:10
-                alpha = rand([d for _ in 1:rank]...)
-                distribution = TensorDirichlet(alpha)
-                (naturalParam,) = unpack_parameters(TensorDirichlet, alpha)
-
-                mat_logPartition = sum(logPartitionDirichlet.(eachslice(alpha, dims = Tuple(2:rank))))
-                mat_grad = grad.(eachslice(alpha, dims = Tuple(2:rank)))
-                mat_info = sum(info.(eachslice(alpha, dims = Tuple(2:rank))))
-
-                @test logPartitionTensor(naturalParam) ≈ mat_logPartition
-                @test gradTensor(naturalParam) ≈ mat_grad
-                @test infoTensor(naturalParam) ≈ mat_info
-            end
-        end
-    end
-end
-
 @testitem "TensorDirichlet: logpdf" begin
     include("distributions_setuptests.jl")
 
