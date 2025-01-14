@@ -128,10 +128,11 @@ function BayesBase.rand(rng::AbstractRNG, dist::TensorDirichlet{T}, nsamples::In
     return container
 end
 
-function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::AbstractArray)
-    for index in CartesianIndices(Base.tail(size(dist.a)))
-        rand!(rng, Dirichlet(dist.a[:, index]), @view container[:, index])
+function BayesBase.rand!(rng::AbstractRNG, dist::TensorDirichlet, container::AbstractArray{T, N}) where {T <: Real, N}
+    for (i, αi) in zip(eachindex(container), dist.a)
+        @inbounds container[i] = rand(rng, Gamma(αi))
     end
+    container = container ./ sum(container; dims = 1)
     return container
 end
 
