@@ -21,6 +21,13 @@ NormalMeanVariance(μ::Integer, v::Integer) = NormalMeanVariance(float(μ), floa
 NormalMeanVariance(μ::T) where {T <: Real} = NormalMeanVariance(μ, one(T))
 NormalMeanVariance()                       = NormalMeanVariance(0.0, 1.0)
 
+function NormalMeanVariance(μ::T1, v::UniformScaling{T2}) where {T1 <: Real, T2}
+    T = promote_type(T1, T2)
+    μ_new = convert(T, μ)
+    v_new = convert(T, v.λ)
+    return NormalMeanVariance(μ_new, v_new)
+end
+
 Distributions.@distr_support NormalMeanVariance -Inf Inf
 
 BayesBase.support(dist::NormalMeanVariance) = Distributions.RealInterval(minimum(dist), maximum(dist))
@@ -32,15 +39,18 @@ function BayesBase.weightedmean_invcov(dist::NormalMeanVariance)
     return (xi, w)
 end
 
-BayesBase.mean(dist::NormalMeanVariance)            = dist.μ
-BayesBase.median(dist::NormalMeanVariance)          = mean(dist)
-BayesBase.mode(dist::NormalMeanVariance)            = mean(dist)
-BayesBase.var(dist::NormalMeanVariance)             = dist.v
-BayesBase.std(dist::NormalMeanVariance)             = sqrt(var(dist))
-BayesBase.cov(dist::NormalMeanVariance)             = var(dist)
-BayesBase.invcov(dist::NormalMeanVariance)          = inv(cov(dist))
-BayesBase.entropy(dist::NormalMeanVariance)         = (1 + log2π + log(var(dist))) / 2
-BayesBase.params(dist::NormalMeanVariance)          = (dist.μ, dist.v)
+BayesBase.mean(dist::NormalMeanVariance)     = dist.μ
+BayesBase.median(dist::NormalMeanVariance)   = mean(dist)
+BayesBase.mode(dist::NormalMeanVariance)     = mean(dist)
+BayesBase.var(dist::NormalMeanVariance)      = dist.v
+BayesBase.std(dist::NormalMeanVariance)      = sqrt(var(dist))
+BayesBase.cov(dist::NormalMeanVariance)      = var(dist)
+BayesBase.invcov(dist::NormalMeanVariance)   = inv(cov(dist))
+BayesBase.entropy(dist::NormalMeanVariance)  = (1 + log2π + log(var(dist))) / 2
+BayesBase.params(dist::NormalMeanVariance)   = (dist.μ, dist.v)
+BayesBase.kurtosis(dist::NormalMeanVariance) = kurtosis(convert(Normal, dist))
+BayesBase.skewness(dist::NormalMeanVariance) = skewness(convert(Normal, dist))
+
 BayesBase.pdf(dist::NormalMeanVariance, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) / 2cov(dist))) / std(dist)
 BayesBase.logpdf(dist::NormalMeanVariance, x::Real) = -(log2π + log(var(dist)) + abs2(x - mean(dist)) / var(dist)) / 2
 

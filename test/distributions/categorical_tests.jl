@@ -84,6 +84,27 @@ end
     @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 2) # conditioner does not match the length
     @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 1)
     @test !isproper(NaturalParametersSpace(), Categorical, [1], 1) # length should be >=2 
+    @test !isproper(NaturalParametersSpace(), Categorical, [1, 1], 2) # the last natural paramter should be 0
+end
+
+@testitem "Categorical ExponentialFamilyDistribution supports RecursiveArrayTools" begin
+    using RecursiveArrayTools
+    include("distributions_setuptests.jl")
+    for s in (2, 3, 4, 5)
+        @testset let params = rand(s - 1)
+            ef = ExponentialFamilyDistribution(Categorical, [params..., 0], s, nothing)
+            part_ef = ExponentialFamilyDistribution(Categorical, ArrayPartition(params, [0]), s, nothing)
+            @test convert(Distribution, ef) ≈ convert(Distribution, part_ef)
+            @test mean(ef) ≈ mean(part_ef)
+            @test var(ef) ≈ var(part_ef)
+            @test logpartition(ef) ≈ logpartition(part_ef)
+            @test gradlogpartition(ef) ≈ gradlogpartition(part_ef)
+            @test fisherinformation(ef) ≈ fisherinformation(part_ef)
+            for k in 1:s
+                @test logpdf(ef, k) ≈ logpdf(part_ef, k)
+            end
+        end
+    end
 end
 
 @testitem "Categorical: prod with ExponentialFamilyDistribution" begin

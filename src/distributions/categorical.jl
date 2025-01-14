@@ -28,7 +28,8 @@ end
 # The default implementation via `@generated` function fails to infer this
 exponential_family_typetag(::Categorical) = Categorical
 
-isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) = isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2)
+isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) =
+    isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2) && (η[end] ≈ 0)
 isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) =
     isinteger(conditioner) && (conditioner === length(θ)) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
 
@@ -51,9 +52,16 @@ function (::MeanToNatural{Categorical})(tuple_of_θ::Tuple{Any}, _)
     return (LoopVectorization.vmap(pᵢ -> log(pᵢ / pₖ), p),)
 end
 
-function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{Any}, _)
+function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where {V <: Vector}
     (η,) = tuple_of_η
     return (softmax(η),)
+end
+
+# We use `Categorical` from `Distributions.jl` for the `MeanParametersSpace` 
+# and their implementation supports only `Vector`s
+function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where {V <: AbstractVector}
+    (η,) = tuple_of_η
+    return (softmax(convert(Vector, η)),)
 end
 
 function unpack_parameters(::Type{Categorical}, packed)
@@ -65,6 +73,7 @@ getsupport(ef::ExponentialFamilyDistribution{Categorical}) = ClosedInterval{Int}
 isbasemeasureconstant(::Type{Categorical}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Categorical}, _) = (x) -> oneunit(x)
+getlogbasemeasure(::Type{Categorical}, _) = (x) -> zero(x)
 getsufficientstatistics(::Type{Categorical}, conditioner) = ((x) -> OneElement(x, conditioner),)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
@@ -72,24 +81,24 @@ getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
         return logsumexp(η)
     end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) = 
+getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
     (η) -> begin
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
         sumη = vmapreduce(exp, +, η)
-        return vmap(d->exp(d)/sumη ,η)
+        return vmap(d -> exp(d) / sumη, η)
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
@@ -97,7 +106,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner)
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
@@ -124,7 +133,7 @@ getlogpartition(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(θ))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
                 )
             )
         end
@@ -136,7 +145,7 @@ getfisherinformation(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(θ))
             throw(
                 DimensionMismatch(
-                    "Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                    lazy"Cannot evaluate the fisherinformation matrix of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
                 )
             )
         end

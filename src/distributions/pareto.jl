@@ -61,7 +61,7 @@ function BayesBase.prod(
     return prod!(similar(left), left, right)
 end
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{Pareto}, x)
-    return x ∈ ClosedInterval{Real}(getconditioner(ef), Inf)
+    return x ∈ ClosedInterval(getconditioner(ef), Inf)
 end
 
 function BayesBase.prod(
@@ -141,6 +141,7 @@ end
 isbasemeasureconstant(::Type{Pareto}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Pareto}, _) = (x) -> oneunit(x)
+getlogbasemeasure(::Type{Pareto}, _) = (x) -> zero(x)
 getsufficientstatistics(::Type{Pareto}, conditioner) = (log,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Pareto}, conditioner) = (η) -> begin
@@ -150,7 +151,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Pareto}, conditioner) = (η) -> begin
     (η1,) = unpack_parameters(Pareto, η)
-    return SA[log(conditioner) - one(η1)/(one(η1)+η1);]
+    return SA[log(conditioner) - one(η1) / (one(η1) + η1);]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Pareto}, _) = (η) -> begin

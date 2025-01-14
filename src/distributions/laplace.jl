@@ -159,6 +159,8 @@ end
 isbasemeasureconstant(::Type{Laplace}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Laplace}, _) = (x) -> oneunit(x)
+getlogbasemeasure(::Type{Laplace}, _) = (x) -> zero(x)
+
 getsufficientstatistics(::Type{Laplace}, conditioner) = (
     (x) -> abs(x - conditioner),
 )
@@ -166,6 +168,11 @@ getsufficientstatistics(::Type{Laplace}, conditioner) = (
 getlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
     (η₁,) = unpack_parameters(Laplace, η)
     return log(-2 / η₁)
+end
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin
+    (η₁,) = unpack_parameters(Laplace, η)
+    return SA[-inv(η₁);]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Laplace}, _) = (η) -> begin

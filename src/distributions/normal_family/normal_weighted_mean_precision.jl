@@ -21,6 +21,13 @@ NormalWeightedMeanPrecision(xi::Integer, w::Integer) = NormalWeightedMeanPrecisi
 NormalWeightedMeanPrecision(xi::Real)                = NormalWeightedMeanPrecision(xi, one(xi))
 NormalWeightedMeanPrecision()                        = NormalWeightedMeanPrecision(0.0, 1.0)
 
+function NormalWeightedMeanPrecision(xi::T1, w::UniformScaling{T2}) where {T1 <: Real, T2}
+    T = promote_type(T1, T2)
+    xi_new = convert(T, xi)
+    w_new = convert(T, w.λ)
+    return NormalWeightedMeanPrecision(xi_new, w_new)
+end
+
 Distributions.@distr_support NormalWeightedMeanPrecision -Inf Inf
 
 BayesBase.support(dist::NormalWeightedMeanPrecision) = Distributions.RealInterval(minimum(dist), maximum(dist))
@@ -42,6 +49,8 @@ BayesBase.cov(dist::NormalWeightedMeanPrecision)             = var(dist)
 BayesBase.invcov(dist::NormalWeightedMeanPrecision)          = dist.w
 BayesBase.entropy(dist::NormalWeightedMeanPrecision)         = (1 + log2π - log(precision(dist))) / 2
 BayesBase.params(dist::NormalWeightedMeanPrecision)          = (weightedmean(dist), precision(dist))
+BayesBase.kurtosis(dist::NormalWeightedMeanPrecision)        = kurtosis(convert(Normal, dist))
+BayesBase.skewness(dist::NormalWeightedMeanPrecision)        = skewness(convert(Normal, dist))
 BayesBase.pdf(dist::NormalWeightedMeanPrecision, x::Real)    = (invsqrt2π * exp(-abs2(x - mean(dist)) * precision(dist) / 2)) * sqrt(precision(dist))
 BayesBase.logpdf(dist::NormalWeightedMeanPrecision, x::Real) = -(log2π - log(precision(dist)) + abs2(x - mean(dist)) * precision(dist)) / 2
 

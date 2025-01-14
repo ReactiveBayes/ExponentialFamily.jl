@@ -37,7 +37,7 @@ end
 BayesBase.var(dist::VonMisesFisher) = diag(cov(dist))
 BayesBase.std(dist::VonMisesFisher) = sqrt.(var(dist))
 
-function BayesBase.insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x::Vector)
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{VonMisesFisher}, x)
     return length(getnaturalparameters(ef)) == length(x) && Distributions.isunitvec(x)
 end
 
@@ -83,10 +83,10 @@ end
 getgradlogpartition(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
     κ = sqrt(dot(η, η))
     p = length(η)
-    term1 = - ((p / 2) - 1) / κ
-    term2 = ((p / 2) - 1)/κ  +  besseli((p / 2), κ)/besseli((p / 2) - 1, κ)
-    term3 = (term1 + term2)/(κ)
-    return term3*η
+    term1 = -((p / 2) - 1) / κ
+    term2 = ((p / 2) - 1) / κ + besseli((p / 2), κ) / besseli((p / 2) - 1, κ)
+    term3 = (term1 + term2) / (κ)
+    return term3 * η
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin

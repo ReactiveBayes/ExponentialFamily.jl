@@ -5,7 +5,7 @@
 @testitem "Chisq: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for i in 3:7
+    for i in 3:0.5:7
         @testset let d = Chisq(2 * (i + 1))
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
             η₁ = first(getnaturalparameters(ef))
@@ -28,7 +28,10 @@
     end
 
     ## mean parameter should be integer in the MeanParametersSpace
-    @test !isproper(MeanParametersSpace(), Chisq, [0.1])
+    @test isproper(MeanParametersSpace(), Chisq, [0.1])
+    @test isproper(NaturalParametersSpace(), Chisq, [-0.5])
+    @test !isproper(NaturalParametersSpace(), Chisq, [-1.5])
+    @test convert(ExponentialFamilyDistribution, Chisq(0.5)) ≈ ExponentialFamilyDistribution(Chisq, [-0.75])
     @test_throws Exception convert(ExponentialFamilyDistribution, Chisq(Inf))
 end
 

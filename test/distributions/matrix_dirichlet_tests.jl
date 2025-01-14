@@ -70,12 +70,12 @@ end
     include("distributions_setuptests.jl")
 
     for len in 3:5
-        α = rand(len, len)
+        α = rand(1.0:2.0, len, len)
         @testset let d = MatrixDirichlet(α)
             ef = test_exponentialfamily_interface(d; test_basic_functions = true, option_assume_no_allocations = false)
             η1 = getnaturalparameters(ef)
 
-            for x in [rand(len, len) for _ in 1:3]
+            for x in [rand(1.0:2.0, len, len) for _ in 1:3]
                 x = x ./ sum(x)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === 1.0
@@ -90,15 +90,14 @@ end
     end
 
     for space in (MeanParametersSpace(), NaturalParametersSpace())
-        @test !isproper(space, MatrixDirichlet, [Inf Inf; Inf 1.0], 1.0)
+        @test !isproper(space, MatrixDirichlet, [Inf Inf; Inf 1.0])
         @test !isproper(space, MatrixDirichlet, [1.0], Inf)
-        @test !isproper(space, MatrixDirichlet, [NaN], 1.0)
+        @test !isproper(space, MatrixDirichlet, [NaN],)
         @test !isproper(space, MatrixDirichlet, [1.0], NaN)
         @test !isproper(space, MatrixDirichlet, [0.5, 0.5], 1.0)
         @test isproper(space, MatrixDirichlet, [2.0, 3.0])
         @test !isproper(space, MatrixDirichlet, [-1.0, -1.2])
-    end
-
+    end 
     @test_throws Exception convert(ExponentialFamilyDistribution, MatrixDirichlet([Inf Inf; 2 3]))
 end
 
@@ -147,4 +146,14 @@ end
 
     @test promote_variate_type(Multivariate, MatrixDirichlet) === Dirichlet
     @test promote_variate_type(Matrixvariate, MatrixDirichlet) === MatrixDirichlet
+end
+
+@testitem "MatrixDirichlet: rand" begin
+    include("distributions_setuptests.jl")
+
+    @test_throws DimensionMismatch sum(rand(MatrixDirichlet(ones(3, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0]
+
+    @test sum(rand(MatrixDirichlet(ones(3, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0;; 1.0;; 1.0]
+    @test sum(rand(MatrixDirichlet(ones(5, 3))), dims = 1) ≈ [1.0;; 1.0;; 1.0]
+    @test sum(rand(MatrixDirichlet(ones(5, 5))), dims = 1) ≈ [1.0;; 1.0;; 1.0;; 1.0;; 1.0]
 end

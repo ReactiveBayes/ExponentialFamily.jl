@@ -15,6 +15,9 @@
     @test eltype(MvNormalMeanPrecision([1, 1], [1, 1])) === Float64
     @test eltype(MvNormalMeanPrecision([1.0f0, 1.0f0])) === Float32
     @test eltype(MvNormalMeanPrecision([1.0f0, 1.0f0], [1.0f0, 1.0f0])) === Float32
+
+    @test MvNormalMeanPrecision(ones(3), 5I) == MvNormalMeanPrecision(ones(3), Diagonal(5 * ones(3)))
+    @test MvNormalMeanPrecision([1, 2, 3, 4], 7.0I) == MvNormalMeanPrecision([1.0, 2.0, 3.0, 4.0], Diagonal(7.0 * ones(4)))
 end
 
 @testitem "MvNormalMeanPrecision: distrname" begin
@@ -66,6 +69,12 @@ end
     @test ndims(MvNormalMeanPrecision([0.0, 0.0, 0.0])) === 3
     @test size(MvNormalMeanPrecision([0.0, 0.0])) === (2,)
     @test size(MvNormalMeanPrecision([0.0, 0.0, 0.0])) === (3,)
+
+    distribution = MvNormalMeanPrecision([0.0, 0.0], [2.0 0.0; 0.0 3.0])
+
+    @test distribution ≈ distribution
+    @test distribution ≈ convert(MvNormalMeanCovariance, distribution)
+    @test distribution ≈ convert(MvNormalWeightedMeanPrecision, distribution)
 end
 
 @testitem "MvNormalMeanPrecision: vague" begin
@@ -97,6 +106,13 @@ end
 
         μ    = [1.0, 2.0, 3.0]
         Λ    = diagm(1 ./ [1.0, 2.0, 3.0])
+        dist = MvNormalMeanPrecision(μ, Λ)
+
+        @test prod(strategy, dist, dist) ≈
+              MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+
+        μ    = [1.0, 2.0, 3.0]
+        Λ    = Diagonal(1 ./ [1.0, 2.0, 3.0])
         dist = MvNormalMeanPrecision(μ, Λ)
 
         @test prod(strategy, dist, dist) ≈

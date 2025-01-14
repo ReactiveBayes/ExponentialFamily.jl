@@ -26,6 +26,9 @@
     @test eltype(NormalWeightedMeanPrecision(0.0f0)) === Float32
     @test eltype(NormalWeightedMeanPrecision(0.0f0, 1.0f0)) === Float32
     @test eltype(NormalWeightedMeanPrecision(0.0f0, 1.0)) === Float64
+
+    @test NormalWeightedMeanPrecision(3, 5I) == NormalWeightedMeanPrecision(3, 5)
+    @test NormalWeightedMeanPrecision(2, 7.0I) == NormalWeightedMeanPrecision(2.0, 7.0)
 end
 
 @testitem "NormalWeightedMeanPrecision: Stats methods" begin
@@ -104,6 +107,12 @@ end
     @test convert(NormalWeightedMeanPrecision, 0, 1) == NormalWeightedMeanPrecision{Float64}(0.0, 1.0)
     @test convert(NormalWeightedMeanPrecision, 0, 10) == NormalWeightedMeanPrecision{Float64}(0.0, 10.0)
     @test convert(NormalWeightedMeanPrecision, 0, 0.1) == NormalWeightedMeanPrecision{Float64}(0.0, 0.1)
+
+    distribution = NormalWeightedMeanPrecision(-2.0, 3.0)
+
+    @test distribution ≈ distribution
+    @test distribution ≈ convert(NormalMeanPrecision, distribution)
+    @test distribution ≈ convert(NormalMeanVariance, distribution)
 end
 
 @testitem "NormalWeightedMeanPrecision: vague" begin

@@ -74,12 +74,9 @@ function BayesBase.rand(rng::AbstractRNG, dist::MatrixDirichlet{T}, nsamples::In
 end
 
 function BayesBase.rand!(rng::AbstractRNG, dist::MatrixDirichlet, container::AbstractMatrix{T}) where {T <: Real}
-    samples = vmap(d -> rand(rng, Dirichlet(convert(Vector, d))), eachcol(dist.a))
-    @views for row in 1:isqrt(length(container))
-        b = container[:, row]
-        b[:] .= samples[row]
+    @views for (i, col) in enumerate(eachcol(dist.a))
+        rand!(rng, Dirichlet(col), container[:, i])
     end
-
     return container
 end
 
@@ -119,9 +116,9 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{MatrixDirichlet}, η, conditioner) =
-    isnothing(conditioner) && length(η) > 1 && typeof(isqrt(length(η))) <: Integer && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
+    isnothing(conditioner) && length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{MatrixDirichlet}, θ, conditioner) =
-    isnothing(conditioner) && length(θ) > 1 && typeof(isqrt(length(θ))) <: Integer && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
+    isnothing(conditioner) && length(θ) > 1 &&all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{MatrixDirichlet})(tuple_of_θ::Tuple{Any})
     (α,) = tuple_of_θ
@@ -153,11 +150,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
         )
     end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) = 
+getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixDirichlet}) =
     (η) -> begin
         (η1,) = unpack_parameters(MatrixDirichlet, η)
         return vmapreduce(
-            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),vcat,
+            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)), vcat,
             eachcol(η1))
     end
 
@@ -185,11 +182,11 @@ getlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) =
         )
     end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) = 
+getgradlogpartition(::MeanParametersSpace, ::Type{MatrixDirichlet}) =
     (θ) -> begin
         (α,) = unpack_parameters(MatrixDirichlet, θ)
         return vmapreduce(
-            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),vcat,
+            d -> getgradlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)), vcat,
             eachcol(α))
     end
 

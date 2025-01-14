@@ -396,10 +396,18 @@ end
 # isapprox
 
 function Base.isapprox(left::UnivariateNormalDistributionsFamily, right::UnivariateNormalDistributionsFamily; kwargs...)
+    return all(p -> isapprox(p[1], p[2]; kwargs...), zip(mean_var(left), mean_var(right)))
+end
+
+function Base.isapprox(left::D, right::D; kwargs...) where {D <: UnivariateNormalDistributionsFamily}
     return all(p -> isapprox(p[1], p[2]; kwargs...), zip(params(left), params(right)))
 end
 
 function Base.isapprox(left::MultivariateNormalDistributionsFamily, right::MultivariateNormalDistributionsFamily; kwargs...)
+    return all(p -> isapprox(p[1], p[2]; kwargs...), zip(mean_cov(left), mean_cov(right)))
+end
+
+function Base.isapprox(left::D, right::D; kwargs...) where {D <: MultivariateNormalDistributionsFamily}
     return all(p -> isapprox(p[1], p[2]; kwargs...), zip(params(left), params(right)))
 end
 
@@ -578,7 +586,7 @@ end
 getgradlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
     (η) -> begin
         (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
-        return SA[-η₁ * inv(η₂*2), abs2(η₁) / ( 4 * abs2(η₂)) - 1 / (2 * η₂)]
+        return SA[-η₁*inv(η₂ * 2), abs2(η₁)/(4*abs2(η₂))-1/(2*η₂)]
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
@@ -600,7 +608,7 @@ end
 getgradlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) =
     (θ) -> begin
         (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
-        return SA[μ / σ², - abs2(μ) / (2σ²^2) + 1 / σ²]
+        return SA[μ/σ², -abs2(μ)/(2σ²^2)+1/σ²]
     end
 
 getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin

@@ -103,7 +103,8 @@ BayesBase.support(::Type{NormalGamma}) = NormalGammaDomain()
 
 # Natural parametrization
 isproper(::NaturalParametersSpace, ::Type{NormalGamma}, η, conditioner) =
-    isnothing(conditioner) && length(η) === 4 && getindex(η, 2) < 0 && getindex(η, 3) > -1 / 2 && getindex(η, 4) < 0 && all(!isinf, η) && all(!isnan, η)
+    isnothing(conditioner) && length(η) === 4 && getindex(η, 2) < 0 && getindex(η, 3) > -1 / 2 &&
+    getindex(η, 1)^2 / (4 * getindex(η, 2)) - getindex(η, 4) > 0 && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{NormalGamma}, θ, conditioner) =
     isnothing(conditioner) && length(θ) === 4 && all(>(0), getindex(θ, 2:4)) && all(!isinf, θ) && all(!isnan, θ)
 
@@ -143,15 +144,15 @@ getlogpartition(::NaturalParametersSpace, ::Type{NormalGamma}) = (η) -> begin
     return loggamma(η3half) - log(-2η2) * (1 / 2) - (η3half) * log(-η4 + η1^2 / (4η2))
 end
 
-getgradlogpartition(::NaturalParametersSpace,::Type{NormalGamma}) = (η) -> begin  
+getgradlogpartition(::NaturalParametersSpace, ::Type{NormalGamma}) = (η) -> begin
     (η1, η2, η3, η4) = unpack_parameters(NormalGamma, η)
     η3half = η3 + (1 / 2)
-    c   = (-η4 + η1^2/(4η2))
-    dη1 = -η3half*((η1/(2η2)) / c) 
-    dη2 = -inv(η2)/2 - η3half*(-η1^2/(4η2^2) / c)
+    c = (-η4 + η1^2 / (4η2))
+    dη1 = -η3half * ((η1 / (2η2)) / c)
+    dη2 = -inv(η2) / 2 - η3half * (-η1^2 / (4η2^2) / c)
     dη3 = digamma(η3half) - log(c)
-    dη4 = η3half /c
-    
+    dη4 = η3half / c
+
     return SA[dη1, dη2, dη3, dη4]
 end
 

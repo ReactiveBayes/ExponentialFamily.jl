@@ -5,7 +5,7 @@
 @testitem "Poisson: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    @testset for i in 2:4
+    @testset for i in 2:7
         @testset let d = Poisson(2 * (i + 1))
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
             η1 = first(getnaturalparameters(ef))
@@ -13,6 +13,7 @@
             for x in 1:5
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === 1 / factorial(x)
+                @test @inferred(logbasemeasure(ef, x)) === -loggamma(x + one(x))
                 @test @inferred(sufficientstatistics(ef, x)) === (x,)
                 @test @inferred(logpartition(ef)) ≈ exp(η1)
             end
@@ -39,7 +40,7 @@ end
         prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
         sample_points = collect(1:5)
         for x in sample_points
-            @test basemeasure(prod_dist, x) == (1 / factorial(x)^2)
+            @test basemeasure(prod_dist, x) == (1 / gamma(x + one(x))^2)
             @test sufficientstatistics(prod_dist, x) == (x,)
         end
         sample_points = [-5, -2, 0, 2, 5]

@@ -37,9 +37,9 @@ end
 
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{Chisq}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(>(-1 / 2), η) && all(!isinf, η)
+isproper(::NaturalParametersSpace, ::Type{Chisq}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(>(-1), η) && all(!isinf, η)
 isproper(::MeanParametersSpace, ::Type{Chisq}, θ, conditioner) =
-    isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(isinteger, θ) && all(!isinf, θ)
+    isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ)
 
 function (::MeanToNatural{Chisq})(tuple_of_θ::Tuple{Any})
     (ν,) = tuple_of_θ
@@ -56,6 +56,7 @@ unpack_parameters(::Type{Chisq}, packed) = (first(packed),)
 isbasemeasureconstant(::Type{Chisq}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Chisq}) = (x) -> exp(-x / 2)
+getlogbasemeasure(::Type{Chisq}) = (x) -> -x / 2
 getsufficientstatistics(::Type{Chisq}) = (log,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
@@ -66,7 +67,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin
     (η1,) = unpack_parameters(Chisq, η)
-    return SA[digamma(η1 + one(η1)) + logtwo]
+    return SA[digamma(η1 + one(η1))+logtwo]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Chisq}) = (η) -> begin

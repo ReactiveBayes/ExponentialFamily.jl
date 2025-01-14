@@ -2,8 +2,9 @@ export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
-export getbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
-export basemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
+export getbasemeasure,
+    getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
 using LoopVectorization
@@ -136,19 +137,28 @@ A structure to represent the attributes of an exponential family member.
 - `logpartition::L`: The log-partition (cumulant) of the exponential family member.
 - `support::P`: The support of the exponential family member.
 
+# Optionally
+- `logbasemeasure::LB`: The log of the  basemeasure of the exponential family member.
+
 See also: [`ExponentialFamilyDistribution`](@ref), [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
-struct ExponentialFamilyDistributionAttributes{B, S, L, P}
+struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB}
     basemeasure::B
     sufficientstatistics::S
     logpartition::L
     support::P
+    logbasemeasure::LB
+end
+function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P) where {B, S, L, P}
+    logbasemeasure = (x) -> log(basemeasure(x))
+    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support, logbasemeasure)
 end
 
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.basemeasure
 getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = attributes.sufficientstatistics
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
+getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.logbasemeasure
 
 BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
 BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
@@ -225,7 +235,7 @@ function ExponentialFamilyDistribution(
     conditioner = nothing
 ) where {T <: Distribution, P}
     if !isproper(NaturalParametersSpace(), T, naturalparameters, conditioner)
-        error("Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
+        error(lazy"Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
     end
     return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
 end
@@ -281,6 +291,17 @@ function basemeasure(ef::ExponentialFamilyDistribution, x)
 end
 
 """
+    logbasemeasure(::ExponentialFamilyDistribution, x)
+
+Returns the computed value of `log(basemeasure)` of the exponential family distribution at the point `x`.
+
+See also [`basemeasure`](@ref)
+"""
+function logbasemeasure(ef::ExponentialFamilyDistribution, x)
+    return getlogbasemeasure(ef)(x)
+end
+
+"""
     sufficientstatistics(::ExponentialFamilyDistribution)
 
 Returns the computed values of `sufficientstatistics` of the exponential family distribution at the point `x`.
@@ -330,6 +351,11 @@ getbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getb
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getbasemeasure(attributes)
 
+getlogbasemeasure(ef::ExponentialFamilyDistribution) = getlogbasemeasure(ef.attributes, ef)
+getlogbasemeasure(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getlogbasemeasure(T, getconditioner(ef))
+getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
+    getlogbasemeasure(attributes)
+
 getsufficientstatistics(ef::ExponentialFamilyDistribution) = getsufficientstatistics(ef.attributes, ef)
 getsufficientstatistics(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
     getsufficientstatistics(T, getconditioner(ef))
@@ -344,14 +370,16 @@ getlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::Exponenti
 getgradlogpartition(ef::ExponentialFamilyDistribution) = getgradlogpartition(ef.attributes, ef)
 getgradlogpartition(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
     getgradlogpartition(T, getconditioner(ef))
+# TODO: Implement Monte Carlo estimation for gradlogpartition.
 getgradlogpartition(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
-    error("TODO: not implemented. Should we use monte-carlo estimator here: the mean of the sufficient statistics here?")
+    error("Generic gradlogpartition is not implemented.")
 
 getfisherinformation(ef::ExponentialFamilyDistribution) = getfisherinformation(ef.attributes, ef)
 getfisherinformation(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} =
     getfisherinformation(T, getconditioner(ef))
+# TODO: Implement a generic fisherinformation.
 getfisherinformation(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
-    error("TODO: not implemented. Should we call ForwardDiff here?")
+    error("Generic getfisherinformation is not implemented.")
 
 getsupport(ef::ExponentialFamilyDistribution) = getsupport(ef.attributes, ef)
 getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsupport(T)
@@ -413,6 +441,22 @@ Does not require an instance of the `ExponentialFamilyDistribution` and can be c
 For conditional exponential family distributions requires an extra `conditioner` argument.
 """
 getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(T)
+
+"""
+    getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
+
+A generic verion of `getlogbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+Just computes log of basemeasure.
+"""
+getlogbasemeasure(::Type{T}) where {T <: Distribution} = (x) -> log(getbasemeasure(T)(x))
+
+"""
+    getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
+
+A generic verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
+"""
+getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbasemeasure(T)
 
 """
     getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])
@@ -569,13 +613,13 @@ For details on the dispatch mechanism of `_logpdf`, refer to the `check_logpdf` 
 See also: [`check_logpdf`](@ref)
 """
 function _logpdf(ef::ExponentialFamilyDistribution{T}, x) where {T}
-    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    vartype, _x = check_logpdf(ef, x)
     _logpdf(vartype, ef, _x)
 end
 
 function _plogpdf(ef, x)
-    @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
-    return _plogpdf(ef, x, logpartition(ef))
+    @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
+    return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef, x))
 end
 
 _scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
@@ -583,13 +627,12 @@ _scalarproduct(::Type{Univariate}, η, statistics) = dot(η, flatten_parameters(
 _scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
 _scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
 
-function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition) where {T}
+function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition, logbasemeasure) where {T}
     # TODO: Think of what to do with this assert
-    @assert insupport(ef, x) "Point $(x) does not belong to the support of $(ef)"
+    @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
-    _basemeasure = basemeasure(ef, x)
-    return log(_basemeasure) + _scalarproduct(T, η, _statistics) - logpartition
+    return logbasemeasure + _scalarproduct(T, η, _statistics) - logpartition
 end
 
 """
@@ -630,6 +673,8 @@ See also: [`_logpdf`](@ref) [`PointBasedLogpdfCall`](@ref) [`MapBasedLogpdfCall`
 """
 function check_logpdf end
 
+check_logpdf(ef::ExponentialFamilyDistribution, x) = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
@@ -637,7 +682,7 @@ check_logpdf(::Type{VectorMatrixvariate},  ::Type{<:AbstractVector}, ::Type{<:Tu
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
-    return map(x -> _plogpdf(ef, x, _logpartition), container)
+    return map(x -> _plogpdf(ef, x, _logpartition, logbasemeasure(ef, x)), container)
 end
 
 check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), container)
@@ -864,9 +909,13 @@ BayesBase.mean(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
 BayesBase.var(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = var(convert(T, ef))
 BayesBase.std(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = std(convert(T, ef))
 BayesBase.cov(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = cov(convert(T, ef))
+BayesBase.skewness(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = skewness(convert(T, ef))
+BayesBase.kurtosis(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} = kurtosis(convert(T, ef))
 
 BayesBase.rand(ef::ExponentialFamilyDistribution, args...) = rand(Random.default_rng(), ef, args...)
 BayesBase.rand!(ef::ExponentialFamilyDistribution, args...) = rand!(Random.default_rng(), ef, args...)
+
+BayesBase.rand(ef::ExponentialFamilyDistribution, args::Integer...) = rand(Random.default_rng(), ef, args...)
 
 BayesBase.rand(rng::AbstractRNG, ef::ExponentialFamilyDistribution{T}, args::Integer...) where {T <: Distribution} =
     rand(rng, convert(T, ef), args...)

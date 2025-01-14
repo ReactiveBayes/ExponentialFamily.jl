@@ -225,6 +225,18 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::InverseWishartFa
     return InverseWishartFast(df, V)
 end
 
+BayesBase.default_prod_rule(::Type{<:InverseWishart}, ::Type{<:InverseWishartFast}) = PreserveTypeProd(Distribution)
+
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::InverseWishart, right::InverseWishartFast)
+    return prod(PreserveTypeProd(Distribution), convert(InverseWishartFast, left), right)
+end
+
+BayesBase.default_prod_rule(::Type{<:InverseWishart}, ::Type{<:InverseWishart}) = PreserveTypeProd(Distribution)
+
+function BayesBase.prod(::PreserveTypeProd{Distribution}, left::InverseWishart, right::InverseWishart)
+    return prod(PreserveTypeProd(Distribution), convert(InverseWishartFast, left), convert(InverseWishartFast, right))
+end
+
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{InverseWishartFast}, x::Matrix)
     return size(getindex(unpack_parameters(ef), 2)) == size(x) && isposdef(x)
 end
@@ -283,12 +295,11 @@ getlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> 
     return term1 + term2
 end
 
-
 getgradlogpartition(::NaturalParametersSpace, ::Type{InverseWishartFast}) = (η) -> begin
     η1, η2 = unpack_parameters(InverseWishartFast, η)
     p = first(size(η2))
-    term1 = logdet(-η2) - mvdigamma(-(η1 + (p + one(η1)) /2) , p)
-    term2 = vec(-((η1+(p+one(p))/2))*cholinv(-η2))
+    term1 = logdet(-η2) - mvdigamma(-(η1 + (p + one(η1)) / 2), p)
+    term2 = vec(-((η1 + (p + one(p)) / 2)) * cholinv(-η2))
 
     return [term1; term2]
 end

@@ -44,9 +44,11 @@ end
 
     import ExponentialFamily: WishartFast
 
+    rng = StableRNG(42)
+
     for d in (2, 3, 4, 5)
-        v = rand() + d
-        L = rand(d, d)
+        v = rand(rng) + d
+        L = rand(rng, d, d)
         S = L' * L + d * Eye(d)
         invS = inv(S)
         cS = copy(S)
@@ -68,13 +70,14 @@ end
     end
 end
 
-
 @testitem "Wishart: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
     import ExponentialFamily: WishartFast
 
-    for dim in (3, 4), invS in rand(Wishart(10, Array(Eye(dim))), 2)
+    rng = StableRNG(42)
+
+    for dim in (3, 4), invS in rand(rng, Wishart(10, Array(Eye(dim))), 2)
         ν = dim + 2
         @testset let (d = WishartFast(ν, invS))
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
@@ -128,3 +131,33 @@ end
         end
     end
 end
+
+@testitem "Wishart: prod between Wishart and WishartFast" begin
+    include("distributions_setuptests.jl")
+
+    import ExponentialFamily: WishartFast
+    import Distributions: Wishart
+
+    for Sleft in rand(Wishart(10, Array(Eye(2))), 2), Sright in rand(Wishart(10, Array(Eye(2))), 2), νright in (6, 7), νleft in (4, 5)
+        let left = Wishart(νleft, Sleft), right = WishartFast(νright, Sright)
+            # Test commutativity of the product
+            prod_result1 = prod(PreserveTypeProd(Distribution), left, right)
+            prod_result2 = prod(PreserveTypeProd(Distribution), right, left)
+            
+            @test prod_result1.ν ≈ prod_result2.ν
+            @test prod_result1.invS ≈ prod_result2.invS
+            
+            # Test that the product preserves type
+            @test prod_result1 isa WishartFast
+            @test prod_result2 isa WishartFast
+
+            # prod stays the same if we convert fisrt and then do product
+            left_fast = convert(WishartFast, left)
+            prod_fast = prod(ClosedProd(), left_fast, right)
+
+            @test prod_fast.ν ≈ prod_result1.ν
+            @test prod_fast.invS ≈ prod_result2.invS
+        end
+    end
+end
+

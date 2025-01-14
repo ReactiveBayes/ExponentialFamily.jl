@@ -250,7 +250,8 @@ end
                 d;
                 # These are handled differently below
                 test_fisherinformation_against_hessian = false,
-                test_fisherinformation_against_jacobian = false
+                test_fisherinformation_against_jacobian = false,
+                test_gradlogpartition_properties = false
             )
 
             (η₁, η₂) = (inv(Σ) * mean(d), -inv(Σ) / 2)
@@ -262,6 +263,12 @@ end
                 @test @inferred(logpartition(ef)) ≈ -1 / 4 * (η₁' * inv(η₂) * η₁) - 1 / 2 * logdet(-2η₂)
                 @test @inferred(insupport(ef, x))
             end
+
+            run_test_gradlogpartition_properties(d, test_against_forwardiff = false)
+
+            # Extra test with AD-friendly logpartition function
+            lp_ag = ForwardDiff.gradient(getlogpartitionfortest(NaturalParametersSpace(), MvNormalMeanCovariance), getnaturalparameters(ef))
+            @test gradlogpartition(ef) ≈ lp_ag
         end
     end
 

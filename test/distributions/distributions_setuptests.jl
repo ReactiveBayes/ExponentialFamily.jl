@@ -1,5 +1,5 @@
 using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
-using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays
+using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET, SpecialFunctions
 
 import BayesBase: compute_logscale
 
@@ -9,6 +9,7 @@ import ExponentialFamily:
     getconditioner,
     logpartition,
     basemeasure,
+    logbasemeasure,
     insupport,
     sufficientstatistics,
     fisherinformation,
@@ -47,6 +48,14 @@ function Base.isapprox(a::Tuple, b::Tuple; kwargs...)
     return length(a) === length(b) && all((d) -> isapprox(d[1], d[2]; kwargs...), zip(a, b))
 end
 
+JET_function_filter(@nospecialize f) = ((f === FastCholesky.cholinv) || (f === FastCholesky.cholsqrt))
+
+macro test_opt(expr)
+    return esc(quote
+        JET.@test_opt function_filter = JET_function_filter ignored_modules = (Base, LinearAlgebra) $expr
+    end)
+end
+
 function test_exponentialfamily_interface(distribution;
     test_parameters_conversion = true,
     test_similar_creation = true,
@@ -54,15 +63,18 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking = true,
     test_isproper = true,
     test_basic_functions = true,
-    test_gradlogpartition_against_expectation = true,
+    test_gradlogpartition_properties = true,
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
+    test_plogpdf_interface = true,
     option_assume_no_allocations = false
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
+
+    @test_opt convert(ExponentialFamilyDistribution, distribution)
 
     @test ef isa ExponentialFamilyDistribution{T}
 
@@ -72,12 +84,22 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking && run_test_packing_unpacking(distribution)
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
     test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
-    test_gradlogpartition_against_expectation && run_test_gradlogpartition_against_expectation(distribution)
+    test_gradlogpartition_properties && run_test_gradlogpartition_properties(distribution)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
-
+    test_plogpdf_interface && run_test_plogpdf_interface(distribution)
     return ef
+end
+
+function run_test_plogpdf_interface(distribution)
+    ef = convert(ExponentialFamily.ExponentialFamilyDistribution, distribution)
+    η = getnaturalparameters(ef)
+    samples = rand(StableRNG(42), distribution, 10)
+    _, _samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
+    ss_vectors = map(s -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), _samples)
+    unnormalized_logpdfs = map(v -> dot(v, η), ss_vectors)
+    @test all(unnormalized_logpdfs ≈ map(x -> ExponentialFamily._plogpdf(ef, x, 0, 0), _samples))
 end
 
 function run_test_parameters_conversion(distribution)
@@ -86,6 +108,10 @@ function run_test_parameters_conversion(distribution)
     tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
 
     @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(MeanParametersSpace(), distribution))
+
+    @test_opt ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    @test_opt ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner)
+    @test_opt params(MeanParametersSpace(), distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -98,6 +124,11 @@ function run_test_parameters_conversion(distribution)
     @test all(MeanToNatural(T)(tuple_of_θ, conditioner) .≈ tuple_of_η)
     @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
     @test all(MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
+
+    @test_opt NaturalToMean(T)(tuple_of_η, conditioner)
+    @test_opt MeanToNatural(T)(tuple_of_θ, conditioner)
+    @test_opt NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner)
+    @test_opt MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner)
 
     @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ, conditioner) .≈ tuple_of_η)
@@ -137,6 +168,9 @@ function run_test_parameters_conversion(distribution)
     @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η)) .== tuple_of_η)
     @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .== tuple_of_θ)
 
+    @test_opt unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
+    @test_opt unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
+
     # Extra methods for conditioner free distributions
     if isnothing(conditioner)
         @test all(
@@ -156,6 +190,7 @@ function run_test_similar_creation(distribution)
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test similar(ef) isa ExponentialFamilyDistribution{T}
+    @test_opt similar(ef)
 end
 
 function run_test_distribution_conversion(distribution; assume_no_allocations = true)
@@ -164,6 +199,7 @@ function run_test_distribution_conversion(distribution; assume_no_allocations = 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test @inferred(convert(Distribution, ef)) ≈ distribution
+    @test_opt convert(Distribution, ef)
 
     if assume_no_allocations
         @test @allocated(convert(Distribution, ef)) === 0
@@ -180,6 +216,9 @@ function run_test_packing_unpacking(distribution)
 
     @test all(unpack_parameters(ef) .≈ tuple_of_η)
     @test @allocated(unpack_parameters(ef)) === 0
+
+    @test_opt ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    @test_opt unpack_parameters(ef)
 end
 
 function run_test_isproper(distribution; assume_no_allocations = true)
@@ -188,6 +227,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     exponential_family_form = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     @test @inferred(isproper(exponential_family_form))
+    @test_opt isproper(exponential_family_form)
 
     if assume_no_allocations
         @test @allocated(isproper(exponential_family_form)) === 0
@@ -205,6 +245,36 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     # ! do not use fixed RNG
     samples = [rand(distribution) for _ in 1:nsamples]
 
+    # Not all methods are defined for all objects in Distributions.jl 
+    # For this methods we first test if the method is defined for the distribution
+    # And only then we test the method for the exponential family form
+    potentially_missing_methods = (
+        cov,
+        skewness,
+        kurtosis
+    )
+
+    argument_type = Tuple{typeof(distribution)}
+
+    @test_opt logpdf(ef, first(samples))
+    @test_opt pdf(ef, first(samples))
+    @test_opt mean(ef)
+    @test_opt var(ef)
+    @test_opt std(ef)
+    # Sampling is not type-stable for all distributions
+    # due to fallback to `Distributions.jl`
+    # @test_opt rand(ef)
+    # @test_opt rand(ef, 10)
+    # @test_opt rand!(ef, rand(ef, 10))
+
+    @test_opt isbasemeasureconstant(ef)
+    @test_opt basemeasure(ef, first(samples))
+    @test_opt logbasemeasure(ef, first(samples))
+    @test_opt sufficientstatistics(ef, first(samples))
+    @test_opt logpartition(ef)
+    @test_opt gradlogpartition(ef)
+    @test_opt fisherinformation(ef)
+
     for x in samples
         # We believe in the implementation in the `Distributions.jl`
         @test @inferred(logpdf(ef, x)) ≈ logpdf(distribution, x)
@@ -212,12 +282,21 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test @inferred(mean(ef)) ≈ mean(distribution)
         @test @inferred(var(ef)) ≈ var(distribution)
         @test @inferred(std(ef)) ≈ std(distribution)
+        @test last(size(rand(ef, 10))) === 10 # Test that `rand` without explicit `rng` works
         @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
         @test all(rand!(StableRNG(42), ef, [deepcopy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [deepcopy(x) for _ in 1:10]))
 
+        for method in potentially_missing_methods
+            if hasmethod(method, argument_type)
+                @test @inferred(method(ef)) ≈ method(distribution)
+            end
+        end
+
         @test @inferred(isbasemeasureconstant(ef)) === isbasemeasureconstant(T)
         @test @inferred(basemeasure(ef, x)) == getbasemeasure(T, conditioner)(x)
+        @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T, conditioner)(x)
+        @test logbasemeasure(ef, x) ≈ log(basemeasure(ef, x)) atol = 1e-8
         @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T, conditioner)))
         @test @inferred(logpartition(ef)) == getlogpartition(T, conditioner)(η)
         @test @inferred(fisherinformation(ef)) == getfisherinformation(T, conditioner)(η)
@@ -225,6 +304,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         # Double check the `conditioner` free methods
         if isnothing(conditioner)
             @test @inferred(basemeasure(ef, x)) == getbasemeasure(T)(x)
+            @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T)(x)
             @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T)))
             @test @inferred(logpartition(ef)) == getlogpartition(T)(η)
             @test @inferred(fisherinformation(ef)) == getfisherinformation(T)(η)
@@ -265,6 +345,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @allocated(mean(ef)) === 0
             @test @allocated(var(ef)) === 0
             @test @allocated(basemeasure(ef, x)) === 0
+            @test @allocated(logbasemeasure(ef, x)) === 0
             @test @allocated(sufficientstatistics(ef, x)) === 0
         end
     end
@@ -285,6 +366,8 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     if test_properties_in_natural_space
         F = getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
 
+        @test_opt getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
+
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
         @test size(F, 1) === size(F, 2)
@@ -296,6 +379,8 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
         θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
         F = getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
 
+        @test_opt getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
+
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
         @test size(F, 1) === size(F, 2)
@@ -304,19 +389,25 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     end
 end
 
-function run_test_gradlogpartition_against_expectation(distribution; nsamples = 6000)
+function run_test_gradlogpartition_properties(distribution; nsamples = 6000, test_against_forwardiff = true)
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
 
-    samples = rand(distribution, nsamples)
-    _, samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
-    sample_sufficient_statistics = map((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
-    expectation_of_sufficient_statistics = mean(sample_sufficient_statistics)
+    rng = StableRNG(42)
+    # Some distributions do not use a vector to store a collection of samples (e.g. matrix for MvGaussian)
+    collection_of_samples = rand(rng, distribution, nsamples)
+    # The `check_logpdf` here converts the collection to a vector like iterable
+    _, samples = ExponentialFamily.check_logpdf(ef, collection_of_samples)
+    expectation_of_sufficient_statistics = mean((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
     gradient = gradlogpartition(ef)
     inverse_fisher = cholinv(fisherinformation(ef))
     @test length(gradient) === length(η)
     @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
+
+    if test_against_forwardiff
+        @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
+    end
 end
 
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)
@@ -427,6 +518,8 @@ function test_generic_simple_exponentialfamily_product(
     end
 
     prod_dist = prod(GenericProd(), left, right)
+
+    @test_opt prod(GenericProd(), left, right)
 
     # We check against the `prod_dist` only if we have the proper solution, and skip if the result is of type `ProductOf`
     if test_against_distributions_prod_if_possible && (prod_dist isa ProductOf || !(typeof(prod_dist) <: T))

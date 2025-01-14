@@ -31,13 +31,14 @@ end
 @testitem "Dirichlet: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
+    rng = StableRNG(42)
     for len in 3:5
-        α = rand(len)
+        α = rand(rng, len)
         @testset let d = Dirichlet(α)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
             η1 = getnaturalparameters(ef)
 
-            for x in [rand(len) for _ in 1:3]
+            for x in [rand(rng, len) for _ in 1:3]
                 x = x ./ sum(x)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === 1.0
@@ -57,6 +58,7 @@ end
         @test !isproper(space, Dirichlet, [0.5, 0.5], 1.0)
         @test isproper(space, Dirichlet, [2.0, 3.0])
         @test !isproper(space, Dirichlet, [-1.0, -1.2])
+        @test !isproper(space, Dirichlet, [NaN, 1.0, 1.0])
     end
 
     @test_throws Exception convert(ExponentialFamilyDistribution, Dirichlet([Inf, Inf]))
@@ -67,17 +69,17 @@ end
 
     for strategy in (ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd(), GenericProd())
         @test @inferred(prod(strategy, Dirichlet([1.0, 1.0, 1.0]), Dirichlet([1.0, 1.0, 1.0]))) ≈ Dirichlet([1.0, 1.0, 1.0])
-        @test @inferred(prod(strategy, Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0]))) ≈ Dirichlet([1.1, 1.2000000000000002, 2.0])
-        @test @inferred(prod(strategy, Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0]))) ≈ Dirichlet([3.0999999999999996, 2.2, 6.0])
+        @test @inferred(prod(strategy, Dirichlet([1.1, 1.0, 2.0]), Dirichlet([1.0, 1.2, 1.0]))) ≈ Dirichlet([1.1, 1.2, 2.0])
+        @test @inferred(prod(strategy, Dirichlet([1.1, 2.0, 2.0]), Dirichlet([3.0, 1.2, 5.0]))) ≈ Dirichlet([3.1, 2.2, 6.0])
     end
 end
 
 @testitem "Dirichlet: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
-
+    rng = StableRNG(123)
     for len in 3:6
-        αleft = rand(len) .+ 1
-        αright = rand(len) .+ 1
+        αleft = rand(rng, len) .+ 1
+        αright = rand(rng, len) .+ 1
         @testset let (left, right) = (Dirichlet(αleft), Dirichlet(αright))
             @test test_generic_simple_exponentialfamily_product(
                 left,

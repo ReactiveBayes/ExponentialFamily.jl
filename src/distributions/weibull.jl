@@ -92,6 +92,7 @@ end
 isbasemeasureconstant(::Type{Weibull}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Weibull}, conditioner) = x -> x^(conditioner - 1)
+getlogbasemeasure(::Type{Weibull}, conditioner) = x -> (conditioner - 1) * log(x)
 getsufficientstatistics(::Type{Weibull}, conditioner) = (x -> x^conditioner,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -> begin
@@ -99,7 +100,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -
     return -log(-η1) - log(conditioner)
 end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{Weibull},conditioner) = (η) -> begin
+getgradlogpartition(::NaturalParametersSpace, ::Type{Weibull}, conditioner) = (η) -> begin
     (η1,) = unpack_parameters(Weibull, η)
     return SA[-inv(η1);]
 end
@@ -113,14 +114,13 @@ end
 
 getlogpartition(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
     (λ,) = unpack_parameters(Weibull, θ)
-    return SA[k/λ;]
+    return SA[k / λ;]
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Weibull},conditioner) = (θ) -> begin
+getgradlogpartition(::MeanParametersSpace, ::Type{Weibull}, conditioner) = (θ) -> begin
     (λ,) = unpack_parameters(Weibull, θ)
     return SA[-inv(η1);]
 end
-
 
 getfisherinformation(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
     (λ,) = unpack_parameters(MeanParametersSpace(), Weibull, θ)

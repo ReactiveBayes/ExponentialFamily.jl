@@ -85,6 +85,7 @@ end
 isbasemeasureconstant(::Type{Binomial}) = NonConstantBaseMeasure()
 
 getbasemeasure(::Type{Binomial}, ntrials) = Base.Fix1(binomial, ntrials)
+getlogbasemeasure(::Type{Binomial}, ntrials) = (x) -> loggamma(ntrials + 1) - (loggamma(ntrials - x + 1) + loggamma(x + 1))
 getsufficientstatistics(::Type{Binomial}, _) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
@@ -94,7 +95,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
     (η₁,) = unpack_parameters(Binomial, η)
-    return SA[ntrials*exp(η₁) / (one(η₁) + exp(η₁))]
+    return SA[ntrials*exp(η₁)/(one(η₁)+exp(η₁))]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
