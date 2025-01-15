@@ -62,6 +62,12 @@ function (::NaturalToMean{VonMises})(tuple_of_η::Tuple{Any, Any}, conditioner)
     return (conditioner * π + μ, κ)
 end
 
+function unpack_parameters(::Type{VonMises}, packed, _)
+    fi = firstindex(packed)
+    si = firstindex(packed) + 1
+    return (packed[fi], packed[si])
+end
+
 function unpack_parameters(::Type{VonMises}, packed)
     fi = firstindex(packed)
     si = firstindex(packed) + 1

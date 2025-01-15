@@ -43,6 +43,7 @@ BayesBase.params(dist::ArbitraryDistributionFromExponentialFamily) = (dist.p1, d
 (::NaturalToMean{ArbitraryDistributionFromExponentialFamily})(params::Tuple) = (params[1] - 1, params[2] - 1)
 
 ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η) = (η[1], η[2])
+ExponentialFamily.unpack_parameters(::Type{ArbitraryDistributionFromExponentialFamily}, η, _) = (η[1], η[2])
 
 # Arbitrary distribution (conditioned)
 struct ArbitraryConditionedDistributionFromExponentialFamily <: ContinuousUnivariateDistribution
@@ -72,3 +73,4 @@ ExponentialFamily.join_conditioner(::Type{ArbitraryConditionedDistributionFromEx
 (::NaturalToMean{ArbitraryConditionedDistributionFromExponentialFamily})(params::Tuple, conditioner::Number) = (params[1] - conditioner,)
 
 ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η) = (η[1],)
+ExponentialFamily.unpack_parameters(::Type{ArbitraryConditionedDistributionFromExponentialFamily}, η, _) = (η[1],)

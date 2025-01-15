@@ -64,6 +64,10 @@ function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where {V <: Ab
     return (softmax(convert(Vector, η)),)
 end
 
+function unpack_parameters(::Type{Categorical}, packed, _)
+    return unpack_parameters(Categorical, packed)
+end
+
 function unpack_parameters(::Type{Categorical}, packed)
     return (packed,)
 end
