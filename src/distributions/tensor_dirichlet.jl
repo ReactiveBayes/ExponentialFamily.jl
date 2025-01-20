@@ -75,6 +75,8 @@ getlogbasemeasure(::Type{TensorDirichlet}, conditioner) = (x) -> zero(Float64)
 getsufficientstatistics(::Type{TensorDirichlet}, conditioner) = (x -> vmap(log, x),)
 
 BayesBase.mean(dist::TensorDirichlet) = dist.a ./ dist.α0
+BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::TensorDirichlet) = digamma.(dist.a) .- digamma.(dist.α0)
+
 function BayesBase.cov(dist::TensorDirichlet{T}) where {T}
     s = size(dist.a)
     news = (first(s), first(s), Base.tail(s)...)

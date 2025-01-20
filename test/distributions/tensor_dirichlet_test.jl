@@ -73,6 +73,28 @@ end
     end
 end
 
+@testitem "TensorDirichlet: logmean" begin
+    include("distributions_setuptests.jl")
+
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
+
+                distribution = TensorDirichlet(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+
+                temp = mean.(Base.Broadcast.BroadcastFunction(log), mat_of_dir)
+                mat_mean = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_mean[:, i] = temp[i]
+                end
+                @test mean(Base.Broadcast.BroadcastFunction(log), distribution) ≈ mat_mean
+            end
+        end
+    end
+end
+
 @testitem "TensorDirichlet: std" begin
     include("distributions_setuptests.jl")
 
