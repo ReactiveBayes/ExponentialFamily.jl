@@ -73,7 +73,7 @@ end
     end
 end
 
-@testitem "TensorDirichlet: mean" begin
+@testitem "TensorDirichlet: logmean" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
