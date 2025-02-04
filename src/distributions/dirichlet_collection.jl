@@ -109,8 +109,6 @@ function BayesBase.entropy(dist::DirichletCollection)
     return sum(-sum((α .- one(eltype(α))) .* (digamma.(α) .- digamma.(α0)); dims = 1) .+ lmnB)
 end
 
-BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:DirichletCollection}) = DirichletCollection
-
 function BayesBase.rand(rng::AbstractRNG, dist::DirichletCollection{T}) where {T}
     container = similar(dist.α)
     return rand!(rng, dist, container)
