@@ -678,7 +678,7 @@ check_logpdf(ef::ExponentialFamilyDistribution, x) = check_logpdf(variate_form(t
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
-check_logpdf(::Type{VectorMatrixvariate},  ::Type{<:AbstractVector}, ::Type{<:Tuple}, ef, x) = (PointBasedLogpdfCall(), x)
+check_logpdf(::Type{VectorMatrixvariate}, ::Type{<:AbstractVector}, ::Type{<:Tuple}, ef, x) = (PointBasedLogpdfCall(), x)
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
@@ -798,7 +798,7 @@ See also: [`MeanParametersSpace`](@ref), [`NaturalParametersSpace`](@ref)
 """
 function unpack_parameters end
 
-unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = 
+unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} =
     unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
 
 function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, conditioner) where {T}
