@@ -180,6 +180,7 @@ end
 
 @testitem "MvNormalMeanScalePrecision: Fisher is faster then for full parametrization" begin
     include("./normal_family_setuptests.jl")
+
     using BenchmarkTools
     using FastCholesky
     using LinearAlgebra
@@ -189,7 +190,7 @@ end
     for k in 10:5:40
         μ = randn(rng, k)
         γ = rand(rng)
-        cov = γ * I(k)
+        cov = inv(γ) * I(k)
 
         ef_small = convert(ExponentialFamilyDistribution, MvNormalMeanScalePrecision(μ, γ))
         ef_full = convert(ExponentialFamilyDistribution, MvNormalMeanCovariance(μ, cov))
@@ -197,30 +198,30 @@ end
         fi_small = fisherinformation(ef_small)
         fi_full = fisherinformation(ef_full)
 
-        @test_opt fisherinformation(ef_small)
-        @test_opt fisherinformation(ef_full)
-
-        fi_mvsp_time = @elapsed fisherinformation(ef_small)
-        fi_mvsp_alloc = @allocated fisherinformation(ef_small)
-
-        fi_full_time = @elapsed fisherinformation(ef_full)
-        fi_full_alloc = @allocated fisherinformation(ef_full)
+        benchmark_fi_mvsp = @benchmark fisherinformation($ef_small) seconds = 1
+        benchmark_fi_full = @benchmark fisherinformation($ef_full) seconds = 1
 
         @test_opt cholinv(fi_small)
         @test_opt cholinv(fi_full)
 
-        cholinv_time_small = @belapsed cholinv($fi_small) samples = 3
-        cholinv_alloc_small = @allocated cholinv(fi_small)
+        # `cholinv` for the small returns a wrapper and doesn't really compute the inverse
+        # but a proxy to compute products, the conversion to Matrix will display a warning, but its oke
+        b = randn(rng, k + 1)
+        Base.with_logger(Base.NullLogger()) do
+            @test cholinv(fi_small) \ b ≈ cholinv(Matrix(fi_small)) \ b
+        end
 
-        cholinv_time_full = @belapsed cholinv($fi_full) samples = 3
-        cholinv_alloc_full = @allocated cholinv(fi_full)
+        benchmark_cholinv_mvsp = @benchmark cholinv($fi_small) seconds = 1
+        benchmark_cholinv_full = @benchmark cholinv($fi_full) seconds = 1
 
+        # small time is supposed to be O(k) and full time is supposed to O(k^2)
         # small time is supposed to be O(k) and full time is supposed to O(k^2)
         # the constant C is selected to account to fluctuations in test runs
         C = 0.7
-        @test fi_mvsp_time < fi_full_time / (C * k)
-        @test fi_mvsp_alloc < fi_full_alloc / (C * k)
-        @test cholinv_time_small < cholinv_time_full / (C * k)
-        @test cholinv_alloc_small < cholinv_alloc_full / (C * k)
+        @test mean(benchmark_fi_mvsp.times) < mean(benchmark_fi_full.times) / (C * k)
+        @test benchmark_fi_mvsp.allocs < benchmark_fi_full.allocs
+
+        @test mean(benchmark_cholinv_mvsp.times) < mean(benchmark_cholinv_full.times) / (C * k)
+        @test benchmark_cholinv_mvsp.allocs < benchmark_cholinv_full.allocs
     end
 end

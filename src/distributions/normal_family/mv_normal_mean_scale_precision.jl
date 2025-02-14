@@ -1,4 +1,4 @@
-export MvNormalMeanScalePrecision, MvGaussianMeanScalePrecision
+export MvNormalMeanScalePrecision
 
 import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
@@ -25,8 +25,6 @@ struct MvNormalMeanScalePrecision{T <: Real, M <: AbstractVector{T}} <: Abstract
     μ::M
     γ::T
 end
-
-const MvGaussianMeanScalePrecision = MvNormalMeanScalePrecision
 
 function MvNormalMeanScalePrecision(μ::AbstractVector{<:Real}, γ::Real)
     T = promote_type(eltype(μ), eltype(γ))
@@ -66,7 +64,7 @@ end
 
 function (::MeanToNatural{MvNormalMeanScalePrecision})(tuple_of_θ::Tuple{Any, Any})
     (μ, γ) = tuple_of_θ
-    return (γ * μ, - γ / 2)
+    return (γ * μ, -γ / 2)
 end
 
 function (::NaturalToMean{MvNormalMeanScalePrecision})(tuple_of_η::Tuple{Any, Any})
@@ -79,6 +77,12 @@ function nabs2(x)
     return sum(map(abs2, x))
 end
 
+# The `MvNormalMeanScalePrecision` distribution has a more efficient implementation of the Fisher information matrix
+# Other Gaussian distributions fallback to `MvNormalMeanCovariance` type tag
+exponential_family_typetag(::MvNormalMeanScalePrecision) = ExponentialFamily.MvNormalMeanScalePrecision
+
+BayesBase.params(::MeanParametersSpace, dist::MvNormalMeanScalePrecision) = (mean(dist), scale(dist))
+
 getsufficientstatistics(::Type{MvNormalMeanScalePrecision}) = (identity, nabs2)
 
 # Conversions
@@ -86,15 +90,15 @@ function Base.convert(
     ::Type{MvNormal{T, C, M}},
     dist::MvNormalMeanScalePrecision
 ) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
-    m, σ = mean(dist), std(dist)
-    return MvNormal(convert(M, m), convert(T, σ))
+    m, Σ = mean_cov(dist)
+    return MvNormal(convert(M, m), Distributions.PDMats.PDMat(Matrix(Σ)))
 end
 
 function Base.convert(
     ::Type{MvNormalMeanScalePrecision{T, M}},
     dist::MvNormalMeanScalePrecision
 ) where {T <: Real, M <: AbstractArray{T}}
-    m, γ = mean(dist), dist.γ
+    m, γ = mean(dist), scale(dist)
     return MvNormalMeanScalePrecision{T, M}(convert(M, m), convert(T, γ))
 end
 
@@ -106,18 +110,18 @@ function Base.convert(
 end
 
 function Base.convert(::Type{MvNormalMeanCovariance}, dist::MvNormalMeanScalePrecision)
-    m, σ = mean(dist), cov(dist)
-    return MvNormalMeanCovariance(m, σ * diagm(ones(length(m))))
+    m, C = mean_cov(dist)
+    return MvNormalMeanCovariance(m, C)
 end
 
 function Base.convert(::Type{MvNormalMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ = mean(dist), precision(dist)
-    return MvNormalMeanPrecision(m, γ * diagm(ones(length(m))))
+    m, C = mean_invcov(dist)
+    return MvNormalMeanPrecision(m, C)
 end
 
 function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ = mean(dist), precision(dist)
-    return MvNormalWeightedMeanPrecision(γ * m, γ * diagm(ones(length(m))))
+    m, C = mean_invcov(dist)
+    return MvNormalWeightedMeanPrecision(C * m, C)
 end
 
 Distributions.distrname(::MvNormalMeanScalePrecision) = "MvNormalMeanScalePrecision"
@@ -129,7 +133,7 @@ BayesBase.mode(dist::MvNormalMeanScalePrecision)      = mean(dist)
 BayesBase.var(dist::MvNormalMeanScalePrecision)       = diag(cov(dist))
 BayesBase.cov(dist::MvNormalMeanScalePrecision)       = cholinv(invcov(dist))
 BayesBase.invcov(dist::MvNormalMeanScalePrecision)    = scale(dist) * I(length(mean(dist)))
-BayesBase.std(dist::MvNormalMeanScalePrecision)       = cholsqrt(cov(dist))
+BayesBase.std(dist::MvNormalMeanScalePrecision)       = sqrt(inv(scale(dist))) * I(length(mean(dist)))
 BayesBase.logdetcov(dist::MvNormalMeanScalePrecision) = -chollogdet(invcov(dist))
 BayesBase.scale(dist::MvNormalMeanScalePrecision)     = dist.γ
 BayesBase.params(dist::MvNormalMeanScalePrecision)    = (mean(dist), scale(dist))
@@ -140,11 +144,11 @@ function Distributions.sqmahal(dist::MvNormalMeanScalePrecision, x::AbstractVect
 end
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanScalePrecision, x::AbstractVector)
-    μ, γ = params(dist)
+    μ, Λ = mean_invcov(dist)
     @inbounds @simd for i in 1:length(r)
         r[i] = μ[i] - x[i]
     end
-    return dot3arg(r, γ, r) # x' * A * x
+    return dot3arg(r, Λ, r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanScalePrecision{T}) where {T} = T
@@ -170,25 +174,13 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanScal
     return MvNormalMeanScalePrecision(m, w)
 end
 
-BayesBase.default_prod_rule(::Type{<:MultivariateNormalDistributionsFamily}, ::Type{<:MvNormalMeanScalePrecision}) = PreserveTypeProd(Distribution)
-
-function BayesBase.prod(
-    ::PreserveTypeProd{Distribution},
-    left::L,
-    right::R
-) where {L <: MultivariateNormalDistributionsFamily, R <: MvNormalMeanScalePrecision}
-    wleft  = convert(MvNormalWeightedMeanPrecision, left)
-    wright = convert(MvNormalWeightedMeanPrecision, right)
-    return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
-end
-
-function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MvNormalMeanScalePrecision{T}) where {T}
     μ, γ = params(dist)
     d = length(μ)
     return rand!(rng, dist, Vector{T}(undef, d))
 end
 
-function BayesBase.rand(rng::AbstractRNG, dist::MvGaussianMeanScalePrecision{T}, size::Int64) where {T}
+function BayesBase.rand(rng::AbstractRNG, dist::MvNormalMeanScalePrecision{T}, size::Int64) where {T}
     container = Matrix{T}(undef, length(dist), size)
     return rand!(rng, dist, container)
 end
@@ -197,7 +189,7 @@ end
 #        it needs to work with scale method, not with std
 function BayesBase.rand!(
     rng::AbstractRNG,
-    dist::MvGaussianMeanScalePrecision,
+    dist::MvNormalMeanScalePrecision,
     container::AbstractArray{T}
 ) where {T <: Real}
     preallocated = similar(container)
@@ -227,42 +219,41 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
         η2 = η[end]
         k = length(η1)
         Cinv = inv(η2)
-        return -dot(η1, 1/4*Cinv, η1) - (k / 2)*log(-2*η2)
+        return -dot(η1, 1 / 4 * Cinv, η1) - (k / 2) * log(-2 * η2)
     end
 
-getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:end-1]
         η2 = η[end]
         inv2 = inv(η2)
         k = length(η1)
-        return pack_parameters(MvNormalMeanCovariance, (-1/(2*η2) * η1,  dot(η1,η1) / 4*inv2^2 - k/2 * inv2))
+        return pack_parameters(MvNormalMeanCovariance, (-1 / (2 * η2) * η1, dot(η1, η1) / 4 * inv2^2 - k / 2 * inv2))
     end
 
-getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:end-1]
         η2 = η[end]
         k = length(η1)
 
-        η1_part = -inv(2*η2)* I(length(η1))
+        η1_part = -inv(2 * η2) * I(length(η1))
         η1η2 = zeros(k, 1)
-        η1η2 .= η1*inv(2*η2^2)
-        
-        η2_part = k*inv(2abs2(η2)) - dot(η1,η1) / (2*η2^3)
+        η1η2 .= η1 * inv(2 * η2^2)
+
+        η2_part = k * inv(2abs2(η2)) - dot(η1, η1) / (2 * η2^3)
 
         return ArrowheadMatrix(η2_part, η1η2, diag(η1_part))
     end
-    
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) = 
+getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (θ) -> begin
         μ = @view θ[1:end-1]
         γ = θ[end]
         k = length(μ)
 
-        matrix = zeros(eltype(μ), (k+1))
+        matrix = zeros(eltype(μ), (k + 1))
         matrix[1:k] .= γ
-        matrix[k+1] = k*inv(2abs2(γ))
+        matrix[k+1] = k * inv(2abs2(γ))
         return Diagonal(matrix)
     end

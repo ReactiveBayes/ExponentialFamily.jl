@@ -41,25 +41,60 @@ end
     rng  = MersenneTwister(1234)
 
     for dim in dims
-        for type in types
-            left = convert(type, rand(rng, Float64, dim), Matrix(Diagonal(abs.(rand(rng, Float64, dim)))))
+        for left_type in types
+            left = if (left_type <: MvNormalMeanScalePrecision)
+                # `MvNormalMeanScalePrecision` cannot be constructed using a Matrix
+                # it requires a scale parameter instead
+                convert(left_type, rand(rng, Float64, dim), rand(rng, Float64))
+            else
+                convert(left_type, rand(rng, Float64, dim), Matrix(Diagonal(abs.(rand(rng, Float64, dim)))))
+            end
 
-            for type in [types..., etypes...]
-                right = convert(type, left)
+            for right_type in [types..., etypes...]
+
+                # It's not always possible to convert other multivariate types to `MvNormalMeanScalePrecision`
+                # so we skip it here
+                if (right_type <: MvNormalMeanScalePrecision)
+                    continue
+                end
+
+                right = convert(right_type, left)
                 check_basic_statistics(left, right)
 
-                p1 = prod(PreserveTypeLeftProd(), left, right)
-                @test typeof(p1) <: typeof(left)
+                p1 = if !(left_type <: MvNormalMeanScalePrecision)
+                    prod(PreserveTypeLeftProd(), left, right)
+                else
+                    nothing
+                end
 
-                p2 = prod(PreserveTypeRightProd(), left, right)
-                @test typeof(p2) <: typeof(right)
+                p2 = if !(right_type <: MvNormalMeanScalePrecision)
+                    prod(PreserveTypeRightProd(), left, right)
+                else
+                    nothing
+                end
+
+                if !isnothing(p1)
+                    @test typeof(p1) <: typeof(left)
+                end
+
+                if !isnothing(p2)
+                    @test typeof(p2) <: typeof(right)
+                end
 
                 for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
                     p3 = prod(strategy, left, right)
 
-                    check_basic_statistics(p1, p2)
-                    check_basic_statistics(p2, p3)
-                    check_basic_statistics(p1, p3)
+                    if !isnothing(p1) && !isnothing(p2)
+                        check_basic_statistics(p1, p2)
+                    end
+
+                    if !isnothing(p2)
+                        check_basic_statistics(p2, p3)
+                    end
+
+                    if !isnothing(p1)
+                        check_basic_statistics(p1, p3)
+                    end
                 end
             end
         end
