@@ -622,17 +622,17 @@ function _plogpdf(ef, x)
     return _plogpdf(ef, x, logpartition(ef), logbasemeasure(ef, x))
 end
 
-_scalarproduct(::Type{T}, η, statistics) where {T} = _scalarproduct(variate_form(T), T, η, statistics)
-_scalarproduct(::Type{Univariate}, η, statistics) = dot(η, flatten_parameters(statistics))
-_scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics) where {T} = dot(η, flatten_parameters(T, statistics))
-_scalarproduct(_, ::Type{T}, η, statistics) where {T} = dot(η, pack_parameters(T, statistics))
+_scalarproduct(::Type{T}, η, statistics, conditioner) where {T} = _scalarproduct(variate_form(T), T, η, statistics, conditioner)
+_scalarproduct(::Type{Univariate}, η, statistics, conditioner) = dot(η, flatten_parameters(statistics))
+_scalarproduct(::Type{Univariate}, ::Type{T}, η, statistics, conditioner) where {T} = dot(η, flatten_parameters(T, statistics))
+_scalarproduct(_, ::Type{T}, η, statistics, conditioner) where {T} = dot(η, pack_parameters(T, statistics))
 
 function _plogpdf(ef::ExponentialFamilyDistribution{T}, x, logpartition, logbasemeasure) where {T}
     # TODO: Think of what to do with this assert
     @assert insupport(ef, x) lazy"Point $(x) does not belong to the support of $(ef)"
     η = getnaturalparameters(ef)
     _statistics = sufficientstatistics(ef, x)
-    return logbasemeasure + _scalarproduct(T, η, _statistics) - logpartition
+    return logbasemeasure + _scalarproduct(T, η, _statistics, getconditioner(ef)) - logpartition
 end
 
 """
