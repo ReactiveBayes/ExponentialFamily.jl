@@ -84,15 +84,15 @@ function Base.convert(
     ::Type{MvNormal{T, C, M}},
     dist::MvNormalMeanScalePrecision
 ) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
-    m, σ = mean(dist), std(dist)
-    return MvNormal(convert(M, m), convert(T, σ))
+    m, Σ = mean_cov(dist)
+    return MvNormal(convert(M, m), Distributions.PDMats.PDMat(Matrix(Σ)))
 end
 
 function Base.convert(
     ::Type{MvNormalMeanScalePrecision{T, M}},
     dist::MvNormalMeanScalePrecision
 ) where {T <: Real, M <: AbstractArray{T}}
-    m, γ = mean(dist), dist.γ
+    m, γ = mean(dist), scale(dist)
     return MvNormalMeanScalePrecision{T, M}(convert(M, m), convert(T, γ))
 end
 
@@ -104,18 +104,18 @@ function Base.convert(
 end
 
 function Base.convert(::Type{MvNormalMeanCovariance}, dist::MvNormalMeanScalePrecision)
-    m, σ = mean(dist), cov(dist)
-    return MvNormalMeanCovariance(m, σ * diagm(ones(length(m))))
+    m, C = mean_cov(dist)
+    return MvNormalMeanCovariance(m, C)
 end
 
 function Base.convert(::Type{MvNormalMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ = mean(dist), precision(dist)
-    return MvNormalMeanPrecision(m, γ * diagm(ones(length(m))))
+    m, C = mean_invcov(dist)
+    return MvNormalMeanPrecision(m, C)
 end
 
 function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MvNormalMeanScalePrecision)
-    m, γ = mean(dist), precision(dist)
-    return MvNormalWeightedMeanPrecision(γ * m, γ * diagm(ones(length(m))))
+    m, C = mean_invcov(dist)
+    return MvNormalWeightedMeanPrecision(C * m, C)
 end
 
 Distributions.distrname(::MvNormalMeanScalePrecision) = "MvNormalMeanScalePrecision"
@@ -127,7 +127,7 @@ BayesBase.mode(dist::MvNormalMeanScalePrecision)      = mean(dist)
 BayesBase.var(dist::MvNormalMeanScalePrecision)       = diag(cov(dist))
 BayesBase.cov(dist::MvNormalMeanScalePrecision)       = cholinv(invcov(dist))
 BayesBase.invcov(dist::MvNormalMeanScalePrecision)    = scale(dist) * I(length(mean(dist)))
-BayesBase.std(dist::MvNormalMeanScalePrecision)       = cholsqrt(cov(dist))
+BayesBase.std(dist::MvNormalMeanScalePrecision)       = sqrt(inv(scale(dist))) * I(length(mean(dist)))
 BayesBase.logdetcov(dist::MvNormalMeanScalePrecision) = -chollogdet(invcov(dist))
 BayesBase.scale(dist::MvNormalMeanScalePrecision)     = dist.γ
 BayesBase.params(dist::MvNormalMeanScalePrecision)    = (mean(dist), scale(dist))
@@ -138,11 +138,11 @@ function Distributions.sqmahal(dist::MvNormalMeanScalePrecision, x::AbstractVect
 end
 
 function Distributions.sqmahal!(r, dist::MvNormalMeanScalePrecision, x::AbstractVector)
-    μ, γ = params(dist)
+    μ, Λ = mean_invcov(dist)
     @inbounds @simd for i in 1:length(r)
         r[i] = μ[i] - x[i]
     end
-    return dot3arg(r, γ, r) # x' * A * x
+    return dot3arg(r, Λ, r) # x' * A * x
 end
 
 Base.eltype(::MvNormalMeanScalePrecision{T}) where {T} = T
