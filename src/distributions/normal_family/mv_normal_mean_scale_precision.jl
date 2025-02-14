@@ -77,6 +77,10 @@ function nabs2(x)
     return sum(map(abs2, x))
 end
 
+# The `MvNormalMeanScalePrecision` distribution has a more efficient implementation of the Fisher information matrix
+# Other Gaussian distributions fallback to `MvNormalMeanCovariance` type tag
+exponential_family_typetag(::MvNormalMeanScalePrecision) = ExponentialFamily.MvNormalMeanScalePrecision
+
 getsufficientstatistics(::Type{MvNormalMeanScalePrecision}) = (identity, nabs2)
 
 # Conversions
