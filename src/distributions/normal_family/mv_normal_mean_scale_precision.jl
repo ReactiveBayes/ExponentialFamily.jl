@@ -81,6 +81,8 @@ end
 # Other Gaussian distributions fallback to `MvNormalMeanCovariance` type tag
 exponential_family_typetag(::MvNormalMeanScalePrecision) = ExponentialFamily.MvNormalMeanScalePrecision
 
+BayesBase.params(::MeanParametersSpace, dist::MvNormalMeanScalePrecision) = (mean(dist), scale(dist))
+
 getsufficientstatistics(::Type{MvNormalMeanScalePrecision}) = (identity, nabs2)
 
 # Conversions

@@ -201,14 +201,14 @@ end
         @test_opt fisherinformation(ef_small)
         @test_opt fisherinformation(ef_full)
 
-        benchmark_fi_mvsp = @benchmark fisherinformation($ef_small) seconds=1
-        benchmark_fi_full = @benchmark fisherinformation($ef_full) seconds=1
+        benchmark_fi_mvsp = @benchmark fisherinformation($ef_small) seconds = 1
+        benchmark_fi_full = @benchmark fisherinformation($ef_full) seconds = 1
 
         @test_opt cholinv(fi_small)
         @test_opt cholinv(fi_full)
 
-        benchmark_cholinv_mvsp = @benchmark cholinv($fi_small) seconds=1
-        benchmark_cholinv_full = @benchmark cholinv($fi_full) seconds=1
+        benchmark_cholinv_mvsp = @benchmark cholinv($fi_small) seconds = 1
+        benchmark_cholinv_full = @benchmark cholinv($fi_full) seconds = 1
 
         # small time is supposed to be O(k) and full time is supposed to O(k^2)
         # small time is supposed to be O(k) and full time is supposed to O(k^2)

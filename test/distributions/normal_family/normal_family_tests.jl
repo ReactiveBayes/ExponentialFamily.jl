@@ -42,7 +42,6 @@ end
 
     for dim in dims
         for left_type in types
-            
             left = if (left_type <: MvNormalMeanScalePrecision)
                 # `MvNormalMeanScalePrecision` cannot be constructed using a Matrix
                 # it requires a scale parameter instead
@@ -63,8 +62,8 @@ end
                 check_basic_statistics(left, right)
 
                 p1 = if !(left_type <: MvNormalMeanScalePrecision)
-                    prod(PreserveTypeLeftProd(), left, right) 
-                else 
+                    prod(PreserveTypeLeftProd(), left, right)
+                else
                     nothing
                 end
 
