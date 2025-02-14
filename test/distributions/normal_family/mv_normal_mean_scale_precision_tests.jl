@@ -198,14 +198,18 @@ end
         fi_small = fisherinformation(ef_small)
         fi_full = fisherinformation(ef_full)
 
-        @test_opt fisherinformation(ef_small)
-        @test_opt fisherinformation(ef_full)
-
         benchmark_fi_mvsp = @benchmark fisherinformation($ef_small) seconds = 1
         benchmark_fi_full = @benchmark fisherinformation($ef_full) seconds = 1
 
         @test_opt cholinv(fi_small)
         @test_opt cholinv(fi_full)
+
+        # `cholinv` for the small returns a wrapper and doesn't really compute the inverse
+        # but a proxy to compute products, the conversion to Matrix will display a warning, but its oke
+        b = randn(rng, k + 1)
+        Base.with_logger(Base.NullLogger()) do
+            @test cholinv(fi_small) \ b ≈ cholinv(Matrix(fi_small)) \ b
+        end
 
         benchmark_cholinv_mvsp = @benchmark cholinv($fi_small) seconds = 1
         benchmark_cholinv_full = @benchmark cholinv($fi_full) seconds = 1
