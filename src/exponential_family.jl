@@ -401,7 +401,7 @@ function (transformation::NaturalToMean{T})(v::AbstractVector, ::Nothing) where 
 end
 
 function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v), conditioner))
+    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner))
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
@@ -413,7 +413,7 @@ function (transformation::MeanToNatural{T})(v::AbstractVector, ::Nothing) where 
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v), conditioner))
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v, conditioner), conditioner))
 end
 
 """
@@ -678,6 +678,7 @@ check_logpdf(ef::ExponentialFamilyDistribution, x) = check_logpdf(variate_form(t
 check_logpdf(::Type{Univariate}, ::Type{<:Number}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, x) = (PointBasedLogpdfCall(), x)
+check_logpdf(::Type{VectorMatrixvariate},  ::Type{<:AbstractVector}, ::Type{<:Tuple}, ef, x) = (PointBasedLogpdfCall(), x)
 
 function _vlogpdf(ef, container)
     _logpartition = logpartition(ef)
@@ -688,7 +689,6 @@ check_logpdf(::Type{Univariate}, ::Type{<:AbstractVector}, ::Type{<:Number}, ef,
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractVector}, ef, container) = (MapBasedLogpdfCall(), container)
 check_logpdf(::Type{Multivariate}, ::Type{<:AbstractMatrix}, ::Type{<:Number}, ef, container) = (MapBasedLogpdfCall(), eachcol(container))
 check_logpdf(::Type{Matrixvariate}, ::Type{<:AbstractVector}, ::Type{<:AbstractMatrix}, ef, container) = (MapBasedLogpdfCall(), container)
-
 """
     pdf(ef::ExponentialFamilyDistribution, x)
 
@@ -697,7 +697,7 @@ Evaluates and returns the probability density function of the exponential family
 BayesBase.pdf(ef::ExponentialFamilyDistribution, x) = _pdf(ef, x)
 
 function _pdf(ef, x)
-    vartype, _x = check_logpdf(variate_form(typeof(ef)), typeof(x), eltype(x), ef, x)
+    vartype, _x = check_logpdf(ef, x)
     _pdf(vartype, ef, _x)
 end
 
@@ -798,7 +798,16 @@ See also: [`MeanParametersSpace`](@ref), [`NaturalParametersSpace`](@ref)
 """
 function unpack_parameters end
 
-unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef))
+unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} = 
+    unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
+
+function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, conditioner) where {T}
+    unpack_parameters(T, packed, conditioner)
+end
+
+function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, ::Nothing) where {T}
+    unpack_parameters(T, packed)
+end
 
 # Assume that for the most distributions the `unpack_parameters` does not depend on the `space` parameter
 unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)

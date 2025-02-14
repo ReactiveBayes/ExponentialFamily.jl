@@ -35,7 +35,8 @@ function BayesBase.insupport(ef::ExponentialFamilyDistribution{Dirichlet}, x)
 end
 # Natural parametrization
 
-isproper(::NaturalParametersSpace, ::Type{Dirichlet}, η, conditioner) = isnothing(conditioner) && length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η)
+isproper(::NaturalParametersSpace, ::Type{Dirichlet}, η, conditioner) =
+    isnothing(conditioner) && length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
 isproper(::MeanParametersSpace, ::Type{Dirichlet}, θ, conditioner) = isnothing(conditioner) && length(θ) > 1 && all(>(0), θ) && all(!isinf, θ)
 
 function (::MeanToNatural{Dirichlet})(tuple_of_θ::Tuple{Any})

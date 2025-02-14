@@ -134,6 +134,10 @@ function (::NaturalToMean{Pareto})(tuple_of_η::Tuple{Any}, _)
     return (-η₁ - one(η₁),)
 end
 
+function unpack_parameters(::Type{Pareto}, packed, _)
+    return (first(packed),)
+end
+
 function unpack_parameters(::Type{Pareto}, packed)
     return (first(packed),)
 end

@@ -15,7 +15,7 @@ A multivariate normal-Wishart distribution, where `T` is the element type of the
 - `ν::N`: The degrees of freedom of the Wishart distribution
 """
 struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real} <:
-       ContinuousMatrixDistribution
+    ContinuousMultivariateMatrixvariateDistribution 
     μ::M
     Ψ::V
     κ::K
@@ -194,6 +194,25 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> beg
     term4 = logmvgamma(d, (d + 2 * η4) * (1 / 2))
 
     return (term1 + term2 + term3 + term4) + (d / 2)log2π
+end
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalWishart}) = (η) -> begin
+    η1, η2, η3, η4 = unpack_parameters(MvNormalWishart, η)
+    d = length(η1)
+    const1 = -(d+2η4)/2
+    kronecker = kron(η1, η1')
+    veckronecker = vec(kronecker)
+    
+    const2 = cholinv(-2η2 + kronecker/(2η3))
+    vconst2 = vec(const2)
+    kronright = kron(Eye(d), η1) / (2η3)
+    kronleft = kron(η1, Eye(d)) / (2η3)
+    dη2 = -2*const1*const2
+    dη1 = const1*(kronright + kronleft)'*vconst2
+    dη3 = (-d/(2η3)) - const1*dot(vconst2,veckronecker/(2η3^2))
+    dη4 = -logdet(-2η2 + kronecker/(2η3)) + d*log(2) + mvdigamma((d + 2 * η4) * (1 / 2),d)
+
+    return vcat(dη1,vec(dη2),dη3,dη4)
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) =

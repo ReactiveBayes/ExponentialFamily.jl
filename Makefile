@@ -8,7 +8,7 @@ format: scripts_init ## Code formating run
 	julia --startup-file=no --project=scripts/ scripts/format.jl --overwrite
 
 benchmark: scripts_init ## Code formating run
-	julia --startup-file=no --project=scripts/ scripts/benchmark.jl
+	julia --startup-file=no --project=scripts/ scripts/benchmark.jl $(branch)
 
 .PHONY: docs
 

@@ -1,10 +1,15 @@
-using PkgBenchmark, Dates
+using PkgBenchmark, BenchmarkTools, Dates
 
 import ExponentialFamily
 
-results = benchmarkpkg(ExponentialFamily)
-
 mkpath("./benchmark_logs")
 
-export_markdown("./benchmark_logs/benchmark_$(now()).md", results)
-export_markdown("./benchmark_logs/last.md", results)
+if isempty(ARGS)
+    result = PkgBenchmark.benchmarkpkg(ExponentialFamily)
+    export_markdown("./benchmark_logs/benchmark_$(now()).md", result)
+    export_markdown("./benchmark_logs/last.md", result)
+else
+    name = first(ARGS)
+    result = BenchmarkTools.judge(ExponentialFamily, name; judgekwargs = Dict(:time_tolerance => 0.1, :memory_tolerance => 0.05))
+    export_markdown("./benchmark_logs/benchmark_vs_$(name)_result.md", result)
+end

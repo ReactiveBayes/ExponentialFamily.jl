@@ -68,7 +68,8 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
     test_plogpdf_interface = true,
-    option_assume_no_allocations = false
+    option_assume_no_allocations = false,
+    nsamples_for_gradlogpartition_properties = 6000
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -84,7 +85,7 @@ function test_exponentialfamily_interface(distribution;
     test_packing_unpacking && run_test_packing_unpacking(distribution)
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
     test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
-    test_gradlogpartition_properties && run_test_gradlogpartition_properties(distribution)
+    test_gradlogpartition_properties && run_test_gradlogpartition_properties(distribution, nsamples = nsamples_for_gradlogpartition_properties)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
@@ -96,7 +97,7 @@ function run_test_plogpdf_interface(distribution)
     ef = convert(ExponentialFamily.ExponentialFamilyDistribution, distribution)
     η = getnaturalparameters(ef)
     samples = rand(StableRNG(42), distribution, 10)
-    _, _samples = ExponentialFamily.check_logpdf(variate_form(typeof(ef)), typeof(samples), eltype(samples), ef, samples)
+    _, _samples = ExponentialFamily.check_logpdf(ef, samples)
     ss_vectors = map(s -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), _samples)
     unnormalized_logpdfs = map(v -> dot(v, η), ss_vectors)
     @test all(unnormalized_logpdfs ≈ map(x -> ExponentialFamily._plogpdf(ef, x, 0, 0), _samples))
@@ -165,11 +166,11 @@ function run_test_parameters_conversion(distribution)
         )
     end
 
-    @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η)) .== tuple_of_η)
-    @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .== tuple_of_θ)
+    @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .== tuple_of_η)
+    @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .== tuple_of_θ)
 
-    @test_opt unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
-    @test_opt unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
+    @test_opt unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner)
+    @test_opt unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner)
 
     # Extra methods for conditioner free distributions
     if isnothing(conditioner)
@@ -299,6 +300,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test logbasemeasure(ef, x) ≈ log(basemeasure(ef, x)) atol = 1e-8
         @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T, conditioner)))
         @test @inferred(logpartition(ef)) == getlogpartition(T, conditioner)(η)
+        @test @inferred(gradlogpartition(ef)) == getgradlogpartition(NaturalParametersSpace(), T, conditioner)(η)
         @test @inferred(fisherinformation(ef)) == getfisherinformation(T, conditioner)(η)
 
         # Double check the `conditioner` free methods
@@ -307,6 +309,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
             @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T)(x)
             @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T)))
             @test @inferred(logpartition(ef)) == getlogpartition(T)(η)
+            @test @inferred(gradlogpartition(ef)) == getgradlogpartition(NaturalParametersSpace(), T)(η)
             @test @inferred(fisherinformation(ef)) == getfisherinformation(T)(η)
         end
 

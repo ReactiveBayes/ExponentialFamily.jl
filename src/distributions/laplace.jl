@@ -152,6 +152,10 @@ function (::NaturalToMean{Laplace})(tuple_of_η::Tuple{Any}, _)
     return (-inv(η₁),)
 end
 
+function unpack_parameters(::Type{Laplace}, packed, _)
+    return (first(packed),)
+end
+
 function unpack_parameters(::Type{Laplace}, packed)
     return (first(packed),)
 end
