@@ -1,25 +1,34 @@
-@testitem "TensorDirichlet: common" begin
+@testitem "DirichletCollection: common" begin
     include("distributions_setuptests.jl")
 
-    @test TensorDirichlet <: Distribution
-    @test TensorDirichlet <: ContinuousDistribution
-    @test TensorDirichlet <: ContinuousTensorDistribution
+    @test DirichletCollection <: Distribution
+    @test DirichletCollection <: ContinuousDistribution
+    @test DirichletCollection{Float64, 3, Array{Float64, 3}} <: Distribution{ArrayLikeVariate{3}, Continuous}
 
-    @test value_support(TensorDirichlet) === Continuous
-    @test variate_form(TensorDirichlet) === ArrayLikeVariate
+    @test value_support(DirichletCollection) === Continuous
+    @test variate_form(DirichletCollection{Float64, 2, Array{Float64, 2}}) === Matrixvariate
+    for N in (2, 3, 4)
+        @test variate_form(DirichletCollection{Float64, N, Array{Float64, N}}) === ArrayLikeVariate{N}
+    end
 
-    @test_throws "ArgumentError: All elements of the alpha tensor should be positive" TensorDirichlet(zeros(3, 3, 3))
+    @test_throws "ArgumentError: All elements of the alpha tensor should be positive" DirichletCollection(zeros(3, 3, 3))
 end
 
-@testitem "TensorDirichlet: entropy" begin
+@testitem "DirichletCollection: entropy" begin
     include("distributions_setuptests.jl")
 
+    # Specific value tests
+    @test entropy(DirichletCollection([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ -1.3862943611198906
+    @test entropy(DirichletCollection([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ -3.1139933152617787
+    @test entropy(DirichletCollection([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ -11.444984495104693
+
+    # General tests
     for rank in (3, 5)
         for d in (2, 5, 10)
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 mat_entropy = sum(entropy.(mat_of_dir))
@@ -29,7 +38,7 @@ end
     end
 end
 
-@testitem "TensorDirichlet: var" begin
+@testitem "DirichletCollection: var" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
@@ -37,7 +46,7 @@ end
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 temp = var.(mat_of_dir)
@@ -51,7 +60,7 @@ end
     end
 end
 
-@testitem "TensorDirichlet: mean" begin
+@testitem "DirichletCollection: mean" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
@@ -59,7 +68,7 @@ end
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 temp = mean.(mat_of_dir)
@@ -73,15 +82,35 @@ end
     end
 end
 
-@testitem "TensorDirichlet: logmean" begin
+@testitem "DirichletCollection: logmean" begin
     include("distributions_setuptests.jl")
 
+    import Base.Broadcast: BroadcastFunction
+
+    # Specific value tests
+    @test mean(BroadcastFunction(log), DirichletCollection([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ [
+        -1.5000000000000002 -1.5000000000000002
+        -1.5000000000000002 -1.5000000000000002
+        -1.5000000000000002 -1.5000000000000002
+    ]
+    @test mean(BroadcastFunction(log), DirichletCollection([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ [
+        -2.1920720408623637 -1.1517536610071326
+        -0.646914475838374 -0.680458481634953
+        -1.480247809171707 -2.6103310904778305
+    ]
+    @test mean(BroadcastFunction(log), DirichletCollection([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ [
+        -6.879998107291004 -1.604778825293528
+        -0.08484054226701443 -0.32259407259407213
+        -6.879998107291004 -4.214965875553984
+    ]
+
+    # General tests
     for rank in (3, 5)
         for d in (2, 5, 10)
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 temp = mean.(Base.Broadcast.BroadcastFunction(log), mat_of_dir)
@@ -95,7 +124,7 @@ end
     end
 end
 
-@testitem "TensorDirichlet: std" begin
+@testitem "DirichletCollection: std" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
@@ -103,7 +132,7 @@ end
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 temp = std.(mat_of_dir)
@@ -117,7 +146,7 @@ end
     end
 end
 
-@testitem "TensorDirichlet: cov" begin
+@testitem "DirichletCollection: cov" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
@@ -125,7 +154,7 @@ end
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 temp = cov.(mat_of_dir)
@@ -141,12 +170,12 @@ end
     end
 end
 
-@testitem "TensorDirichlet: ExponentialFamilyDistribution" begin
+@testitem "DirichletCollection: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
     for len in 3:5
         α = rand(len, len, len) .+ 1
-        let d = TensorDirichlet(α)
+        let d = DirichletCollection(α)
             ef = test_exponentialfamily_interface(d;
                 option_assume_no_allocations = false,
                 nsamples_for_gradlogpartition_properties = 20000)
@@ -160,7 +189,7 @@ end
                 @test @inferred(logpartition(ef)) ≈ mapreduce(
                     d -> getlogpartition(NaturalParametersSpace(), Dirichlet)(convert(Vector, d)),
                     +,
-                    eachcol(reshape(first(unpack_parameters(TensorDirichlet, η1, conditioner)), len, len * len))
+                    eachcol(reshape(first(unpack_parameters(DirichletCollection, η1, conditioner)), len, len * len))
                 )
             end
         end
@@ -175,32 +204,32 @@ end
     c = [0.2, 3.4]
     d = [4.0, 5.0]
 
-    tensorDiri = Array{Float64, 3}(undef, (2, 2, 2))
+    dirichletCollection = Array{Float64, 3}(undef, (2, 2, 2))
 
-    tensorDiri[:, 1, 1] .= a
-    tensorDiri[:, 1, 2] .= b
-    tensorDiri[:, 2, 1] .= c
-    tensorDiri[:, 2, 2] .= d
+    dirichletCollection[:, 1, 1] .= a
+    dirichletCollection[:, 1, 2] .= b
+    dirichletCollection[:, 2, 1] .= c
+    dirichletCollection[:, 2, 2] .= d
 
     for space in (MeanParametersSpace(), NaturalParametersSpace())
-        @test isproper(space, TensorDirichlet, tensorDiri)
-        @test !isproper(space, TensorDirichlet, Inf)
-        tensorDiri[:, 1, 1] .= nan_test
-        @test !isproper(space, TensorDirichlet, tensorDiri)
-        tensorDiri[:, 1, 1] .= inf_test
-        @test !isproper(space, TensorDirichlet, tensorDiri)
-        tensorDiri[:, 1, 1] .= negative_num_test
-        @test !isproper(space, TensorDirichlet, tensorDiri)
-        tensorDiri[:, 1, 1] .= a
+        @test isproper(space, DirichletCollection, dirichletCollection)
+        @test !isproper(space, DirichletCollection, Inf)
+        dirichletCollection[:, 1, 1] .= nan_test
+        @test !isproper(space, DirichletCollection, dirichletCollection)
+        dirichletCollection[:, 1, 1] .= inf_test
+        @test !isproper(space, DirichletCollection, dirichletCollection)
+        dirichletCollection[:, 1, 1] .= negative_num_test
+        @test !isproper(space, DirichletCollection, dirichletCollection)
+        dirichletCollection[:, 1, 1] .= a
     end
-    tensorDiri[:, 1, 1] = negative_num_natural_param_test
-    @test !isproper(MeanParametersSpace(), TensorDirichlet, tensorDiri)
-    @test isproper(NaturalParametersSpace(), TensorDirichlet, tensorDiri)
+    dirichletCollection[:, 1, 1] = negative_num_natural_param_test
+    @test !isproper(MeanParametersSpace(), DirichletCollection, dirichletCollection)
+    @test isproper(NaturalParametersSpace(), DirichletCollection, dirichletCollection)
 
-    @test_throws Exception convert(ExponentialFamilyDistribution, TensorDirichlet([Inf Inf; 2 3]))
+    @test_throws Exception convert(ExponentialFamilyDistribution, DirichletCollection([Inf Inf; 2 3]))
 end
 
-@testitem "TensorDirichlet: prod with Distribution" begin
+@testitem "DirichletCollection: prod with Distribution" begin
     include("distributions_setuptests.jl")
 
     a = [1.0, 1.0]
@@ -224,50 +253,20 @@ end
     D3 = Array{Float64, 2}(undef, (2, 3))
     D3[:, 1] = D3[:, 2] = D3[:, 3] = a
 
-    d1 = TensorDirichlet(D1)
-    d2 = TensorDirichlet(D2)
-    d3 = TensorDirichlet(D3)
-    @test @inferred(
-        prod(PreserveTypeProd(Distribution), d1, d2) ≈ TensorDirichlet([0.3999999999999999 8.0 1.2000000000000002; 5.699999999999999 15.0 0.7000000000000002])
-    )
-    @test @inferred(prod(PreserveTypeProd(Distribution), d1, d3)) ≈ TensorDirichlet(
-        [0.19999999999999996 5.0 0.19999999999999996; 3.4000000000000004 11.0 0.6000000000000001]
-    )
-    @test @inferred(prod(PreserveTypeProd(Distribution), d2, d3)) ≈ TensorDirichlet([1.2000000000000002 4.0 2.0; 3.3 5.0 1.1])
-end
+    d1 = DirichletCollection(D1)
+    d2 = DirichletCollection(D2)
+    d3 = DirichletCollection(D3)
 
-@testitem "TensorDirichlet: prod with ExponentialFamilyDistribution" begin
-    include("distributions_setuptests.jl")
-    for rank in 3:6
-        for d in 3:6
-            αleft = rand([d for _ in 1:rank]...) .+ 1
-            αright = rand([d for _ in 1:rank]...) .+ 1
-            @testset let (left, right) = (TensorDirichlet(αleft), TensorDirichlet(αright))
-                test_generic_simple_exponentialfamily_product(
-                    left,
-                    right,
-                    strategies = (
-                        ClosedProd(),
-                        GenericProd()
-                    )
-                )
-            end
-        end
+    # Test all product strategies
+    for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd())
+        @test @inferred(prod(strategy, d1, d2)) ≈
+              DirichletCollection(D1 .+ D2 .- 1.0)
+        @test @inferred(prod(strategy, d1, d3)) ≈ DirichletCollection(D1 .+ D3 .- 1.0)
+        @test @inferred(prod(strategy, d2, d3)) ≈ DirichletCollection(D2 .+ D3 .- 1.0)
     end
 end
 
-@testitem "TensorDirichlet: promote_variate_type" begin
-    include("distributions_setuptests.jl")
-
-    @test_throws MethodError promote_variate_type(Univariate, TensorDirichlet)
-
-    @test promote_variate_type(Multivariate, Dirichlet) === Dirichlet
-    @test promote_variate_type(ArrayLikeVariate, Dirichlet) === TensorDirichlet
-
-    @test promote_variate_type(Multivariate, TensorDirichlet) === TensorDirichlet
-end
-
-@testitem "TensorDirichlet: prod with PreserveTypeProd{Distribution}" begin
+@testitem "DirichletCollection: prod with PreserveTypeProd{Distribution}" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 5)
@@ -275,8 +274,8 @@ end
             for _ in 1:10
                 alpha1 = rand([d for _ in 1:rank]...) .+ 1
                 alpha2 = rand([d for _ in 1:rank]...) .+ 1
-                distribution1 = TensorDirichlet(alpha1)
-                distribution2 = TensorDirichlet(alpha2)
+                distribution1 = DirichletCollection(alpha1)
+                distribution2 = DirichletCollection(alpha2)
 
                 mat_of_dir_1 = Dirichlet.(eachslice(alpha1, dims = Tuple(2:rank)))
                 mat_of_dir_2 = Dirichlet.(eachslice(alpha2, dims = Tuple(2:rank)))
@@ -290,23 +289,29 @@ end
                 for i in CartesianIndices(Base.tail(size(alpha1)))
                     mat_prod[:, i] = prod_temp[i].alpha
                 end
-                @test @inferred(prod(PreserveTypeProd(Distribution), distribution1, distribution2)) ≈ TensorDirichlet(mat_prod)
+                @test @inferred(prod(PreserveTypeProd(Distribution), distribution1, distribution2)) ≈ DirichletCollection(mat_prod)
             end
         end
     end
 end
 
-@testitem "TensorDirichlet: rand" begin
+@testitem "DirichletCollection: rand" begin
     include("distributions_setuptests.jl")
     using StableRNGs
     import Random: seed!
     rng = StableRNG(1234)
 
+    # Specific dimension tests
+    @test sum(rand(DirichletCollection(ones(3, 5))), dims = 1) ≈ ones(1, 5)
+    @test sum(rand(DirichletCollection(ones(5, 3))), dims = 1) ≈ ones(1, 3)
+    @test sum(rand(DirichletCollection(ones(5, 5))), dims = 1) ≈ ones(1, 5)
+
+    # General tests
     for rank in (3, 5)
         for d in (2, 3, 4, 5)
             seed!(rng, 1234)
             alpha = rand([d for _ in 1:rank]...) .+ 2
-            distribution = TensorDirichlet(alpha)
+            distribution = DirichletCollection(alpha)
             seed!(rng, 1234)
             sample = rand(rng, distribution)
 
@@ -331,21 +336,17 @@ end
     end
 end
 
-@testitem "TensorDirichlet: vague" begin
+@testitem "DirichletCollection: vague" begin
     include("distributions_setuptests.jl")
 
-    dirichlet = vague(TensorDirichlet, 3)
-    @test typeof(dirichlet.a) <: Array{Float64, 2}
-    @test size(dirichlet.a) == (3, 3)
+    @test_throws MethodError vague(DirichletCollection)
+    @test_throws MethodError vague(DirichletCollection, 3)
 
-    @test typeof(vague(TensorDirichlet, (2, 2, 2, 3)).a) <: Array{Float64, 4}
-
-    @test vague(TensorDirichlet, 3) == vague(TensorDirichlet, (3, 3))
-
-    @test_throws MethodError vague(TensorDirichlet)
+    @test typeof(vague(DirichletCollection, (2, 2, 2, 3)).α) <: Array{Float64, 4}
+    @test typeof(vague(DirichletCollection, (2, 2, 2, 3)).α0) <: Array{Float64, 4}
 end
 
-@testitem "TensorDirichlet: logpdf" begin
+@testitem "DirichletCollection: logpdf" begin
     include("distributions_setuptests.jl")
 
     for rank in (3, 4, 5, 6)
@@ -353,7 +354,7 @@ end
             for i in 1:10
                 alpha = rand([d for _ in 1:rank]...)
 
-                distribution = TensorDirichlet(alpha)
+                distribution = DirichletCollection(alpha)
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 sample = rand(distribution)
@@ -371,5 +372,60 @@ end
                 @test all(lpdf .≈ map(s -> sum(logpdf.(mat_of_dir, eachslice(s, dims = Tuple(2:rank)))), sample))
             end
         end
+    end
+end
+
+@testitem "DirichletCollection: specific entropy values" begin
+    include("distributions_setuptests.jl")
+
+    @test entropy(DirichletCollection([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ -1.3862943611198906
+    @test entropy(DirichletCollection([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ -3.1139933152617787
+    @test entropy(DirichletCollection([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ -11.444984495104693
+end
+
+@testitem "DirichletCollection: specific logmean values" begin
+    include("distributions_setuptests.jl")
+
+    import Base.Broadcast: BroadcastFunction
+
+    @test mean(BroadcastFunction(log), DirichletCollection([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ [
+        -1.5000000000000002 -1.5000000000000002
+        -1.5000000000000002 -1.5000000000000002
+        -1.5000000000000002 -1.5000000000000002
+    ]
+    @test mean(BroadcastFunction(log), DirichletCollection([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ [
+        -2.1920720408623637 -1.1517536610071326
+        -0.646914475838374 -0.680458481634953
+        -1.480247809171707 -2.6103310904778305
+    ]
+    @test mean(BroadcastFunction(log), DirichletCollection([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ [
+        -6.879998107291004 -1.604778825293528
+        -0.08484054226701443 -0.32259407259407213
+        -6.879998107291004 -4.214965875553984
+    ]
+end
+
+@testitem "DirichletCollection: specific rand dimension tests" begin
+    include("distributions_setuptests.jl")
+
+    @test sum(rand(DirichletCollection(ones(3, 5))), dims = 1) ≈ ones(1, 5)
+    @test sum(rand(DirichletCollection(ones(5, 3))), dims = 1) ≈ ones(1, 3)
+    @test sum(rand(DirichletCollection(ones(5, 5))), dims = 1) ≈ ones(1, 5)
+end
+
+@testitem "DirichletCollection: additional product strategies" begin
+    include("distributions_setuptests.jl")
+
+    d1 = DirichletCollection([0.2 3.4; 5.0 11.0; 0.2 0.6])
+    d2 = DirichletCollection([1.2 3.3; 4.0 5.0; 2.0 1.1])
+    d3 = DirichletCollection([1.0 1.0; 1.0 1.0; 1.0 1.0])
+
+    for strategy in (GenericProd(), ClosedProd(), PreserveTypeProd(Distribution), PreserveTypeLeftProd(), PreserveTypeRightProd())
+        @test @inferred(prod(strategy, d1, d2)) ≈
+              DirichletCollection([0.3999999999999999 5.699999999999999; 8.0 15.0; 1.2000000000000002 0.7000000000000002])
+        @test @inferred(prod(strategy, d1, d3)) ≈ DirichletCollection(
+            [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
+        )
+        @test @inferred(prod(strategy, d2, d3)) ≈ DirichletCollection([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
     end
 end

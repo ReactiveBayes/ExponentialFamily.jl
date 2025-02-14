@@ -5,7 +5,6 @@
 These are the distributions that are not included in the Distributions.jl package.
 
 ```@docs
-ExponentialFamily.MatrixDirichlet
 ExponentialFamily.GammaShapeRate
 ExponentialFamily.GammaShapeScale
 ExponentialFamily.NormalMeanPrecision
@@ -21,5 +20,5 @@ ExponentialFamily.WishartFast
 ExponentialFamily.InverseWishartFast
 ExponentialFamily.NormalGamma
 ExponentialFamily.MvNormalWishart
-ExponentialFamily.TensorDirichlet
+ExponentialFamily.DirichletCollection
 ```
