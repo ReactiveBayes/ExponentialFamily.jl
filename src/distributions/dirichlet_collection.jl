@@ -34,7 +34,11 @@ struct DirichletCollection{T <: Real, N, A <: AbstractArray{T, N}} <: Distributi
         end
         alpha0 = sum(alpha; dims = 1)
         lmnB = sum(loggamma, alpha; dims = 1) - loggamma.(alpha0)
-        new{T, N, typeof(alpha)}(alpha, alpha0, lmnB)
+        NT = promote_type(T, eltype(alpha0), eltype(lmnB))
+        alpha = convert_paramfloattype(NT, alpha)
+        alpha0 = convert_paramfloattype(NT, alpha0)
+        lmnB = convert_paramfloattype(NT, lmnB)
+        new{NT, N, typeof(alpha)}(alpha, alpha0, lmnB)
     end
 end
 
