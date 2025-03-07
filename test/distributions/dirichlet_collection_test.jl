@@ -11,6 +11,9 @@
         @test variate_form(DirichletCollection{Float64, N, Array{Float64, N}}) === ArrayLikeVariate{N}
     end
 
+    @test DirichletCollection(rand(3, 3, 3)) isa DirichletCollection{Float64, 3, Array{Float64, 3}}
+    @test DirichletCollection(rand(1:10, 3, 3, 3)) isa DirichletCollection{Float64, 3, Array{Float64, 3}}
+
     @test_throws "ArgumentError: All elements of the alpha tensor should be positive" DirichletCollection(zeros(3, 3, 3))
 end
 
