@@ -78,7 +78,8 @@ getsufficientstatistics(::Type{DirichletCollection}, conditioner) = (x -> vmap(l
 
 BayesBase.mean(dist::DirichletCollection) = dist.α ./ dist.α0
 BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::DirichletCollection) = digamma.(dist.α) .- digamma.(dist.α0)
-
+BayesBase.mean(::BroadcastFunction{typeof(clamplog)}, dist::DirichletCollection{T, N, A}) where {T, N, A} =
+    digamma.(clamp.(dist.α, tiny, typemax(T))) .- digamma.(dist.α0)
 function BayesBase.cov(dist::DirichletCollection{T}) where {T}
     s = size(dist.α)
     news = (first(s), first(s), Base.tail(s)...)
