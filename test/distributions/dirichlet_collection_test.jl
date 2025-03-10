@@ -11,6 +11,9 @@
         @test variate_form(DirichletCollection{Float64, N, Array{Float64, N}}) === ArrayLikeVariate{N}
     end
 
+    @test_throws ArgumentError DirichletCollection(zeros(3, 3, 3))
+    @test_throws ArgumentError DirichletCollection([1.0 0.0; 0.0 1.0])
+
     @test DirichletCollection(rand(3, 3, 3)) isa DirichletCollection{Float64, 3, Array{Float64, 3}}
     @test DirichletCollection(rand(1:10, 3, 3, 3)) isa DirichletCollection{Float64, 3, Array{Float64, 3}}
 
@@ -122,6 +125,48 @@ end
                     mat_mean[:, i] = temp[i]
                 end
                 @test mean(Base.Broadcast.BroadcastFunction(log), distribution) ≈ mat_mean
+            end
+        end
+    end
+end
+
+@testitem "DirichletCollection: clamplogmean" begin
+    include("distributions_setuptests.jl")
+
+    import Base.Broadcast: BroadcastFunction
+
+    # Specific value tests
+    @test mean(BroadcastFunction(clamplog), DirichletCollection([1.0 1.0; 1.0 1.0; 1.0 1.0])) ≈ [
+        -1.5000000000000002 -1.5000000000000002
+        -1.5000000000000002 -1.5000000000000002
+        -1.5000000000000002 -1.5000000000000002
+    ]
+    @test mean(BroadcastFunction(clamplog), DirichletCollection([1.2 3.3; 4.0 5.0; 2.0 1.1])) ≈ [
+        -2.1920720408623637 -1.1517536610071326
+        -0.646914475838374 -0.680458481634953
+        -1.480247809171707 -2.6103310904778305
+    ]
+    @test mean(BroadcastFunction(clamplog), DirichletCollection([0.2 3.4; 5.0 11.0; 0.2 0.6])) ≈ [
+        -6.879998107291004 -1.604778825293528
+        -0.08484054226701443 -0.32259407259407213
+        -6.879998107291004 -4.214965875553984
+    ]
+
+    # General tests
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
+
+                distribution = DirichletCollection(alpha)
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+
+                temp = mean.(Base.Broadcast.BroadcastFunction(clamplog), mat_of_dir)
+                mat_mean = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_mean[:, i] = temp[i]
+                end
+                @test mean(Base.Broadcast.BroadcastFunction(clamplog), distribution) ≈ mat_mean
             end
         end
     end
