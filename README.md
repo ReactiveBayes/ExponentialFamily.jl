@@ -1,8 +1,8 @@
 # ExponentialFamily.jl
 
-| **Documentation**                                                         | **Build Status**                                       | **Code Coverage**                       | 
-|:-------------------------------------------------------------------------:|:------------------------------------------------------:|:---------------------------------------:|
-| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI][ci-img]][ci-url] [![Aqua][aqua-img]][aqua-url]  | [![CodeCov][codecov-img]][codecov-url]  |
+| **Documentation**                                                         | **Build Status**                                       | **Code Coverage**                       | **Zenodo**                                                                             | 
+|:-------------------------------------------------------------------------:|:------------------------------------------------------:|:---------------------------------------:|:--------------------------------------------------------------------------------------:|
+| [![][docs-stable-img]][docs-stable-url] [![][docs-dev-img]][docs-dev-url] | [![CI][ci-img]][ci-url] [![Aqua][aqua-img]][aqua-url]  | [![CodeCov][codecov-img]][codecov-url]  |[![DOI](https://zenodo.org/badge/501995296.svg)](https://doi.org/10.5281/zenodo.7774921)|
 
 [ci-img]: https://github.com/reactivebayes/ExponentialFamily.jl/actions/workflows/CI.yml/badge.svg?branch=main
 [ci-url]: https://github.com/reactivebayes/ExponentialFamily.jl/actions
