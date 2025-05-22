@@ -712,32 +712,18 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
         invη2 = -cholinv(-η₂)
         n = size(η₁, 1)
         ident = Eye(n)
-        Iₙ = PermutationMatrix(1, 1)
+        kron_invη2 = kron(invη2, invη2)
+        trans_invη2_η₁ = transpose(invη2 * η₁)
+        kron_η₁_trans_invη2_η₁_ident = kron(η₁' * invη2, ident)
+        kron_ident_trans_invη2_η₁ = kron(ident, trans_invη2_η₁)
         offdiag =
-            1 / 4 * (invη2 * kron(ident, transpose(invη2 * η₁)) + invη2 * kron(η₁' * invη2, ident)) *
-            kron(ident, kron(Iₙ, ident))
+            1 / 4 * (invη2 * (kron_ident_trans_invη2_η₁ + kron_η₁_trans_invη2_η₁_ident))
         G =
             -1 / 4 *
-            (
-                kron(invη2, invη2) * kron(ident, η₁) * kron(ident, transpose(invη2 * η₁)) +
-                kron(invη2, invη2) * kron(η₁, ident) * kron(η₁' * invη2, ident)
-            ) * kron(ident, kron(Iₙ, ident)) + 1 / 2 * kron(invη2, invη2)
-        [-1/2*invη2 offdiag; offdiag' G]
+            (kron_invη2 * (kron(ident, η₁) * kron_ident_trans_invη2_η₁ + kron(η₁, ident) * kron_η₁_trans_invη2_η₁_ident)) + 1 / 2 * kron_invη2
+        return Hermitian([-1/2*invη2 offdiag; offdiag' G])
     end
 
-function PermutationMatrix(m, n)
-    P = Matrix{Int}(undef, m * n, m * n)
-    for i in 1:m*n
-        for j in 1:m*n
-            if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
-                P[i, j] = 1
-            else
-                P[i, j] = 0
-            end
-        end
-    end
-    P
-end
 
 getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
     μ, Σ = unpack_parameters(MvNormalMeanCovariance, θ)
