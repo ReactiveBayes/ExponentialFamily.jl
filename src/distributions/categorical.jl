@@ -13,8 +13,8 @@ BayesBase.default_prod_rule(::Type{<:Categorical}, ::Type{<:Categorical}) = Pres
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Categorical, right::Categorical)
     mvec = clamp.(probvec(left) .* probvec(right), tiny, huge)
-    norm = sum(mvec)
-    return Categorical(mvec ./ norm)
+    mvec ./= sum(mvec)
+    return Categorical(mvec; check_args = false)
 end
 
 BayesBase.probvec(dist::Categorical) = probs(dist)
