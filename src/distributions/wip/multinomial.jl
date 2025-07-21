@@ -57,7 +57,7 @@ end
 
 function pack_naturalparameters(dist::Multinomial)
     @inbounds p = params(dist)[2]
-    return vmap(log, p / p[end])
+    return map(log, p / p[end])
 end
 
 unpack_naturalparameters(ef::ExponentialFamilyDistribution{Multinomial}) = (getnaturalparameters(ef),)
@@ -68,7 +68,7 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Multinomial)
 end
 
 function Base.convert(::Type{Distribution}, exponentialfamily::ExponentialFamilyDistribution{Multinomial})
-    expη = vmap(exp, getnaturalparameters(exponentialfamily))
+    expη = map(exp, getnaturalparameters(exponentialfamily))
     p = expη / sum(expη)
     return Multinomial(getconditioner(exponentialfamily), p)
 end
@@ -109,7 +109,7 @@ function fisherinformation(expfamily::ExponentialFamilyDistribution{Multinomial}
     η = getnaturalparameters(expfamily)
     n = getconditioner(expfamily)
     I = Matrix{Float64}(undef, length(η), length(η))
-    seη = sum(vmap(exp, η))
+    seη = mapreduce(exp, +, η)
     @inbounds for i in 1:length(η)
         I[i, i] = exp(η[i]) * (seη - exp(η[i])) / (seη)^2
         @inbounds for j in 1:i-1

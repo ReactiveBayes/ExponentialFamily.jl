@@ -100,8 +100,8 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) 
                 )
             )
         end
-        sumη = vmapreduce(exp, +, η)
-        return vmap(d -> exp(d) / sumη, η)
+        sumη = mapreduce(exp, +, η)
+        return map(d -> exp(d) / sumη, η)
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =

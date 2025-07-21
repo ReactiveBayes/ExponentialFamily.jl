@@ -73,7 +73,7 @@ isbasemeasureconstant(::Type{DirichletCollection}) = ConstantBaseMeasure()
 getbasemeasure(::Type{DirichletCollection}, conditioner) = (x) -> one(Float64)
 getlogbasemeasure(::Type{DirichletCollection}, conditioner) = (x) -> zero(Float64)
 
-getsufficientstatistics(::Type{DirichletCollection}, conditioner) = (x -> vmap(log, x),)
+getsufficientstatistics(::Type{DirichletCollection}, conditioner) = (x -> map(log, x),)
 
 BayesBase.mean(dist::DirichletCollection) = dist.α ./ dist.α0
 BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::DirichletCollection) = digamma.(dist.α) .- digamma.(dist.α0)
