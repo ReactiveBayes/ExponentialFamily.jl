@@ -4,7 +4,6 @@ export logpartition
 import Distributions: Categorical, probs
 import LogExpFunctions: logsumexp
 import FillArrays: OneElement
-using LoopVectorization
 
 BayesBase.vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
 BayesBase.convert_paramfloattype(::Type{T}, distribution::Categorical) where {T <: Real} = Categorical(convert(AbstractVector{T}, probs(distribution)))
@@ -49,7 +48,7 @@ end
 function (::MeanToNatural{Categorical})(tuple_of_θ::Tuple{Any}, _)
     (p,) = tuple_of_θ
     pₖ = p[end]
-    return (LoopVectorization.vmap(pᵢ -> log(pᵢ / pₖ), p),)
+    return (map(pᵢ -> log(pᵢ / pₖ), p),)
 end
 
 function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where {V <: Vector}
@@ -101,8 +100,8 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) 
                 )
             )
         end
-        sumη = vmapreduce(exp, +, η)
-        return vmap(d -> exp(d) / sumη, η)
+        sumη = mapreduce(exp, +, η)
+        return map(d -> exp(d) / sumη, η)
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =

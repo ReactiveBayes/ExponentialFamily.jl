@@ -5,7 +5,6 @@ import SpecialFunctions: digamma, loggamma, trigamma
 import Base.Broadcast: BroadcastFunction
 
 using FillArrays
-using LoopVectorization
 using StaticArrays
 using LinearAlgebra
 using LogExpFunctions
@@ -20,7 +19,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right
 end
 
 BayesBase.probvec(dist::Dirichlet) = params(dist)[1]
-BayesBase.std(dist::Dirichlet)     = vmap(sqrt, var(dist))
+BayesBase.std(dist::Dirichlet)     = map(sqrt, var(dist))
 
 BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
 BayesBase.mean(::BroadcastFunction{typeof(clamplog)}, dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
@@ -54,7 +53,7 @@ unpack_parameters(::Type{Dirichlet}, packed) = (packed,)
 isbasemeasureconstant(::Type{Dirichlet}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Dirichlet}) = (x) -> one(Float64)
-getsufficientstatistics(::Type{Dirichlet}) = (x -> vmap(log, x),)
+getsufficientstatistics(::Type{Dirichlet}) = (x -> map(log, x),)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Dirichlet}) = (η) -> begin
     (η1,) = unpack_parameters(Dirichlet, η)

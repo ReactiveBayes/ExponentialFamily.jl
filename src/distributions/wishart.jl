@@ -5,7 +5,6 @@ import Base: ndims, size, convert
 import LinearAlgebra
 import SpecialFunctions: digamma
 import StatsFuns: logmvgamma
-using LoopVectorization
 
 """
     WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
@@ -38,7 +37,7 @@ BayesBase.params(dist::WishartFast)  = (dist.ν, cholinv(dist.invS))
 BayesBase.mean(dist::WishartFast)    = mean(convert(Wishart, dist))
 BayesBase.var(dist::WishartFast)     = var(convert(Wishart, dist))
 BayesBase.cov(dist::WishartFast)     = cov(convert(Wishart, dist))
-BayesBase.std(dist::WishartFast)     = vmap(sqrt, var(dist))
+BayesBase.std(dist::WishartFast)     = map(sqrt, var(dist))
 BayesBase.mode(dist::WishartFast)    = mode(convert(Wishart, dist))
 BayesBase.entropy(dist::WishartFast) = entropy(convert(Wishart, dist))
 

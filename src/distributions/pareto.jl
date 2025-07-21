@@ -41,7 +41,7 @@ function BayesBase.prod!(
     (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))
 
     if isapprox(conditioner_left, conditioner_right) && isapprox(conditioner_left, conditioner_container)
-        LoopVectorization.vmap!(+, η_container, η_left, η_right)
+        map!(+, η_container, η_left, η_right)
         return container
     end
 
