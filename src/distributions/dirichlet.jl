@@ -5,7 +5,6 @@ import SpecialFunctions: digamma, loggamma, trigamma
 import Base.Broadcast: BroadcastFunction
 
 using FillArrays
-using LoopVectorization
 using StaticArrays
 using LinearAlgebra
 using LogExpFunctions

@@ -7,7 +7,6 @@ using Distributions
 using SpecialFunctions, LogExpFunctions
 
 import FillArrays: Ones, Eye
-import LoopVectorization: vmap, vmapreduce
 using LinearAlgebra, Random
 
 using BlockArrays: BlockDiagonal

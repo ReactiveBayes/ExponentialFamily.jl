@@ -7,7 +7,6 @@ export getbasemeasure,
 export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
-using LoopVectorization
 using Distributions, LinearAlgebra, StaticArrays, Random
 
 import Base: map
@@ -1029,7 +1028,7 @@ function BayesBase.prod!(
         # Check that all three conditioners are either nothing or all are approximately equal
         if (isnothing(getconditioner(container)) && isnothing(getconditioner(left)) && isnothing(getconditioner(right))) ||
            (isapprox(getconditioner(left), getconditioner(right)) && isapprox(getconditioner(container), getconditioner(left)))
-            LoopVectorization.vmap!(
+            map!(
                 +,
                 getnaturalparameters(container),
                 getnaturalparameters(left),

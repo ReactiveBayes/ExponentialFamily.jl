@@ -5,7 +5,6 @@ import Base: ndims, size, convert
 import LinearAlgebra
 import SpecialFunctions: digamma
 import StatsFuns: logmvgamma
-using LoopVectorization
 
 """
     WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution

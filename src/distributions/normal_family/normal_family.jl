@@ -25,7 +25,6 @@ import Random: rand!
 import Distributions: logpdf
 import StatsFuns: invsqrt2π
 
-using LoopVectorization
 using StatsFuns: log2π
 using LinearAlgebra
 using SpecialFunctions
@@ -497,7 +496,7 @@ function BayesBase.rand!(
 ) where {T <: Real}
     randn!(rng, container)
     μ, σ = mean_std(dist)
-    @turbo for i in eachindex(container)
+    for i in eachindex(container)
         container[i] = μ + σ * container[i]
     end
     container

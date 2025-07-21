@@ -3,7 +3,6 @@ export Multinomial
 import Distributions: Multinomial, probs
 import StableRNGs: StableRNG
 using StaticArrays
-using LoopVectorization
 using LogExpFunctions
 
 vague(::Type{<:Multinomial}, n::Int, dims::Int) = Multinomial(n, ones(dims) ./ dims)
