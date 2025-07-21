@@ -236,7 +236,7 @@ BayesBase.promote_variate_type(::Type{Multivariate}, ::Type{<:NormalWeightedMean
 
 function Base.convert(::Type{Normal{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
     mean, std = mean_std(dist)
-    return Normal(convert(T, mean), convert(T, std))
+    return Normal(convert(T, T(mean)), convert(T, T(std)))
 end
 
 function Base.convert(::Type{Normal}, dist::UnivariateNormalDistributionsFamily{T}) where {T <: Real}
@@ -248,7 +248,7 @@ function Base.convert(
     dist::MultivariateNormalDistributionsFamily
 ) where {T <: Real, C <: Distributions.PDMats.PDMat{T, Matrix{T}}, M <: AbstractVector{T}}
     mean, cov = mean_cov(dist)
-    return MvNormal(convert(M, mean), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
+    return MvNormal(convert(M, M(mean)), Distributions.PDMats.PDMat(convert(AbstractMatrix{T}, cov)))
 end
 
 function Base.convert(::Type{MvNormal{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
@@ -267,7 +267,7 @@ end
 
 function Base.convert(::Type{NormalMeanVariance{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
     mean, var = mean_var(dist)
-    return NormalMeanVariance(convert(T, mean), convert(T, var))
+    return NormalMeanVariance(convert(T, T(mean)), convert(T, T(var)))
 end
 
 function Base.convert(::Type{MvNormalMeanCovariance{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
@@ -286,7 +286,7 @@ function Base.convert(
     dist::MultivariateNormalDistributionsFamily
 ) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
     mean, cov = mean_cov(dist)
-    return MvNormalMeanCovariance(convert(M, mean), convert(P, cov))
+    return MvNormalMeanCovariance(convert(M, M(mean)), convert(P, P(cov)))
 end
 
 function Base.convert(::Type{NormalMeanVariance}, dist::UnivariateNormalDistributionsFamily{T}) where {T <: Real}
@@ -301,7 +301,7 @@ end
 
 function Base.convert(::Type{NormalMeanPrecision{T}}, dist::UnivariateNormalDistributionsFamily) where {T <: Real}
     mean, precision = mean_precision(dist)
-    return NormalMeanPrecision(convert(T, mean), convert(T, precision))
+    return NormalMeanPrecision(convert(T, T(mean)), convert(T, T(precision)))
 end
 
 function Base.convert(::Type{MvNormalMeanPrecision{T}}, dist::MultivariateNormalDistributionsFamily) where {T <: Real}
@@ -320,7 +320,7 @@ function Base.convert(
     dist::MultivariateNormalDistributionsFamily
 ) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
     mean, precision = mean_precision(dist)
-    return MvNormalMeanPrecision(convert(M, mean), convert(P, precision))
+    return MvNormalMeanPrecision(convert(M, M(mean)), convert(P, P(precision)))
 end
 
 function Base.convert(::Type{NormalMeanPrecision}, dist::UnivariateNormalDistributionsFamily{T}) where {T <: Real}
@@ -338,7 +338,7 @@ function Base.convert(
     dist::UnivariateNormalDistributionsFamily
 ) where {T <: Real}
     weightedmean, precision = weightedmean_precision(dist)
-    return NormalWeightedMeanPrecision(convert(T, weightedmean), convert(T, precision))
+    return NormalWeightedMeanPrecision(convert(T, T(weightedmean)), convert(T, T(precision)))
 end
 
 function Base.convert(
@@ -360,7 +360,7 @@ function Base.convert(
     dist::MultivariateNormalDistributionsFamily
 ) where {T <: Real, M <: AbstractArray{T}, P <: AbstractArray{T}}
     weightedmean, precision = weightedmean_precision(dist)
-    return MvNormalWeightedMeanPrecision(convert(M, weightedmean), convert(P, precision))
+    return MvNormalWeightedMeanPrecision(convert(M, M(weightedmean)), convert(P, P(precision)))
 end
 
 function Base.convert(
