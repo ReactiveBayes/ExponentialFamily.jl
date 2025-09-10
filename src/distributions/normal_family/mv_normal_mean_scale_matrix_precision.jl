@@ -10,6 +10,7 @@ import Distributions: AbstractMvNormal
 Multivariate normal with parameters (μ, γ, G) where the precision matrix Λ = γ * G.
 
 At current state of development, this distribution simply returns a MvNormalMeanPrecision distribution.
+This means that after creation, it is not possible to recover the original parameters, such as `γ` and `G`.
 
 Requirements:
 * γ > 0
