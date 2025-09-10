@@ -24,7 +24,7 @@ struct MvNormalMeanScaleMatrixPrecision{ T <: Real, M <: AbstractVector{T}, H <:
     G::H
 end
 
-function MvNormalMeanScaleMatrixPrecisionb(μ::AbstractVector{<:Real}, γ::Real, G::AbstractMatrix{<:Real})
+function MvNormalMeanScaleMatrixPrecision(μ::AbstractVector{<:Real}, γ::Real, G::AbstractMatrix{<:Real})
     @assert size(G,1) == size(G,2) "G must be square"
     @assert γ > 0.0 "γ must be positive"
     @assert isposdef(Symmetric(G)) "G must be SPD"

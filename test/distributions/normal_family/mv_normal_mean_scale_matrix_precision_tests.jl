@@ -35,7 +35,8 @@ end
     for s in 1:6
         μ = randn(rng, s)
         γ = rand(rng)
-        G = randn(rng, s, s)*randn(rng, s, s)' + 1e-8*Matrix(I,s,s) # make sure it's pos definite
+        g = randn(rng, s, s)
+        G = g*g' + 1e-8*Matrix(I,s,s) # make sure it's pos definite
 
         @testset let d = MvNormalMeanScaleMatrixPrecision(μ, γ, G)
             ef = test_exponentialfamily_interface(d;)
@@ -44,7 +45,8 @@ end
 
     μ = randn(rng, 1)
     γ = rand(rng)
-    G = randn(rng, 1, 1)*randn(rng, 1, 1)' + 1e-8*Matrix(I,1,1) # make sure it's pos definite
+    g = randn(rng, 1, 1)
+    G = g*g' + 1e-8*Matrix(I,1,1) # make sure it's pos definite
 
     d = MvNormalMeanScaleMatrixPrecision(μ, γ, G)
     ef = convert(ExponentialFamilyDistribution, d)
@@ -64,7 +66,8 @@ end
 
     μ = [0.2, 3.0, 4.0]
     γ = 2.0
-    G = randn(rng, 3, 3)*randn(rng, 3, 3)' + 1e-8*Matrix(I,3,3) # make sure it's pos definite
+    g = randn(rng, 3, 3)
+    G = g*g' + 1e-8*Matrix(I,3,3) # make sure it's pos definite
     dist = MvNormalMeanScaleMatrixPrecision(μ, γ, G)
     rdist = MvNormalMeanPrecision(μ, γ * G)
 
