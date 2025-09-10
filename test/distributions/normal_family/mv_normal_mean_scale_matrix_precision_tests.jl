@@ -27,6 +27,23 @@ end
     @test ExponentialFamily.distrname(MvNormalMeanScaleMatrixPrecision(zeros(2))) === "MvNormalMeanPrecision"
 end
 
+@testitem "MvNormalMeanScaleMatrixPrecision: is alias to MvNormalMeanPrecision" begin
+    include("../distributions_setuptests.jl")
+
+    rng = StableRNG(42)
+    # integer works!
+    @test typeof(MvNormalMeanScaleMatrixPrecision([1], 1, [1;;])) <: MvNormalMeanPrecision
+
+    for s in 1:6
+        μ = randn(rng, s)
+        γ = rand(rng)
+        g = randn(rng, s, s)
+        G = g*g' + 1e-8*Matrix(I,s,s) # make sure it's pos definite
+
+        @test typeof(MvNormalMeanScaleMatrixPrecision(μ, γ, G)) <: MvNormalMeanPrecision
+    end
+end
+
 @testitem "MvNormalMeanScaleMatrixPrecision: ExponentialFamilyDistribution" begin
     include("../distributions_setuptests.jl")
 
