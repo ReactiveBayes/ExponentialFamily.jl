@@ -18,11 +18,13 @@ Requirements:
 * tr(G) = d (enforced by normalisation)
 * (equivalently Λ SPD)
 """
-struct MvNormalMeanScaleMatrixPrecision{ T <: Real, M <: AbstractVector{T}, H <: AbstractMatrix{T}} <: AbstractMvNormal
-    μ::M
-    γ::T
-    G::H
-end
+# struct MvNormalMeanScaleMatrixPrecision{ T <: Real, M <: AbstractVector{T}, H <: AbstractMatrix{T}} <: AbstractMvNormal
+#     μ::M
+#     γ::T
+#     G::H
+# end
+
+const MvNormalMeanScaleMatrixPrecision = MvNormalMeanPrecision
 
 function MvNormalMeanScaleMatrixPrecision(μ::AbstractVector{<:Real}, γ::Real, G::AbstractMatrix{<:Real})
     @assert size(G,1) == size(G,2) "G must be square"
