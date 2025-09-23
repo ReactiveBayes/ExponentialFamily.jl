@@ -5,8 +5,8 @@ SUITE["dirichlet_collection"] = BenchmarkGroup(
 )
 
 # `prod` BenchmarkGroup ========================
-for rank in (3, 4, 5, 6)
-    for d in (5, 10, 20)
+for rank in (3, 4, 5)
+    for d in (5, 10)
         left = DirichletCollection(rand([d for _ in 1:rank]...) .+ 1)
         right = DirichletCollection(rand([d for _ in 1:rank]...) .+ 1)
         SUITE["dirichlet_collection"]["prod"]["Closed(rank=$rank, d=$d)"] = @benchmarkable prod(ClosedProd(), $left, $right)
