@@ -100,6 +100,8 @@ end
 @testitem "MvNormalMeanCovariance: prod" begin
     include("./normal_family_setuptests.jl")
 
+    using StaticArrays
+
     for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
         @test prod(strategy, MvNormalMeanCovariance([-1, -1], [2, 2]), MvNormalMeanCovariance([1, 1], [2, 4])) ≈
               MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
@@ -113,6 +115,13 @@ end
 
         μ    = [1.0, 2.0, 3.0]
         Σ    = Diagonal([1.0, 2.0, 3.0])
+        dist = MvNormalMeanCovariance(μ, Σ)
+
+        @test prod(strategy, dist, dist) ≈
+              MvNormalWeightedMeanPrecision([2.0, 2.0, 2.0], diagm([2.0, 1.0, 2 / 3]))
+
+        μ = SVector(1.0, 2.0, 3.0)
+        Σ = [1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 3.0]
         dist = MvNormalMeanCovariance(μ, Σ)
 
         @test prod(strategy, dist, dist) ≈
