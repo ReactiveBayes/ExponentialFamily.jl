@@ -103,8 +103,8 @@ end
 
 function BayesBase.prod(
     ::PreserveTypeProd{Distribution},
-    left::MvNormalMeanCovariance{T1, <:AbstractVector, <:Matrix},
-    right::MvNormalMeanCovariance{T2, <:AbstractVector, <:Matrix}
+    left::MvNormalMeanCovariance{T1, <:Vector, <:Matrix},
+    right::MvNormalMeanCovariance{T2, <:Vector, <:Matrix}
 ) where {T1 <: LinearAlgebra.BlasFloat, T2 <: LinearAlgebra.BlasFloat}
     xi, W = weightedmean_precision(left)
 
