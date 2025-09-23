@@ -2,7 +2,9 @@
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
 ExponentialFamily = {path = "../../ExponentialFamily"}
