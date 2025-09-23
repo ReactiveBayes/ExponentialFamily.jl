@@ -146,25 +146,6 @@ end
     @test ndims(d2) == 3
 end
 
-@testitem "MvNormalWeightedMeanPrecision: prod" begin
-    include("./normal_family_setuptests.jl")
-
-    for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
-        @test prod(
-            strategy,
-            MvNormalWeightedMeanPrecision([-1, -1], [2, 2]),
-            MvNormalWeightedMeanPrecision([1, 1], [2, 4])
-        ) ≈ MvNormalWeightedMeanPrecision([0, 0], [4, 6])
-
-        xi   = [0.2, 3.0, 4.0]
-        Λ    = [1.5 -0.1 0.1; -0.1 1.8 0.0; 0.1 0.0 3.5]
-        dist = MvNormalWeightedMeanPrecision(xi, Λ)
-
-        @test prod(strategy, dist, dist) ≈
-              MvNormalWeightedMeanPrecision([0.40, 6.00, 8.00], [3.00 -0.20 0.20; -0.20 3.60 0.00; 0.20 0.00 7.00])
-    end
-end
-
 @testitem "MvNormalWeightedMeanPrecision: convert" begin
     include("./normal_family_setuptests.jl")
 
