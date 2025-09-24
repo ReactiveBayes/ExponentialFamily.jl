@@ -5,4 +5,4 @@ JuliaFormatter = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
 PkgBenchmark = "32113eaa-f34f-5b0d-bd6c-c81e245fc73d"
 
 [sources]
-ExponentialFamily = {path = "../../ExponentialFamily"}
+ExponentialFamily = {path = "../"}
