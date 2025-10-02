@@ -8,14 +8,7 @@
     @test_throws MethodError vague(Dirichlet)
 
     d1 = vague(Dirichlet, 2)
-
     @test typeof(d1) <: Dirichlet
-    @test probvec(d1) == ones(2)
-
-    d2 = vague(Dirichlet, 4)
-
-    @test typeof(d2) <: Dirichlet
-    @test probvec(d2) == ones(4)
 end
 
 @testitem "Dirichlet: mean(::typeof(log))" begin
@@ -91,4 +84,9 @@ end
             )
         end
     end
+end
+
+@testitem "Dirichlet: probvec does not exist" begin
+    include("distributions_setuptests.jl")
+    @test_throws ArgumentError probvec(Dirichlet([1.0, 2.0, 3.0]))
 end
