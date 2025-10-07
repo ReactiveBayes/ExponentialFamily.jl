@@ -167,6 +167,7 @@ BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, 
 
 `ExponentialFamilyDistribution` structure represents a generic exponential family distribution in natural parameterization.
 Type `T` can be either a distribution type (e.g. from the `Distributions.jl` package) or a variate type (e.g. `Univariate`).
+If you provide all four arguments, isproper() check is not called.
 In the context of the package, exponential family distributions are represented in the form:
 
 ```math
@@ -231,10 +232,10 @@ end
 function ExponentialFamilyDistribution(
     ::Type{T},
     naturalparameters::P,
-    conditioner = nothing
+    conditioner = nothing,
 ) where {T <: Distribution, P}
     if !isproper(NaturalParametersSpace(), T, naturalparameters, conditioner)
-        error(lazy"Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T).")
+        error(lazy"Parameter vector $(naturalparameters) is not a valid natural parameter for distribution $(T). Consider specifying 'ExponentialFamilyDistribution(..., attributes = nothing)' to skip this check.")
     end
     return ExponentialFamilyDistribution(T, naturalparameters, conditioner, nothing)
 end
