@@ -218,6 +218,27 @@ end
     end
 end
 
+@testitem "DirichletCollection: mode" begin
+    include("distributions_setuptests.jl")
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...)
+                distribution = DirichletCollection(alpha)
+
+                if !all(x -> x > one(x), alpha)
+                    @test_throws "ArgumentError: The mode is ill-defined for a Dirichlet random variable if any of the parameters is ≤ 1." mode(distribution)
+                else
+                    alpha0 = sum(alpha; dims = 1)
+                    t = eltype(alpha)
+                    tensor_mode = (alpha .- one(t)) ./ (alpha0 .- convert(t, rank))
+                    @test mode(distribution) ≈ tensor_mode
+                end
+            end
+        end
+    end
+end
+
 @testitem "DirichletCollection: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
