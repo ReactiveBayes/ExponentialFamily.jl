@@ -1,5 +1,6 @@
 using LinearAlgebra
 using StaticArrays
+using ExponentialFamily.BayesBase
 
 SUITE["mvnormal_mean_covariance"] = BenchmarkGroup(
     ["mvnormal_mean_covariance", "normal_family", "distribution"],
@@ -93,5 +94,15 @@ let dims_dense = (10, 50, 100)
                     @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
             end
         end
+    end
+end
+
+# compute_logscale ==============
+
+for dims in (10, 50, 100)
+    for T in (Float64, Float32, Float16)
+        dist = dense_dist(T, dims)
+        SUITE["mvnormal_mean_covariance"]["compute_logscale"]["d=$dims"]["$(T)"] =
+            @benchmarkable compute_logscale($dist, $dist, $dist)
     end
 end

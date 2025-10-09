@@ -37,14 +37,14 @@ let dims_dense = (10, 50, 100)
         for (TL, TR) in ((Float64, Float64), (Float32, Float32), (Float32, Float64))
             left = dense_dist(TL, d)
             right = dense_dist(TR, d)
-            SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["Dense×Dense"]["d=$d"]["$(TL)×$(TR)"] =
+            SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["Dense×Dense"]["d=$d"]["$(TL)×$(TR)"] =
                 @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
         end
         # Mixed lower precision (generic path)
         let TL = Float16, TR = Float64
             left = dense_dist(TL, d)
             right = dense_dist(TR, d)
-            SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["Dense×Dense"]["d=$d"]["Float16×Float64"] =
+            SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["Dense×Dense"]["d=$d"]["Float16×Float64"] =
                 @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
         end
     end
@@ -53,12 +53,12 @@ let dims_dense = (10, 50, 100)
     for d in dims_dense
         left = dense_dist(Float64, d)
         right = diag_dist(Float64, d)
-        SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["Dense×Diag"]["d=$d"]["Float64×Float64"] =
+        SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["Dense×Diag"]["d=$d"]["Float64×Float64"] =
             @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
 
         left = dense_dist(Float32, d)
         right = diag_dist(Float64, d)
-        SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["Dense×Diag"]["d=$d"]["Float32×Float64"] =
+        SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["Dense×Diag"]["d=$d"]["Float32×Float64"] =
             @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
     end
 
@@ -66,7 +66,7 @@ let dims_dense = (10, 50, 100)
     for d in (10, 50, 100)
         left = diag_dist(Float64, d)
         right = diag_dist(Float64, d)
-        SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["Diag×Diag"]["d=$d"]["Float64×Float64"] =
+        SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["Diag×Diag"]["d=$d"]["Float64×Float64"] =
             @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
     end
 
@@ -77,21 +77,31 @@ let dims_dense = (10, 50, 100)
                 # Static × Static
                 left = static_dist(TL, Val(D))
                 right = static_dist(TR, Val(D))
-                SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["SArray×SArray"]["d=$D"]["$(TL)×$(TR)"] =
+                SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["SArray×SArray"]["d=$D"]["$(TL)×$(TR)"] =
                     @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
 
                 # Static × Dense
                 left = static_dist(TL, Val(D))
                 right = dense_dist(TR, D)
-                SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["SArray×Dense"]["d=$D"]["$(TL)×$(TR)"] =
+                SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["SArray×Dense"]["d=$D"]["$(TL)×$(TR)"] =
                     @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
 
                 # Static × Diagonal
                 left = static_dist(TL, Val(D))
                 right = diag_dist(TR, D)
-                SUITE["mvnormal_mean_covariance"]["prod"]["PreserveType"]["SArray×Diag"]["d=$D"]["$(TL)×$(TR)"] =
+                SUITE["mvnormal_mean_precision"]["prod"]["PreserveType"]["SArray×Diag"]["d=$D"]["$(TL)×$(TR)"] =
                     @benchmarkable prod(PreserveTypeProd(Distribution), $left, $right)
             end
         end
+    end
+end
+
+# compute_logscale ==============
+
+for dims in (10, 50, 100)
+    for T in (Float64, Float32)
+        dist = dense_dist(T, dims)
+        SUITE["mvnormal_mean_precision"]["compute_logscale"]["d=$dims"]["$(T)"] =
+            @benchmarkable compute_logscale($dist, $dist, $dist)
     end
 end
