@@ -53,6 +53,16 @@ function BayesBase.pdf(dist::DirichletCollection, xs::AbstractVector)
     return map(x -> pdf(dist, x), xs)
 end
 
+function Distributions.mode(dist::DirichletCollection)
+    alpha, alpha0 = dist.α, dist.α0
+    if !all(x -> x > one(x), alpha)
+        throw(ArgumentError("The mode is ill-defined for a Dirichlet random variable if any of the parameters is ≤ 1."))
+    end
+
+    d = convert(eltype(alpha), float(size(alpha)[1])) # dimension of the Dirichlet variables, converted to the right type
+    return (alpha .- one(d)) ./ (alpha0 .- d)
+end
+
 BayesBase.params(dist::DirichletCollection) = (dist.α,)
 
 function unpack_parameters(::Type{DirichletCollection}, packed, conditioner)
