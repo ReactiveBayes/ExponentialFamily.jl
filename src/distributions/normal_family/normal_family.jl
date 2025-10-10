@@ -464,9 +464,14 @@ function BayesBase.compute_logscale(
     m_right, v_right = mean_cov(right)
     v                = v_left + v_right
     n                = length(left)
-    v_inv, v_logdet  = cholinv_logdet(v)
     m                = m_left - m_right
-    return -(v_logdet + n * log2π) / 2 - dot3arg(m, v_inv, m) / 2
+
+    # factor once useing fastcholesky
+    F = fastcholesky(v)          # returns Cholesky factorization object
+    v_logdet = logdet(F)         # uses the factor
+    sol = F \ m                  # triangular solves, no inverse formed
+
+    return -(v_logdet + n * log2π) / 2 - dot(m, sol) / 2
 end
 
 BayesBase.logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(NormalMeanPrecision, dist)
