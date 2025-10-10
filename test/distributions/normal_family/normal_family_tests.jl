@@ -378,7 +378,7 @@ end
     end
 end
 
-@testitem "Diffrentiabilty of ExponentialFamily(ExponentialFamily.MvNormalMeanCovariance) logpdf" begin
+@testitem "Differentiability of ExponentialFamily(ExponentialFamily.MvNormalMeanCovariance) logpdf" begin
     include("./normal_family_setuptests.jl")
     for i in 1:5, d in 2:3
         rng = StableRNG(d * i)
@@ -394,16 +394,16 @@ end
         ef = convert(ExponentialFamilyDistribution, MvNormalMeanCovariance(μ, Σ))
 
         nat_space2mean_space = (η) -> begin
-            dist = convert(Distribution, ExponentialFamilyDistribution(MvNormalMeanCovariance, η))
+            dist = convert(Distribution, ExponentialFamilyDistribution(MvNormalMeanCovariance, η, nothing, nothing))
             μ, Σ = mean(dist), cov(dist)
             pack_parameters(MvNormalMeanCovariance, (μ, Σ))
         end
 
         for sample in eachcol(samples)
             mean_gradient = ForwardDiff.gradient(Base.Fix2(gaussianlpdffortest, sample), θ)
-            nat_gradient = ForwardDiff.gradient((η) -> logpdf(ExponentialFamilyDistribution(MvNormalMeanCovariance, η), sample), getnaturalparameters(ef))
+            nat_gradient = ForwardDiff.gradient((η) -> logpdf(ExponentialFamilyDistribution(MvNormalMeanCovariance, η, nothing, nothing), sample), getnaturalparameters(ef))
             jacobian = ForwardDiff.jacobian(nat_space2mean_space, getnaturalparameters(ef))
-            #autograd failing to compute jacobian of matrix part correclty. Comparing only vector (mean) part.
+            # # autograd failing to compute jacobian of matrix part correclty. Comparing only vector (mean) part.
             @test nat_gradient[1:d] ≈ (jacobian'*mean_gradient)[1:d]
         end
     end
