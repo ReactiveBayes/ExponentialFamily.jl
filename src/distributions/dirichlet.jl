@@ -13,19 +13,21 @@ BayesBase.vague(::Type{<:Dirichlet}, dims::Int) = Dirichlet(ones(dims))
 BayesBase.default_prod_rule(::Type{<:Dirichlet}, ::Type{<:Dirichlet}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::Dirichlet, right::Dirichlet)
-    mvec = probvec(left) .+ probvec(right)
+    probvec_left = params(left)[1]
+    probvec_right = params(right)[1]
+    mvec = probvec_left .+ probvec_right
     mvec = mvec .- one(eltype(mvec))
     return Dirichlet(mvec)
 end
 
-BayesBase.probvec(dist::Dirichlet) = params(dist)[1]
+BayesBase.probvec(dist::Dirichlet) = throw(ArgumentError("`probvec` is not defined for Dirichlet. Dirichlet represents a distribution over probability vectors, not a discrete distribution."))
 BayesBase.std(dist::Dirichlet)     = map(sqrt, var(dist))
 
-BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::Dirichlet)      = digamma.(probvec(dist)) .- digamma(sum(probvec(dist)))
-BayesBase.mean(::BroadcastFunction{typeof(clamplog)}, dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in probvec(dist))) .- digamma(sum(probvec(dist)))
+BayesBase.mean(::BroadcastFunction{typeof(log)}, dist::Dirichlet)      = digamma.(params(dist)[1]) .- digamma(sum(params(dist)[1]))
+BayesBase.mean(::BroadcastFunction{typeof(clamplog)}, dist::Dirichlet) = digamma.((clamp(p, tiny, typemax(p)) for p in params(dist)[1])) .- digamma(sum(params(dist)[1]))
 
 function BayesBase.compute_logscale(new_dist::Dirichlet, left_dist::Dirichlet, right_dist::Dirichlet)
-    return logmvbeta(probvec(new_dist)) - logmvbeta(probvec(left_dist)) - logmvbeta(probvec(right_dist))
+    return logmvbeta(params(new_dist)[1]) - logmvbeta(params(left_dist)[1]) - logmvbeta(params(right_dist)[1])
 end
 
 function BayesBase.insupport(ef::ExponentialFamilyDistribution{Dirichlet}, x)

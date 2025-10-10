@@ -20,6 +20,48 @@
     @test MvNormalMeanScalePrecision([1, 2, 3, 4], 7.0) == MvNormalMeanScalePrecision([1.0, 2.0, 3.0, 4.0], 7.0)
 end
 
+@testitem "MvNormalMeanScalePrecision: prod" begin
+    include("./normal_family_setuptests.jl")
+    using LinearAlgebra, StaticArrays
+
+    mk_dense(T) = MvNormalMeanScalePrecision(T[1, 4, 3], T(2))
+    mk_diag(T)  = MvNormalMeanScalePrecision(T[2, 2, 1], T(3))  # same form; diag path is via scale
+    mk_sarr(T)  = MvNormalMeanScalePrecision(SVector{3, T}(1, 2, 3), T(4))
+    mk_mixed(T) = MvNormalMeanScalePrecision(SVector{3, T}(1, 2, 3), T(5))
+
+    cases = [
+        ("Dense64×Dense64", mk_dense(Float64), mk_dense(Float64)),
+        ("Dense32×Dense32", mk_dense(Float32), mk_dense(Float32)),
+        ("Dense32×Dense64", mk_dense(Float32), mk_dense(Float64)),
+        ("Dense16×Dense64", mk_dense(Float16), mk_dense(Float64)),
+        ("Dense64×Diag64", mk_dense(Float64), mk_diag(Float64)),
+        ("Diag64×Diag64", mk_diag(Float64), mk_diag(Float64)),
+        ("SArray64×SArray64", mk_sarr(Float64), mk_sarr(Float64)),
+        ("SArray16×Dense64", mk_sarr(Float16), mk_dense(Float64)),
+        ("Dense64×Mixed64", mk_dense(Float64), mk_mixed(Float64)),
+        ("Mixed64×Dense64", mk_mixed(Float64), mk_dense(Float64)),
+        ("Mixed64×Mixed64", mk_mixed(Float64), mk_mixed(Float64))
+    ]
+
+    for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+        @test prod(strategy, MvNormalMeanScalePrecision([-1, -1], 2), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
+              MvNormalWeightedMeanPrecision([0, 2], [4, 6])
+        for (label, left, right) in cases
+            res = prod(strategy, left, right)
+            xiL, WL = weightedmean_precision(left)
+            xiR, WR = weightedmean_precision(right)
+            expected = MvNormalWeightedMeanPrecision(xiL + xiR, WL + WR)
+
+            @test res ≈ expected
+            @test prod(strategy, right, left) ≈ expected
+        end
+    end
+
+    left  = mk_dense(Float64)  # d=3
+    right = MvNormalMeanScalePrecision(Float64[1, 2], 2.0) # d=2
+    @test_throws DimensionMismatch prod(PreserveTypeProd(Distribution), left, right)
+end
+
 @testitem "MvNormalMeanScalePrecision: distrname" begin
     include("./normal_family_setuptests.jl")
 
@@ -128,22 +170,6 @@ end
     @test mean(d2) == zeros(3)
     @test invcov(d2) == Matrix(Diagonal(1e-12 * ones(3)))
     @test ndims(d2) == 3
-end
-
-@testitem "MvNormalMeanScalePrecision: prod" begin
-    include("./normal_family_setuptests.jl")
-
-    for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
-        @test prod(strategy, MvNormalMeanScalePrecision([-1, -1], 2), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
-              MvNormalWeightedMeanPrecision([0, 2], [4, 6])
-
-        μ    = [1.0, 2.0, 3.0]
-        γ    = 2.0
-        dist = MvNormalMeanScalePrecision(μ, γ)
-
-        @test prod(strategy, dist, dist) ≈
-              MvNormalMeanScalePrecision([1.0, 2.0, 3.0], 2γ)
-    end
 end
 
 @testitem "MvNormalMeanScalePrecision: convert" begin

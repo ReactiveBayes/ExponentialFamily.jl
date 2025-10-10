@@ -408,3 +408,49 @@ end
         end
     end
 end
+
+@testitem "MvNormalMeanCovariance: compute_logscale" begin
+    include("./normal_family_setuptests.jl")
+
+    left = MvNormalMeanCovariance([1.0, -1.0], [2.0 3.0; 3.0 4.0])
+    right = MvNormalMeanCovariance([2.5, 1.2], [3.0 1.0; 1.0 2.0])
+
+    @test compute_logscale(left, left, right) ≈ -3.5609771597884032
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+
+    left = MvNormalMeanCovariance([0.0, 0.0], [1.0 0.0; 0.0 1.0])
+    right = MvNormalMeanCovariance([1.0, -1.0], [2.0 0.5; 0.5 1.0])
+
+    @test compute_logscale(left, left, right) ≈ -3.234216124248758
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+
+    left = MvNormalMeanCovariance([-2.0, 3.0], [3.0 1.0; 1.0 2.0])
+    right = MvNormalMeanCovariance([0.5, 0.5], [1.5 0.2; 0.2 1.5])
+
+    @test compute_logscale(left, left, right) ≈ -5.439495426785419
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+
+    left = MvNormalMeanCovariance([10.0, -10.0], [5.0 0.0; 0.0 2.0])
+    right = MvNormalMeanCovariance([2.5, 1.2], [3.0 1.0; 1.0 2.0])
+
+    @test compute_logscale(left, left, right) ≈ -26.07938679768417
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+
+    left = MvNormalMeanCovariance([0.0, 0.0, 0.0], Matrix(Diagonal([1.0, 2.0, 3.0])))
+    right = MvNormalMeanCovariance([0.0, 0.0, 0.0], Matrix(Diagonal([1.0, 2.0, 3.0])))
+
+    @test compute_logscale(left, left, right) ≈ -4.692416105067964
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+
+    left = MvNormalMeanCovariance([1.0, 2.0, 3.0], [2.0 0.1 0.0; 0.1 2.0 0.1; 0.0 0.1 2.0])
+    right = MvNormalMeanCovariance([-1.0, -2.0, -3.0], [3.0 0.5 0.2; 0.5 3.0 0.5; 0.2 0.5 3.0])
+
+    @test compute_logscale(left, left, right) ≈ -10.04009658793601
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+
+    left = MvNormalMeanCovariance([0.0, 1.0, 2.0, 3.0], Matrix(Diagonal([1.0, 1.0, 1.0, 1.0])))
+    right = MvNormalMeanCovariance([1.0, 2.0, 3.0, 4.0], Matrix(Diagonal([1.0, 2.0, 3.0, 4.0])))
+
+    @test compute_logscale(left, left, right) ≈ -6.711166670876381
+    @test compute_logscale(right, right, left) == compute_logscale(left, left, right)
+end
