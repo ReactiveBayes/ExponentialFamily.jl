@@ -460,6 +460,12 @@ function BayesBase.compute_logscale(
     L <: MultivariateNormalDistributionsFamily,
     R <: MultivariateNormalDistributionsFamily
 }
+    m_left, v_left   = mean_cov(left)
+    m_right, v_right = mean_cov(right)
+    v                = v_left + v_right
+    n                = length(left)
+    m                = m_left - m_right
+
     # factor once useing fastcholesky
     F = fastcholesky(v)          # returns Cholesky factorization object
     v_logdet = logdet(F)         # uses the factor
