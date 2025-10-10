@@ -453,7 +453,7 @@ function BayesBase.prod(
     return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
 
-function compute_logscale_v2_opt(
+function BayesBase.compute_logscale(
     left::L, right::R
 ) where {
     L <: MultivariateNormalDistributionsFamily,
