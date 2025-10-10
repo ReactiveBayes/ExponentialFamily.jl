@@ -453,10 +453,9 @@ function BayesBase.prod(
     return prod(BayesBase.default_prod_rule(wleft, wright), wleft, wright)
 end
 
-function BayesBase.compute_logscale(
-    ::N, left::L, right::R
+function compute_logscale_v2_opt(
+    left::L, right::R
 ) where {
-    N <: MultivariateNormalDistributionsFamily,
     L <: MultivariateNormalDistributionsFamily,
     R <: MultivariateNormalDistributionsFamily
 }
@@ -465,7 +464,13 @@ function BayesBase.compute_logscale(
     v                = v_left + v_right
     n                = length(left)
     m                = m_left - m_right
-    return -(logdet(v) + n * log2π) / 2 - dot(m, v \ m) / 2
+
+    # factor once useing fastcholesky
+    F = fastcholesky(v)          # returns Cholesky factorization object
+    v_logdet = logdet(F)         # uses the factor
+    sol = F \ m                  # triangular solves, no inverse formed
+
+    return -(v_logdet + n * log2π) / 2 - dot(m, sol) / 2
 end
 
 BayesBase.logpdf_optimized(dist::UnivariateNormalDistributionsFamily) = convert(NormalMeanPrecision, dist)
