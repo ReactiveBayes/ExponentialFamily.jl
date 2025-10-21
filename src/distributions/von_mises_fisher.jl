@@ -60,13 +60,13 @@ function (::NaturalToMean{VonMisesFisher})(tuple_of_η::Tuple{Any})
 end
 
 function unpack_parameters(::MeanParametersSpace, ::Type{VonMisesFisher}, packed, ::Nothing)
-    (μ, κ) = (view(packed, 1:length(packed)-1), packed[end])
+    (μ, κ) = (view(packed, 1:(length(packed)-1)), packed[end])
 
     return (μ, κ)
 end
 
 function unpack_parameters(::MeanParametersSpace, ::Type{VonMisesFisher}, packed)
-    (μ, κ) = (view(packed, 1:length(packed)-1), packed[end])
+    (μ, κ) = (view(packed, 1:(length(packed)-1)), packed[end])
 
     return (μ, κ)
 end

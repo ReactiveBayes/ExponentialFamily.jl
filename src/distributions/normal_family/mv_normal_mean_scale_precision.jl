@@ -47,7 +47,7 @@ function MvNormalMeanScalePrecision(μ::AbstractVector{T1}, γ::T2) where {T1, T
 end
 
 function unpack_parameters(::Type{MvNormalMeanScalePrecision}, packed)
-    p₁ = view(packed, 1:length(packed)-1)
+    p₁ = view(packed, 1:(length(packed)-1))
     p₂ = packed[end]
 
     return (p₁, p₂)
@@ -215,7 +215,7 @@ getlogbasemeasure(::Type{MvNormalMeanScalePrecision}) = (x) -> -length(x) / 2 * 
 
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
-        η1 = @view η[1:end-1]
+        η1 = @view η[1:(end-1)]
         η2 = η[end]
         k = length(η1)
         Cinv = inv(η2)
@@ -224,7 +224,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
-        η1 = @view η[1:end-1]
+        η1 = @view η[1:(end-1)]
         η2 = η[end]
         inv2 = inv(η2)
         k = length(η1)
@@ -233,7 +233,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}
 
 getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
-        η1 = @view η[1:end-1]
+        η1 = @view η[1:(end-1)]
         η2 = η[end]
         k = length(η1)
 
@@ -248,7 +248,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
 
 getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (θ) -> begin
-        μ = @view θ[1:end-1]
+        μ = @view θ[1:(end-1)]
         γ = θ[end]
         k = length(μ)
 

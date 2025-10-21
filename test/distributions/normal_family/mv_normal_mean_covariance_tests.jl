@@ -29,8 +29,8 @@ end
 @testitem "MvNormalMeanCovariance: Stats methods" begin
     include("./normal_family_setuptests.jl")
 
-    μ    = [0.2, 3.0, 4.0]
-    Σ    = [1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5]
+    μ = [0.2, 3.0, 4.0]
+    Σ = [1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5]
     dist = MvNormalMeanCovariance(μ, Σ)
 
     @test mean(dist) == μ
