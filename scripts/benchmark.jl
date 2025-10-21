@@ -12,4 +12,5 @@ else
     name = first(ARGS)
     result = BenchmarkTools.judge(ExponentialFamily, name; judgekwargs = Dict(:time_tolerance => 0.1, :memory_tolerance => 0.05))
     safe_name = replace(name, '/' => '-')
-    export_markdown("./benchmark_logs/benchmark_vs_$(safe_name)_result.md", result)end
+    export_markdown("./benchmark_logs/benchmark_vs_$(safe_name)_result.md", result)
+end

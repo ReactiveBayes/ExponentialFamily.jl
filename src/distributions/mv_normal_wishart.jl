@@ -156,7 +156,7 @@ function unpack_parameters(::Type{MvNormalWishart}, η)
     d = Int64((-1 + isqrt(1 - 4 * (2 - len))) / 2)
 
     @inbounds η1 = view(η, 1:d)
-    @inbounds η2 = reshape(view(η, d+1:d^2+d), d, d)
+    @inbounds η2 = reshape(view(η, (d+1):(d^2+d)), d, d)
     @inbounds η3 = η[d^2+d+1]
     @inbounds η4 = η[d^2+d+2]
 
@@ -235,21 +235,21 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) =
         @inbounds begin
             ##diagonals
             fimatrix[1:d, 1:d] = -constant * ((kroninv * (kronright + kronleft))' * (kronleft + kronright)) + constant * invϕ / η3
-            fimatrix[d+1:d^2+d, d+1:d^2+d] = -4 * constant * kroninv
+            fimatrix[(d+1):(d^2+d), (d+1):(d^2+d)] = -4 * constant * kroninv
             fimatrix[d^2+d+1, d^2+d+1] = constant * vinvϕ' * (kronη1) / η3^3 - (constant / (4 * η3^4)) * (kroninv * kronη1)' * kronη1 + d / (2η3^2)
             fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, -constant)
 
             ##offdiagonals
-            fimatrix[1:d, d+1:d^2+d] = 2constant * (kroninv * (kronright + kronleft))'
-            fimatrix[d+1:d^2+d, 1:d] = fimatrix[1:d, d+1:d^2+d]'
+            fimatrix[1:d, (d+1):(d^2+d)] = 2constant * (kroninv * (kronright + kronleft))'
+            fimatrix[(d+1):(d^2+d), 1:d] = fimatrix[1:d, (d+1):(d^2+d)]'
             fimatrix[1:d, d^2+d+1] = (constant) * ((kroninv * (kronleft + kronright))' * kronη1 / (2 * η3^2) - (kronleft + kronright)' * vinvϕ / η3)
             fimatrix[d^2+d+1, 1:d] = fimatrix[1:d, d^2+d+1]'
             fimatrix[1:d, end] = -vinvϕ' * (kronleft + kronright)
             fimatrix[end, 1:d] = fimatrix[1:d, end]'
-            fimatrix[d+1:d^2+d, d^2+d+1] = -constant / (η3^2) * kroninv * kronη1
-            fimatrix[d^2+d+1, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+1]'
-            fimatrix[d+1:d^2+d, d^2+d+2] = 2vinvϕ
-            fimatrix[d^2+d+2, d+1:d^2+d] = fimatrix[d+1:d^2+d, d^2+d+2]'
+            fimatrix[(d+1):(d^2+d), d^2+d+1] = -constant / (η3^2) * kroninv * kronη1
+            fimatrix[d^2+d+1, (d+1):(d^2+d)] = fimatrix[(d+1):(d^2+d), d^2+d+1]'
+            fimatrix[(d+1):(d^2+d), d^2+d+2] = 2vinvϕ
+            fimatrix[d^2+d+2, (d+1):(d^2+d)] = fimatrix[(d+1):(d^2+d), d^2+d+2]'
             fimatrix[d^2+d+1, d^2+d+2] = vinvϕ' * kronη1 / (2η3^2)
             fimatrix[d^2+d+2, d^2+d+1] = fimatrix[d^2+d+1, d^2+d+2]
         end
@@ -280,7 +280,7 @@ getfisherinformation(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> b
     @inbounds begin
         ##diagonals
         fimatrix[1:d, 1:d] = ν * κ * T
-        fimatrix[d+1:d^2+d, d+1:d^2+d] = (ν / 2) * kronT
+        fimatrix[(d+1):(d^2+d), (d+1):(d^2+d)] = (ν / 2) * kronT
         fimatrix[d^2+d+1, d^2+d+1] = d / (2κ^2)
         fimatrix[d^2+d+2, d^2+d+2] = mvtrigamma(d, ν / 2) / 4
 

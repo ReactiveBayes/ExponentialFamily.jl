@@ -9,7 +9,7 @@
         @testset let d = Pareto(shape, scale)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
             η1 = -shape - 1
-            for x in scale:1.0:scale+3.0
+            for x in scale:1.0:(scale+3.0)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === oneunit(x)
                 @test @inferred(sufficientstatistics(ef, x)) === (log(x),)

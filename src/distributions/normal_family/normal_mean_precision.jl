@@ -19,7 +19,7 @@ end
 NormalMeanPrecision(μ::Real, w::Real)       = NormalMeanPrecision(promote(μ, w)...)
 NormalMeanPrecision(μ::Integer, w::Integer) = NormalMeanPrecision(float(μ), float(w))
 NormalMeanPrecision(μ::Real)                = NormalMeanPrecision(μ, one(μ))
-NormalMeanPrecision()                       = NormalMeanPrecision(0.0, 1.0)
+NormalMeanPrecision()                        = NormalMeanPrecision(0.0, 1.0)
 
 function NormalMeanPrecision(μ::T1, w::UniformScaling{T2}) where {T1 <: Real, T2}
     T = promote_type(T1, T2)

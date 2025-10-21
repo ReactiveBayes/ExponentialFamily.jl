@@ -112,7 +112,7 @@ function fisherinformation(expfamily::ExponentialFamilyDistribution{Multinomial}
     seη = mapreduce(exp, +, η)
     @inbounds for i in 1:length(η)
         I[i, i] = exp(η[i]) * (seη - exp(η[i])) / (seη)^2
-        @inbounds for j in 1:i-1
+        @inbounds for j in 1:(i-1)
             I[i, j] = -exp(η[i]) * exp(η[j]) / (seη)^2
             I[j, i] = I[i, j]
         end
@@ -125,7 +125,7 @@ function fisherinformation(dist::Multinomial)
     I = Matrix{Float64}(undef, length(p), length(p))
     @inbounds for i in 1:length(p)
         I[i, i] = (1 - p[i]) / p[i]
-        @inbounds for j in 1:i-1
+        @inbounds for j in 1:(i-1)
             I[i, j] = -1
             I[j, i] = I[i, j]
         end

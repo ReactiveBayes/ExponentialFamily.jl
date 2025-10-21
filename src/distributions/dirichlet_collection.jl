@@ -237,8 +237,8 @@ function getgradlogpartition(
             @inbounds begin
                 # For the i-th distribution, grab the slice of η
                 # and apply the Dirichlet gradlogpartition.
-                out[(i-1)*k+1:i*k] = dirichlet_gradlogpartition(
-                    @view η[(i-1)*k+1:i*k]
+                out[((i-1)*k+1):(i*k)] = dirichlet_gradlogpartition(
+                    @view η[((i-1)*k+1):(i*k)]
                 )
             end
         end
@@ -284,8 +284,8 @@ function getgradlogpartition(::MeanParametersSpace, ::Type{DirichletCollection},
         for i in 1:n_distributions
             @inbounds begin
                 # For each distribution, compute its gradient
-                out[(i-1)*k+1:i*k] = dirichlet_gradlogpartition(
-                    @view θ[(i-1)*k+1:i*k]
+                out[((i-1)*k+1):(i*k)] = dirichlet_gradlogpartition(
+                    @view θ[((i-1)*k+1):(i*k)]
                 )
             end
         end
@@ -306,7 +306,7 @@ function getfisherinformation(::MeanParametersSpace, ::Type{DirichletCollection}
             @inbounds begin
                 # For each distribution, compute its Fisher information
                 blocks[i] = dirichlet_fisher(
-                    @view θ[(i-1)*k+1:i*k]
+                    @view θ[((i-1)*k+1):(i*k)]
                 )
             end
         end

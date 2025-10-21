@@ -129,7 +129,7 @@ end
     for T in (Float32, Float64)
         let # NormalMeanVariance
             μ, v = 10randn(rng), 10rand(rng)
-            d    = convert(NormalMeanVariance{T}, μ, v)
+            d = convert(NormalMeanVariance{T}, μ, v)
 
             @test typeof(rand(d)) <: T
 
@@ -141,7 +141,7 @@ end
 
         let # NormalMeanPrecision
             μ, w = 10randn(rng), 10rand(rng)
-            d    = convert(NormalMeanPrecision{T}, μ, w)
+            d = convert(NormalMeanPrecision{T}, μ, w)
 
             @test typeof(rand(d)) <: T
 
@@ -153,7 +153,7 @@ end
 
         let # WeightedMeanPrecision
             wμ, w = 10randn(rng), 10rand(rng)
-            d     = convert(NormalWeightedMeanPrecision{T}, wμ, w)
+            d = convert(NormalWeightedMeanPrecision{T}, wμ, w)
 
             @test typeof(rand(d)) <: T
 
@@ -401,7 +401,10 @@ end
 
         for sample in eachcol(samples)
             mean_gradient = ForwardDiff.gradient(Base.Fix2(gaussianlpdffortest, sample), θ)
-            nat_gradient = ForwardDiff.gradient((η) -> logpdf(ExponentialFamilyDistribution(MvNormalMeanCovariance, η, nothing, nothing), sample), getnaturalparameters(ef))
+            nat_gradient = ForwardDiff.gradient(
+                (η) -> logpdf(ExponentialFamilyDistribution(MvNormalMeanCovariance, η, nothing, nothing), sample),
+                getnaturalparameters(ef)
+            )
             jacobian = ForwardDiff.jacobian(nat_space2mean_space, getnaturalparameters(ef))
             # # autograd failing to compute jacobian of matrix part correclty. Comparing only vector (mean) part.
             @test nat_gradient[1:d] ≈ (jacobian'*mean_gradient)[1:d]

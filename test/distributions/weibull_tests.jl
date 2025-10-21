@@ -16,7 +16,7 @@
                     MeanParametersSpace() => NaturalParametersSpace()
                 )
             )
-            for x in scale:1.0:scale+3.0
+            for x in scale:1.0:(scale+3.0)
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === x^(shape - 1)
                 @test @inferred(sufficientstatistics(ef, x)) === (x^shape,)

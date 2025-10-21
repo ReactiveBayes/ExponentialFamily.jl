@@ -134,7 +134,7 @@ function BayesBase.paramfloattype(joint::JointNormal, dist::NormalDistributionsF
 end
 
 function BayesBase.convert_paramfloattype(::Type{T}, joint::JointNormal, dist::NormalDistributionsFamily) where {T}
-    μ, Σ  = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
+    μ, Σ = map(e -> convert_paramfloattype(T, e), mean_cov(dist))
     cdist = convert(promote_variate_type(typeof(μ), NormalMeanVariance), μ, Σ)
     return JointNormal(cdist, joint.ds)
 end
@@ -181,9 +181,9 @@ end
 function BayesBase.component(::JointNormal, dist::MvNormalMeanCovariance, ds::Tuple, sz::Tuple{Int}, index)
     @assert index <= length(ds) "Cannot marginalize `JointNormal` with single entry at index > number of elements"
     start = sum(prod.(ds[1:(index-1)]); init = 0) + 1
-    len   = first(sz)
-    stop  = start + len - 1
-    μ, Σ  = mean_cov(dist)
+    len = first(sz)
+    stop = start + len - 1
+    μ, Σ = mean_cov(dist)
     # Return the slice of the original `MvNormalMeanCovariance`
     return MvNormalMeanCovariance(view(μ, start:stop), view(Σ, start:stop, start:stop))
 end
@@ -591,7 +591,7 @@ end
 getgradlogpartition(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
     (η) -> begin
         (η₁, η₂) = unpack_parameters(NormalMeanVariance, η)
-        return SA[-η₁*inv(η₂ * 2), abs2(η₁)/(4*abs2(η₂))-1/(2*η₂)]
+        return SA[-η₁*inv(η₂*2), abs2(η₁)/(4*abs2(η₂))-1/(2*η₂)]
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
@@ -673,7 +673,7 @@ function unpack_parameters(::Type{MvNormalMeanCovariance}, packed)
     n = div(-1 + isqrt(1 + 4 * len), 2)
 
     p₁ = view(packed, 1:n)
-    p₂ = reshape(view(packed, n+1:len), n, n)
+    p₂ = reshape(view(packed, (n+1):len), n, n)
 
     return (p₁, p₂)
 end
@@ -731,8 +731,8 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
 
 function PermutationMatrix(m, n)
     P = Matrix{Int}(undef, m * n, m * n)
-    for i in 1:m*n
-        for j in 1:m*n
+    for i in 1:(m*n)
+        for j in 1:(m*n)
             if j == 1 + m * (i - 1) - (m * n - 1) * floor((i - 1) / n)
                 P[i, j] = 1
             else

@@ -119,7 +119,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner)
         @inbounds for i in 1:length(η)
             expηᵢ = exp(η[i])
             I[i, i] = expηᵢ * (∑expη - expηᵢ) / ∑expη²
-            for j in 1:i-1
+            for j in 1:(i-1)
                 offv = -expηᵢ * exp(η[j]) / ∑expη²
                 I[i, j] = offv
                 I[j, i] = offv

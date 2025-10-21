@@ -79,7 +79,7 @@ end
     include("./normal_family_setuptests.jl")
 
     xi   = [-0.2, 5.34, 14.02]
-    Λ    = [1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5]
+    Λ   = [1.5 -0.3 0.1; -0.3 1.8 0.0; 0.1 0.0 3.5]
     dist = MvNormalWeightedMeanPrecision(xi, Λ)
 
     @test mean(dist) ≈ inv(Λ) * xi

@@ -18,7 +18,7 @@ end
         @testset let d = VonMises(a, b)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
 
-            for x in a-1:0.5:a+1
+            for x in (a-1):0.5:(a+1)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === inv(twoπ)
                 @test all(@inferred(sufficientstatistics(ef, x)) .≈ (cos(x), sin(x)))

@@ -326,15 +326,16 @@ getlogpartition(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> beg
     return (ν / 2) * (p * log(2.0) - logdet(S)) + mvtrigamma(p, ν / 2)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
-    (ν, S) = unpack_parameters(InverseWishartFast, θ)
-    p = first(size(S))
-    invscale = cholinv(S)
+getfisherinformation(::MeanParametersSpace, ::Type{InverseWishartFast}) =
+    (θ) -> begin
+        (ν, S) = unpack_parameters(InverseWishartFast, θ)
+        p = first(size(S))
+        invscale = cholinv(S)
 
-    hessian = ones(eltype(S), p^2 + 1, p^2 + 1)
-    @inbounds hessian[1, 1] = mvtrigamma(p, ν / 2) / 4
-    @inbounds hessian[1, 2:p^2+1] = view(invscale, :) / 2
-    @inbounds hessian[2:p^2+1, 1] = view(invscale, :) / 2
-    @inbounds hessian[2:p^2+1, 2:p^2+1] = (ν / 2) * kron(invscale, invscale)
-    return hessian
-end
+        hessian = ones(eltype(S), p^2 + 1, p^2 + 1)
+        @inbounds hessian[1, 1] = mvtrigamma(p, ν / 2) / 4
+        @inbounds hessian[1, 2:(p^2+1)] = view(invscale, :) / 2
+        @inbounds hessian[2:(p^2+1), 1] = view(invscale, :) / 2
+        @inbounds hessian[2:(p^2+1), 2:(p^2+1)] = (ν / 2) * kron(invscale, invscale)
+        return hessian
+    end

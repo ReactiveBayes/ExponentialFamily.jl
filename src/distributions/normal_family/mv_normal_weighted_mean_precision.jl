@@ -13,8 +13,8 @@ A multivariate normal distribution with a weighted mean vector `xi` and precisio
 - `Λ::P`: The precision matrix (inverse of the covariance matrix) of the multivariate normal distribution.
 """
 struct MvNormalWeightedMeanPrecision{T <: Real, M <: AbstractVector{T}, P <: AbstractMatrix{T}} <: AbstractMvNormal
-    xi :: M
-    Λ  :: P
+    xi::M
+    Λ::P
 end
 
 function MvNormalWeightedMeanPrecision(xi::AbstractVector{<:Real}, Λ::AbstractMatrix{<:Real})
@@ -101,6 +101,6 @@ BayesBase.default_prod_rule(::Type{<:MvNormalWeightedMeanPrecision}, ::Type{<:Mv
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalWeightedMeanPrecision, right::MvNormalWeightedMeanPrecision)
     xi = weightedmean(left) + weightedmean(right)
-    Λ  = invcov(left) + invcov(right)
+    Λ = invcov(left) + invcov(right)
     return MvNormalWeightedMeanPrecision(xi, Λ)
 end

@@ -22,8 +22,8 @@ For model creation and regular usage, it is recommended to use `Wishart` from `D
 Internally, `WishartFast` stores and creates the inverse of its scale matrix. However, the `params()` function returns the scale matrix itself for backward compatibility. This is done to ensure better stability in the message passing update rules for `ReactiveMP.jl`.
 """
 struct WishartFast{T <: Real, A <: AbstractMatrix{T}} <: ContinuousMatrixDistribution
-    ν    :: T
-    invS :: A
+    ν::T
+    invS::A
 end
 
 function WishartFast(ν::Real, invS::AbstractMatrix{<:Real})
@@ -54,16 +54,16 @@ function Base.convert(::Type{WishartFast{T}}, distribution::WishartFast) where {
 end
 
 function BayesBase.mean(::typeof(logdet), distribution::WishartFast)
-    d       = size(distribution, 1)
+    d = size(distribution, 1)
     ν, invS = (distribution.ν, distribution.invS)
-    T       = promote_type(typeof(ν), eltype(invS))
+    T = promote_type(typeof(ν), eltype(invS))
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(convert(T, 2)) - logdet(invS)
 end
 
 function BayesBase.mean(::typeof(logdet), distribution::Wishart)
-    d    = size(distribution, 1)
+    d = size(distribution, 1)
     ν, S = params(distribution)
-    T    = promote_type(typeof(ν), eltype(S))
+    T = promote_type(typeof(ν), eltype(S))
     return mapreduce(i -> digamma((ν + 1 - i) / 2), +, 1:d) + d * log(convert(T, 2)) + logdet(S)
 end
 

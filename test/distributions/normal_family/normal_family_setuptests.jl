@@ -13,7 +13,7 @@ end
 
 function gaussianlpdffortest(params, x)
     k = length(x)
-    μ, Σ = params[1:k], reshape(params[k+1:end], k, k)
+    μ, Σ = params[1:k], reshape(params[(k+1):end], k, k)
     coef = (2π)^(-k / 2) * det(Σ)^(-1 / 2)
     exponent = -0.5 * (x - μ)' * inv(Σ) * (x - μ)
     return log(coef * exp(exponent))
