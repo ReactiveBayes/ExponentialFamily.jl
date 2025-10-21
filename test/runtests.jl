@@ -4,7 +4,7 @@ using Aqua, Hwloc, ReTestItems, ExponentialFamily
 # `piracies = false` - we extend/add some of the methods to the objects defined in the Distributions.jl
 Aqua.test_all(ExponentialFamily, ambiguities = false, deps_compat = (; check_extras = false, check_weakdeps = true), piracies = false)
 
-ncores   = max(Hwloc.num_physical_cores(), 1)
+ncores = max(Hwloc.num_physical_cores(), 1)
 nthreads = max(Hwloc.num_virtual_cores(), 1)
 threads_per_core = max(Int(floor(nthreads / ncores)), 1)
 
