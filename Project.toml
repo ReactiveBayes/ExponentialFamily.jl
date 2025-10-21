@@ -1,7 +1,7 @@
 name = "ExponentialFamily"
 uuid = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 authors = ["Ismail Senoz <i.senoz@tue.nl>", "Dmitry Bagaev <d.v.bagaev@tue.nl>"]
-version = "2.1.0"
+version = "2.1.1"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
