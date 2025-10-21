@@ -379,6 +379,7 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     end
 
     if test_properties_in_mean_space
+        @show η
         θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
         F = getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
 
