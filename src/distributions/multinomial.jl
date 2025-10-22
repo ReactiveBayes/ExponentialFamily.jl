@@ -3,6 +3,7 @@ export Multinomial
 import Distributions: Multinomial, probs
 using StaticArrays
 using LogExpFunctions
+using Random
 
 BayesBase.vague(::Type{<:Multinomial}, n::Int, dims::Int) = Multinomial(n, ones(dims) ./ dims)
 
@@ -13,7 +14,8 @@ BayesBase.default_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = Pres
 
 function __compute_logpartition_multinomial_product(K::Int, n::Int)
     d = vague(Multinomial, n, K)
-    samples = unique(rand(d, 4000), dims = 2)
+    rng = Random.MersenneTwister(42)
+    samples = unique(rand(rng, d, 10000), dims = 2)
     samples = [samples[:, i] for i in 1:size(samples, 2)]
     return let samples = samples
         (η) -> begin

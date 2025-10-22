@@ -59,7 +59,7 @@ end
             efright = convert(ExponentialFamilyDistribution, right)
             prod_ef = prod(PreserveTypeProd(ExponentialFamilyDistribution), efleft, efright)
             d = vague(Multinomial, n, n)
-            sample_space = unique(rand(rng, d, 4000), dims = 2)
+            sample_space = unique(rand(rng, d, 10000), dims = 2)
             sample_space = [sample_space[:, i] for i in 1:size(sample_space, 2)]
 
             # Test normalization for the new interface
