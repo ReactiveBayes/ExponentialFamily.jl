@@ -91,3 +91,50 @@ end
         )
     end
 end
+
+@testitem "Multinomial: natural parameters" begin
+    include("distributions_setuptests.jl")
+
+    @testset "natural parameters related " begin
+        d1 = Multinomial(5, [0.1, 0.4, 0.5])
+        d2 = Multinomial(5, [0.2, 0.4, 0.4])
+        η1 = ExponentialFamilyDistribution(Multinomial, [log(0.1 / 0.5), log(0.4 / 0.5), 0.0], 5)
+        η2 = ExponentialFamilyDistribution(Multinomial, [log(0.2 / 0.4), 0.0, 0.0], 5)
+
+        @test convert(ExponentialFamilyDistribution, d1) ≈ η1
+        @test convert(ExponentialFamilyDistribution, d2) ≈ η2
+
+        @test convert(Distribution, η1) ≈ d1
+        @test convert(Distribution, η2) ≈ d2
+
+        @test logpartition(η1) == 3.4657359027997265
+        @test logpartition(η2) == 4.5814536593707755
+
+        @test basemeasure(η1, [1, 2, 2]) == 30.0
+        @test basemeasure(η2, [1, 2, 2]) == 30.0
+
+        @test logpdf(η1, [1, 2, 2]) ≈ logpdf(d1, [1, 2, 2]) atol = 1e-8
+        @test logpdf(η2, [1, 2, 2]) ≈ logpdf(d2, [1, 2, 2]) atol = 1e-8
+
+        @test pdf(η1, [1, 2, 2]) ≈ pdf(d1, [1, 2, 2]) atol = 1e-8
+        @test pdf(η2, [1, 2, 2]) ≈ pdf(d2, [1, 2, 2]) atol = 1e-8
+    end
+end
+
+@testitem "Multinomial: mean and covariance" begin
+    include("distributions_setuptests.jl")
+
+    using StableRNGs
+    using Distributions: Dirichlet
+
+    @testset "ExponentialFamilyDistribution mean,cov" begin
+        rng = StableRNG(42)
+        for n in 2:12
+            p = rand(rng, Dirichlet(ones(n)))
+            dist = Multinomial(n, p)
+            ef = convert(ExponentialFamilyDistribution, dist)
+            @test mean(dist) ≈ mean(ef) atol = 1e-8
+            @test cov(dist) ≈ cov(ef) atol = 1e-8
+        end
+    end
+end
