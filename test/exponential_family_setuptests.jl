@@ -5,6 +5,8 @@ import ExponentialFamily: basemeasure, logbasemeasure, sufficientstatistics, log
 import ExponentialFamily: getnaturalparameters, getbasemeasure, getlogbasemeasure, getsufficientstatistics, getlogpartition, getsupport
 import ExponentialFamily: ExponentialFamilyDistributionAttributes, NaturalParametersSpace
 
+include("allocations_setuptests.jl")
+
 # import ExponentialFamily:
 #     ExponentialFamilyDistribution, getnaturalparameters, getconditioner, reconstructargument!, as_vec,
 #     pack_naturalparameters, unpack_naturalparameters, insupport
