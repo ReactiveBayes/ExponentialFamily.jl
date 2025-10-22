@@ -6,14 +6,24 @@ using LogExpFunctions
 
 BayesBase.vague(::Type{<:Multinomial}, n::Int, dims::Int) = Multinomial(n, ones(dims) ./ dims)
 
-BayesBase.probvec(dist::Multinomial) = probs(dist)
-
-function convert_eltype(::Type{Multinomial}, ::Type{T}, distribution::Multinomial{R}) where {T <: Real, R <: Real}
-    n, p = params(distribution)
-    return Multinomial(n, convert(AbstractVector{T}, p))
-end
+BayesBase.convert_paramfloattype(::Type{T}, distribution::Multinomial) where {T <: Real} =
+    Multinomial(distribution.n, convert(AbstractVector{T}, probvec(distribution)))
 
 BayesBase.default_prod_rule(::Type{<:Multinomial}, ::Type{<:Multinomial}) = PreserveTypeProd(ExponentialFamilyDistribution)
+
+function __compute_logpartition_multinomial_product(K::Int, n::Int)
+    d = vague(Multinomial, n, K)
+    samples = unique(rand(d, 4000), dims = 2)
+    samples = [samples[:, i] for i in 1:size(samples, 2)]
+    return let samples = samples
+        (η) -> begin
+            result = mapreduce(+, samples) do xi
+                return (factorial(n) / prod(@.factorial(xi)))^2 * exp(η' * xi)
+            end
+            return log(result)
+        end
+    end
+end
 
 # NOTE: The product of two Multinomial distributions is NOT a Multinomial distribution.
 function BayesBase.prod(
@@ -30,29 +40,32 @@ function BayesBase.prod(
 
     K = length(η_left)
     naturalparameters = η_left + η_right
-    sufficientstatistics = (x) -> x
-    ## If conditioner is larger than 12 factorial will be problematic. Casting to BigInt will resolve the issue.
-    ##TODO: fix this issue in future PRs
-    basemeasure = (x) -> factorial(conditioner_left)^2 / (prod(@.factorial(x)))^2
-    logpartition = computeLogpartition(K, conditioner_left)
+    sufficientstatistics = (identity,)
+
+    logbasemeasure = (x) -> 2 * loggamma(conditioner_left + 1) - 2 * sum(loggamma.(x .+ 1))
+    basemeasure = (x) -> exp(logbasemeasure(x))
+
+    # Create log partition function that takes natural parameters as input
+    logpartition = __compute_logpartition_multinomial_product(K, conditioner_left)
+
     supp = 0:conditioner_left
-    return ExponentialFamilyDistribution(
-        Multivariate,
-        naturalparameters,
-        nothing,
+
+    attributes = ExponentialFamilyDistributionAttributes(
         basemeasure,
         sufficientstatistics,
         logpartition,
         supp
     )
+
+    return ExponentialFamilyDistribution(
+        Multivariate,
+        naturalparameters,
+        η_left,
+        attributes
+    )
 end
 
-function BayesBase.prod(::ClosedProd, left::T, right::T) where {T <: Multinomial}
-    @assert left.n == right.n "$(left) and $(right) must have the same number of trials"
-    ef_left = convert(ExponentialFamilyDistribution, left)
-    ef_right = convert(ExponentialFamilyDistribution, right)
-    return prod(ClosedProd(), ef_left, ef_right)
-end
+BayesBase.probvec(dist::Multinomial) = probs(dist)
 
 check_valid_natural(::Type{<:Multinomial}, params) = length(params) >= 1
 
@@ -61,16 +74,11 @@ function check_valid_conditioner(::Type{<:Multinomial}, conditioner)
 end
 
 function isproper(::NaturalParametersSpace, ::Type{Multinomial}, natural_parameters::AbstractVector{<:Real}, conditioner::Int)
-   return (conditioner >= 1) && (length(natural_parameters) >= 1)
+    return (conditioner >= 1) && (length(natural_parameters) >= 1)
 end
 
-function unpack_parameters(::Type{Multinomial}, packed::AbstractVector, conditioner)
-    @show packed
+function unpack_parameters(::Type{Multinomial}, packed, conditioner)
     return (packed,)
-end
-
-function pack_parameters(::Type{Multinomial}, unpacked::Tuple{<:AbstractVector})
-    return first(unpacked)
 end
 
 function separate_conditioner(::Type{Multinomial}, params)
@@ -86,21 +94,27 @@ end
 
 function (::MeanToNatural{Multinomial})(parameters::Tuple{<:AbstractVector}, conditioner)
     (succprob,) = parameters
-    return (log.(succprob),)
+    pk = last(succprob)
+    return (map(pi -> log(pi / pk), succprob),)
+    # return (log.(succprob),)
 end
 
 function (::NaturalToMean{Multinomial})(natural_parameters::Tuple{<:AbstractVector}, conditioner)
     (log_probs,) = natural_parameters
-    return (exp.(log_probs),)
+    return (softmax(log_probs),)
 end
 
 getsufficientstatistics(::Type{Multinomial}, _) = (identity,)
-getgradlogpartition(::NaturalParametersSpace, ::Type{Multinomial}, conditioner::Int) = (η) -> zeros(length(η))
 
-function logpartition(exponentialfamily::ExponentialFamilyDistribution{Multinomial})
-    η = getnaturalparameters(exponentialfamily)
-    n = getconditioner(exponentialfamily)
-    return n * logsumexp(η)
+isbasemeasureconstant(::Type{Multinomial}) = NonConstantBaseMeasure()
+getbasemeasure(::Type{Multinomial}, ntrials) = (x) -> factorial(sum(x)) / prod(@.factorial(x))
+getlogbasemeasure(::Type{Multinomial}, ntrials) = (x) -> loggamma(sum(x) + 1) - sum(loggamma.(x .+ 1))
+
+getlogpartition(::NaturalParametersSpace, ::Type{Multinomial}, conditioner::Int) = (η) -> conditioner * logsumexp(η)
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{Multinomial}, conditioner::Int) = (η) -> begin
+    sumη = mapreduce(exp, +, η)
+    return map(d -> conditioner * exp(d) / sumη, η)
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Multinomial}, conditioner::Int) = (η) -> begin
@@ -132,18 +146,3 @@ function BayesBase.insupport(ef::ExponentialFamilyDistribution{Multinomial, P, C
     n = Int(sum(x))
     return n == getconditioner(ef)
 end
-
-basemeasureconstant(::ExponentialFamilyDistribution{Multinomial}) = NonConstantBaseMeasure()
-basemeasureconstant(::Type{<:Multinomial}) = NonConstantBaseMeasure()
-basemeasure(ef::ExponentialFamilyDistribution{Multinomial}) = (x) -> basemeasure(ef, x)
-
-sufficientstatistics(::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}, x::Vector) = x
-sufficientstatistics(ef::Union{<:ExponentialFamilyDistribution{Multinomial}, <:Multinomial}) =
-    x -> sufficientstatistics(ef, x)
-
-getbasemeasure(::Type{Multinomial}, ntrials) = (x) -> begin
-    n = Int(sum(x))
-    return factorial(n) / prod(@.factorial(x))
-end
-getlogbasemeasure(::Type{Multinomial}, ntrials) = (x) -> log(getbasemeasure(Multinomial, ntrials)(x)) # TODO change with loggamma
-getlogpartition(::NaturalParametersSpace, ::Type{Multinomial}, conditioner::Int) = (η) -> zeros(length(η))
