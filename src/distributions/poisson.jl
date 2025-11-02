@@ -36,7 +36,7 @@ end
 getsupport(::Type{Poisson}) = DomainSets.NaturalNumbers()
 
 isproper(::NaturalParametersSpace, ::Type{Poisson}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{Poisson}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
+isproper(::DefaultParametersSpace, ::Type{Poisson}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{Poisson})(tuple_of_θ::Tuple{Any})
     (λ,) = tuple_of_θ
@@ -73,12 +73,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Poisson}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Poisson}) = (θ) -> begin
     (λ,) = unpack_parameters(Poisson, θ)
     return λ
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Poisson}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Poisson}) = (θ) -> begin
     (λ,) = unpack_parameters(Poisson, θ)
     return SA[1 / λ;;]
 end

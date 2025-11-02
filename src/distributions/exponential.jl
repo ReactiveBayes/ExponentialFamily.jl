@@ -20,7 +20,7 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{Exponential}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && first(η) < 0
-isproper(::MeanParametersSpace, ::Type{Exponential}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && first(θ) > 0
+isproper(::DefaultParametersSpace, ::Type{Exponential}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && first(θ) > 0
 
 function (::MeanToNatural{Exponential})(tuple_of_θ::Tuple{Any})
     (scale,) = tuple_of_θ
@@ -56,12 +56,12 @@ end
 
 ## Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Exponential}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Exponential}) = (θ) -> begin
     (scale,) = unpack_parameters(Exponential, θ)
     return log(scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Exponential}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Exponential}) = (θ) -> begin
     (scale,) = unpack_parameters(Exponential, θ)
     SA[inv(scale^2);;]
 end

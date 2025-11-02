@@ -121,7 +121,7 @@ function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner::Nu
     return !isnan(η₁) && !isinf(η₁) && η₁ < 0
 end
 
-function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner::Number)
+function isproper(::DefaultParametersSpace, ::Type{Laplace}, θ, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1
         return false
     end
@@ -186,12 +186,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
     (scale,) = unpack_parameters(Laplace, θ)
     return log(2scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
     (scale,) = unpack_parameters(Laplace, θ)
     return SA[inv(abs2(scale));;] # 1 / scale^2
 end

@@ -1,7 +1,7 @@
 export ExponentialFamilyDistribution
 
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
-export MeanToNatural, NaturalToMean, MeanParametersSpace, NaturalParametersSpace
+export MeanToNatural, NaturalToMean, DefaultParametersSpace, NaturalParametersSpace
 export getbasemeasure,
     getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
 export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
@@ -17,7 +17,7 @@ import Base: map
 Return the transformation function that maps the parameters in the mean parameters space to the natural parameters space for a distribution of type `T`.
 The transformation function is of signature `(params_in_mean_space, [ conditioner ]) -> params_in_natural_space`.
 
-See also: [`NaturalToMean`](@ref), [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref), [`getmapping`](@ref)
+See also: [`NaturalToMean`](@ref), [`NaturalParametersSpace`](@ref), [`DefaultParametersSpace`](@ref), [`getmapping`](@ref)
 """
 struct MeanToNatural{T} end
 
@@ -34,7 +34,7 @@ end
 Return the transformation function that maps the parameters in the natural parameters space to the mean parameters space for a distribution of type `T`.
 The transformation function is of signature `(params_in_natural_space, [ conditioner ]) -> params_in_mean_space`.
 
-See also: [`MeanToNatural`](@ref), [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref), [`getmapping`](@ref)
+See also: [`MeanToNatural`](@ref), [`NaturalParametersSpace`](@ref), [`DefaultParametersSpace`](@ref), [`getmapping`](@ref)
 """
 struct NaturalToMean{T} end
 
@@ -46,26 +46,26 @@ function (transformation::NaturalToMean)(params, ::Nothing)
 end
 
 """
-    MeanParametersSpace
+    DefaultParametersSpace
 
 Specifies the mean parameters space `θ` as the desired parameters space.
 Some functions (such as `logpartition` or `fisherinformation`) accept an additional `space` parameter to disambiguate the desired parameters space. 
-Use `map(MeanParametersSpace() => NaturalParametersSpace(), T, parameters, conditioner)` to map the `parameters` and the `conditioner` of a distribution of type `T`
+Use `map(DefaultParametersSpace() => NaturalParametersSpace(), T, parameters, conditioner)` to map the `parameters` and the `conditioner` of a distribution of type `T`
 from the mean parametrization to the corresponding natural parametrization.
 
 See also: [`NaturalParametersSpace`](@ref), [`getmapping`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
 """
-struct MeanParametersSpace end
+struct DefaultParametersSpace end
 
 """
     NaturalParametersSpace
 
 Specifies the natural parameters space `η` as the desired parameters space.
 Some functions (such as `logpartition` or `fisherinformation`) accept an additional `space` parameter to disambiguate the desired parameters space. 
-Use `map(NaturalParametersSpace() => MeanParametersSpace(), T, parameters, conditioner)` to map the `parameters` and the `conditioner` of a distribution of type `T`
+Use `map(NaturalParametersSpace() => DefaultParametersSpace(), T, parameters, conditioner)` to map the `parameters` and the `conditioner` of a distribution of type `T`
 from the natural parametrization to the corresponding mean parametrization.
 
-See also: [`MeanParametersSpace`](@ref), [`getmapping`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
+See also: [`DefaultParametersSpace`](@ref), [`getmapping`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
 """
 struct NaturalParametersSpace end
 
@@ -74,16 +74,16 @@ struct NaturalParametersSpace end
 
 Returns a transformation `L -> R` between different parametrizations of a distribution of type `T`.
 
-See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
+See also: [`NaturalParametersSpace`](@ref), [`DefaultParametersSpace`](@ref), [`NaturalToMean`](@ref), [`MeanToNatural`](@ref)
 """
 function getmapping end
 
-getmapping(::Pair{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}) where {T} = NaturalToMean{T}()
-getmapping(::Pair{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}) where {T} = MeanToNatural{T}()
+getmapping(::Pair{NaturalParametersSpace, DefaultParametersSpace}, ::Type{T}) where {T} = NaturalToMean{T}()
+getmapping(::Pair{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}) where {T} = MeanToNatural{T}()
 
-Base.map(::Pair{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
+Base.map(::Pair{NaturalParametersSpace, DefaultParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
     NaturalToMean{T}()(something, conditioner)
-Base.map(::Pair{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
+Base.map(::Pair{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
     MeanToNatural{T}()(something, conditioner)
 
 """
@@ -399,11 +399,11 @@ function (transformation::NaturalToMean{T})(v::AbstractVector) where {T <: Distr
 end
 
 function (transformation::NaturalToMean{T})(v::AbstractVector, ::Nothing) where {T <: Distribution}
-    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v)))
+    return pack_parameters(DefaultParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v)))
 end
 
 function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(MeanParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner))
+    return pack_parameters(DefaultParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner))
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
@@ -411,11 +411,11 @@ function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distr
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, ::Nothing) where {T <: Distribution}
-    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v)))
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(DefaultParametersSpace(), T, v)))
 end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner) where {T <: Distribution}
-    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(MeanParametersSpace(), T, v, conditioner), conditioner))
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(DefaultParametersSpace(), T, v, conditioner), conditioner))
 end
 
 """
@@ -426,11 +426,11 @@ Does not require an instance of the `ExponentialFamilyDistribution` and can be c
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
 
-See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
+See also: [`NaturalParametersSpace`](@ref), [`DefaultParametersSpace`](@ref)
 """
 isproper(::Type{T}, parameters, conditioner = nothing) where {T <: Distribution} =
     isproper(NaturalParametersSpace(), T, parameters, conditioner)
-isproper(space::Union{NaturalParametersSpace, MeanParametersSpace}, ::Type{T}, parameters) where {T} =
+isproper(space::Union{NaturalParametersSpace, DefaultParametersSpace}, ::Type{T}, parameters) where {T} =
     isproper(space, T, parameters, nothing)
 isproper(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
     isproper(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
@@ -477,12 +477,12 @@ Does not require an instance of the `ExponentialFamilyDistribution` and can be c
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
 
-See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
+See also: [`NaturalParametersSpace`](@ref), [`DefaultParametersSpace`](@ref)
 """
 getlogpartition(::Type{T}, conditioner = nothing) where {T <: Distribution} =
     getlogpartition(NaturalParametersSpace(), T, conditioner)
 getlogpartition(
-    space::Union{MeanParametersSpace, NaturalParametersSpace},
+    space::Union{DefaultParametersSpace, NaturalParametersSpace},
     ::Type{T},
     ::Nothing
 ) where {T <: Distribution} = getlogpartition(space, T)
@@ -498,7 +498,7 @@ For conditional exponential family distributions requires an extra `conditioner`
 getgradlogpartition(::Type{T}, conditioner = nothing) where {T <: Distribution} =
     getgradlogpartition(NaturalParametersSpace(), T, conditioner)
 getgradlogpartition(
-    space::Union{MeanParametersSpace, NaturalParametersSpace},
+    space::Union{DefaultParametersSpace, NaturalParametersSpace},
     ::Type{T},
     ::Nothing
 ) where {T <: Distribution} = getgradlogpartition(space, T)
@@ -511,12 +511,12 @@ Does not require an instance of the `ExponentialFamilyDistribution` and can be c
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
 
-See also: [`NaturalParametersSpace`](@ref), [`MeanParametersSpace`](@ref)
+See also: [`NaturalParametersSpace`](@ref), [`DefaultParametersSpace`](@ref)
 """
 getfisherinformation(::Type{T}, conditioner = nothing) where {T <: Distribution} =
     getfisherinformation(NaturalParametersSpace(), T, conditioner)
 getfisherinformation(
-    space::Union{MeanParametersSpace, NaturalParametersSpace},
+    space::Union{DefaultParametersSpace, NaturalParametersSpace},
     ::Type{T},
     ::Nothing
 ) where {T <: Distribution} = getfisherinformation(space, T)
@@ -758,7 +758,7 @@ julia> ExponentialFamily.pack_parameters((1, [2.0, 3.0], [4.0 5.0 6.0; 7.0 8.0 9
 function pack_parameters end
 
 # Assume that for the most distributions the `pack_parameters` does not depend on the `space` parameter
-pack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, params::Tuple) where {T} = pack_parameters(T, params)
+pack_parameters(::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, params::Tuple) where {T} = pack_parameters(T, params)
 pack_parameters(::Type{T}, params::Tuple) where {T <: Distribution} = pack_parameters(params)
 
 # Below is an optimized version of packing, which assumes that the packed container is 
@@ -796,23 +796,23 @@ __pack_copyto!(dest::Array, doffset, source::Number, _) = @inbounds(dest[doffset
 This function "unpack" the vectorized form of the parameters in a tuple. For most of the distributions the packed `parameters` are of the 
 same structure in any parameters space. For some distributions, however, it is necessary to indicate the `space` of the packaged parameters.
 
-See also: [`MeanParametersSpace`](@ref), [`NaturalParametersSpace`](@ref)
+See also: [`DefaultParametersSpace`](@ref), [`NaturalParametersSpace`](@ref)
 """
 function unpack_parameters end
 
 unpack_parameters(ef::ExponentialFamilyDistribution{T}) where {T} =
     unpack_parameters(NaturalParametersSpace(), T, getnaturalparameters(ef), getconditioner(ef))
 
-function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, conditioner) where {T}
+function unpack_parameters(::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, conditioner) where {T}
     unpack_parameters(T, packed, conditioner)
 end
 
-function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, ::Nothing) where {T}
+function unpack_parameters(::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, ::Nothing) where {T}
     unpack_parameters(T, packed)
 end
 
 # Assume that for the most distributions the `unpack_parameters` does not depend on the `space` parameter
-unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)
+unpack_parameters(::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)
 
 """
     separate_conditioner(::Type{T}, params) where {T <: Distribution}
@@ -860,15 +860,15 @@ Base.convert(::Type{T}, ef::ExponentialFamilyDistribution{E}) where {T <: Distri
 
 # Assume that the type tag is the same as the `Distribution` type but without the type parameters 
 # This can be overwritten by certain distributions, which have many different parametrizations, e.g. `Gamma` or `Normal`
-# The package also makes the assumption that the `MeanParametersSpace` **is** the of same type as `exponential_family_typetag`
+# The package also makes the assumption that the `DefaultParametersSpace` **is** the of same type as `exponential_family_typetag`
 exponential_family_typetag(distribution) = distribution_typewrapper(distribution)
 exponential_family_typetag(::ExponentialFamilyDistribution{D}) where {D} = D
 
-BayesBase.params(::MeanParametersSpace, distribution::Distribution) = params(distribution)
+BayesBase.params(::DefaultParametersSpace, distribution::Distribution) = params(distribution)
 
 function BayesBase.params(::NaturalParametersSpace, distribution::Distribution)
-    θ = params(MeanParametersSpace(), distribution)
-    return map(MeanParametersSpace() => NaturalParametersSpace(), exponential_family_typetag(distribution), θ)
+    θ = params(DefaultParametersSpace(), distribution)
+    return map(DefaultParametersSpace() => NaturalParametersSpace(), exponential_family_typetag(distribution), θ)
 end
 
 Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T} =
@@ -879,7 +879,7 @@ function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}
     tuple_of_η = unpack_parameters(ef)
     conditioner = getconditioner(ef)
     # Map the conditioned natural parameters space into its corresponding mean parameters space
-    cparams = map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner)
+    cparams = map(NaturalParametersSpace() => DefaultParametersSpace(), T, tuple_of_η, conditioner)
     # `Distributions.jl` stores the params in a single tuple, so we need to join the parameters and the conditioner
     params = join_conditioner(T, cparams, conditioner)
     return T(params...)
@@ -890,12 +890,12 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::Distribution)
     # Get the type wrapper, e.g. `Bernoulli{Float64, ...}` becomes just `Bernoulli`
     T = exponential_family_typetag(dist)
 
-    tuple_of_θ = params(MeanParametersSpace(), dist)
+    tuple_of_θ = params(DefaultParametersSpace(), dist)
     # Separate the parameters and the conditioner, the `params` function returns all together
     cparams, conditioner = separate_conditioner(T, tuple_of_θ)
 
     # Map the conditioned `cparams` into the natural parameters space
-    tuple_of_η = map(MeanParametersSpace() => NaturalParametersSpace(), T, cparams, conditioner)
+    tuple_of_η = map(DefaultParametersSpace() => NaturalParametersSpace(), T, cparams, conditioner)
     # Pack the parameters for efficiency
     η = pack_parameters(NaturalParametersSpace(), T, tuple_of_η)
 

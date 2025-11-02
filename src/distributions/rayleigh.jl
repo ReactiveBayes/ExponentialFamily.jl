@@ -32,7 +32,7 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{Rayleigh}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(<(0), η) && all(!isinf, η)
-isproper(::MeanParametersSpace, ::Type{Rayleigh}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ)
+isproper(::DefaultParametersSpace, ::Type{Rayleigh}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ)
 
 function (::MeanToNatural{Rayleigh})(tuple_of_θ::Tuple{Any})
     (σ,) = tuple_of_θ
@@ -68,17 +68,17 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
     (σ,) = unpack_parameters(Rayleigh, θ)
     return 2 * log(σ)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
     (σ,) = unpack_parameters(Rayleigh, θ)
     return SA[2 / σ;]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Rayleigh}) = (θ) -> begin
     (σ,) = unpack_parameters(Rayleigh, θ)
     return SA[4 / σ^2;;]
 end

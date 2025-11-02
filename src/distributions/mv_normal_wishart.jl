@@ -129,7 +129,7 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalWishart}, η, conditi
     return η3 < 0 && η4 > -1 / 2
 end
 
-function isproper(::MeanParametersSpace, ::Type{MvNormalWishart}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{MvNormalWishart}, θ, conditioner)
     if !isnothing(conditioner) || length(θ) <= 8 || any(isnan, θ) || any(isinf, θ)
         return false
     end
@@ -258,7 +258,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     (μ, S, λ, ν) = unpack_parameters(MvNormalWishart, θ)
     d = length(μ)
 
@@ -270,7 +270,7 @@ getlogpartition(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     return term1 + term2 + term3 + term4 + (d / 2)log2π
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     μ, T, κ, ν = unpack_parameters(MvNormalWishart, θ)
     d = length(μ)
 
