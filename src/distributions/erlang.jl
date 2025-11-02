@@ -22,7 +22,8 @@ end
 
 isproper(::NaturalParametersSpace, ::Type{Erlang}, η, conditioner) =
     isnothing(conditioner) && length(η) === 2 && isinteger(η[1]) && (η[1] >= 0) && (-η[2] >= tiny) && all(!isinf, η)
-isproper(::DefaultParametersSpace, ::Type{Erlang}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ) && isinteger(θ[1]) && all(!isinf, θ)
+isproper(::DefaultParametersSpace, ::Type{Erlang}, θ, conditioner) =
+    isnothing(conditioner) && length(θ) === 2 && all(>(0), θ) && isinteger(θ[1]) && all(!isinf, θ)
 
 function (::MeanToNatural{Erlang})(tuple_of_θ::Tuple{Any, Any})
     (shape, scale) = tuple_of_θ

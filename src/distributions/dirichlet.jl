@@ -85,11 +85,12 @@ getlogpartition(::DefaultParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
     return firstterm - secondterm
 end
 
-getfisherinformation(::DefaultParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
-    (α,) = unpack_parameters(Dirichlet, θ)
-    n = length(α)
-    return Diagonal(map(d -> trigamma(d), α)) - Ones{Float64}(n, n) * trigamma(sum(α))
-end
+getfisherinformation(::DefaultParametersSpace, ::Type{Dirichlet}) =
+    (θ) -> begin
+        (α,) = unpack_parameters(Dirichlet, θ)
+        n = length(α)
+        return Diagonal(map(d -> trigamma(d), α)) - Ones{Float64}(n, n) * trigamma(sum(α))
+    end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
     (α,) = unpack_parameters(Dirichlet, θ)

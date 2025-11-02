@@ -123,8 +123,12 @@ function run_test_parameters_conversion(distribution)
 
     @test all(NaturalToMean(T)(tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(MeanToNatural(T)(tuple_of_θ, conditioner) .≈ tuple_of_η)
-    @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(DefaultParametersSpace(), T, tuple_of_θ))
-    @test all(MeanToNatural(T)(pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
+    @test all(
+        NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(DefaultParametersSpace(), T, tuple_of_θ)
+    )
+    @test all(
+        MeanToNatural(T)(pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η)
+    )
 
     @test_opt NaturalToMean(T)(tuple_of_η, conditioner)
     @test_opt MeanToNatural(T)(tuple_of_θ, conditioner)

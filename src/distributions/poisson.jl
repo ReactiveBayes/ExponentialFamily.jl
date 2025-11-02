@@ -36,7 +36,8 @@ end
 getsupport(::Type{Poisson}) = DomainSets.NaturalNumbers()
 
 isproper(::NaturalParametersSpace, ::Type{Poisson}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(!isinf, η) && all(!isnan, η)
-isproper(::DefaultParametersSpace, ::Type{Poisson}, θ, conditioner) = isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
+isproper(::DefaultParametersSpace, ::Type{Poisson}, θ, conditioner) =
+    isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{Poisson})(tuple_of_θ::Tuple{Any})
     (λ,) = tuple_of_θ

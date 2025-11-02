@@ -55,7 +55,8 @@ end
 BayesBase.insupport(ef::ExponentialFamilyDistribution{Binomial}, x) = insupport(convert(Distribution, ef), x)
 
 isproper(::NaturalParametersSpace, ::Type{Binomial}, η, conditioner) = length(η) === 1 && isinteger(conditioner) && conditioner >= 0
-isproper(::DefaultParametersSpace, ::Type{Binomial}, θ, conditioner::Number) = length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0
+isproper(::DefaultParametersSpace, ::Type{Binomial}, θ, conditioner::Number) =
+    length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0
 
 function separate_conditioner(::Type{Binomial}, params)
     ntrials, succprob = params

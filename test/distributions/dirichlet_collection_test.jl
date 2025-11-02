@@ -226,7 +226,7 @@ end
             for _ in 1:10
                 alpha = rand([d for _ in 1:rank]...) .+ 1.0
                 distribution = DirichletCollection(alpha)
-                
+
                 mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
 
                 temp = mode.(mat_of_dir)
