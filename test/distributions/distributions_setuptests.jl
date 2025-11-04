@@ -489,8 +489,11 @@ function run_test_fisherinformation_against_jacobian(
             end
 
             if assume_no_allocations
-                @test @allocated(getfisherinformation(M, T, conditioner)(m)) == 0
-                @test @allocated(getfisherinformation(N, T, conditioner)(n)) == 0
+                FIₘ = getfisherinformation(M, T, conditioner)
+                FIₙ = getfisherinformation(N, T, conditioner)
+
+                @test_no_allocations FIₘ(m)
+                @test_no_allocations FIₙ(n)
             end
         end
     end

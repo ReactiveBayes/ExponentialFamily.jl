@@ -17,6 +17,10 @@ macro test_no_allocations(expr::Expr)
     result_symbol = gensym(:result)
 
     return esc(quote
+        # precompile inside of the enclosed let block
+        let 
+            $expr
+        end
         $alloc_symbol = @allocated($expr)
         # We first check with the standard `@allocated` to see if the function does not allocate
         # sometimes it reports spurious allocations, also depends on Julia version and OS
