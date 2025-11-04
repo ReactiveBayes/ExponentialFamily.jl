@@ -1,0 +1,28 @@
+name: Coverage Performance Test
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - Coverage ${{ matrix.coverage }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '1.10'
+          - '1.11'
+          - '1.12'
+        coverage:
+          - 'false'
+          - 'true'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v2
+        with:
+          include-all-prereleases: true
+          version: ${{ matrix.version }}
+      - name: Run tests
+        run: |
+          julia --project=. -e 'import Pkg; Pkg.test(;coverage=${{ matrix.coverage }}, julia_args=["--check-bounds=yes", "--compiled-modules=yes", "--depwarn=yes"], force_latest_compatible_version=false, allow_reresolve=true)'
+        env:
+          JULIA_FASTCHOLESKY_THROW_ERROR_NON_SYMMETRIC: 1
