@@ -83,8 +83,9 @@ deps-docs: ## Install documentation dependencies
 deps-scripts: ## Install script dependencies
 	$(JULIA) $(JULIAFLAGSSCRIPTS) -e 'using Pkg; Pkg.instantiate()'
 
-test: deps ## Run project tests
-	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'	
+test: deps ## Run project tests (supports test_args)
+	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test("ExponentialFamily"; test_args=split(get(ENV, "test_args", ""), " ", keepempty=false))'
+
 
 format: deps-scripts ## Format Julia code
 	$(JULIA) $(JULIAFLAGSSCRIPTS) $(FORMATTER) --overwrite
