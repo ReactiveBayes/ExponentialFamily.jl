@@ -653,7 +653,8 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, 
         return false
     end
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
-    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
+    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isapprox(norm(η₂ - transpose(η₂)), 0.0; atol = 1e-10) &&
+           isposdef(Hermitian(-η₂))
 end
 
 function (::MeanToNatural{MvNormalMeanCovariance})(tuple_of_θ::Tuple{Any, Any})

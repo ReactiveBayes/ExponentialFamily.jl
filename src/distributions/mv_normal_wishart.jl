@@ -29,6 +29,18 @@ struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Re
     ) where {T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real}
         new{T, M, V, K, N}(μ, Ψ, κ, ν)
     end
+
+    function MvNormalWishart(
+        μ::M,
+        Ψ::V,
+        κ::K,
+        ν::N
+    ) where {T1, T2, M <: AbstractArray{T1}, V <: AbstractMatrix{T2}, K <: Real, N <: Real}
+        T = promote_type(T1, T2)
+        μ_new = convert(AbstractArray{T}, μ)
+        Ψ_new = convert(AbstractMatrix{T}, Ψ)
+        return new{T, typeof(μ_new), typeof(Ψ_new), K, N}(μ_new, Ψ_new, κ, ν)
+    end
 end
 
 scatter(d::MvNormalWishart) = getindex(params(d), 2)

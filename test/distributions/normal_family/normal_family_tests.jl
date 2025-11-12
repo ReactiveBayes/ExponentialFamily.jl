@@ -455,3 +455,35 @@ end
         end
     end
 end
+
+@testitem "MvNormalMeanCovariance isproper handles near-symmetric η₂ correctly" begin
+    include("./normal_family_setuptests.jl")
+    #using LinearAlgebra
+    #using Test
+
+    # Example parameters that previously failed due to numerical asymmetry
+    weighted_mean = [0.5929739312294535, -0.5765312236076422, -0.27502558591534837, 0.7921902812250886]
+    negative_half_precision = [
+        -1.4988377222596585 0.24017412940042754 -0.25091748712776246 0.021297606627674978;
+        0.24017412940042765 -1.3055257012352184 0.12334134123122117 -0.048756680716141254;
+        -0.25091748712776263 0.1233413412312212 -1.5108823225676407 0.06676100253121688;
+        0.021297606627674905 -0.04875668071614124 0.06676100253121682 -1.3471915876466825
+    ]
+    packed_parameters = [
+        weighted_mean...,
+        vec(negative_half_precision')...
+    ]
+
+    # Unpack and verify structural assumptions
+    η₁, η₂ = ExponentialFamily.unpack_parameters(MvNormalMeanCovariance, packed_parameters)
+    @test length(η₁) == size(η₂, 1)
+    @test size(η₂, 1) == size(η₂, 2)
+
+    # Verify that η₂ is nearly symmetric and negative definite
+    @test isapprox(norm(η₂ - η₂'), 0.0; atol = 1e-10)
+    @test all(LinearAlgebra.eigen(-η₂).values .> 0)
+
+    # Under the fixed `isproper` definition, this should now pass
+    d = ExponentialFamily.ExponentialFamilyDistribution(MvNormalMeanCovariance, packed_parameters)
+    @test isa(d, ExponentialFamily.ExponentialFamilyDistribution)
+end

@@ -41,6 +41,8 @@ import HCubature:
 import DomainSets:
     NaturalNumbers
 
+include("../allocations_setuptests.jl")
+
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
 
@@ -207,7 +209,7 @@ function run_test_distribution_conversion(distribution; assume_no_allocations = 
     @test_opt convert(Distribution, ef)
 
     if assume_no_allocations
-        @test @allocated(convert(Distribution, ef)) === 0
+        @test_no_allocations convert(Distribution, ef)
     end
 end
 
@@ -220,7 +222,7 @@ function run_test_packing_unpacking(distribution)
     tuple_of_η = MeanToNatural(T)(tuple_of_θ, conditioner)
 
     @test all(unpack_parameters(ef) .≈ tuple_of_η)
-    @test @allocated(unpack_parameters(ef)) === 0
+    @test_no_allocations unpack_parameters(ef)
 
     @test_opt ExponentialFamily.separate_conditioner(T, params(DefaultParametersSpace(), distribution))
     @test_opt unpack_parameters(ef)
@@ -235,7 +237,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     @test_opt isproper(exponential_family_form)
 
     if assume_no_allocations
-        @test @allocated(isproper(exponential_family_form)) === 0
+        @test_no_allocations isproper(exponential_family_form)
     end
 end
 
@@ -347,13 +349,13 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
 
         # Test that the selected methods do not allocate
         if assume_no_allocations
-            @test @allocated(logpdf(ef, x)) === 0
-            @test @allocated(pdf(ef, x)) === 0
-            @test @allocated(mean(ef)) === 0
-            @test @allocated(var(ef)) === 0
-            @test @allocated(basemeasure(ef, x)) === 0
-            @test @allocated(logbasemeasure(ef, x)) === 0
-            @test @allocated(sufficientstatistics(ef, x)) === 0
+            @test_no_allocations logpdf(ef, x)
+            @test_no_allocations pdf(ef, x)
+            @test_no_allocations mean(ef)
+            @test_no_allocations var(ef)
+            @test_no_allocations basemeasure(ef, x)
+            @test_no_allocations logbasemeasure(ef, x)
+            @test_no_allocations sufficientstatistics(ef, x)
         end
     end
 
@@ -436,7 +438,7 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
     end
 
     if assume_no_allocations
-        @test @allocated(fisherinformation(ef)) === 0
+        @test_no_allocations fisherinformation(ef)
     end
 end
 
@@ -491,8 +493,11 @@ function run_test_fisherinformation_against_jacobian(
             end
 
             if assume_no_allocations
-                @test @allocated(getfisherinformation(M, T, conditioner)(m)) === 0
-                @test @allocated(getfisherinformation(N, T, conditioner)(n)) === 0
+                FIₘ = getfisherinformation(M, T, conditioner)
+                FIₙ = getfisherinformation(N, T, conditioner)
+
+                @test_no_allocations FIₘ(m)
+                @test_no_allocations FIₙ(n)
             end
         end
     end
@@ -553,7 +558,7 @@ function test_generic_simple_exponentialfamily_product(
 
         if test_inplace_assume_no_allocations
             let _similar = similar(efleft)
-                @test @allocated(prod!(_similar, efleft, efright)) === 0
+                @test_no_allocations prod!(_similar, efleft, efright)
             end
         end
     end
