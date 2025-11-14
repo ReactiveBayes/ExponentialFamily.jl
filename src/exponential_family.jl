@@ -1024,22 +1024,30 @@ function BayesBase.prod!(
     left::ExponentialFamilyDistribution{T},
     right::ExponentialFamilyDistribution{T}
 ) where {T}
-    # First check if we can actually simply sum-up the natural parameters
+    # First check if conditioners match - we can never compute the product if conditioners are different
+    all_conditioners_nothing = isnothing(getconditioner(container)) && isnothing(getconditioner(left)) && isnothing(getconditioner(right))
+
+    if !all_conditioners_nothing
+        conditioners_mismatch = !(isapprox(getconditioner(left), getconditioner(right)) && isapprox(getconditioner(container), getconditioner(left)))
+        if conditioners_mismatch
+            error("""
+            Cannot compute a closed product of two `ExponentialFamilyDistribution` distribution in their natural parametrization with different conditioners.
+        """)
+        end
+    end
+
+    # If conditioners match, check if we can actually simply sum-up the natural parameters
     # We assume that this code-path is static and should be const-folded in run-time (there are tests that check that this function does not allocate in this simple case)
     if isbasemeasureconstant(left) === ConstantBaseMeasure() &&
        isbasemeasureconstant(right) === ConstantBaseMeasure() && getbasemeasure(left) === getbasemeasure(right)
-        # Check that all three conditioners are either nothing or all are approximately equal
-        if (isnothing(getconditioner(container)) && isnothing(getconditioner(left)) && isnothing(getconditioner(right))) ||
-           (isapprox(getconditioner(left), getconditioner(right)) && isapprox(getconditioner(container), getconditioner(left)))
-            map!(
-                +,
-                getnaturalparameters(container),
-                getnaturalparameters(left),
-                getnaturalparameters(right)
-            )
-            return container
-        end
+        map!(
+            +,
+            getnaturalparameters(container),
+            getnaturalparameters(left),
+            getnaturalparameters(right)
+        )
+        return container
     end
-    # If the check fails, do not do un-safe operation and simply fallback to the `PreserveTypeProd(ExponentialFamilyDistribution)`
+    # If the base measure check fails, do not do un-safe operation and simply fallback to the `PreserveTypeProd(ExponentialFamilyDistribution)`
     return prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
 end
