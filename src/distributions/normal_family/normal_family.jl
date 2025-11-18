@@ -697,11 +697,16 @@ isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
 getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(length(x) / -2)
 getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * x')
 
+"""
+Optimized implementation using a single Cholesky factorization and triangular solves.
+"""
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
     k = length(η₁)
-    Cinv, l = cholinv_logdet(-η₂)
-    return (dot(η₁, Cinv, η₁) / 2 - (k * log(2) + l)) / 2
+    F = FastCholesky.fastcholesky(-η₂)
+    l = logdet(F)
+    sol = F \ η₁
+    return (dot(η₁, sol) / 2 - (k * log(2) + l)) / 2
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
