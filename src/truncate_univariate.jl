@@ -10,22 +10,39 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
     
     #constructor
     function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, l::TL, u::TU, lcdf::T, ucdf::T) where {T <: Real, TL <: Union{T,Nothing}, TU <: Union{T,Nothing}}
+        
+        
+        # --- Validation checks ---
+        # 1. Bound consistency
+        if !(l === nothing || u === nothing) && u < l
+            throw(ArgumentError("Invalid bounds: upper ($u) must be ≥ lower ($l)."))
+        end
+        # 2. CDF range validity
+        if lcdf < 0 || ucdf > 1
+            throw(ArgumentError("Invalid CDF values: must satisfy 0 ≤ lcdf ≤ ucdf ≤ 1 (got lcdf=$lcdf, ucdf=$ucdf)."))
+        end
+        # 3. CDF ordering
+        if ucdf < lcdf
+            throw(ArgumentError("Invalid CDF ordering: ucdf ($ucdf) must be ≥ lcdf ($lcdf)."))
+        end
+        
         new{typeof(d), value_support(typeof(d)), T, TL, TU}(d, l, u, lcdf, ucdf)
     end
 
     #constructor with only bounds (Reals)
     function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, 
-                                                l::TL, u::TU) where {TL<:AbstractFloat, TU<:AbstractFloat}
-        T = paramfloattype(d)   # Float64 is default if eltype(d) is Int, ensures Real
-        lcdf = l === nothing ? zero(T) : T(cdf(d, l))
-        ucdf = u === nothing ? one(T)  : T(cdf(d, u))
-        new{typeof(d), value_support(typeof(d)), T, TL, TU}(d, l, u, lcdf, ucdf)
+                                                l::TL, u::TU) where {TL<:Real, TU<:Real}
+        T = promote_type(paramfloattype(d), TL, TU)   # Float64 is default if eltype(d) is Int, ensures Real
+        lcdf = T(cdf(d, l))
+        ucdf = T(cdf(d, u))
+        l = convert(T, l)
+        u = convert(T, u)
+        return TruncatedExponentialFamilyDistribution(d, l, u, lcdf, ucdf)
     end
 
     function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, 
                                                 l::TL, u::TU) where {TL<:Any, TU<:Any} 
-        T = paramfloattype(d)
-        return TruncatedExponentialFamilyDistribution(d, float(something(l, zero(T))), float(something(u, one(T))))
+        return TruncatedExponentialFamilyDistribution(d, float(something(l, -Inf)), float(something(u, Inf)))
     end
 end
 
