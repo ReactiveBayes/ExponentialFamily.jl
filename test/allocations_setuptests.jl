@@ -18,7 +18,7 @@ macro test_no_allocations(expr::Expr)
 
     return esc(quote
         # precompile inside of the enclosed let block
-        let 
+        let
             $expr
         end
         $alloc_symbol = @allocated($expr)
