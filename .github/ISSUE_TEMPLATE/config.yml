@@ -1,0 +1,6 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 Documentation
+    url: https://reactivebayes.github.io/ExponentialFamily.jl/stable/
+    about: Check out our documentation for guides and API reference
+
