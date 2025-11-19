@@ -13,10 +13,15 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
         
         
         # --- Validation checks ---
-        # 1. Bound consistency
+        # 1. Bound consistency checks
         if !(l === nothing || u === nothing) && u < l
             throw(ArgumentError("Invalid bounds: upper ($u) must be ≥ lower ($l)."))
         end
+
+        if lcdf == 1.0 || ucdf == 0.0
+            throw(ArgumentError("Invalid bounds: no prob. mass remaining"))
+        end
+
         # 2. CDF range validity
         if lcdf < 0 || ucdf > 1
             throw(ArgumentError("Invalid CDF values: must satisfy 0 ≤ lcdf ≤ ucdf ≤ 1 (got lcdf=$lcdf, ucdf=$ucdf)."))
@@ -25,7 +30,10 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
         if ucdf < lcdf
             throw(ArgumentError("Invalid CDF ordering: ucdf ($ucdf) must be ≥ lcdf ($lcdf)."))
         end
-        
+
+        #l = maximum(l, minimum(d))
+        #u = maximum(u, maximum(d))
+
         new{typeof(d), value_support(typeof(d)), T, TL, TU}(d, l, u, lcdf, ucdf)
     end
 
@@ -73,7 +81,7 @@ function Distributions.truncated(d::TruncatedExponentialFamilyDistribution, l::R
 end
 
 #parameters are the original parameters plus lower and upper bound
-BayesBase.params(d::TruncatedExponentialFamilyDistribution) = tuple(params(d.untruncated)..., d.lower, d.upper)
+BayesBase.params(d::ExponentialFamily.TruncatedExponentialFamilyDistribution) = tuple(params(d.untruncated)..., d.lower, d.upper)
 
 #ensures consistent precision between base parameters and truncated distribution parameters (including bounds)
 Distributions.partype(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution,<:ValueSupport,T}) where {T<:Real} = promote_type(partype(d.untruncated), T)
