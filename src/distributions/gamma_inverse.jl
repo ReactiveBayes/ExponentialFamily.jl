@@ -27,7 +27,7 @@ end
 
 # Natural parametrization
 
-isproper(::MeanParametersSpace, ::Type{GammaInverse}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ)
+isproper(::DefaultParametersSpace, ::Type{GammaInverse}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ)
 
 function isproper(::NaturalParametersSpace, ::Type{GammaInverse}, η, conditioner)
     if length(η) !== 2
@@ -78,12 +78,12 @@ getfisherinformation(::NaturalParametersSpace, ::Type{GammaInverse}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{GammaInverse}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{GammaInverse}) = (θ) -> begin
     (shape, scale) = unpack_parameters(Gamma, θ)
     return loggamma(shape) - shape * log(scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{GammaInverse}) =
+getfisherinformation(::DefaultParametersSpace, ::Type{GammaInverse}) =
     (θ) -> begin
         (shape, scale) = unpack_parameters(Gamma, θ)
         return SA[polygamma(1, shape) -inv(scale); -inv(scale) shape/(scale^2)]

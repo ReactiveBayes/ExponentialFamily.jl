@@ -243,9 +243,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), NormalMeanVariance, [-1])
-    @test !isproper(MeanParametersSpace(), NormalMeanVariance, [1, -0.1])
-    @test !isproper(MeanParametersSpace(), NormalMeanVariance, [-0.1, -1])
+    @test !isproper(DefaultParametersSpace(), NormalMeanVariance, [-1])
+    @test !isproper(DefaultParametersSpace(), NormalMeanVariance, [1, -0.1])
+    @test !isproper(DefaultParametersSpace(), NormalMeanVariance, [-0.1, -1])
     @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [-1.1])
     @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [1, 1])
     @test !isproper(NaturalParametersSpace(), NormalMeanVariance, [-1.1, 1])
@@ -308,11 +308,11 @@ end
     end
 
     # Test failing isproper cases (naive)
-    @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [-1])
-    @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [1, -0.1])
-    @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [-0.1, -1])
-    @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [-1, 2, 3, 4]) # shapes are incompatible
-    @test !isproper(MeanParametersSpace(), MvNormalMeanCovariance, [1, -0.1, -1, 0, 0, -1]) # covariance is not posdef
+    @test !isproper(DefaultParametersSpace(), MvNormalMeanCovariance, [-1])
+    @test !isproper(DefaultParametersSpace(), MvNormalMeanCovariance, [1, -0.1])
+    @test !isproper(DefaultParametersSpace(), MvNormalMeanCovariance, [-0.1, -1])
+    @test !isproper(DefaultParametersSpace(), MvNormalMeanCovariance, [-1, 2, 3, 4]) # shapes are incompatible
+    @test !isproper(DefaultParametersSpace(), MvNormalMeanCovariance, [1, -0.1, -1, 0, 0, -1]) # covariance is not posdef
 
     @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [-1.1])
     @test !isproper(NaturalParametersSpace(), MvNormalMeanCovariance, [1, 1])
@@ -370,7 +370,7 @@ end
         approxFisherInformation = approxHessian /= n_samples
 
         # The error will be higher for sampling tests, tolerance adjusted accordingly.
-        fi_dist = getfisherinformation(MeanParametersSpace(), MvNormalMeanCovariance)(θ)
+        fi_dist = getfisherinformation(DefaultParametersSpace(), MvNormalMeanCovariance)(θ)
         @test isposdef(fi_dist) || all(>(0), eigvals(fi_dist))
         @test issymmetric(fi_dist) || (LowerTriangular(fi_dist) ≈ (UpperTriangular(fi_dist)'))
         @test sort(eigvals(fi_dist)) ≈ sort(abs.(eigvals(approxFisherInformation))) rtol = 1e-1

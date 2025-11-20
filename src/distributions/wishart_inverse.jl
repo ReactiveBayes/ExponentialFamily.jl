@@ -252,7 +252,7 @@ function isproper(::NaturalParametersSpace, ::Type{InverseWishartFast}, η, cond
     # return  η1 > 0 && isposdef(-η2)
     return η1 < 0
 end
-function isproper(::MeanParametersSpace, ::Type{InverseWishartFast}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{InverseWishartFast}, θ, conditioner)
     if !isnothing(conditioner) || length(θ) <= 4 || any(isnan, θ) || any(isinf, θ)
         return false
     end
@@ -320,13 +320,13 @@ getfisherinformation(::NaturalParametersSpace, ::Type{InverseWishartFast}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
     (ν, S) = unpack_parameters(InverseWishartFast, θ)
     p = first(size(S))
     return (ν / 2) * (p * log(2.0) - logdet(S)) + mvtrigamma(p, ν / 2)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{InverseWishartFast}) =
+getfisherinformation(::DefaultParametersSpace, ::Type{InverseWishartFast}) =
     (θ) -> begin
         (ν, S) = unpack_parameters(InverseWishartFast, θ)
         p = first(size(S))

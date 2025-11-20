@@ -96,11 +96,11 @@ tuple_of_θ = NaturalToMean(Bernoulli)(tuple_of_η)
 Alternatuvely, the following API is supported 
 
 ```@example dist-interfacing
-map(MeanParametersSpace() => NaturalParametersSpace(), Bernoulli, tuple_of_θ)
+map(DefaultParametersSpace() => NaturalParametersSpace(), Bernoulli, tuple_of_θ)
 ```
 
 ```@example dist-interfacing
-map(NaturalParametersSpace() => MeanParametersSpace(), Bernoulli, tuple_of_η)
+map(NaturalParametersSpace() => DefaultParametersSpace(), Bernoulli, tuple_of_η)
 ```
 
 While the `ExponentialFamily` package employs the respective mappings where needed, it's also possible to call these functions manually. For instance, the generic implementation of the `convert` function between `ExponentialFamilyDistribution` and `Distribution` is built in terms of `MeanToNatural` and `NaturalToMean`. Moreover, the `convert` function performs checks to ensure that the provided parameters and conditioner are suitable for a specific distribution type.
@@ -184,7 +184,7 @@ getlogpartition(Bernoulli) === getlogpartition(NaturalParametersSpace(), Bernoul
 
 ```@docs 
 NaturalParametersSpace
-MeanParametersSpace
+DefaultParametersSpace
 ```
 
 The `isbasemeasureconstant` function is defined for all supported distributions as well.

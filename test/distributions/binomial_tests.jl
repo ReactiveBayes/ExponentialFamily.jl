@@ -48,9 +48,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Binomial, [-1], 1)
-    @test !isproper(MeanParametersSpace(), Binomial, [0.5], -1)
-    @test !isproper(MeanParametersSpace(), Binomial, [-0.1, 1], 10)
+    @test !isproper(DefaultParametersSpace(), Binomial, [-1], 1)
+    @test !isproper(DefaultParametersSpace(), Binomial, [0.5], -1)
+    @test !isproper(DefaultParametersSpace(), Binomial, [-0.1, 1], 10)
     @test !isproper(NaturalParametersSpace(), Binomial, [-1.1], -1)
     @test !isproper(NaturalParametersSpace(), Binomial, [1, -1.1], 10)
 end

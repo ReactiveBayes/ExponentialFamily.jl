@@ -31,14 +31,14 @@ function BayesBase.prod(
 end
 
 function BayesBase.compute_logscale(new_dist::Chisq, left_dist::Chisq, right_dist::Chisq)
-    lp = getlogpartition(MeanParametersSpace(), Chisq)
+    lp = getlogpartition(DefaultParametersSpace(), Chisq)
     return lp(params(new_dist)...) - lp(params(left_dist)...) - lp(params(right_dist)...)
 end
 
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{Chisq}, η, conditioner) = isnothing(conditioner) && length(η) === 1 && all(>(-1), η) && all(!isinf, η)
-isproper(::MeanParametersSpace, ::Type{Chisq}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{Chisq}, θ, conditioner) =
     isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ)
 
 function (::MeanToNatural{Chisq})(tuple_of_θ::Tuple{Any})
@@ -77,12 +77,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Chisq}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Chisq}) = (θ) -> begin
     (ν,) = unpack_parameters(Chisq, θ)
     return loggamma(ν / 2) + (ν / 2) * logtwo
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Chisq}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Chisq}) = (θ) -> begin
     (ν,) = unpack_parameters(Chisq, θ)
     return SA[trigamma(ν / 2) * (1 / 4);;]
 end

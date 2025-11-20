@@ -38,7 +38,7 @@ end
 
 isproper(::NaturalParametersSpace, ::Type{Dirichlet}, η, conditioner) =
     isnothing(conditioner) && length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{Dirichlet}, θ, conditioner) = isnothing(conditioner) && length(θ) > 1 && all(>(0), θ) && all(!isinf, θ)
+isproper(::DefaultParametersSpace, ::Type{Dirichlet}, θ, conditioner) = isnothing(conditioner) && length(θ) > 1 && all(>(0), θ) && all(!isinf, θ)
 
 function (::MeanToNatural{Dirichlet})(tuple_of_θ::Tuple{Any})
     (α,) = tuple_of_θ
@@ -78,20 +78,21 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
     (α,) = unpack_parameters(Dirichlet, θ)
     firstterm = mapreduce(x -> loggamma(x), +, α)
     secondterm = loggamma(sum(α))
     return firstterm - secondterm
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
-    (α,) = unpack_parameters(Dirichlet, θ)
-    n = length(α)
-    return Diagonal(map(d -> trigamma(d), α)) - Ones{Float64}(n, n) * trigamma(sum(α))
-end
+getfisherinformation(::DefaultParametersSpace, ::Type{Dirichlet}) =
+    (θ) -> begin
+        (α,) = unpack_parameters(Dirichlet, θ)
+        n = length(α)
+        return Diagonal(map(d -> trigamma(d), α)) - Ones{Float64}(n, n) * trigamma(sum(α))
+    end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
     (α,) = unpack_parameters(Dirichlet, θ)
     return digamma.(α) .- digamma(sum(α))
 end

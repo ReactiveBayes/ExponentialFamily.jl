@@ -543,9 +543,9 @@ end
 # Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
 exponential_family_typetag(::UnivariateNormalDistributionsFamily) = NormalMeanVariance
 
-BayesBase.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
+BayesBase.params(::DefaultParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
 
-function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
     if length(θ) !== 2
         return false
     end
@@ -606,18 +606,18 @@ getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
 
 ### Univariate / mean parameters space
 
-getlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
     return μ / 2σ² + log(sqrt(σ²))
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) =
+getgradlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) =
     (θ) -> begin
         (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
         return SA[μ/σ², -abs2(μ)/(2σ²^2)+1/σ²]
     end
 
-getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
     return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
 end
@@ -626,9 +626,9 @@ end
 
 getbasemeasure(::Type{<:UnivariateNormalDistributionsFamily}) = getbasemeasure(NormalMeanVariance)
 getsufficientstatistics(::Type{<:UnivariateNormalDistributionsFamily}) = getsufficientstatistics(NormalMeanVariance)
-getlogpartition(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+getlogpartition(space::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
     getlogpartition(space, NormalMeanVariance)
-getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+getfisherinformation(space::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
     getfisherinformation(space, NormalMeanVariance)
 
 ### Multivariate case
@@ -637,9 +637,9 @@ getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, 
 # Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
 exponential_family_typetag(::MultivariateGaussianDistributionsFamily) = MvNormalMeanCovariance
 
-BayesBase.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
+BayesBase.params(::DefaultParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
 
-function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
     k = div(-1 + isqrt(1 + 4 * length(θ)), 2)
     if length(θ) < 2 || (length(θ) !== (k + k^2))
         return false
@@ -745,7 +745,7 @@ function PermutationMatrix(m, n)
     P
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
     μ, Σ = unpack_parameters(MvNormalMeanCovariance, θ)
     invΣ = cholinv(Σ)
     n = size(μ, 1)

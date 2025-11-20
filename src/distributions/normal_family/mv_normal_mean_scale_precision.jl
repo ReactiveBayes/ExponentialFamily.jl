@@ -81,7 +81,7 @@ end
 # Other Gaussian distributions fallback to `MvNormalMeanCovariance` type tag
 exponential_family_typetag(::MvNormalMeanScalePrecision) = ExponentialFamily.MvNormalMeanScalePrecision
 
-BayesBase.params(::MeanParametersSpace, dist::MvNormalMeanScalePrecision) = (mean(dist), scale(dist))
+BayesBase.params(::DefaultParametersSpace, dist::MvNormalMeanScalePrecision) = (mean(dist), scale(dist))
 
 getsufficientstatistics(::Type{MvNormalMeanScalePrecision}) = (identity, nabs2)
 
@@ -246,7 +246,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision
         return ArrowheadMatrix(η2_part, η1η2, diag(η1_part))
     end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (θ) -> begin
         μ = @view θ[1:(end-1)]
         γ = θ[end]
