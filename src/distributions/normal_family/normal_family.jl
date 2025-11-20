@@ -23,7 +23,7 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base: prod, convert, ndims
 import Random: rand!
 import Distributions: logpdf
-import StatsFuns: invsqrt2π
+import StatsFuns: invsqrt2π, normcdf
 
 using StatsFuns: log2π
 using LinearAlgebra
@@ -219,6 +219,7 @@ function BayesBase.convert_paramfloattype(::Type{T}, distribution::Truncated{<:N
     return Truncated(convert_paramfloattype(T, distribution.untruncated), convert(T, distribution.lower), convert(T, distribution.upper))
 end
 
+BayesBase.cdf(dist::UnivariateNormalDistributionsFamily, x::Real) = normcdf(mean(dist), sqrt(var(dist)), x)
 # Variate forms promotion
 
 BayesBase.promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F

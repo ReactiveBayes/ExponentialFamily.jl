@@ -487,3 +487,21 @@ end
     d = ExponentialFamily.ExponentialFamilyDistribution(MvNormalMeanCovariance, packed_parameters)
     @test isa(d, ExponentialFamily.ExponentialFamilyDistribution)
 end
+
+@testitem "NormalFamily: cdf" begin
+    include("./normal_family_setuptests.jl")
+
+    for _ in 1:10
+        μ = randn()
+        var = rand(0.1:0.1:10.0)
+        base_dist = NormalMeanVariance(μ, var)
+        for normal_fam in (NormalMeanVariance, NormalMeanPrecision, NormalWeightedMeanPrecision)
+            d = convert(normal_fam, base_dist)
+            ground_truth_d = Normal(μ, sqrt(var))
+            for i in 1:100
+                x = randn()
+                @test cdf(d, x) ≈ cdf(ground_truth_d, x)
+            end
+        end
+    end
+end
