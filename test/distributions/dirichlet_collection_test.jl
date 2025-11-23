@@ -287,7 +287,7 @@ end
     dirichletCollection[:, 2, 1] .= c
     dirichletCollection[:, 2, 2] .= d
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test isproper(space, DirichletCollection, dirichletCollection)
         @test !isproper(space, DirichletCollection, Inf)
         dirichletCollection[:, 1, 1] .= nan_test
@@ -299,7 +299,7 @@ end
         dirichletCollection[:, 1, 1] .= a
     end
     dirichletCollection[:, 1, 1] = negative_num_natural_param_test
-    @test !isproper(MeanParametersSpace(), DirichletCollection, dirichletCollection)
+    @test !isproper(DefaultParametersSpace(), DirichletCollection, dirichletCollection)
     @test isproper(NaturalParametersSpace(), DirichletCollection, dirichletCollection)
 
     @test_throws Exception convert(ExponentialFamilyDistribution, DirichletCollection([Inf Inf; 2 3]))

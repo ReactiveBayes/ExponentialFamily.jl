@@ -29,7 +29,7 @@ exponential_family_typetag(::Categorical) = Categorical
 
 isproper(::NaturalParametersSpace, ::Type{Categorical}, η, conditioner) =
     isinteger(conditioner) && (conditioner === length(η)) && (length(η) >= 2) && (η[end] ≈ 0)
-isproper(::MeanParametersSpace, ::Type{Categorical}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{Categorical}, θ, conditioner) =
     isinteger(conditioner) && (conditioner === length(θ)) && (length(θ) >= 2) && all(>(0), θ) && isapprox(sum(θ), 1)
 
 function separate_conditioner(::Type{Categorical}, params)
@@ -56,7 +56,7 @@ function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where {V <: Ve
     return (softmax(η),)
 end
 
-# We use `Categorical` from `Distributions.jl` for the `MeanParametersSpace` 
+# We use `Categorical` from `Distributions.jl` for the `DefaultParametersSpace` 
 # and their implementation supports only `Vector`s
 function (::NaturalToMean{Categorical})(tuple_of_η::Tuple{V}, _) where {V <: AbstractVector}
     (η,) = tuple_of_η
@@ -131,7 +131,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner)
 # Mean parametrization
 
 # TODO: This function is AD unfriendly and gives wrong gradients and hessians
-getlogpartition(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
+getlogpartition(::DefaultParametersSpace, ::Type{Categorical}, conditioner) =
     (θ) -> begin
         if (conditioner !== length(θ))
             throw(
@@ -143,7 +143,7 @@ getlogpartition(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
         return -log(θ[end])
     end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Categorical}, conditioner) =
+getfisherinformation(::DefaultParametersSpace, ::Type{Categorical}, conditioner) =
     (θ) -> begin
         if (conditioner !== length(θ))
             throw(
