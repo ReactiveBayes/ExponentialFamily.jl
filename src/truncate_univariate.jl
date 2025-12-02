@@ -7,7 +7,7 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
     upper::TU     # upper bound
     lcdf::T       # cdf of lower bound (exclusive): P(X < lower)
     ucdf::T       # cdf of upper bound (inclusive): P(X ≤ upper)
-    
+
     #constructor
     function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, l::TL, u::TU, lcdf::T, ucdf::T) where {T <: Real, TL <: Union{T,Nothing}, TU <: Union{T,Nothing}}
         
@@ -80,8 +80,8 @@ function Distributions.truncated(d::TruncatedExponentialFamilyDistribution, l::R
     return Distributions.truncated(d.untruncated, d.lower === nothing ? l : max(l, d.lower), d.upper)
 end
 
-#parameters are the original parameters plus lower and upper bound
-BayesBase.params(d::ExponentialFamily.TruncatedExponentialFamilyDistribution) = tuple(params(d.untruncated)..., d.lower, d.upper)
+#parameters are the original parameters plus lower and upper bound - THIS IS NOT IMPLEMENTED FOR EXPONENTIALFAMILY
+BayesBase.params(d::TruncatedExponentialFamilyDistribution) = tuple(params(convert(Distribution, d.untruncated))..., d.lower, d.upper)
 
 #ensures consistent precision between base parameters and truncated distribution parameters (including bounds)
 Distributions.partype(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution,<:ValueSupport,T}) where {T<:Real} = promote_type(partype(d.untruncated), T)
@@ -96,53 +96,47 @@ Base.eltype(d::TruncatedExponentialFamilyDistribution) = eltype(d.untruncated)
 
 # Determine whether a (possibly truncated) distribution has a finite lower bound.
 # For a right-truncated distribution, inherit the lower-boundedness from the untruncated base.
-islowerbounded(d::RightTruncatedExponentialFamilyDistribution) = islowerbounded(d.untruncated)
+islowerbounded(d::RightTruncatedExponentialFamilyDistribution) = islowerbounded(convert(Distribution, d.untruncated))
 # For a general truncated distribution, it is lower-bounded if either the base distribution is,
 # or an explicit finite lower truncation limit is set.
-islowerbounded(d::TruncatedExponentialFamilyDistribution) = islowerbounded(d.untruncated) || isfinite(d.lower)
+islowerbounded(d::TruncatedExponentialFamilyDistribution) = islowerbounded(d.convert(Distribution, d.untruncated)) || isfinite(d.lower)
 
 # Determine whether a (possibly truncated) distribution has a finite upper bound.
 # For a left-truncated distribution, inherit the upper-boundedness from the untruncated base.
-isupperbounded(d::LeftTruncatedExponentialFamilyDistribution) = isupperbounded(d.untruncated)
+isupperbounded(d::LeftTruncatedExponentialFamilyDistribution) = isupperbounded(d.convert(Distribution, d.untruncated))
 # For a general truncated distribution, it is upper-bounded if either the base distribution is,
 # or an explicit finite upper truncation limit is set.
-isupperbounded(d::TruncatedExponentialFamilyDistribution) = isupperbounded(d.untruncated) || isfinite(d.upper)
+isupperbounded(d::TruncatedExponentialFamilyDistribution) = isupperbounded(d.convert(Distribution, d.untruncated)) || isfinite(d.upper)
 
 # Return the minimum value of a (possibly truncated) distribution.
 # For a right-truncated distribution, the minimum is the same as the untruncated distribution.
-minimum(d::RightTruncatedExponentialFamilyDistribution) = minimum(d.untruncated)
+minimum(d::RightTruncatedExponentialFamilyDistribution) = minimum(convert(Distribution, d.untruncated))
 # For a general truncated distribution, the minimum is the larger of the untruncated minimum
 # and the lower truncation bound (if finite).
-minimum(d::TruncatedExponentialFamilyDistribution) = max(minimum(d.untruncated), d.lower)
+minimum(d::TruncatedExponentialFamilyDistribution) = max(minimum(convert(Distribution, d.untruncated)), d.lower)
 
 # Return the maximum value of a (possibly truncated) distribution.
 # For a left-truncated distribution, the maximum is the same as the untruncated distribution.
-maximum(d::LeftTruncatedExponentialFamilyDistribution) = maximum(d.untruncated)
+maximum(d::LeftTruncatedExponentialFamilyDistribution) = maximum(convert(Distribution, d.untruncated))
 # For a general truncated distribution, the maximum is the smaller of the untruncated maximum
 # and the upper truncation bound (if finite).
-maximum(d::TruncatedExponentialFamilyDistribution) = min(maximum(d.untruncated), d.upper)
+maximum(d::TruncatedExponentialFamilyDistribution) = d0 = min(maximum(convert(Distribution, d.untruncated)), d.upper)
 
 # Check if a value `x` is within the support of a truncated distribution.
 function BayesBase.insupport(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution,<:Union{Discrete,Continuous}}, x::Real)
     return _in_closed_interval(x, d.lower, d.upper) && insupport(d.untruncated, x)
 end
 
+function BayesBase.rand(rng::AbstractRNG, d::TruncatedExponentialFamilyDistribution)
+    d0 = convert(Distribution, d.untruncated)
+    lower = d.lower
+    upper = d.upper
 
-# function BayesBase.rand(rng::AbstractRNG, d::TruncatedExponentialFamilyDistribution)
-#     d0 = convert(Distribution, d.untruncated)
-#     tp = d.tp
-#     lower = d.lower
-#     upper = d.upper
-#     if tp > 0.25
-#         while true
-#             r = rand(rng, d0)
-#             if _in_closed_interval(r, lower, upper)
-#                 return r
-#             end
-#         end
-#     elseif tp > sqrt(eps(typeof(float(tp))))
-#         return quantile(d0, d.lcdf + rand(rng) * d.tp)
-#     else
-#         return invlogcdf(d0, logaddexp(d.loglcdf, d.logtp - randexp(rng)))
-#     end
-# end
+    while true #sample from d0 using rejection sampling
+        r = rand(rng, d0)
+        if _in_closed_interval(r, lower, upper)
+            return r
+        end
+    end
+end
+

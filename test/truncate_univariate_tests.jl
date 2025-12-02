@@ -1,4 +1,7 @@
 @testitem "TruncateExponentialFamily" begin
+    import BayesBase: params, rand
+    import Distributions: islowerbounded, isupperbounded
+    import Random
     # Compute reasonable bounds for truncation
 
     # --- Define test bound configurations ---
@@ -19,17 +22,9 @@
         (-Inf32, Inf64)
     ]
 
-    invalid_bound_configs = [
-        (5.0, 2.0),
-        (3.0, 1),
-        (Inf, -Inf),
-        (Inf32, -Inf64)
-    ]
-
     dists = [
         Poisson(3),                  # Discrete
-        #Bernoulli(0.7),              # Discrete
-        #Binomial(10, 0.5),           # Discrete
+        Binomial(10, 0.5),           # Discrete
         #NormalMeanVariance(0.0, 1.0),            # Continuous
         #NormalMeanVariance(2.0, 3.0),            # Continuous
         Gamma(2.0, 2.0),             # Continuous, rate parameterization
@@ -43,13 +38,25 @@
             d_trunc = TruncatedExponentialFamilyDistribution(d_ef, l, u)
             # Test bounds
             @test d_trunc.lower <= d_trunc.upper
-            @test d_trunc.lower >= (something(l, -Inf))
-            @test d_trunc.upper <= float(something(u, Inf))
+            @test d_trunc.lower >= something(l, -Inf)
+            @test d_trunc.upper <= something(u, Inf)
+            @test islowerbounded(d_trunc) == true
             
-            # Test parameters
-            #println(typeof(d_trunc))
-            #new_params = params(d_trunc)
-            #@test new_params(1) == params(d_trunc.untruncated)
+            #Test functionality
+            @test minimum(d_trunc) >= minimum(d)
+            @test maximum(d_trunc) <= maximum(d)
+            @test insupport(d_trunc, -50.0) == false
+            
+            #Test parameters
+            new_params = params(d_trunc)
+            old_params = params(d);
+            @test all(isapprox.(new_params[1:end-2], old_params[1:end])) #converting back and forth introduces some small deviation 
+
+            #Test sampling mechanism
+            rng = Random.MersenneTwister(42)
+            randomNumber = rand(rng, d_trunc)
+            @test randomNumber isa Real && randomNumber <= d_trunc.upper && randomNumber >= d_trunc.lower
+
         end
     end
 end
