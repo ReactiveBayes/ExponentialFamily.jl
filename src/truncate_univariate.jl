@@ -1,7 +1,13 @@
 export TruncatedExponentialFamilyDistribution
-import Distributions:_in_closed_interval, logsubexp
+import Distributions: _in_closed_interval, logsubexp
 
-struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<:UnivariateDistribution}, S<:ValueSupport, T<: Real, TL<:Union{T,Nothing}, TU<:Union{T,Nothing}} <: UnivariateDistribution{S}
+struct TruncatedExponentialFamilyDistribution{
+    D <: ExponentialFamilyDistribution{<:UnivariateDistribution},
+    S <: ValueSupport,
+    T <: Real,
+    TL <: Union{T, Nothing},
+    TU <: Union{T, Nothing}
+} <: UnivariateDistribution{S}
     untruncated::D      # the original distribution (untruncated)
     lower::TL     # lower bound
     upper::TU     # upper bound
@@ -9,9 +15,14 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
     ucdf::T       # cdf of upper bound (inclusive): P(X ≤ upper)
 
     #constructor
-    function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, l::TL, u::TU, lcdf::T, ucdf::T) where {T <: Real, TL <: Union{T,Nothing}, TU <: Union{T,Nothing}}
-        
-        
+    function TruncatedExponentialFamilyDistribution(
+        d::ExponentialFamilyDistribution{<:UnivariateDistribution},
+        l::TL,
+        u::TU,
+        lcdf::T,
+        ucdf::T
+    ) where {T <: Real, TL <: Union{T, Nothing}, TU <: Union{T, Nothing}}
+
         # --- Validation checks ---
         # 1. Bound consistency checks
         if !(l === nothing || u === nothing) && u < l
@@ -38,8 +49,8 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
     end
 
     #constructor with only bounds (Reals)
-    function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, 
-                                                l::TL, u::TU) where {TL<:Real, TU<:Real}
+    function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution},
+        l::TL, u::TU) where {TL <: Real, TU <: Real}
         T = promote_type(paramfloattype(d), TL, TU)   # Float64 is default if eltype(d) is Int, ensures Real
         lcdf = T(cdf(d, l))
         ucdf = T(cdf(d, u))
@@ -48,25 +59,25 @@ struct TruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<
         return TruncatedExponentialFamilyDistribution(d, l, u, lcdf, ucdf)
     end
 
-    function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution}, 
-                                                l::TL, u::TU) where {TL<:Any, TU<:Any} 
+    function TruncatedExponentialFamilyDistribution(d::ExponentialFamilyDistribution{<:UnivariateDistribution},
+        l::TL, u::TU) where {TL <: Any, TU <: Any}
         return TruncatedExponentialFamilyDistribution(d, float(something(l, -Inf)), float(something(u, Inf)))
     end
 end
 
 #Left-truncated: special instance with upper_bound Nothing (infinity)
-const LeftTruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<:UnivariateDistribution},S<:ValueSupport,T<:Real} = 
-                        TruncatedExponentialFamilyDistribution{D,S,T,T,Nothing}
+const LeftTruncatedExponentialFamilyDistribution{D <: ExponentialFamilyDistribution{<:UnivariateDistribution}, S <: ValueSupport, T <: Real} =
+    TruncatedExponentialFamilyDistribution{D, S, T, T, Nothing}
 #Right-truncated: special instance with lower_bound Nothing (infinity)
-const RightTruncatedExponentialFamilyDistribution{D<:ExponentialFamilyDistribution{<:UnivariateDistribution},S<:ValueSupport,T<:Real} = 
-                        TruncatedExponentialFamilyDistribution{D,S,T,Nothing,T}
+const RightTruncatedExponentialFamilyDistribution{D <: ExponentialFamilyDistribution{<:UnivariateDistribution}, S <: ValueSupport, T <: Real} =
+    TruncatedExponentialFamilyDistribution{D, S, T, Nothing, T}
 
 #Truncate the truncated distribution using the Julia Distributions package
-function Distributions.truncated(d::TruncatedExponentialFamilyDistribution, l::T, u::T) where {T<:Real}
+function Distributions.truncated(d::TruncatedExponentialFamilyDistribution, l::T, u::T) where {T <: Real}
     return Distributions.truncated(
         d.untruncated,
         d.lower === nothing ? l : max(l, d.lower),
-        d.upper === nothing ? u : min(u, d.upper),
+        d.upper === nothing ? u : min(u, d.upper)
     )
 end
 
@@ -84,11 +95,12 @@ end
 BayesBase.params(d::TruncatedExponentialFamilyDistribution) = tuple(params(convert(Distribution, d.untruncated))..., d.lower, d.upper)
 
 #ensures consistent precision between base parameters and truncated distribution parameters (including bounds)
-Distributions.partype(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution,<:ValueSupport,T}) where {T<:Real} = promote_type(partype(d.untruncated), T)
+Distributions.partype(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution, <:ValueSupport, T}) where {T <: Real} =
+    promote_type(partype(d.untruncated), T)
 
 # Define the element type (eltype) for truncated distributions.
 # For the type version, inherit the element type from the underlying untruncated distribution type D.
-Base.eltype(::Type{<:TruncatedExponentialFamilyDistribution{D}}) where {D<:UnivariateDistribution} = eltype(D)
+Base.eltype(::Type{<:TruncatedExponentialFamilyDistribution{D}}) where {D <: UnivariateDistribution} = eltype(D)
 # For an instance, delegate to the eltype of the stored untruncated distribution.
 Base.eltype(d::TruncatedExponentialFamilyDistribution) = eltype(d.untruncated)
 
@@ -123,7 +135,7 @@ maximum(d::LeftTruncatedExponentialFamilyDistribution) = maximum(convert(Distrib
 maximum(d::TruncatedExponentialFamilyDistribution) = d0 = min(maximum(convert(Distribution, d.untruncated)), d.upper)
 
 # Check if a value `x` is within the support of a truncated distribution.
-function BayesBase.insupport(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution,<:Union{Discrete,Continuous}}, x::Real)
+function BayesBase.insupport(d::TruncatedExponentialFamilyDistribution{<:UnivariateDistribution, <:Union{Discrete, Continuous}}, x::Real)
     return _in_closed_interval(x, d.lower, d.upper) && insupport(d.untruncated, x)
 end
 

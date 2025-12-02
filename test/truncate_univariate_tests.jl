@@ -41,22 +41,21 @@
             @test d_trunc.lower >= something(l, -Inf)
             @test d_trunc.upper <= something(u, Inf)
             @test islowerbounded(d_trunc) == true
-            
+
             #Test functionality
             @test minimum(d_trunc) >= minimum(d)
             @test maximum(d_trunc) <= maximum(d)
             @test insupport(d_trunc, -50.0) == false
-            
+
             #Test parameters
             new_params = params(d_trunc)
             old_params = params(d);
-            @test all(isapprox.(new_params[1:end-2], old_params[1:end])) #converting back and forth introduces some small deviation 
+            @test all(isapprox.(new_params[1:(end-2)], old_params[1:end])) #converting back and forth introduces some small deviation 
 
             #Test sampling mechanism
             rng = Random.MersenneTwister(42)
             randomNumber = rand(rng, d_trunc)
             @test randomNumber isa Real && randomNumber <= d_trunc.upper && randomNumber >= d_trunc.lower
-
         end
     end
 end
