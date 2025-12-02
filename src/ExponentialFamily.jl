@@ -33,6 +33,7 @@ import Base: convert, promote_rule
 
 include("common.jl")
 include("exponential_family.jl")
+include("truncate_univariate.jl")
 
 include("distributions/bernoulli.jl")
 include("distributions/categorical.jl")
