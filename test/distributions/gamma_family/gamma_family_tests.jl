@@ -85,4 +85,7 @@ end
             @test mean(inv, d) ≈ mean(InverseGamma(α, β))
         end
     end
+
+    # Test that the mean of the inverse is Inf when the shape is less than 1
+    @test mean(inv, GammaShapeScale(0.5, 1.0)) == Inf
 end

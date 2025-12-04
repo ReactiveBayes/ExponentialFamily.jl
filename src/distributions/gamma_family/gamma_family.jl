@@ -85,8 +85,10 @@ function unpack_parameters(::Type{Gamma}, packed)
     return (packed[fi], packed[si])
 end
 
-function BayesBase.mean(::typeof(inv), dist::GammaDistributionsFamily)
-    return scale(dist) / (shape(dist) - 1)
+function BayesBase.mean(::typeof(inv), dist::GammaDistributionsFamily{T}) where {T}
+    α = shape(dist)
+    θ = scale(dist)
+    return (α > 1 ? θ / (α - 1) : T(Inf))
 end
 
 isbasemeasureconstant(::Type{Gamma}) = ConstantBaseMeasure()
