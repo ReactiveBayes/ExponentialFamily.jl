@@ -85,6 +85,10 @@ function unpack_parameters(::Type{Gamma}, packed)
     return (packed[fi], packed[si])
 end
 
+function BayesBase.mean(::typeof(inv), dist::GammaDistributionsFamily)
+    return scale(dist) / (shape(dist) - 1)
+end
+
 isbasemeasureconstant(::Type{Gamma}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Gamma}) = (x) -> oneunit(x)
@@ -102,7 +106,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Gamma}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Gamma, η)
-    return SA[digamma(η₁+one(η₁))-log(-η₂), -(η₁+one(η₁))/η₂]
+    return SA[digamma(η₁ + one(η₁))-log(-η₂), -(η₁ + one(η₁))/η₂]
 end
 
 # Mean parametrization

@@ -76,3 +76,13 @@ end
         end
     end
 end
+
+@testitem "GammaFamily: mean(::typeof(inv))" begin
+    include("./gamma_family_setuptests.jl")
+
+    for α in 2.0:1.0:5.0, β in 0.1:1.0:5.0, T in union_types(GammaDistributionsFamily{Float64})
+        @testset let d = convert(T, GammaShapeScale(α, β))
+            @test mean(inv, d) ≈ mean(InverseGamma(α, β))
+        end
+    end
+end
