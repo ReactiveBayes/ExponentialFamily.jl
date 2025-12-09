@@ -81,8 +81,11 @@ end
     include("./gamma_family_setuptests.jl")
 
     for α in 2.0:1.0:5.0, β in 0.1:1.0:5.0, T in union_types(GammaDistributionsFamily{Float64})
-        @testset let d = convert(T, GammaShapeScale(α, β))
-            @test mean(inv, d) ≈ mean(InverseGamma(α, β))
+        @testset let d = convert(T, GammaShapeRate(α, β))
+            invgamma = InverseGamma(α, β)
+            @test shape(invgamma.invd) == shape(d)
+            @test scale(invgamma.invd) == scale(d)
+            @test mean(inv, d) ≈ mean(invgamma)
         end
     end
 

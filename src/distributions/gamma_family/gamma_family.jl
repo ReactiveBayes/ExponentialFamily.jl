@@ -87,7 +87,7 @@ end
 
 function BayesBase.mean(::typeof(inv), dist::GammaDistributionsFamily{T}) where {T}
     α = shape(dist)
-    θ = scale(dist)
+    θ = rate(dist)
     return (α > 1 ? θ / (α - 1) : T(Inf))
 end
 
