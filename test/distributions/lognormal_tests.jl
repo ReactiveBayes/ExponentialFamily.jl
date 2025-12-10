@@ -59,9 +59,9 @@ end
         end
     end
 
-    @test !isproper(MeanParametersSpace(), LogNormal, [1.0])
-    @test !isproper(MeanParametersSpace(), LogNormal, [-1.0, 0.0])
-    @test !isproper(MeanParametersSpace(), LogNormal, [1.0, -1.0])
+    @test !isproper(DefaultParametersSpace(), LogNormal, [1.0])
+    @test !isproper(DefaultParametersSpace(), LogNormal, [-1.0, 0.0])
+    @test !isproper(DefaultParametersSpace(), LogNormal, [1.0, -1.0])
     @test !isproper(NaturalParametersSpace(), LogNormal, [1.0])
     @test !isproper(NaturalParametersSpace(), LogNormal, [-1.0, 0.0])
     @test !isproper(NaturalParametersSpace(), LogNormal, [1.0, 1.0])

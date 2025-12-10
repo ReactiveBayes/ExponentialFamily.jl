@@ -62,7 +62,7 @@ end
 
 isproper(::NaturalParametersSpace, ::Type{Weibull}, η, conditioner) =
     !isnan(conditioner) && !isinf(conditioner) && conditioner > 0 && length(η) === 1 && all(<(0), η) && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{Weibull}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{Weibull}, θ, conditioner) =
     !isnan(conditioner) && !isinf(conditioner) && conditioner > 0 && length(θ) === 1 && all(>(0), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function separate_conditioner(::Type{Weibull}, params)
@@ -116,18 +116,18 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
     (λ,) = unpack_parameters(Weibull, θ)
     return SA[k / λ;]
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Weibull}, conditioner) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Weibull}, conditioner) = (θ) -> begin
     (λ,) = unpack_parameters(Weibull, θ)
     return SA[-inv(η1);]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
-    (λ,) = unpack_parameters(MeanParametersSpace(), Weibull, θ)
+getfisherinformation(::DefaultParametersSpace, ::Type{Weibull}, k) = (θ) -> begin
+    (λ,) = unpack_parameters(DefaultParametersSpace(), Weibull, θ)
     γ = -digamma(1) # Euler-Mascheroni constant (see https://en.wikipedia.org/wiki/Euler%E2%80%93Mascheroni_constant)
     a11 = (1 - 2γ + γ^2 + π^2 / 6) / (k^2)
     a12 = (γ - 1) / λ

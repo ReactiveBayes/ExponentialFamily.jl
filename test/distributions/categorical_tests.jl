@@ -51,8 +51,8 @@ end
             )
 
             run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false, mappings = (
-                NaturalParametersSpace() => MeanParametersSpace(),
-                # MeanParametersSpace() => NaturalParametersSpace(), # here is the problem for discussion, the test is broken
+                NaturalParametersSpace() => DefaultParametersSpace(),
+                # DefaultParametersSpace() => NaturalParametersSpace(), # here is the problem for discussion, the test is broken
             ))
 
             θ = probvec(d)
@@ -77,10 +77,10 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Categorical, [-1], 2) # conditioner does not match the length
-    @test !isproper(MeanParametersSpace(), Categorical, [-1], 1)
-    @test !isproper(MeanParametersSpace(), Categorical, [1, 0.5], 2)
-    @test !isproper(MeanParametersSpace(), Categorical, [-0.5, 1.5], 2)
+    @test !isproper(DefaultParametersSpace(), Categorical, [-1], 2) # conditioner does not match the length
+    @test !isproper(DefaultParametersSpace(), Categorical, [-1], 1)
+    @test !isproper(DefaultParametersSpace(), Categorical, [1, 0.5], 2)
+    @test !isproper(DefaultParametersSpace(), Categorical, [-0.5, 1.5], 2)
     @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 2) # conditioner does not match the length
     @test !isproper(NaturalParametersSpace(), Categorical, [-1.1], 1)
     @test !isproper(NaturalParametersSpace(), Categorical, [1], 1) # length should be >=2 

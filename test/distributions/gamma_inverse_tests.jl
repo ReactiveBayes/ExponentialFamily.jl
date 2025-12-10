@@ -49,7 +49,7 @@ end
         @testset let d = InverseGamma(α, θ)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
 
-            (α, β) = params(MeanParametersSpace(), d)
+            (α, β) = params(DefaultParametersSpace(), d)
 
             (η₁, η₂) = (-α - 1, -β)
 
@@ -69,9 +69,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), InverseGamma, [-1])
-    @test !isproper(MeanParametersSpace(), InverseGamma, [1, -0.1])
-    @test !isproper(MeanParametersSpace(), InverseGamma, [-0.1, 1])
+    @test !isproper(DefaultParametersSpace(), InverseGamma, [-1])
+    @test !isproper(DefaultParametersSpace(), InverseGamma, [1, -0.1])
+    @test !isproper(DefaultParametersSpace(), InverseGamma, [-0.1, 1])
     @test !isproper(NaturalParametersSpace(), InverseGamma, [-0.5])
     @test !isproper(NaturalParametersSpace(), InverseGamma, [1, -1.1])
     @test !isproper(NaturalParametersSpace(), InverseGamma, [-0.5, 1])

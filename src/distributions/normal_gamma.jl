@@ -105,7 +105,7 @@ BayesBase.support(::Type{NormalGamma}) = NormalGammaDomain()
 isproper(::NaturalParametersSpace, ::Type{NormalGamma}, η, conditioner) =
     isnothing(conditioner) && length(η) === 4 && getindex(η, 2) < 0 && getindex(η, 3) > -1 / 2 &&
     getindex(η, 1)^2 / (4 * getindex(η, 2)) - getindex(η, 4) > 0 && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{NormalGamma}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{NormalGamma}, θ, conditioner) =
     isnothing(conditioner) && length(θ) === 4 && all(>(0), getindex(θ, 2:4)) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{NormalGamma})(tuple_of_θ::Tuple{Any, Any, Any, Any})
@@ -209,12 +209,12 @@ getfisherinformation(::NaturalParametersSpace, ::Type{NormalGamma}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{NormalGamma}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{NormalGamma}) = (θ) -> begin
     (_, λ, α, β) = unpack_parameters(NormalGamma, θ)
     return loggamma(α) - α * log(β) - (1 / 2) * log(λ)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{NormalGamma}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{NormalGamma}) = (θ) -> begin
     (_, λ, α, β) = unpack_parameters(NormalGamma, θ)
 
     info_matrix = MMatrix{4, 4, eltype(θ), 16}(undef)
