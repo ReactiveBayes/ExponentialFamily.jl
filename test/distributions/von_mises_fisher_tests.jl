@@ -24,8 +24,8 @@ end
             )
 
             run_test_fisherinformation_against_jacobian(d; assume_no_allocations = false, mappings = (
-                NaturalParametersSpace() => MeanParametersSpace(),
-                # MeanParametersSpace() => NaturalParametersSpace(), # here is the problem for discussion, the test is broken
+                NaturalParametersSpace() => DefaultParametersSpace(),
+                # DefaultParametersSpace() => NaturalParametersSpace(), # here is the problem for discussion, the test is broken
             ))
 
             for x in rand(d)

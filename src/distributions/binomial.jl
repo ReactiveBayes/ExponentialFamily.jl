@@ -55,7 +55,8 @@ end
 BayesBase.insupport(ef::ExponentialFamilyDistribution{Binomial}, x) = insupport(convert(Distribution, ef), x)
 
 isproper(::NaturalParametersSpace, ::Type{Binomial}, η, conditioner) = length(η) === 1 && isinteger(conditioner) && conditioner >= 0
-isproper(::MeanParametersSpace, ::Type{Binomial}, θ, conditioner::Number) = length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0
+isproper(::DefaultParametersSpace, ::Type{Binomial}, θ, conditioner::Number) =
+    length(θ) === 1 && 0 <= first(θ) <= 1 && isinteger(conditioner) && conditioner >= 0
 
 function separate_conditioner(::Type{Binomial}, params)
     ntrials, succprob = params
@@ -110,12 +111,12 @@ end
 
 ## Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Binomial}, ntrials) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Binomial}, ntrials) = (θ) -> begin
     (p,) = unpack_parameters(Binomial, θ)
     return -ntrials * log(1 - p)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Binomial}, ntrials) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Binomial}, ntrials) = (θ) -> begin
     (p,) = unpack_parameters(Binomial, θ)
     return SA[ntrials / (p * (1 - p));;]
 end
