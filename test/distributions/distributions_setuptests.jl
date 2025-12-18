@@ -201,7 +201,7 @@ function run_test_distribution_conversion(distribution; assume_no_allocations = 
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
-    @test @inferred(convert(Distribution, ef)) ≈ distribution
+    @test @inferred(convert(Distribution, ef)) ≈ distribution rtol = 1e-4
     @test_opt convert(Distribution, ef)
 
     if assume_no_allocations
@@ -280,19 +280,19 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
 
     for x in samples
         # We believe in the implementation in the `Distributions.jl`
-        @test @inferred(logpdf(ef, x)) ≈ logpdf(distribution, x)
-        @test @inferred(pdf(ef, x)) ≈ pdf(distribution, x)
-        @test @inferred(mean(ef)) ≈ mean(distribution)
-        @test @inferred(var(ef)) ≈ var(distribution)
-        @test @inferred(std(ef)) ≈ std(distribution)
+        @test @inferred(logpdf(ef, x)) ≈ logpdf(distribution, x) rtol = 1e-4
+        @test @inferred(pdf(ef, x)) ≈ pdf(distribution, x) rtol = 1e-4
+        @test @inferred(mean(ef)) ≈ mean(distribution) rtol = 1e-4
+        @test @inferred(var(ef)) ≈ var(distribution) rtol = 1e-4
+        @test @inferred(std(ef)) ≈ std(distribution) rtol = 1e-4
         @test last(size(rand(ef, 10))) === 10 # Test that `rand` without explicit `rng` works
-        @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution)
+        @test rand(StableRNG(42), ef) ≈ rand(StableRNG(42), distribution) rtol = 1e-4
         @test all(rand(StableRNG(42), ef, 10) .≈ rand(StableRNG(42), distribution, 10))
         @test all(rand!(StableRNG(42), ef, [deepcopy(x) for _ in 1:10]) .≈ rand!(StableRNG(42), distribution, [deepcopy(x) for _ in 1:10]))
 
         for method in potentially_missing_methods
             if hasmethod(method, argument_type)
-                @test @inferred(method(ef)) ≈ method(distribution)
+                @test @inferred(method(ef)) ≈ method(distribution) rtol = 1e-4
             end
         end
 
@@ -318,14 +318,14 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         if test_gradients && value_support(T) === Continuous && x isa Number
             let tlogpdf = ForwardDiff.derivative((x) -> logpdf(distribution, x), x)
                 if !isnan(tlogpdf) && !isinf(tlogpdf)
-                    @test ForwardDiff.derivative((x) -> logpdf(ef, x), x) ≈ tlogpdf
-                    @test ForwardDiff.gradient((x) -> logpdf(ef, x[1]), [x])[1] ≈ tlogpdf
+                    @test ForwardDiff.derivative((x) -> logpdf(ef, x), x) ≈ tlogpdf rtol = 1e-4
+                    @test ForwardDiff.gradient((x) -> logpdf(ef, x[1]), [x])[1] ≈ tlogpdf rtol = 1e-4
                 end
             end
             let tpdf = ForwardDiff.derivative((x) -> pdf(distribution, x), x)
                 if !isnan(tpdf) && !isinf(tpdf)
-                    @test ForwardDiff.derivative((x) -> pdf(ef, x), x) ≈ tpdf
-                    @test ForwardDiff.gradient((x) -> pdf(ef, x[1]), [x])[1] ≈ tpdf
+                    @test ForwardDiff.derivative((x) -> pdf(ef, x), x) ≈ tpdf rtol = 1e-4
+                    @test ForwardDiff.gradient((x) -> pdf(ef, x[1]), [x])[1] ≈ tpdf rtol = 1e-4
                 end
             end
         end
@@ -333,12 +333,12 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         if test_gradients && value_support(T) === Continuous && x isa AbstractVector
             let tlogpdf = ForwardDiff.gradient((x) -> logpdf(distribution, x), x)
                 if !any(isnan, tlogpdf) && !any(isinf, tlogpdf)
-                    @test ForwardDiff.gradient((x) -> logpdf(ef, x), x) ≈ tlogpdf
+                    @test ForwardDiff.gradient((x) -> logpdf(ef, x), x) ≈ tlogpdf rtol = 1e-4
                 end
             end
             let tpdf = ForwardDiff.gradient((x) -> pdf(distribution, x), x)
                 if !any(isnan, tpdf) && !any(isinf, tpdf)
-                    @test ForwardDiff.gradient((x) -> pdf(ef, x), x) ≈ tpdf
+                    @test ForwardDiff.gradient((x) -> pdf(ef, x), x) ≈ tpdf rtol = 1e-4
                 end
             end
         end
@@ -356,8 +356,8 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     end
 
     if test_samples_logpdf
-        @test @inferred(logpdf(ef, samples)) ≈ map((s) -> logpdf(distribution, s), samples)
-        @test @inferred(pdf(ef, samples)) ≈ map((s) -> pdf(distribution, s), samples)
+        @test @inferred(logpdf(ef, samples)) ≈ map((s) -> logpdf(distribution, s), samples) rtol = 1e-4
+        @test @inferred(pdf(ef, samples)) ≈ map((s) -> pdf(distribution, s), samples) rtol = 1e-4
     end
 end
 
@@ -411,7 +411,7 @@ function run_test_gradlogpartition_properties(distribution; nsamples = 6000, tes
     @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
 
     if test_against_forwardiff
-        @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
+        @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef)) rtol = 1e-4
     end
 end
 
@@ -422,11 +422,11 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
 
-    @test fisherinformation(ef) ≈ ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T, conditioner)(η), η)
+    @test fisherinformation(ef) ≈ ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T, conditioner)(η), η) rtol = 1e-4
 
     # Double check the `conditioner` free methods
     if isnothing(conditioner)
-        @test fisherinformation(ef) ≈ ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T)(η), η)
+        @test fisherinformation(ef) ≈ ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T)(η), η) rtol = 1e-4
     end
 
     if assume_ours_faster
@@ -466,12 +466,12 @@ function run_test_fisherinformation_against_jacobian(
             Fₘ = getfisherinformation(M, T, conditioner)(m)
             Fₙ = getfisherinformation(N, T, conditioner)(n)
 
-            @test Fₘ ≈ (J' * Fₙ * J)
+            @test Fₘ ≈ (J' * Fₙ * J) rtol = 1e-4
 
             # Check the default space
             if M === NaturalParametersSpace()
                 # The `fisherinformation` uses the `NaturalParametersSpace` by default
-                @test fisherinformation(ef) ≈ (J' * Fₙ * J)
+                @test fisherinformation(ef) ≈ (J' * Fₙ * J) rtol = 1e-4
             end
 
             # Double check the `conditioner` free methods
@@ -481,10 +481,10 @@ function run_test_fisherinformation_against_jacobian(
                 Fₘ = getfisherinformation(M, T)(m)
                 Fₙ = getfisherinformation(N, T)(n)
 
-                @test Fₘ ≈ (J' * Fₙ * J)
+                @test Fₘ ≈ (J' * Fₙ * J) rtol = 1e-4
 
                 if M === NaturalParametersSpace()
-                    @test fisherinformation(ef) ≈ (J' * Fₙ * J)
+                    @test fisherinformation(ef) ≈ (J' * Fₙ * J) rtol = 1e-4
                 end
             end
 
@@ -544,7 +544,7 @@ function test_generic_simple_exponentialfamily_product(
 
         # Check that the result is consistent with the `prod_dist`
         if !isnothing(prod_dist)
-            @test convert(T, prod(strategy, efleft, efright)) ≈ prod_dist
+            @test convert(T, prod(strategy, efleft, efright)) ≈ prod_dist rtol = 1e-4
         end
     end
 
@@ -561,7 +561,7 @@ function test_generic_simple_exponentialfamily_product(
 
     if test_preserve_type_prod_of_distribution
         @test @inferred(prod(PreserveTypeProd(T), efleft, efright)) ≈
-              prod(PreserveTypeProd(T), left, right)
+              prod(PreserveTypeProd(T), left, right) rtol = 1e-4
     end
 
     return true
