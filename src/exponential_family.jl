@@ -141,16 +141,17 @@ A structure to represent the attributes of an exponential family member.
 
 See also: [`ExponentialFamilyDistribution`](@ref), [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
-struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB}
+struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB, D}
     basemeasure::B
     sufficientstatistics::S
     logpartition::L
     support::P
     logbasemeasure::LB
+    dimensions::D
 end
-function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P) where {B, S, L, P}
+function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P, dimensions::D=1) where {B,S,L,P,D}
     logbasemeasure = (x) -> log(basemeasure(x))
-    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support, logbasemeasure)
+    ExponentialFamilyDistributionAttributes(basemeasure,sufficientstatistics,logpartition,support,logbasemeasure,dimensions)
 end
 
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.basemeasure
@@ -158,9 +159,10 @@ getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = a
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
 getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.logbasemeasure
+getdimensions(attributes::ExponentialFamilyDistributionAttributes) = attributes.dimensions
 
 BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
-BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
+BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P, D}}) where {B, S, L, P, D} = value_support(P)
 
 """
     ExponentialFamilyDistribution(::Type{T}, naturalparameters, conditioner, attributes)
@@ -187,6 +189,7 @@ For a given member of exponential family:
 - `getnaturalparameters` returns an iterable holding the values of the natural parameters. 
 - `getlogpartition` return a function that depends on the naturalparameters and it ensures that the distribution is normalized to 1. 
 - `getsupport` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use ither the `∈` operator or the `insupport()` function to check if a value belongs to the support.
+- `getdimensions` returns the dimensions of the variable; 1 for random variables, n for random vectors, (m,n) for random matrices.
 
 !!! note
     The `attributes` can be `nothing`. In which case the package will try to derive the corresponding attributes from the type `T`.
@@ -207,7 +210,7 @@ julia> logpdf(ef, 4.0)
 -6.0
 ```
 
-See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
+See also: [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getnaturalparameters`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref), [`getdimensions`](@ref)
 """
 struct ExponentialFamilyDistribution{T, P, C, A}
     naturalparameters::P
@@ -317,8 +320,12 @@ By default `η = getnaturalparameters(ef)`.
 
 See also: [`getlogpartition`](@ref)
 """
-function logpartition(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef))
-    return getlogpartition(ef)(η)
+function logpartition(ef::ExponentialFamilyDistribution, η = getnaturalparameters(ef), dims = getdimensions(ef))
+    if dims == 1
+        return getlogpartition(ef)(η)
+    else
+        return getlogpartition(ef)(η,dims)
+    end
 end
 
 """
@@ -384,6 +391,11 @@ getsupport(ef::ExponentialFamilyDistribution) = getsupport(ef.attributes, ef)
 getsupport(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getsupport(T)
 getsupport(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) =
     getsupport(attributes)
+
+getdimensions(ef::ExponentialFamilyDistribution) = getdimensions(ef.attributes, ef)    
+getdimensions(::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getdimensions(T)
+getdimensions(attributes::ExponentialFamilyDistributionAttributes, ::ExponentialFamilyDistribution) = 
+    getdimensions(attributes)
 
 BayesBase.insupport(ef::ExponentialFamilyDistribution, value) = Base.in(value, getsupport(ef))
 
@@ -810,6 +822,11 @@ end
 
 # Assume that for the most distributions the `unpack_parameters` does not depend on the `space` parameter
 unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed) where {T} = unpack_parameters(T, packed)
+
+# Unpack vectorized parameters for matrix-variate distributions (where dims = Tuple(Int,Int))
+function unpack_parameters(::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{T}, packed, dims::Tuple{Integer,Integer}) where {T}
+    unpack_parameters(T, packed, dims)
+end
 
 """
     separate_conditioner(::Type{T}, params) where {T <: Distribution}
