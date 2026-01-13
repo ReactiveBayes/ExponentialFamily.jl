@@ -34,9 +34,15 @@ end
 @testitem "Bernoulli: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
+    if VERSION >= v"1.12"
+        option_assume_no_allocations = false
+    else
+        option_assume_no_allocations = true
+    end
+
     for p in 0.1:0.1:0.9
         @testset let d = Bernoulli(p)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = option_assume_no_allocations)
             η₁ = logit(p)
 
             for x in (0, 1)
@@ -79,9 +85,11 @@ end
         @test @inferred(prod(strategy, Categorical([0.5, 0.5]), Bernoulli(0.5))) ≈ Categorical([0.5, 0.5])
     end
 
-    @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
-    @test @allocated(prod(PreserveTypeProd(Distribution), Bernoulli(0.5), Bernoulli(0.5))) === 0
-    @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+    if VERSION < v"1.12"
+        @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(PreserveTypeProd(Distribution), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+    end
 end
 
 @testitem "Bernoulli: prod with Categorical" begin
@@ -102,6 +110,12 @@ end
 @testitem "Bernoulli: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
+    if VERSION >= v"1.12"
+        test_inplace_assume_no_allocations = false
+    else
+        test_inplace_assume_no_allocations = true
+    end
+
     for pleft in 0.1:0.1:0.9, pright in 0.1:0.1:0.9
         @testset let (left, right) = (Bernoulli(pleft), Bernoulli(pright))
             @test test_generic_simple_exponentialfamily_product(
@@ -112,7 +126,8 @@ end
                     GenericProd(),
                     PreserveTypeProd(ExponentialFamilyDistribution),
                     PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
-                )
+                ),
+                test_inplace_assume_no_allocations=test_inplace_assume_no_allocations
             )
         end
     end
