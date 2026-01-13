@@ -11,8 +11,8 @@
                 right = convert(type, left)
                 @test compare_basic_statistics(left, right)
 
-                @test all(params(MeanParametersSpace(), left) .== (shape(left), scale(left)))
-                @test all(params(MeanParametersSpace(), right) .== (shape(right), scale(right)))
+                @test all(params(DefaultParametersSpace(), left) .== (shape(left), scale(left)))
+                @test all(params(DefaultParametersSpace(), right) .== (shape(right), scale(right)))
             end
         end
     end
@@ -43,9 +43,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Gamma, [-1])
-    @test !isproper(MeanParametersSpace(), Gamma, [1, -1])
-    @test !isproper(MeanParametersSpace(), Gamma, [-1, -1])
+    @test !isproper(DefaultParametersSpace(), Gamma, [-1])
+    @test !isproper(DefaultParametersSpace(), Gamma, [1, -1])
+    @test !isproper(DefaultParametersSpace(), Gamma, [-1, -1])
     @test !isproper(NaturalParametersSpace(), Gamma, [-1])
     @test !isproper(NaturalParametersSpace(), Gamma, [1, 10])
     @test !isproper(NaturalParametersSpace(), Gamma, [-100, -1])

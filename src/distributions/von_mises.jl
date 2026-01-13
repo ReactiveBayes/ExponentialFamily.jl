@@ -39,7 +39,7 @@ BayesBase.insupport(ef::ExponentialFamilyDistribution{T}, value) where {T <: Von
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{VonMises}, η, conditioner) = !isnothing(conditioner) && length(η) === 2 && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{VonMises}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{VonMises}, θ, conditioner) =
     !isnothing(conditioner) && length(θ) === 2 && getindex(θ, 2) > 0 && all(!isinf, θ) && all(!isnan, θ)
 
 ## We record the conditioner otherwise it is not possible to uniquely map back to mean paramaters space
@@ -109,12 +109,12 @@ getfisherinformation(::NaturalParametersSpace, ::Type{VonMises}, _) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{VonMises}, _) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{VonMises}, _) = (θ) -> begin
     (_, κ) = unpack_parameters(VonMises, θ)
     return log(besseli(0, κ))
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{VonMises}, _) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{VonMises}, _) = (θ) -> begin
     (_, k) = unpack_parameters(VonMises, θ)
     bessel0 = besseli(0, k)
     bessel1 = besseli(1, k)

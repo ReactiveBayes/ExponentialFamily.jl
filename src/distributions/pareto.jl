@@ -81,7 +81,7 @@ function isproper(::NaturalParametersSpace, ::Type{Pareto}, η, conditioner::Num
     return !isnan(η₁) && !isinf(η₁) && η₁ < -1
 end
 
-function isproper(::MeanParametersSpace, ::Type{Pareto}, θ, conditioner::Number)
+function isproper(::DefaultParametersSpace, ::Type{Pareto}, θ, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1 || conditioner < 0
         return false
     end
@@ -143,17 +143,17 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (shape,) = unpack_parameters(Pareto, θ)
     return -log(shape) - shape * log(conditioner)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (shape,) = unpack_parameters(Pareto, θ)
     return SA[-inv(shape) - log(conditioner);]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (α,) = unpack_parameters(Pareto, θ)
     ### Below fisher information is problematic if α is larger than conditioner as Pareto 
     ### does not satisfy regularity conditions

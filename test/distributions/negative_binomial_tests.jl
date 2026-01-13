@@ -36,7 +36,7 @@ end
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, NegativeBinomial, [Inf], 1.0)
         @test !isproper(space, NegativeBinomial, [1.0], Inf)
         @test !isproper(space, NegativeBinomial, [NaN], 1.0)

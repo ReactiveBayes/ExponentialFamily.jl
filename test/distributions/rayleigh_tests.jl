@@ -19,13 +19,13 @@
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Rayleigh, [Inf])
         @test !isproper(space, Rayleigh, [NaN])
         @test !isproper(space, Rayleigh, [1.0], NaN)
         @test !isproper(space, Rayleigh, [0.5, 0.5], 1.0)
     end
-    @test !isproper(MeanParametersSpace(), Rayleigh, [-1.0])
+    @test !isproper(DefaultParametersSpace(), Rayleigh, [-1.0])
     @test_throws Exception convert(ExponentialFamilyDistribution, Rayleigh(Inf))
 end
 
