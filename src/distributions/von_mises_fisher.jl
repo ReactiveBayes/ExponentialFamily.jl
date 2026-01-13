@@ -44,7 +44,7 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{VonMisesFisher}, η, conditioner) = isnothing(conditioner) && length(η) > 1 && all(!isinf, η) && all(!isnan, η)
-isproper(::MeanParametersSpace, ::Type{VonMisesFisher}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{VonMisesFisher}, θ, conditioner) =
     isnothing(conditioner) && length(θ) > 1 && getindex(θ, 2) >= 0 && norm(first(θ)) ≈ 1.0 && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{VonMisesFisher})(tuple_of_θ::Tuple{Any, Any})
@@ -59,13 +59,13 @@ function (::NaturalToMean{VonMisesFisher})(tuple_of_η::Tuple{Any})
     return (μ, κ)
 end
 
-function unpack_parameters(::MeanParametersSpace, ::Type{VonMisesFisher}, packed, ::Nothing)
+function unpack_parameters(::DefaultParametersSpace, ::Type{VonMisesFisher}, packed, ::Nothing)
     (μ, κ) = (view(packed, 1:(length(packed)-1)), packed[end])
 
     return (μ, κ)
 end
 
-function unpack_parameters(::MeanParametersSpace, ::Type{VonMisesFisher}, packed)
+function unpack_parameters(::DefaultParametersSpace, ::Type{VonMisesFisher}, packed)
     (μ, κ) = (view(packed, 1:(length(packed)-1)), packed[end])
 
     return (μ, κ)
@@ -125,15 +125,15 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{VonMisesFisher}) = (θ) -> begin
-    (μ, κ) = unpack_parameters(MeanParametersSpace(), VonMisesFisher, θ)
+getlogpartition(::DefaultParametersSpace, ::Type{VonMisesFisher}) = (θ) -> begin
+    (μ, κ) = unpack_parameters(DefaultParametersSpace(), VonMisesFisher, θ)
     p = length(μ)
     return log(besseli((p / 2) - 1, κ)) - ((p / 2) - 1) * log(κ)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{VonMisesFisher}) =
+getfisherinformation(::DefaultParametersSpace, ::Type{VonMisesFisher}) =
     (θ) -> begin
-        (μ, k) = unpack_parameters(MeanParametersSpace(), VonMisesFisher, θ)
+        (μ, k) = unpack_parameters(DefaultParametersSpace(), VonMisesFisher, θ)
         p = length(μ)
 
         bessel3 = besseli((p / 2) - 3, k)

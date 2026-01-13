@@ -30,12 +30,12 @@ end
         end
     end
 
-    @test !isproper(MeanParametersSpace(), NormalGamma, [1.0, 0.0, -1.0, 2.0])
-    @test !isproper(MeanParametersSpace(), NormalGamma, [1.0, 0.0, -1.0, 2.0])
+    @test !isproper(DefaultParametersSpace(), NormalGamma, [1.0, 0.0, -1.0, 2.0])
+    @test !isproper(DefaultParametersSpace(), NormalGamma, [1.0, 0.0, -1.0, 2.0])
     @test !isproper(NaturalParametersSpace(), NormalGamma, [1.0, -0.2, 1.0, -1 / 0.8])
     @test !isproper(NaturalParametersSpace(), NormalGamma, [1.0, -0.2, 1.0, 10 / 8])
     @test isproper(NaturalParametersSpace(), NormalGamma, [1.0, -0.2, 1.0, -11 / 8])
-    @test !isproper(MeanParametersSpace(), NormalGamma, [-1.0, 0.0, NaN, 1.0], [Inf])
+    @test !isproper(DefaultParametersSpace(), NormalGamma, [-1.0, 0.0, NaN, 1.0], [Inf])
 end
 
 @testitem "NormalGamma: prod with Distribution" begin

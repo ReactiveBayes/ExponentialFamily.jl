@@ -34,9 +34,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), VonMises, [-1])
-    @test !isproper(MeanParametersSpace(), VonMises, [1], 3.0)
-    @test !isproper(MeanParametersSpace(), VonMises, [1, -2])
+    @test !isproper(DefaultParametersSpace(), VonMises, [-1])
+    @test !isproper(DefaultParametersSpace(), VonMises, [1], 3.0)
+    @test !isproper(DefaultParametersSpace(), VonMises, [1, -2])
 end
 
 @testitem "VonMises: prod with Distributions" begin

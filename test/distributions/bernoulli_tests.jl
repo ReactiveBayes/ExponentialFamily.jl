@@ -62,8 +62,8 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Bernoulli, [-1])
-    @test !isproper(MeanParametersSpace(), Bernoulli, [0.5, 0.5])
+    @test !isproper(DefaultParametersSpace(), Bernoulli, [-1])
+    @test !isproper(DefaultParametersSpace(), Bernoulli, [0.5, 0.5])
     @test !isproper(NaturalParametersSpace(), Bernoulli, [0.5, 0.5])
     @test !isproper(NaturalParametersSpace(), Bernoulli, [Inf])
 

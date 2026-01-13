@@ -18,7 +18,7 @@
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Pareto, [Inf], 1.0)
         @test !isproper(space, Pareto, [1.0], Inf)
         @test !isproper(space, Pareto, [NaN], 1.0)

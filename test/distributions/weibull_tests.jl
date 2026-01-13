@@ -13,7 +13,7 @@
                 d;
                 assume_no_allocations = true,
                 mappings = (
-                    MeanParametersSpace() => NaturalParametersSpace()
+                    DefaultParametersSpace() => NaturalParametersSpace()
                 )
             )
             for x in scale:1.0:(scale+3.0)
@@ -30,12 +30,12 @@
             η = -(1 / λ)^k
             transformation(η) = [k, (-1 / η[1])^(1 / k)]
             J = ForwardDiff.jacobian(transformation, [η])
-            @test first(J' * getfisherinformation(MeanParametersSpace(), Weibull, k)(λ) * J) ≈
+            @test first(J' * getfisherinformation(DefaultParametersSpace(), Weibull, k)(λ) * J) ≈
                   first(getfisherinformation(NaturalParametersSpace(), Weibull, k)(η)) atol = 1e-8
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Weibull, [Inf], 1.0)
         @test !isproper(space, Weibull, [1.0], Inf)
         @test !isproper(space, Weibull, [NaN], 1.0)
