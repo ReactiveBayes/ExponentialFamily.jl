@@ -20,14 +20,14 @@
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Poisson, [Inf])
         @test !isproper(space, Poisson, [NaN])
         @test !isproper(space, Poisson, [1.0], NaN)
         @test !isproper(space, Poisson, [0.5, 0.5], 1.0)
     end
-    ## mean parameter should be integer in the MeanParametersSpace
-    @test !isproper(MeanParametersSpace(), Poisson, [-0.1])
+    ## mean parameter should be integer in the DefaultParametersSpace
+    @test !isproper(DefaultParametersSpace(), Poisson, [-0.1])
     @test_throws Exception convert(ExponentialFamilyDistribution, Poisson(Inf))
 end
 

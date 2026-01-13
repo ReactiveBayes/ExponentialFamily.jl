@@ -50,12 +50,12 @@ end
     include("./exponential_family_setuptests.jl")
 
     @testset "getmapping" begin
-        @test @inferred(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
+        @test @inferred(getmapping(DefaultParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
               MeanToNatural{ArbitraryDistributionFromExponentialFamily}()
-        @test @inferred(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
+        @test @inferred(getmapping(NaturalParametersSpace() => DefaultParametersSpace(), ArbitraryDistributionFromExponentialFamily)) ===
               NaturalToMean{ArbitraryDistributionFromExponentialFamily}()
-        @test @allocated(getmapping(MeanParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
-        @test @allocated(getmapping(NaturalParametersSpace() => MeanParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
+        @test @allocated(getmapping(DefaultParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
+        @test @allocated(getmapping(NaturalParametersSpace() => DefaultParametersSpace(), ArbitraryDistributionFromExponentialFamily)) === 0
     end
 
     @testset let attributes = ArbitraryExponentialFamilyAttributes

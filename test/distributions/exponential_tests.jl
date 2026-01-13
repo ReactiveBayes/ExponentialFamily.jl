@@ -45,9 +45,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Exponential, [-1])
-    @test !isproper(MeanParametersSpace(), Exponential, [1, -0.1])
-    @test !isproper(MeanParametersSpace(), Exponential, [-0.1, 1])
+    @test !isproper(DefaultParametersSpace(), Exponential, [-1])
+    @test !isproper(DefaultParametersSpace(), Exponential, [1, -0.1])
+    @test !isproper(DefaultParametersSpace(), Exponential, [-0.1, 1])
     @test !isproper(NaturalParametersSpace(), Exponential, [1.1])
     @test !isproper(NaturalParametersSpace(), Exponential, [1, -1.1])
     @test !isproper(NaturalParametersSpace(), Exponential, [-1.1, 1])
