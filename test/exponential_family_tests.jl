@@ -93,10 +93,8 @@ end
 
         _similar = @inferred(similar(member))
 
-        # The standard `@allocated` is not really reliable in this test 
-        # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 1.0), samples = 1, evals = 1) === 0
-        @test @ballocated(pdf($member, 1.0), samples = 1, evals = 1) === 0
+        @test_no_allocations(logpdf(member, 1.0))
+        @test_no_allocations(pdf(member, 1.0))
 
         @test _similar isa typeof(member)
 
@@ -150,10 +148,8 @@ end
         @test @inferred(pdf(member, 2.0)) ≈ exp(3.75 + 2log(2))
         @test @inferred(pdf(member, 4.0)) ≈ exp(7.75 + 4log(2))
 
-        # The standard `@allocated` is not really reliable in this test 
-        # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0), samples = 1, evals = 1) === 0
-        @test @ballocated(pdf($member, 2.0), samples = 1, evals = 1) === 0
+        @test_no_allocations(logpdf(member, 1.0))
+        @test_no_allocations(pdf(member, 1.0))
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
@@ -185,7 +181,7 @@ end
         end
 
         # Test that the generic in-place prod! version does not allocate at all
-        @test @allocated(prod!(_similar, member, member)) === 0
+        @test_no_allocations(prod!(_similar, member, member))
     end
 end
 
@@ -232,10 +228,8 @@ end
         @test @inferred(pdf(member, 2.0)) ≈ exp((log(2.0^-2) + log(2.0 + 2) + 2.0))
         @test @inferred(pdf(member, 4.0)) ≈ exp((log(4.0^-2) + log(4.0 + 2) + 2.0))
 
-        # The standard `@allocated` is not really reliable in this test 
-        # We avoid using the `BenchmarkTools`, but here it is essential
-        @test @ballocated(logpdf($member, 2.0), samples = 1, evals = 1) === 0
-        @test @ballocated(pdf($member, 2.0), samples = 1, evals = 1) === 0
+        @test_no_allocations(logpdf(member, 2.0))
+        @test_no_allocations(pdf(member, 2.0))
 
         @test @inferred(member == member)
         @test @inferred(member ≈ member)
