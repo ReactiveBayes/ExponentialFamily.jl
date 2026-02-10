@@ -81,7 +81,7 @@ getgradlogpartition(::DefaultParametersSpace, ::Type{LogNormal}) = (θ) -> begin
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{LogNormal}) = (θ) -> begin
-    (μ, σ) = unpack_parameters(LogNormal, θ)
+    (_, σ) = unpack_parameters(LogNormal, θ)
     invσ² = inv(abs2(σ))
     return SA[invσ² 0.0; 0.0 2invσ²]
 end

@@ -58,7 +58,7 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}, 
     if length(η) < 2 || (length(η) !== k + 1)
         return false
     end
-    (η₁, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η)
+    (_, η₂) = unpack_parameters(MvNormalMeanScalePrecision, η) #η₁ is unused
     return isnothing(conditioner) && isone(size(η₂, 1)) && isposdef(-η₂)
 end
 
@@ -175,7 +175,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanScal
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MvNormalMeanScalePrecision{T}) where {T}
-    μ, γ = params(dist)
+    μ, _ = params(dist)
     d = length(μ)
     return rand!(rng, dist, Vector{T}(undef, d))
 end

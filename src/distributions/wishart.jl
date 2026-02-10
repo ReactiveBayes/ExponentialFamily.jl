@@ -115,7 +115,7 @@ function BayesBase.rand!(rng::AbstractRNG, sampleable::WishartFast{T}, x::Abstra
     end
 
     A     = similar(S)
-    l     = length(S)
+    # l     = length(S) #unused variable
     axes2 = axes(A, 2)
     r     = rank(S)
 
@@ -150,7 +150,7 @@ function BayesBase.rand!(rng::AbstractRNG, sampleable::WishartFast, x::AbstractV
     end
 
     A     = similar(S)
-    l     = length(S)
+    # l     = length(S) #unused variable
     axes2 = axes(A, 2)
     r     = rank(S)
 

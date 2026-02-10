@@ -163,7 +163,7 @@ function BayesBase.logpdf(dist::DirichletCollection{R, N, A}, x::AbstractArray{T
         return sum(xlogy.(one(eltype(dist.α)), zero(eltype(x))))
     end
     α = dist.α
-    α0 = dist.α0
+    # α0 = dist.α0 #unused variable
     s = sum(xlogy.(α .- 1, x); dims = 1)
     return sum(s .- dist.lmnB)
 end

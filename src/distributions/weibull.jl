@@ -123,7 +123,7 @@ end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{Weibull}, conditioner) = (θ) -> begin
     (λ,) = unpack_parameters(Weibull, θ)
-    return SA[-inv(η1);]
+    return SA[-inv(λ);]
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{Weibull}, k) = (θ) -> begin

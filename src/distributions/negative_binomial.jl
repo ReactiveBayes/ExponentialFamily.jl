@@ -132,8 +132,8 @@ getlogpartition(::DefaultParametersSpace, ::Type{NegativeBinomial}, conditioner)
 end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
-    (p,) = unpack_parameters(NegativeBinomial, η)
-    return SA[conditioner * inv(one(p) - p);]
+    (p,) = unpack_parameters(NegativeBinomial, θ)
+    return SA[conditioner * inv(one(p) - p)]
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{NegativeBinomial}, r) = (θ) -> begin
