@@ -106,20 +106,6 @@ Base.eltype(d::TruncatedExponentialFamilyDistribution) = eltype(d.untruncated)
 
 ### Functionality for Range and Support
 
-# Determine whether a (possibly truncated) distribution has a finite lower bound.
-# For a right-truncated distribution, inherit the lower-boundedness from the untruncated base.
-islowerbounded(d::RightTruncatedExponentialFamilyDistribution) = islowerbounded(convert(Distribution, d.untruncated))
-# For a general truncated distribution, it is lower-bounded if either the base distribution is,
-# or an explicit finite lower truncation limit is set.
-islowerbounded(d::TruncatedExponentialFamilyDistribution) = islowerbounded(convert(Distribution, d.untruncated)) || isfinite(d.lower)
-
-# Determine whether a (possibly truncated) distribution has a finite upper bound.
-# For a left-truncated distribution, inherit the upper-boundedness from the untruncated base.
-isupperbounded(d::LeftTruncatedExponentialFamilyDistribution) = isupperbounded(convert(Distribution, d.untruncated))
-# For a general truncated distribution, it is upper-bounded if either the base distribution is,
-# or an explicit finite upper truncation limit is set.
-isupperbounded(d::TruncatedExponentialFamilyDistribution) = isupperbounded(convert(Distribution, d.untruncated)) || isfinite(d.upper)
-
 # Return the minimum value of a (possibly truncated) distribution.
 # For a right-truncated distribution, the minimum is the same as the untruncated distribution.
 minimum(d::RightTruncatedExponentialFamilyDistribution) = minimum(convert(Distribution, d.untruncated))
