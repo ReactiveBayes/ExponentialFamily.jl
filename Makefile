@@ -96,7 +96,7 @@ benchmark: deps-scripts ## Run project benchmarks
 	$(JULIA) $(JULIAFLAGSSCRIPTS) $(JULIAFLAGSSCRIPTS) $(BENCHMARK)
 
 benchmark-compare: deps-scripts ## Run project benchmarks with comparison against specified branch
-	$(JULIA) $(JULIAFLAGSSCRIPTS) $(JULIAFLAGSSCRIPTS) $(BENCHMARK) --compare-branch $(branch)
+	$(JULIA) $(JULIAFLAGSSCRIPTS) $(JULIAFLAGSSCRIPTS) $(BENCHMARK) $(branch)
 
 clean: docs-clean ## Clean all generated files
 	rm -rf .julia/compiled
