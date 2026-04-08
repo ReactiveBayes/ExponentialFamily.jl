@@ -34,6 +34,7 @@ cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution}
 getnaturalparameters
 getattributes
 getconditioner
+getdims
 isproper
 getbasemeasure
 getlogbasemeasure

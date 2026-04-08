@@ -255,3 +255,96 @@ end
     @test @inferred(vague(ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily})) isa
           ExponentialFamilyDistribution{ArbitraryConditionedDistributionFromExponentialFamily}
 end
+
+@testitem "ExponentialFamilyDistributionAttributes dims" begin
+    include("./exponential_family_setuptests.jl")
+
+    import ExponentialFamily: getdims
+
+    # Default: dims = nothing
+    @test @inferred(getdims(ArbitraryExponentialFamilyAttributes)) === nothing
+
+    # Explicit dims = nothing
+    attrs_nothing = ExponentialFamilyDistributionAttributes(
+        (x) -> 1.0,
+        ((x) -> x,),
+        (η) -> sum(η),
+        RealInterval(0, Inf);
+        dims = nothing
+    )
+    @test @inferred(getdims(attrs_nothing)) === nothing
+
+    # dims = (2, 3)
+    attrs_dims = ExponentialFamilyDistributionAttributes(
+        (x) -> 1.0,
+        ((x) -> x,),
+        (η) -> sum(η),
+        RealInterval(0, Inf);
+        dims = (2, 3)
+    )
+    @test @inferred(getdims(attrs_dims)) === (2, 3)
+
+    # dims = (4,) (vector-variate case)
+    attrs_dims_1d = ExponentialFamilyDistributionAttributes(
+        (x) -> 1.0,
+        ((x) -> x,),
+        (η) -> sum(η),
+        RealInterval(0, Inf);
+        dims = (4,)
+    )
+    @test @inferred(getdims(attrs_dims_1d)) === (4,)
+end
+
+@testitem "getdims on ExponentialFamilyDistribution" begin
+    include("./exponential_family_setuptests.jl")
+
+    import ExponentialFamily: getdims
+
+    # No attributes (type-tagged distribution) -> dims = nothing
+    member_type_tagged = ExponentialFamilyDistribution(ArbitraryDistributionFromExponentialFamily, [2.0, 2.0])
+    @test getdims(member_type_tagged) === nothing
+
+    # Attributes without dims -> dims = nothing
+    attrs_no_dims = ExponentialFamilyDistributionAttributes(
+        (x) -> 1.0,
+        ((x) -> x,),
+        (η) -> sum(η),
+        RealInterval(0, Inf)
+    )
+    member_no_dims = ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, attrs_no_dims)
+    @test getdims(member_no_dims) === nothing
+
+    # Attributes with dims -> dims returned
+    attrs_with_dims = ExponentialFamilyDistributionAttributes(
+        (x) -> 1.0,
+        ((x) -> x,),
+        (η) -> sum(η),
+        RealInterval(0, Inf);
+        dims = (2, 3)
+    )
+    member_with_dims = ExponentialFamilyDistribution(Univariate, [2.0, 2.0], nothing, attrs_with_dims)
+    @test getdims(member_with_dims) === (2, 3)
+end
+
+@testitem "MeanToNatural and NaturalToMean dims=nothing dispatch" begin
+    include("./exponential_family_setuptests.jl")
+
+    m2n = MeanToNatural{ArbitraryDistributionFromExponentialFamily}()
+    n2m = NaturalToMean{ArbitraryDistributionFromExponentialFamily}()
+
+    params_mean = (1.0, 2.0)
+    params_natural = (2.0, 3.0)
+
+    # dims=nothing falls through to the conditioner-only version, then to the no-conditioner version
+    @test m2n(params_mean, nothing, nothing) == m2n(params_mean)
+    @test n2m(params_natural, nothing, nothing) == n2m(params_natural)
+
+    # map with dims=nothing should produce the same result as without the dims argument
+    η_mapped = map(DefaultParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily, [1.0, 2.0], nothing, nothing)
+    η_ref    = map(DefaultParametersSpace() => NaturalParametersSpace(), ArbitraryDistributionFromExponentialFamily, [1.0, 2.0])
+    @test η_mapped == η_ref
+
+    θ_mapped = map(NaturalParametersSpace() => DefaultParametersSpace(), ArbitraryDistributionFromExponentialFamily, [2.0, 3.0], nothing, nothing)
+    θ_ref    = map(NaturalParametersSpace() => DefaultParametersSpace(), ArbitraryDistributionFromExponentialFamily, [2.0, 3.0])
+    @test θ_mapped == θ_ref
+end
