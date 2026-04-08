@@ -21,5 +21,6 @@ ExponentialFamily.WishartFast
 ExponentialFamily.InverseWishartFast
 ExponentialFamily.NormalGamma
 ExponentialFamily.MvNormalWishart
+ExponentialFamily.MatrixNormalWishart
 ExponentialFamily.DirichletCollection
 ```
