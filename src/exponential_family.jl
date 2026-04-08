@@ -3,7 +3,7 @@ export ExponentialFamilyDistribution
 export ExponentialFamilyDistribution, ExponentialFamilyDistributionAttributes, getnaturalparameters, getattributes
 export MeanToNatural, NaturalToMean, DefaultParametersSpace, NaturalParametersSpace
 export getbasemeasure,
-    getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner
+    getlogbasemeasure, getsufficientstatistics, getlogpartition, getgradlogpartition, getfisherinformation, getsupport, getmapping, getconditioner, getdims
 export basemeasure, logbasemeasure, sufficientstatistics, logpartition, gradlogpartition, fisherinformation, insupport, isproper
 export isbasemeasureconstant, ConstantBaseMeasure, NonConstantBaseMeasure
 
@@ -28,6 +28,11 @@ function (transformation::MeanToNatural)(params, ::Nothing)
     return transformation(params)
 end
 
+# If `dims` is nothing, fall through to the version without dims
+function (transformation::MeanToNatural)(params, conditioner, ::Nothing)
+    return transformation(params, conditioner)
+end
+
 """
     NaturalToMean(::Type{T})
 
@@ -43,6 +48,11 @@ NaturalToMean(::Type{T}) where {T} = NaturalToMean{T}()
 # If the `conditioner` is nothing simply ignore it in the signature then
 function (transformation::NaturalToMean)(params, ::Nothing)
     return transformation(params)
+end
+
+# If `dims` is nothing, fall through to the version without dims
+function (transformation::NaturalToMean)(params, conditioner, ::Nothing)
+    return transformation(params, conditioner)
 end
 
 """
@@ -86,6 +96,11 @@ Base.map(::Pair{NaturalParametersSpace, DefaultParametersSpace}, ::Type{T}, some
 Base.map(::Pair{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, something, conditioner = nothing) where {T} =
     MeanToNatural{T}()(something, conditioner)
 
+Base.map(::Pair{NaturalParametersSpace, DefaultParametersSpace}, ::Type{T}, something, conditioner, dims) where {T} =
+    NaturalToMean{T}()(something, conditioner, dims)
+Base.map(::Pair{DefaultParametersSpace, NaturalParametersSpace}, ::Type{T}, something, conditioner, dims) where {T} =
+    MeanToNatural{T}()(something, conditioner, dims)
+
 """
     getbasemeasure(::ExponentialFamilyDistribution)
     getbasemeasure(::Type{ <: Distribution }, [ conditioner ])
@@ -126,7 +141,7 @@ Returns the support of the exponential family distribution.
 function getsupport end
 
 """
-    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support)
+    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support; dims = nothing)
 
 A structure to represent the attributes of an exponential family member.
 
@@ -137,20 +152,25 @@ A structure to represent the attributes of an exponential family member.
 - `support::P`: The support of the exponential family member.
 
 # Optionally
-- `logbasemeasure::LB`: The log of the  basemeasure of the exponential family member.
+- `logbasemeasure::LB`: The log of the basemeasure of the exponential family member.
+- `dims::D`: The dimensions of the variate (e.g. `(n, p)` for a matrix-variate distribution).
+  Used to thread shape information through the exponential family interface without relying on conditioner.
+  Defaults to `nothing` for all univariate and fixed-dimension multivariate distributions.
 
 See also: [`ExponentialFamilyDistribution`](@ref), [`getbasemeasure`](@ref), [`getsufficientstatistics`](@ref), [`getlogpartition`](@ref), [`getsupport`](@ref)
 """
-struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB}
+struct ExponentialFamilyDistributionAttributes{B, S, L, P, LB, D}
     basemeasure::B
     sufficientstatistics::S
     logpartition::L
     support::P
     logbasemeasure::LB
+    dims::D
 end
-function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P) where {B, S, L, P}
+
+function ExponentialFamilyDistributionAttributes(basemeasure::B, sufficientstatistics::S, logpartition::L, support::P; dims::D = nothing) where {B, S, L, P, D}
     logbasemeasure = (x) -> log(basemeasure(x))
-    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support, logbasemeasure)
+    ExponentialFamilyDistributionAttributes(basemeasure, sufficientstatistics, logpartition, support, logbasemeasure, dims)
 end
 
 getbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.basemeasure
@@ -158,9 +178,10 @@ getsufficientstatistics(attributes::ExponentialFamilyDistributionAttributes) = a
 getlogpartition(attributes::ExponentialFamilyDistributionAttributes) = attributes.logpartition
 getsupport(attributes::ExponentialFamilyDistributionAttributes) = attributes.support
 getlogbasemeasure(attributes::ExponentialFamilyDistributionAttributes) = attributes.logbasemeasure
+getdims(attributes::ExponentialFamilyDistributionAttributes) = attributes.dims
 
 BayesBase.insupport(attributes::ExponentialFamilyDistributionAttributes, value) = Base.in(value, getsupport(attributes))
-BayesBase.value_support(::Type{ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
+BayesBase.value_support(::Type{<:ExponentialFamilyDistributionAttributes{B, S, L, P}}) where {B, S, L, P} = value_support(P)
 
 """
     ExponentialFamilyDistribution(::Type{T}, naturalparameters, conditioner, attributes)
@@ -275,11 +296,21 @@ getconditioner(ef::ExponentialFamilyDistribution) = ef.conditioner
 """
     getattributes(::ExponentialFamilyDistribution)
 
-Returns iether the attributes of the exponential family member or `nothing`. 
+Returns iether the attributes of the exponential family member or `nothing`.
 
 See also: [`ExponentialFamilyDistributionAttributes`](@ref)
 """
 getattributes(ef::ExponentialFamilyDistribution) = ef.attributes
+
+"""
+    getdims(::ExponentialFamilyDistribution)
+
+Returns the `dims` field of the distribution's attributes, or `nothing` if attributes are absent or dims was not set.
+Useful for matrix-variate distributions that need shape information (e.g. `(n, p)`) inside exponential family interface calls.
+"""
+getdims(ef::ExponentialFamilyDistribution) = _getdims(getattributes(ef))
+_getdims(::Nothing) = nothing
+_getdims(attrs::ExponentialFamilyDistributionAttributes) = getdims(attrs)
 
 """
     basemeasure(::ExponentialFamilyDistribution, x)
@@ -406,6 +437,10 @@ function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner) wher
     return pack_parameters(DefaultParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner))
 end
 
+function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner, dims) where {T <: Distribution}
+    return pack_parameters(DefaultParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner, dims))
+end
+
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
     return transformation(v, nothing)
 end
@@ -416,6 +451,10 @@ end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner) where {T <: Distribution}
     return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(DefaultParametersSpace(), T, v, conditioner), conditioner))
+end
+
+function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner, dims) where {T <: Distribution}
+    return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(DefaultParametersSpace(), T, v, conditioner), conditioner, dims))
 end
 
 """
@@ -878,8 +917,9 @@ Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {
 function Base.convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{T}) where {T <: Distribution}
     tuple_of_η = unpack_parameters(ef)
     conditioner = getconditioner(ef)
+    dims = getdims(ef)
     # Map the conditioned natural parameters space into its corresponding mean parameters space
-    cparams = map(NaturalParametersSpace() => DefaultParametersSpace(), T, tuple_of_η, conditioner)
+    cparams = map(NaturalParametersSpace() => DefaultParametersSpace(), T, tuple_of_η, conditioner, dims)
     # `Distributions.jl` stores the params in a single tuple, so we need to join the parameters and the conditioner
     params = join_conditioner(T, cparams, conditioner)
     return T(params...)
