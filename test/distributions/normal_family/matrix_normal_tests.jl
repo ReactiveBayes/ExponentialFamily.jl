@@ -182,9 +182,9 @@ end
     # U and V are only identifiable up to a positive scalar c:
     # MN(M, U, V) = MN(M, cU, V/c) for any c > 0.
     # Verify the recovered distribution is equivalent by comparing logpdfs.
-    d_orig      = MatrixNormal(M,  U,  V)
+    d_orig      = MatrixNormal(M, U, V)
     d_recovered = MatrixNormal(M2, U2, V2)
-    rng = StableRNG(42)
+    rng         = StableRNG(42)
     for _ in 1:5
         X = rand(rng, d_orig)
         @test logpdf(d_orig, X) ≈ logpdf(d_recovered, X) atol = 1e-10
@@ -232,7 +232,7 @@ end
     μ_expected = Σ_expected * ξ_expected
 
     @test mean(result) ≈ μ_expected
-    @test cov(result)  ≈ Σ_expected
+    @test cov(result) ≈ Σ_expected
 
     # logpdf of product equals sum of logpdfs up to a constant:
     # check log-ratio is preserved across samples
@@ -300,4 +300,109 @@ end
     # For zero-mean MN(0, U, V): E[X X'] = tr(V) * U
     sample_row_cov = mean(s -> s * s', samples) / tr(V)
     @test sample_row_cov ≈ U atol = 0.15
+end
+
+@testitem "MatrixNormal: precision" begin
+    include("./normal_family_setuptests.jl")
+
+    M = [1.0 2.0; 3.0 4.0]
+    U = [2.0 0.5; 0.5 1.5]
+    V = [1.5 0.3; 0.3 2.0]
+    d = MatrixNormal(M, U, V)
+
+    # precision(d) is defined as invcov(d)
+    prec = precision(d)
+    ic = invcov(d)
+    @test prec[1] ≈ ic[1]
+    @test prec[2] ≈ ic[2]
+
+    # Both match the matrix inverses
+    @test prec[1] ≈ inv(U)
+    @test prec[2] ≈ inv(V)
+end
+
+@testitem "MatrixNormal: isproper (DefaultParametersSpace)" begin
+    include("./normal_family_setuptests.jl")
+
+    M = [1.0 2.0; 3.0 4.0]
+    U = [2.0 0.5; 0.5 1.5]
+    V = [1.5 0.3; 0.3 2.0]
+
+    # Non-nothing conditioner always returns false
+    @test !isproper(DefaultParametersSpace(), MatrixNormal, (M, U, V), :some_conditioner)
+    @test !isproper(DefaultParametersSpace(), MatrixNormal, (M, U, V), 1)
+
+    # Valid parameters with nothing conditioner
+    @test isproper(DefaultParametersSpace(), MatrixNormal, (M, U, V), nothing)
+
+    # NaN or Inf in any parameter matrix returns false
+    @test !isproper(DefaultParametersSpace(), MatrixNormal, (fill(NaN, 2, 2), U, V), nothing)
+    @test !isproper(DefaultParametersSpace(), MatrixNormal, (M, fill(Inf, 2, 2), V), nothing)
+    @test !isproper(DefaultParametersSpace(), MatrixNormal, (M, U, fill(NaN, 2, 2)), nothing)
+end
+
+@testitem "MatrixNormal: getbasemeasure" begin
+    include("./normal_family_setuptests.jl")
+
+    X = [1.0 2.0; 3.0 4.0]
+    bm = getbasemeasure(MatrixNormal)
+
+    # MatrixNormal has a constant base measure equal to oneunit of x
+    @test isbasemeasureconstant(MatrixNormal) isa ConstantBaseMeasure
+    @test bm(X) == oneunit(X)
+end
+
+@testitem "MatrixNormal: getnaturalparameters (DefaultParametersSpace)" begin
+    include("./normal_family_setuptests.jl")
+
+    M = [1.0 2.0; 3.0 4.0]
+    U = [2.0 0.5; 0.5 1.5]
+    V = [1.5 0.3; 0.3 2.0]
+
+    η_fn = getnaturalparameters(DefaultParametersSpace(), MatrixNormal)
+    η1, η2 = η_fn((M, U, V))
+
+    # Results match MeanToNatural
+    η1_ref, η2_ref = MeanToNatural(MatrixNormal)((M, U, V))
+    @test η1 ≈ η1_ref
+    @test η2 ≈ η2_ref
+
+    # Explicit formula: η1 = vec(U⁻¹ M V⁻¹), η2 = -1/2 * kron(V⁻¹, U⁻¹)
+    @test η1 ≈ vec(inv(U) * M * inv(V))
+    @test η2 ≈ -1/2 * kron(inv(V), inv(U))
+end
+
+@testitem "MatrixNormal: getfisherinformation (DefaultParametersSpace)" begin
+    include("./normal_family_setuptests.jl")
+
+    M = [1.0 2.0; 3.0 4.0]
+    U = [2.0 0.5; 0.5 1.5]
+    V = [1.5 0.3; 0.3 2.0]
+    n, p = 2, 2
+
+    fi_fn = getfisherinformation(DefaultParametersSpace(), MatrixNormal)
+    F_M, F_U, F_V = fi_fn((M, U, V))
+
+    # F_M = kron(U⁻¹, V⁻¹)
+    @test F_M ≈ kron(inv(U), inv(V))
+
+    # F_U = n/2 * kron(U⁻¹, U⁻¹)
+    @test F_U ≈ n/2 * kron(inv(U), inv(U))
+
+    # F_V = p/2 * kron(V⁻¹, V⁻¹)
+    @test F_V ≈ p/2 * kron(inv(V), inv(V))
+
+    # Fisher information does not depend on M
+    F_M2, F_U2, F_V2 = fi_fn((zeros(n, p), U, V))
+    @test F_M ≈ F_M2
+    @test F_U ≈ F_U2
+    @test F_V ≈ F_V2
+
+    # Each block is symmetric positive definite
+    @test issymmetric(F_M)
+    @test issymmetric(F_U)
+    @test issymmetric(F_V)
+    @test isposdef(F_M)
+    @test isposdef(F_U)
+    @test isposdef(F_V)
 end

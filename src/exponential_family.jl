@@ -441,6 +441,14 @@ function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner, dims
     return pack_parameters(DefaultParametersSpace(), T, transformation(unpack_parameters(NaturalParametersSpace(), T, v, conditioner), conditioner, dims))
 end
 
+function (transformation::NaturalToMean{T})(v::AbstractVector, conditioner, ::Nothing) where {T <: Distribution}
+    return transformation(v, conditioner)
+end
+
+function (transformation::NaturalToMean{T})(v::AbstractVector, ::Nothing, ::Nothing) where {T <: Distribution}
+    return transformation(v, nothing)
+end
+
 function (transformation::MeanToNatural{T})(v::AbstractVector) where {T <: Distribution}
     return transformation(v, nothing)
 end
@@ -455,6 +463,14 @@ end
 
 function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner, dims) where {T <: Distribution}
     return pack_parameters(NaturalParametersSpace(), T, transformation(unpack_parameters(DefaultParametersSpace(), T, v, conditioner), conditioner, dims))
+end
+
+function (transformation::MeanToNatural{T})(v::AbstractVector, conditioner, ::Nothing) where {T <: Distribution}
+    return transformation(v, conditioner)
+end
+
+function (transformation::MeanToNatural{T})(v::AbstractVector, ::Nothing, ::Nothing) where {T <: Distribution}
+    return transformation(v, nothing)
 end
 
 """

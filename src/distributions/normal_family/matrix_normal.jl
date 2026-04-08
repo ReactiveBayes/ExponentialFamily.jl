@@ -1,20 +1,19 @@
 export MatrixNormal
 
-import Distributions: entropy,distrname,AbstractMvNormal
+import Distributions: entropy, distrname, AbstractMvNormal
 import Base: convert
 
 using DomainSets
 using LinearAlgebra
-
 
 Distributions.distrname(::MatrixNormal) = "MatrixNormal"
 
 Base.eltype(::MatrixNormal{T}) where {T} = T
 Base.precision(d::MatrixNormal) = invcov(d)
 
-covmats(d::MatrixNormal) = (d.U,d.V)
-BayesBase.invcov(d::MatrixNormal) = (cholinv(d.U),cholinv(d.V))
-BayesBase.vague(::Type{<:MatrixNormal}, dims::Tuple{Int,Int}) =
+covmats(d::MatrixNormal) = (d.U, d.V)
+BayesBase.invcov(d::MatrixNormal) = (cholinv(d.U), cholinv(d.V))
+BayesBase.vague(::Type{<:MatrixNormal}, dims::Tuple{Int, Int}) =
     MatrixNormal(zeros(Float64, dims), diagm(ones(dims[1])), diagm(ones(dims[2])))
 
 function kronecker_factor(M::AbstractMatrix, n::Int, p::Int)
@@ -35,11 +34,11 @@ function kronecker_factor(M::AbstractMatrix, n::Int, p::Int)
     return Ui, Vi
 end
 
-getsupport(::MatrixNormal) = ProductDomain(VectorDomain{FullSpace},VectorDomain{FullSpace})
+getsupport(::MatrixNormal) = ProductDomain(VectorDomain{FullSpace}, VectorDomain{FullSpace})
 
 function Base.convert(::Type{MvNormalMeanCovariance}, d::MatrixNormal)
-    U,V = covmats(d)
-    return MvNormalMeanCovariance(vec(mean(d)), Distributions.PDMats.PDMat(kron(V,U)))
+    U, V = covmats(d)
+    return MvNormalMeanCovariance(vec(mean(d)), Distributions.PDMats.PDMat(kron(V, U)))
 end
 
 BayesBase.default_prod_rule(::Type{MatrixNormal}, ::Type{MatrixNormal}) = PreserveTypeProd(MvNormalMeanCovariance)
@@ -55,72 +54,72 @@ function BayesBase.prod(::PreserveTypeProd{MvNormalMeanCovariance}, left::Matrix
     return MvNormalMeanCovariance(Σ * ξ, Σ)
 end
 
-function (::MeanToNatural{MatrixNormal})(tuple_of_θ::Tuple{Any,Any,Any})
-    (M,U,V) = tuple_of_θ
+function (::MeanToNatural{MatrixNormal})(tuple_of_θ::Tuple{Any, Any, Any})
+    (M, U, V) = tuple_of_θ
     Ui = cholinv(U)
     Vi = cholinv(V)
     η1 = vec(Ui*M*Vi)
-    η2 = -1/2*kron(Vi,Ui)
-    return (η1,η2)
+    η2 = -1/2*kron(Vi, Ui)
+    return (η1, η2)
 end
 
-function (::NaturalToMean{MatrixNormal})(tuple_of_η::Tuple{Any,Any}, ::Nothing, dims::Tuple{Int,Int})
+function (::NaturalToMean{MatrixNormal})(tuple_of_η::Tuple{Any, Any}, ::Nothing, dims::Tuple{Int, Int})
     (η1, η2) = tuple_of_η
-    n,p = dims
-    Ui,Vi = kronecker_factor(-2η2,n,p)
+    n, p = dims
+    Ui, Vi = kronecker_factor(-2η2, n, p)
     U = cholinv(Ui)
     V = cholinv(Vi)
-    M = U*reshape(η1,n,p)*V
-    return (M,U,V)
+    M = U*reshape(η1, n, p)*V
+    return (M, U, V)
 end
 
 # Natural parameterization
 
 isproper(::NaturalParametersSpace, ::Type{MatrixNormal}, η, conditioner) = isnothing(conditioner) && all(x -> !any(isinf, x) && !any(isnan, x), η)
-isproper(::DefaultParametersSpace, ::Type{MatrixNormal}, θ, conditioner) = isnothing(conditioner) && !any(isinf, θ) && !any(isnan, θ)
+isproper(::DefaultParametersSpace, ::Type{MatrixNormal}, θ, conditioner) = isnothing(conditioner) && all(x -> !any(isinf, x) && !any(isnan, x), θ)
 
 isbasemeasureconstant(::Type{MatrixNormal}) = ConstantBaseMeasure()
 getbasemeasure(::Type{MatrixNormal}) = (x) -> oneunit(x)
 
 getnaturalparameters(::DefaultParametersSpace, ::Type{MatrixNormal}) = (θ) -> begin
-    (M,U,V) = θ
+    (M, U, V) = θ
     Ui = cholinv(U)
     Vi = cholinv(V)
     η1 = vec(Ui*M*Vi)
-    η2 = -1/2*kron(Vi,Ui)
-    return (η1,η2)  
+    η2 = -1/2*kron(Vi, Ui)
+    return (η1, η2)
 end
 
 getsufficientstatistics(::Type{MatrixNormal}) = (X) -> begin
     T1 = vec(X)
     T2 = vec(X)*vec(X)'
-    return (T1,T2)
+    return (T1, T2)
 end
 
 # Mean parametrization
 
 function Distributions.entropy(d::MatrixNormal)
-    (M,U,V) = params(d)
-    n,p = size(d)
+    (M, U, V) = params(d)
+    n, p = size(d)
     return n*p/2*log(2*π) + p/2*logdet(U) + n/2*logdet(V) + n*p/2
 end
 
 getlogpartition(::DefaultParametersSpace, ::Type{MatrixNormal}) = (Θ) -> begin
-    (M,U,V) = Θ
-    n,p = size(M)
+    (M, U, V) = Θ
+    n, p = size(M)
     return n*p/2*log(2*π) + p/2*logdet(U) + n/2*logdet(V)
 end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{MatrixNormal}) = (Θ) -> begin
-    (M,U,V) = Θ
-    n,p = size(M)
-    return (zeros(n,p), p/2*cholinv(U), n/2*cholinv(V))
+    (M, U, V) = Θ
+    n, p = size(M)
+    return (zeros(n, p), p/2*cholinv(U), n/2*cholinv(V))
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{MatrixNormal}) = (Θ) -> begin
-    (M,U,V) = Θ
-    n,p = size(M)
+    (M, U, V) = Θ
+    n, p = size(M)
     Ui = cholinv(U)
     Vi = cholinv(V)
-    return (kron(Ui,Vi), n/2*kron(Ui,Ui), p/2*kron(Vi,Vi)) 
+    return (kron(Ui, Vi), n/2*kron(Ui, Ui), p/2*kron(Vi, Vi))
 end
