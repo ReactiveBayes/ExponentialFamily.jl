@@ -5,86 +5,87 @@ import StatsFuns: logmvgamma
 using Random
 
 """
-    MatrixNormalWishart{T, M, S, K, N, C}
+    MatrixNormalWishart{T, M, U, V, N}
 
-A Matrix Normal-Wishart distribution — the conjugate prior for the mean matrix and row-precision
-of a Matrix Normal distribution.
+A Matrix Normal-Wishart distribution — the conjugate prior for the mean matrix and column
+precision of a Matrix Normal distribution.
 
-Models the joint distribution of a matrix `M` (n×p) and a positive-definite matrix `Λ` (n×n):
-- `M | Λ ~ MatrixNormal(M₀, (κΛ)⁻¹, V)`
-- `Λ ~ Wishart(ν, Ψ)`
+Models the joint distribution of a matrix `X` (n×p) and a positive-definite matrix `Y` (p×p):
+- `X | Y ~ MatrixNormal(M, U, Y⁻¹)`
+- `Y ~ Wishart(V, ν)`
 
 # Fields
-- `M₀`: Prior mean matrix (n×p).
-- `Ψ`: Wishart scale matrix (n×n).
-- `κ`: Precision scaling factor (scalar > 0).
-- `ν`: Wishart degrees of freedom (scalar > n−1).
-- `V`: Column covariance matrix (p×p).
+- `M`: Prior mean matrix (n×p).
+- `U`: Row covariance matrix (n×n).
+- `V`: Wishart scale matrix (p×p).
+- `ν`: Wishart degrees of freedom (scalar > p−1).
 
 # Note
-`V` plays the role of a fixed hyperparameter (conditioner) in the exponential family interface.
-When converting to `ExponentialFamilyDistribution`, `V` is stored as the conditioner.
+`U` plays the role of a fixed hyperparameter (conditioner) in the exponential family interface.
+When converting to `ExponentialFamilyDistribution`, `U` is stored as the conditioner.
+
+# Reference
+The pdf follows the definition in the Book of Statistical Proofs:
+  MNW(X,Y | M,U,V,ν) = MN(X | M, U, Y⁻¹) W(Y | V, ν)
 """
-struct MatrixNormalWishart{T, M <: AbstractMatrix{T}, S <: AbstractMatrix{T}, K <: Real, N <: Real, C <: AbstractMatrix{T}} <:
+struct MatrixNormalWishart{T, TM <: AbstractMatrix{T}, TU <: AbstractMatrix{T}, TV <: AbstractMatrix{T}, N <: Real} <:
        ContinuousMultivariateMatrixvariateDistribution
-    M₀::M
-    Ψ::S
-    κ::K
+    M::TM
+    U::TU
+    V::TV
     ν::N
-    V::C
 
     function MatrixNormalWishart(
-        M₀::M,
-        Ψ::S,
-        κ::K,
-        ν::N,
-        V::C
-    ) where {T, M <: AbstractMatrix{T}, S <: AbstractMatrix{T}, K <: Real, N <: Real, C <: AbstractMatrix{T}}
-        new{T, M, S, K, N, C}(M₀, Ψ, κ, ν, V)
+        M::TM,
+        U::TU,
+        V::TV,
+        ν::N
+    ) where {T, TM <: AbstractMatrix{T}, TU <: AbstractMatrix{T}, TV <: AbstractMatrix{T}, N <: Real}
+        new{T, TM, TU, TV, N}(M, U, V, ν)
     end
 
     function MatrixNormalWishart(
-        M₀::M,
-        Ψ::S,
-        κ::K,
-        ν::N,
-        V::C
-    ) where {T1, T2, T3, M <: AbstractMatrix{T1}, S <: AbstractMatrix{T2}, K <: Real, N <: Real, C <: AbstractMatrix{T3}}
+        M::TM,
+        U::TU,
+        V::TV,
+        ν::N
+    ) where {T1, T2, T3, TM <: AbstractMatrix{T1}, TU <: AbstractMatrix{T2}, TV <: AbstractMatrix{T3}, N <: Real}
         T = promote_type(T1, T2, T3)
-        M₀_new = convert(AbstractMatrix{T}, M₀)
-        Ψ_new  = convert(AbstractMatrix{T}, Ψ)
-        V_new  = convert(AbstractMatrix{T}, V)
-        return new{T, typeof(M₀_new), typeof(Ψ_new), K, N, typeof(V_new)}(M₀_new, Ψ_new, κ, ν, V_new)
+        M_new = convert(AbstractMatrix{T}, M)
+        U_new = convert(AbstractMatrix{T}, U)
+        V_new = convert(AbstractMatrix{T}, V)
+        return new{T, typeof(M_new), typeof(U_new), typeof(V_new), N}(M_new, U_new, V_new, ν)
     end
 end
 
 Base.eltype(::MatrixNormalWishart{T}) where {T} = T
-Base.size(d::MatrixNormalWishart) = size(d.M₀)
+Base.size(d::MatrixNormalWishart) = size(d.M)
 
-BayesBase.params(d::MatrixNormalWishart)  = (d.M₀, d.Ψ, d.κ, d.ν, d.V)
-BayesBase.mean(d::MatrixNormalWishart)    = (d.M₀, d.ν * d.Ψ)
-BayesBase.dof(d::MatrixNormalWishart)     = d.ν
-BayesBase.location(d::MatrixNormalWishart) = d.M₀
+BayesBase.params(d::MatrixNormalWishart)   = (d.M, d.U, d.V, d.ν)
+BayesBase.mean(d::MatrixNormalWishart)     = (d.M, d.ν * d.V)
+BayesBase.dof(d::MatrixNormalWishart)      = d.ν
+BayesBase.location(d::MatrixNormalWishart) = d.M
 
+# U is the conditioner; the "free" parameters are (M, V, ν).
 ExponentialFamily.separate_conditioner(::Type{MatrixNormalWishart}, params) =
-    ((params[1], params[2], params[3], params[4]), params[5])
+    ((params[1], params[3], params[4]), params[2])
 
-ExponentialFamily.join_conditioner(::Type{MatrixNormalWishart}, cparams, V) =
-    (cparams..., V)
+ExponentialFamily.join_conditioner(::Type{MatrixNormalWishart}, cparams, U) =
+    (cparams[1], U, cparams[2], cparams[3])
 
 function BayesBase.pdf(dist::MatrixNormalWishart, x::Tuple)
-    M, Λ = x
-    M₀, Ψ, κ, ν, V = params(dist)
-    return pdf(MatrixNormal(M₀, cholinv(κ * Λ), V), M) * pdf(Wishart(ν, Ψ), Λ)
+    (X, Y) = x
+    M, U, V, ν = params(dist)
+    return pdf(MatrixNormal(M, U, cholinv(Y)), X) * pdf(Wishart(ν, V), Y)
 end
 
 BayesBase.logpdf(dist::MatrixNormalWishart, x::Tuple) = log(pdf(dist, x))
 
 function BayesBase.rand(rng::AbstractRNG, dist::MatrixNormalWishart{T}) where {T}
-    M₀, Ψ, κ, ν, V = params(dist)
-    Λ = rand(rng, Wishart(ν, Ψ))
-    M = rand(rng, MatrixNormal(M₀, cholinv(κ * Λ), V))
-    return (M, Λ)
+    M, U, V, ν = params(dist)
+    Y = rand(rng, Wishart(ν, V))
+    X = rand(rng, MatrixNormal(M, U, cholinv(Y)))
+    return (X, Y)
 end
 
 function BayesBase.rand(rng::AbstractRNG, dist::MatrixNormalWishart{T}, nsamples::Int) where {T}
@@ -94,151 +95,176 @@ end
 BayesBase.default_prod_rule(::Type{<:MatrixNormalWishart}, ::Type{<:MatrixNormalWishart}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixNormalWishart, right::MatrixNormalWishart)
-    M₀l, Ψl, κl, νl, Vl = params(left)
-    M₀r, Ψr, κr, νr, Vr = params(right)
-
-    Vi_l = cholinv(Vl)
-
-    κ  = κl + κr
-    M₀ = (κl * M₀l + κr * M₀r) / κ
-    Ψ  = cholinv(
-        cholinv(Ψl) + κl * M₀l * Vi_l * M₀l' +
-        cholinv(Ψr) + κr * M₀r * Vi_l * M₀r' -
-        κ * M₀ * Vi_l * M₀'
-    )
-    n, p = size(M₀l)
-    ν = νl + νr + p - n - 1
-
-    return MatrixNormalWishart(M₀, Ψ, κ, ν, Vl)
+    Ml, Ul, Vl, νl = params(left)
+    Mr, Ur, Vr, νr = params(right)
+    # Assumes same conditioner Ul == Ur = U
+    U  = Ul
+    Ui = cholinv(U)
+    M  = Ml + Mr
+    Vl_inv = cholinv(Vl)
+    Vr_inv = cholinv(Vr)
+    cross  = Ml' * Ui * Mr
+    V  = cholinv(Vl_inv + Vr_inv - cross - cross')
+    n, p = size(Ml)
+    ν  = νl + νr + n - p - 1
+    return MatrixNormalWishart(M, U, V, ν)
 end
 
 function BayesBase.insupport(::ExponentialFamilyDistribution{MatrixNormalWishart}, x)
     return x isa Tuple && length(x) == 2 && isposdef(x[2])
 end
 
-function isproper(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, η, V)
-    if isnothing(V) || any(isnan, η) || any(isinf, η)
+function isproper(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, η, U)
+    if isnothing(U) || any(isnan, η) || any(isinf, η)
+        return false
+    end
+    η₁, η₂, η₃ = unpack_parameters(MatrixNormalWishart, η, U)
+    n = size(η₁, 1)
+    W = Symmetric(-2η₂ - η₁' * U * η₁)
+    return η₃ > (n - 2) / 2 && isposdef(W)
+end
+
+function isproper(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, θ, U)
+    if isnothing(U)
+        return false
+    end
+    M, V, ν = θ
+    if any(x -> any(isnan, x) || any(isinf, x), (M, V)) || isnan(ν) || isinf(ν)
         return false
     end
     p = size(V, 1)
-    _, _, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, V)
-    return η₃ < 0 && η₄ > (p - 2) / 2
+    return isposdef(V) && ν > p - 1
 end
 
-function isproper(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, θ, V)
-    if isnothing(V)
-        return false
-    end
-    M₀, Ψ, κ, ν = θ
-    if any(x -> any(isnan, x) || any(isinf, x), (M₀, Ψ)) || isnan(κ) || isinf(κ) || isnan(ν) || isinf(ν)
-        return false
-    end
-    n = size(M₀, 1)
-    return κ > 0 && ν > n - 1
+function (::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::Tuple{Any, Any, Any}, U)
+    M, V, ν = tuple_of_θ
+    n, p = size(M)
+    Ui   = cholinv(U)
+    η₁   = Ui * M                               # n×p
+    η₂   = -1 / 2 * (cholinv(V) + M' * Ui * M) # p×p
+    η₃   = (ν + n - p - 1) / 2                 # scalar
+    return (η₁, η₂, η₃)
 end
 
-function (::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::Tuple{Any, Any, Any, Any}, V)
-    M₀, Ψ, κ, ν = tuple_of_θ
-    n, p = size(M₀)
-    Vi    = cholinv(V)
-    M₀Vi  = M₀ * Vi
-    η₁ = κ * M₀Vi
-    η₂ = -1 / 2 * (cholinv(Ψ) + κ * M₀Vi * M₀')
-    η₃ = -κ / 2
-    η₄ = (ν + p - n - 1) / 2
-    return (η₁, η₂, η₃, η₄)
-end
-
-function (t::NaturalToMean{MatrixNormalWishart})(tuple_of_η::Tuple{Any, Any, Any, Any}, V)
-    η₁, η₂, η₃, η₄ = tuple_of_η
+function (::NaturalToMean{MatrixNormalWishart})(tuple_of_η::Tuple{Any, Any, Any}, U)
+    η₁, η₂, η₃ = tuple_of_η
     n, p = size(η₁)
-    κ  = -2η₃
-    M₀ = (-1 / (2η₃)) * η₁ * V
-    ν  = 2η₄ + n + 1 - p
-    Ψ  = cholinv(-2η₂ + η₁ * V * η₁' / (2η₃))
-    return (M₀, Ψ, κ, ν)
+    M  = U * η₁                                  # n×p
+    V  = cholinv(-2η₂ - η₁' * U * η₁)           # p×p
+    ν  = 2η₃ - n + p + 1                        # scalar
+    return (M, V, ν)
 end
 
-function (t::NaturalToMean{MatrixNormalWishart})(tuple_of_η::Tuple{Any, Any, Any, Any}, V, ::Tuple{Int, Int})
-    return t(tuple_of_η, V)
+function (t::NaturalToMean{MatrixNormalWishart})(tuple_of_η::Tuple{Any, Any, Any}, U, ::Tuple{Int, Int})
+    return t(tuple_of_η, U)
 end
 
-# Infer n from p = size(V,1) and total length of η.
-# Packed layout: [vec(η₁) (n×p), vec(η₂) (n×n), η₃, η₄]   length = np + n² + 2
-# n satisfies: n² + np − (length(η)−2) = 0  →  n = (−p + √(p²+4L)) / 2
-function unpack_parameters(::Type{MatrixNormalWishart}, η, V)
-    p = size(V, 1)
-    L = length(η) - 2
-    n = Int(round((-p + sqrt(p^2 + 4L)) / 2))
+function (t::NaturalToMean{MatrixNormalWishart})(tuple_of_η::Tuple{Any, Any, Any}, U, ::Nothing)
+    return t(tuple_of_η, U)
+end
+
+# Packed layout: [vec(η₁) (n×p), vec(η₂) (p×p), η₃]   length = np + p² + 1
+# Conditioner U is n×n, so n = size(U,1).
+# p satisfies: p² + n*p − (length(η)−1) = 0  →  p = (−n + √(n²+4L)) / 2  where L = length(η)-1
+function unpack_parameters(::Type{MatrixNormalWishart}, η, U)
+    n = size(U, 1)
+    L = length(η) - 1
+    p = Int(round((-n + sqrt(n^2 + 4L)) / 2))
     @inbounds η₁ = reshape(view(η, 1:(n * p)), n, p)
-    @inbounds η₂ = reshape(view(η, (n * p + 1):(n * p + n^2)), n, n)
-    @inbounds η₃ = η[n * p + n^2 + 1]
-    @inbounds η₄ = η[n * p + n^2 + 2]
-    return η₁, η₂, η₃, η₄
+    @inbounds η₂ = reshape(view(η, (n * p + 1):(n * p + p^2)), p, p)
+    @inbounds η₃ = η[n * p + p^2 + 1]
+    return η₁, η₂, η₃
 end
 
-isbasemeasureconstant(::Type{MatrixNormalWishart}) = ConstantBaseMeasure()
+isbasemeasureconstant(::Type{MatrixNormalWishart}) = NonConstantBaseMeasure()
 
-getbasemeasure(::Type{MatrixNormalWishart})    = (_) -> 1.0
-getbasemeasure(::Type{MatrixNormalWishart}, V) = (_) -> 1.0
+getbasemeasure(::Type{MatrixNormalWishart}, U) = let Ui = cholinv(U)
+    (z) -> begin (X, Y) = z; exp(-1 / 2 * tr(X' * Ui * X * Y)) end
+end
 
-getlogbasemeasure(::Type{MatrixNormalWishart})    = (_) -> 0.0
-getlogbasemeasure(::Type{MatrixNormalWishart}, V) = (_) -> 0.0
+getlogbasemeasure(::Type{MatrixNormalWishart}, U) = let Ui = cholinv(U)
+    (z) -> begin (X, Y) = z; -1 / 2 * tr(X' * Ui * X * Y) end
+end
 
-function getsufficientstatistics(::Type{MatrixNormalWishart}, V)
-    Vi = cholinv(V)
+function getsufficientstatistics(::Type{MatrixNormalWishart}, U)
     return (
-        (z) -> begin (M, Λ) = z; Λ * M end,
-        (z) -> begin (_, Λ) = z; Λ end,
-        (z) -> begin (M, Λ) = z; tr(Vi * M' * Λ * M) end,
-        (z) -> begin (_, Λ) = z; logdet(Λ) end
+        (z) -> begin (X, Y) = z; X * Y end,         # T₁ = XY (n×p)
+        (z) -> begin (_, Y) = z; Y end,              # T₂ = Y  (p×p)
+        (z) -> begin (_, Y) = z; logdet(Y) end       # T₃ = logdet(Y)
     )
 end
 
-getlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, V) = (η) -> begin
-    η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, V)
+getlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, U) = (η) -> begin
+    η₁, η₂, η₃ = unpack_parameters(MatrixNormalWishart, η, U)
     n, p = size(η₁)
-    ν  = 2η₄ + n + 1 - p
-    Ψ  = cholinv(-2η₂ + η₁ * V * η₁' / (2η₃))
-    term1 = -(n * p / 2) * log(-2η₃)
-    term2 = (ν / 2) * logdet(Ψ)
-    term3 = (ν * n / 2) * log(2.0)
-    term4 = logmvgamma(n, ν / 2)
-    term5 = (n / 2) * logdet(V)
-    return term1 + term2 + term3 + term4 + term5 + (n * p / 2) * log2π
-end
-
-getlogpartition(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, V) = (θ) -> begin
-    M₀, Ψ, κ, ν = θ
-    n, p = size(M₀)
+    ν  = 2η₃ - n + p + 1
+    V  = cholinv(-2η₂ - η₁' * U * η₁)
     term1 = (n * p / 2) * log2π
-    term2 = (n / 2) * logdet(V)
-    term3 = -(n * p / 2) * log(κ)
-    term4 = (ν * n / 2) * log(2.0)
-    term5 = (ν / 2) * logdet(Ψ)
-    term6 = logmvgamma(n, ν / 2)
-    return term1 + term2 + term3 + term4 + term5 + term6
+    term2 = (p / 2) * logdet(U)
+    term3 = (ν / 2) * logdet(V)
+    term4 = (ν * p / 2) * log(2.0)
+    term5 = logmvgamma(p, ν / 2)
+    return term1 + term2 + term3 + term4 + term5
 end
 
-getfisherinformation(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, V) = (θ) -> begin
-    M₀, Ψ, κ, ν = θ
-    n, p = size(M₀)
+getlogpartition(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, U) = (θ) -> begin
+    M, V, ν = θ
+    n, p = size(M)
+    term1 = (n * p / 2) * log2π
+    term2 = (p / 2) * logdet(U)
+    term3 = (ν / 2) * logdet(V)
+    term4 = (ν * p / 2) * log(2.0)
+    term5 = logmvgamma(p, ν / 2)
+    return term1 + term2 + term3 + term4 + term5
+end
+
+getfisherinformation(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, U) = (θ) -> begin
+    M, V, ν = θ
+    n, p = size(M)
+    Ui   = cholinv(U)
     Vi   = cholinv(V)
-    Ψi   = cholinv(Ψ)
-    # Block structure: (M₀ block: np×np, Ψ block: n²×n², κ block: 1×1, ν block: 1×1)
-    total = n * p + n^2 + 2
+    # Block structure: (M block: np×np, V block: p²×p², ν block: 1×1)
+    total = n * p + p^2 + 1
     F = zeros(total, total)
     @inbounds begin
-        # ∂²A/∂M₀² = ν κ (V⁻¹ ⊗ Ψ⁻¹)
-        F[1:(n*p), 1:(n*p)] = ν * κ * kron(Vi, Ψi)
-        # ∂²A/∂Ψ²  = ν/2 (Ψ⁻¹ ⊗ Ψ⁻¹)
-        F[(n*p+1):(n*p+n^2), (n*p+1):(n*p+n^2)] = (ν / 2) * kron(Ψi, Ψi)
-        # ∂²A/∂κ²  = np / (2κ²)
-        F[n*p+n^2+1, n*p+n^2+1] = n * p / (2κ^2)
-        # ∂²A/∂ν²  = mvtrigamma(n, ν/2) / 4
-        F[n*p+n^2+2, n*p+n^2+2] = mvtrigamma(n, ν / 2) / 4
+        # ∂²A/∂M² = ν (V⁻¹ ⊗ U⁻¹)
+        F[1:(n * p), 1:(n * p)] = ν * kron(Vi, Ui)
+        # ∂²A/∂V²  = ν/2 (V⁻¹ ⊗ V⁻¹)
+        F[(n * p + 1):(n * p + p^2), (n * p + 1):(n * p + p^2)] = (ν / 2) * kron(Vi, Vi)
+        # ∂²A/∂ν²  = mvtrigamma(p, ν/2) / 4
+        F[n * p + p^2 + 1, n * p + p^2 + 1] = mvtrigamma(p, ν / 2) / 4
     end
     return F
+end
+
+BayesBase.default_prod_rule(
+    ::Type{<:ExponentialFamilyDistribution{MatrixNormalWishart}},
+    ::Type{<:ExponentialFamilyDistribution{MatrixNormalWishart}}
+) = PreserveTypeProd(ExponentialFamilyDistribution{MatrixNormalWishart})
+
+function BayesBase.prod(
+    ::PreserveTypeProd{ExponentialFamilyDistribution{MatrixNormalWishart}},
+    left::ExponentialFamilyDistribution{MatrixNormalWishart},
+    right::ExponentialFamilyDistribution{MatrixNormalWishart}
+)
+    if !isapprox(getconditioner(left), getconditioner(right))
+        error("MatrixNormalWishart product requires matching conditioners (row covariance U)")
+    end
+    F = promote_type(eltype(getnaturalparameters(left)), eltype(getnaturalparameters(right)))
+    container = similar(left, F)
+    return BayesBase.prod!(container, left, right)
+end
+
+function BayesBase.prod!(
+    container::ExponentialFamilyDistribution{MatrixNormalWishart},
+    left::ExponentialFamilyDistribution{MatrixNormalWishart},
+    right::ExponentialFamilyDistribution{MatrixNormalWishart}
+)
+    if !isapprox(getconditioner(left), getconditioner(right)) || !isapprox(getconditioner(container), getconditioner(left))
+        error("MatrixNormalWishart product requires matching conditioners (row covariance U)")
+    end
+    map!(+, getnaturalparameters(container), getnaturalparameters(left), getnaturalparameters(right))
+    return container
 end
 
 function ExponentialFamily._logpdf(ef::ExponentialFamilyDistribution{MatrixNormalWishart}, x::Tuple)
@@ -252,10 +278,9 @@ function ExponentialFamily._logpdf(ef::ExponentialFamilyDistribution{MatrixNorma
 end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixNormalWishart)
-    M₀, Ψ, κ, ν, V = params(dist)
-    n, p    = size(M₀)
-    cparams = (M₀, Ψ, κ, ν)
-    tuple_of_η = MeanToNatural{MatrixNormalWishart}()(cparams, V)
-    η = pack_parameters(NaturalParametersSpace(), MatrixNormalWishart, tuple_of_η)
-    return ExponentialFamilyDistribution(MatrixNormalWishart, η, V)
+    M, U, V, ν = params(dist)
+    cparams    = (M, V, ν)
+    tuple_of_η = MeanToNatural{MatrixNormalWishart}()(cparams, U)
+    η          = pack_parameters(NaturalParametersSpace(), MatrixNormalWishart, tuple_of_η)
+    return ExponentialFamilyDistribution(MatrixNormalWishart, η, U)
 end
