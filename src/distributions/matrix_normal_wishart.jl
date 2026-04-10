@@ -98,15 +98,15 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixNormalWish
     Ml, Ul, Vl, νl = params(left)
     Mr, Ur, Vr, νr = params(right)
     # Assumes same conditioner Ul == Ur = U
-    U  = Ul
-    Ui = cholinv(U)
-    M  = Ml + Mr
+    U      = Ul
+    Ui     = cholinv(U)
+    M      = Ml + Mr
     Vl_inv = cholinv(Vl)
     Vr_inv = cholinv(Vr)
     cross  = Ml' * Ui * Mr
-    V  = cholinv(Vl_inv + Vr_inv - cross - cross')
-    n, p = size(Ml)
-    ν  = νl + νr + n - p - 1
+    V      = cholinv(Vl_inv + Vr_inv - cross - cross')
+    n, p   = size(Ml)
+    ν     = νl + νr + n - p - 1
     return MatrixNormalWishart(M, U, V, ν)
 end
 
@@ -139,19 +139,19 @@ end
 function (::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::Tuple{Any, Any, Any}, U)
     M, V, ν = tuple_of_θ
     n, p = size(M)
-    Ui   = cholinv(U)
-    η₁   = Ui * M                               # n×p
-    η₂   = -1 / 2 * (cholinv(V) + M' * Ui * M) # p×p
-    η₃   = (ν + n - p - 1) / 2                 # scalar
+    Ui = cholinv(U)
+    η₁ = Ui * M                               # n×p
+    η₂ = -1 / 2 * (cholinv(V) + M' * Ui * M) # p×p
+    η₃ = (ν + n - p - 1) / 2                 # scalar
     return (η₁, η₂, η₃)
 end
 
 function (::NaturalToMean{MatrixNormalWishart})(tuple_of_η::Tuple{Any, Any, Any}, U)
     η₁, η₂, η₃ = tuple_of_η
     n, p = size(η₁)
-    M  = U * η₁                                  # n×p
-    V  = cholinv(-2η₂ - η₁' * U * η₁)           # p×p
-    ν  = 2η₃ - n + p + 1                        # scalar
+    M = U * η₁                                  # n×p
+    V = cholinv(-2η₂ - η₁' * U * η₁)           # p×p
+    ν = 2η₃ - n + p + 1                        # scalar
     return (M, V, ν)
 end
 
@@ -170,35 +170,52 @@ function unpack_parameters(::Type{MatrixNormalWishart}, η, U)
     n = size(U, 1)
     L = length(η) - 1
     p = Int(round((-n + sqrt(n^2 + 4L)) / 2))
-    @inbounds η₁ = reshape(view(η, 1:(n * p)), n, p)
-    @inbounds η₂ = reshape(view(η, (n * p + 1):(n * p + p^2)), p, p)
-    @inbounds η₃ = η[n * p + p^2 + 1]
+    @inbounds η₁ = reshape(view(η, 1:(n*p)), n, p)
+    @inbounds η₂ = reshape(view(η, (n*p+1):(n*p+p^2)), p, p)
+    @inbounds η₃ = η[n*p+p^2+1]
     return η₁, η₂, η₃
 end
 
 isbasemeasureconstant(::Type{MatrixNormalWishart}) = NonConstantBaseMeasure()
 
-getbasemeasure(::Type{MatrixNormalWishart}, U) = let Ui = cholinv(U)
-    (z) -> begin (X, Y) = z; exp(-1 / 2 * tr(X' * Ui * X * Y)) end
-end
+getbasemeasure(::Type{MatrixNormalWishart}, U) =
+    let Ui = cholinv(U)
+        (z) -> begin
+            (X, Y) = z;
+            exp(-1 / 2 * tr(X' * Ui * X * Y))
+        end
+    end
 
-getlogbasemeasure(::Type{MatrixNormalWishart}, U) = let Ui = cholinv(U)
-    (z) -> begin (X, Y) = z; -1 / 2 * tr(X' * Ui * X * Y) end
-end
+getlogbasemeasure(::Type{MatrixNormalWishart}, U) =
+    let Ui = cholinv(U)
+        (z) -> begin
+            (X, Y) = z;
+            -1 / 2 * tr(X' * Ui * X * Y)
+        end
+    end
 
 function getsufficientstatistics(::Type{MatrixNormalWishart}, U)
     return (
-        (z) -> begin (X, Y) = z; X * Y end,         # T₁ = XY (n×p)
-        (z) -> begin (_, Y) = z; Y end,              # T₂ = Y  (p×p)
-        (z) -> begin (_, Y) = z; logdet(Y) end       # T₃ = logdet(Y)
+        (z) -> begin
+            (X, Y) = z;
+            X * Y
+        end,         # T₁ = XY (n×p)
+        (z) -> begin
+            (_, Y) = z;
+            Y
+        end,              # T₂ = Y  (p×p)
+        (z) -> begin
+            (_, Y) = z;
+            logdet(Y)
+        end       # T₃ = logdet(Y)
     )
 end
 
 getlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, U) = (η) -> begin
     η₁, η₂, η₃ = unpack_parameters(MatrixNormalWishart, η, U)
     n, p = size(η₁)
-    ν  = 2η₃ - n + p + 1
-    V  = cholinv(-2η₂ - η₁' * U * η₁)
+    ν = 2η₃ - n + p + 1
+    V = cholinv(-2η₂ - η₁' * U * η₁)
     term1 = (n * p / 2) * log2π
     term2 = (p / 2) * logdet(U)
     term3 = (ν / 2) * logdet(V)
@@ -221,18 +238,18 @@ end
 getfisherinformation(::DefaultParametersSpace, ::Type{MatrixNormalWishart}, U) = (θ) -> begin
     M, V, ν = θ
     n, p = size(M)
-    Ui   = cholinv(U)
-    Vi   = cholinv(V)
+    Ui = cholinv(U)
+    Vi = cholinv(V)
     # Block structure: (M block: np×np, V block: p²×p², ν block: 1×1)
     total = n * p + p^2 + 1
     F = zeros(total, total)
     @inbounds begin
         # ∂²A/∂M² = ν (V⁻¹ ⊗ U⁻¹)
-        F[1:(n * p), 1:(n * p)] = ν * kron(Vi, Ui)
+        F[1:(n*p), 1:(n*p)] = ν * kron(Vi, Ui)
         # ∂²A/∂V²  = ν/2 (V⁻¹ ⊗ V⁻¹)
-        F[(n * p + 1):(n * p + p^2), (n * p + 1):(n * p + p^2)] = (ν / 2) * kron(Vi, Vi)
+        F[(n*p+1):(n*p+p^2), (n*p+1):(n*p+p^2)] = (ν / 2) * kron(Vi, Vi)
         # ∂²A/∂ν²  = mvtrigamma(p, ν/2) / 4
-        F[n * p + p^2 + 1, n * p + p^2 + 1] = mvtrigamma(p, ν / 2) / 4
+        F[n*p+p^2+1, n*p+p^2+1] = mvtrigamma(p, ν / 2) / 4
     end
     return F
 end
@@ -279,7 +296,7 @@ end
 
 function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixNormalWishart)
     M, U, V, ν = params(dist)
-    cparams    = (M, V, ν)
+    cparams     = (M, V, ν)
     tuple_of_η = MeanToNatural{MatrixNormalWishart}()(cparams, U)
     η          = pack_parameters(NaturalParametersSpace(), MatrixNormalWishart, tuple_of_η)
     return ExponentialFamilyDistribution(MatrixNormalWishart, η, U)

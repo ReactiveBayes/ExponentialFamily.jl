@@ -173,7 +173,7 @@ end
 
     lbm_expected = -1/2 * tr(X' * inv(U) * X * Λ)
     @test lbm_fn(x) ≈ lbm_expected
-    @test bm_fn(x)  ≈ exp(lbm_expected)
+    @test bm_fn(x) ≈ exp(lbm_expected)
 end
 
 @testitem "MatrixNormalWishart: getsufficientstatistics" begin
@@ -331,9 +331,9 @@ end
 @testitem "MatrixNormalWishart: logpdf via ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    M = [1.0 2.0; 3.0 4.0]
-    U = [2.0 0.5; 0.5 1.5]
-    V = [1.5 0.3; 0.3 2.0]
+    M  = [1.0 2.0; 3.0 4.0]
+    U  = [2.0 0.5; 0.5 1.5]
+    V  = [1.5 0.3; 0.3 2.0]
     ν = 4.0
     d  = MatrixNormalWishart(M, U, V, ν)
     ef = convert(ExponentialFamilyDistribution, d)
@@ -351,7 +351,7 @@ end
     rng = StableRNG(42)
 
     M_l = [1.0 2.0; 3.0 4.0]
-    U   = [2.0 0.5; 0.5 1.5]   # shared conditioner
+    U = [2.0 0.5; 0.5 1.5]   # shared conditioner
     V_l = [1.5 0.3; 0.3 2.0]
     ν_l = 4.0
     left = MatrixNormalWishart(M_l, U, V_l, ν_l)
