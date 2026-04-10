@@ -384,4 +384,9 @@ end
     @test dist_from_ef.M ≈ result.M atol = 1e-10
     @test dist_from_ef.V ≈ result.V atol = 1e-10
     @test dist_from_ef.ν ≈ result.ν atol = 1e-10
+
+    # Mismatched conditioners should throw
+    U2 = [3.0 0.1; 0.1 2.0]
+    ef_mismatch = convert(ExponentialFamilyDistribution, MatrixNormalWishart(M_l, U2, V_l, ν_l))
+    @test_throws ErrorException prod(PreserveTypeProd(ExponentialFamilyDistribution{MatrixNormalWishart}), ef_l, ef_mismatch)
 end
