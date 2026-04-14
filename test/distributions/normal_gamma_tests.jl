@@ -2,7 +2,8 @@
 @testitem "NormalGamma: common" begin
     include("distributions_setuptests.jl")
 
-    m = rand()
+    rng = StableRNG(42)
+    m = rand(rng)
     s, a, b = 1.0, 0.1, 3.0
     dist = NormalGamma(m, s, a, b)
     @test params(dist) == (m, s, a, b)
@@ -15,13 +16,15 @@ end
 @testitem "NormalGamma: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for μ in 10randn(3), λ in 10rand(3), α in (1 .+ 10rand(3)), β in 10 * rand(3)
+    rng = StableRNG(42)
+
+    for μ in 10randn(rng, 3), λ in 10rand(rng, 3), α in (1 .+ 10rand(rng, 3)), β in 10 * rand(rng, 3)
         @testset let d = NormalGamma(μ, λ, α, β)
             ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
 
             (η1, η2, η3, η4) = unpack_parameters(NormalGamma, getnaturalparameters(ef))
             η3half = η3 + 1 / 2
-            for x in rand(d, 3)
+            for x in rand(rng, d, 3)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) ≈ invsqrt2π
                 @test @inferred(sufficientstatistics(ef, x)) === (x[1] * x[2], x[1]^2 * x[2], log(x[2]), x[2])
@@ -50,8 +53,10 @@ end
 @testitem "NormalGamma: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
-    for μleft in 10randn(2), μright in 10randn(2), σleft in 10rand(2), σright in 10rand(2),
-        αleft in (1 .+ 10rand(2)), αright in (1 .+ 10rand(2)), βleft in 10rand(2), βright in 10rand(2)
+    rng = StableRNG(42)
+
+    for μleft in 10randn(rng, 2), μright in 10randn(rng, 2), σleft in 10rand(rng, 2), σright in 10rand(rng, 2),
+        αleft in (1 .+ 10rand(rng, 2)), αright in (1 .+ 10rand(rng, 2)), βleft in 10rand(rng, 2), βright in 10rand(rng, 2)
 
         let left = NormalGamma(μleft, σleft, αleft, βleft), right = NormalGamma(μright, σright, αright + 1 / 2, βright)
             @test test_generic_simple_exponentialfamily_product(
