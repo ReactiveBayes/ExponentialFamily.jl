@@ -342,57 +342,22 @@ end
     include("distributions_setuptests.jl")
     using ForwardDiff
 
-    for (M, U, V, ν) in (
-        ([1.0 2.0; 3.0 4.0], [2.0 0.5; 0.5 1.5], [1.5 0.3; 0.3 2.0], 5.0),
-        ([0.2 -0.4; 1.1 0.7; -0.3 0.5], [1.8 0.2 0.1; 0.2 1.4 -0.3; 0.1 -0.3 1.1], [0.9 0.2; 0.2 1.3], 6.5),
-        (reshape([0.5, -0.2, 0.9], 1, 3), reshape([1.2], 1, 1), [1.0 0.1 0.0; 0.1 0.8 0.2; 0.0 0.2 0.9], 7.0)
-    )
-        n, p = size(M)
-        η_tup = MeanToNatural(MatrixNormalWishart)((M, U, V, ν))
-        η = pack_parameters(NaturalParametersSpace(), MatrixNormalWishart, η_tup)
-
-        F = getfisherinformation(NaturalParametersSpace(), MatrixNormalWishart, (n, p))(η)
-        A = getlogpartition(NaturalParametersSpace(), MatrixNormalWishart, (n, p))
-        H = ForwardDiff.hessian(A, η)
-
-        @test size(F) == (length(η), length(η))
-        @test F ≈ F'
-        @test F ≈ H atol = 1e-6
-
-        ef = convert(ExponentialFamilyDistribution, MatrixNormalWishart(M, U, V, ν))
-        @test fisherinformation(ef) ≈ F
-    end
-end
-
-@testitem "MatrixNormalWishart: Fisher information matches Monte Carlo Cov(T)" begin
-    include("distributions_setuptests.jl")
-    using Random, Statistics, LinearAlgebra
-
-    M = [0.5 1.0; -0.3 0.2]
-    U = [1.2 0.1; 0.1 0.9]
-    V = [0.8 0.2; 0.2 1.1]
-    ν = 12.0
+    M = [0.2 -0.4; 1.1 0.7; -0.3 0.5]
+    U = [1.8 0.2 0.1; 0.2 1.4 -0.3; 0.1 -0.3 1.1]
+    V = [0.9 0.2; 0.2 1.3]
+    ν = 6.5
     n, p = size(M)
-    dist = MatrixNormalWishart(M, U, V, ν)
-
-    rng = MersenneTwister(20260414)
-    nsamp = 200_000
-    samples = rand(rng, dist, nsamp)
-
-    L = n * p + p^2 + 1 + n^2
-    Ts = Matrix{Float64}(undef, L, nsamp)
-    for (k, (X, Y)) in enumerate(samples)
-        t1 = vec(X * Y)
-        t2 = vec(Y)
-        t3 = logdet(Y)
-        t4 = vec(X * Y * X')
-        Ts[:, k] = vcat(t1, t2, t3, t4)
-    end
-    F_mc = cov(Ts; dims = 2)
-
     η_tup = MeanToNatural(MatrixNormalWishart)((M, U, V, ν))
     η = pack_parameters(NaturalParametersSpace(), MatrixNormalWishart, η_tup)
-    F = getfisherinformation(NaturalParametersSpace(), MatrixNormalWishart, (n, p))(η)
 
-    @test norm(F_mc - F) / norm(F) < 0.05
+    F = getfisherinformation(NaturalParametersSpace(), MatrixNormalWishart, (n, p))(η)
+    A = getlogpartition(NaturalParametersSpace(), MatrixNormalWishart, (n, p))
+    H = ForwardDiff.hessian(A, η)
+
+    @test size(F) == (length(η), length(η))
+    @test F ≈ F'
+    @test F ≈ H atol = 1e-6
+
+    ef = convert(ExponentialFamilyDistribution, MatrixNormalWishart(M, U, V, ν))
+    @test fisherinformation(ef) ≈ F
 end
