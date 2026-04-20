@@ -152,6 +152,7 @@ function (::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any})
     return (η₁, η₂, η₃, η₄)
 end
 
+(t::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any}, ::Nothing) = t(tuple_of_θ)
 (t::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any}, _) = t(tuple_of_θ)
 (t::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any}, _, ::Tuple{Int, Int}) = t(tuple_of_θ)
 (t::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any}, _, ::Nothing) = t(tuple_of_θ)
@@ -190,6 +191,12 @@ ExponentialFamily.unpack_parameters(ef::ExponentialFamilyDistribution{MatrixNorm
 ExponentialFamily.getfisherinformation(ef::ExponentialFamilyDistribution{MatrixNormalWishart}) =
     getfisherinformation(NaturalParametersSpace(), MatrixNormalWishart, getdims(ef))
 
+ExponentialFamily.getgradlogpartition(ef::ExponentialFamilyDistribution{MatrixNormalWishart}) =
+    getgradlogpartition(NaturalParametersSpace(), MatrixNormalWishart, getdims(ef))
+
+ExponentialFamily.isproper(ef::ExponentialFamilyDistribution{MatrixNormalWishart}) =
+    isproper(NaturalParametersSpace(), MatrixNormalWishart, getnaturalparameters(ef), getdims(ef))
+
 isbasemeasureconstant(::Type{MatrixNormalWishart}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{MatrixNormalWishart}) = (z) -> one(Float64)
@@ -197,10 +204,10 @@ getlogbasemeasure(::Type{MatrixNormalWishart}) = (z) -> zero(Float64)
 
 function getsufficientstatistics(::Type{MatrixNormalWishart})
     """
-    T₁=XY
-    T₂=Y
-    T₃=logdet(Y)
-    T₄=XYX'
+    T₁ = XY
+    T₂ = Y
+    T₃ = logdet(Y)
+    T₄ = XYX'
     """
     return (
         (z) -> begin
@@ -322,6 +329,26 @@ getlogpartition(::DefaultParametersSpace, ::Type{MatrixNormalWishart}) =
         M, U, V, ν = θ
         n, p = size(M)
         return (n*p/2)*log2π + (p/2)*logdet(U) + (ν/2)*logdet(V) + (ν*p/2)*log(2.0) + logmvgamma(p, ν/2)
+    end
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}) =
+    (η) -> begin
+        n, p = dims
+        η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
+
+        η₂s = (η₂ + η₂') / 2
+        η₄s = (η₄ + η₄') / 2
+        U = inv(-2 * η₄s)
+        M = U * η₁
+        V = inv(-2 * η₂s - η₁' * U * η₁)
+        ν = 2 * η₃ - n + p + 1
+
+        grad_T1 = ν * (M * V)
+        grad_T2 = ν * V
+        grad_T3 = mvdigamma(ν / 2, p) + p * log(2.0) + logdet(V)
+        grad_T4 = ν * (M * V * M') + p * U
+
+        return vcat(vec(grad_T1), vec(grad_T2), grad_T3, vec(grad_T4))
     end
 
 function ExponentialFamily._logpdf(ef::ExponentialFamilyDistribution{MatrixNormalWishart}, x::Tuple)

@@ -2,6 +2,7 @@ export MatrixNormal
 
 import Distributions: entropy, distrname, AbstractMvNormal
 import Base: convert
+import ForwardDiff
 
 using DomainSets
 using LinearAlgebra
@@ -41,16 +42,34 @@ function Base.convert(::Type{MvNormalMeanCovariance}, d::MatrixNormal)
     return MvNormalMeanCovariance(vec(mean(d)), Distributions.PDMats.PDMat(kron(V, U)))
 end
 
+function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixNormal)
+    M, U, V = params(dist)
+    n, p = size(M)
+    tuple_of_η = MeanToNatural{MatrixNormal}()((M, U, V))
+    η = pack_parameters(NaturalParametersSpace(), MatrixNormal, tuple_of_η)
+    attrs = ExponentialFamilyDistributionAttributes(
+        getbasemeasure(MatrixNormal),
+        getsufficientstatistics(MatrixNormal),
+        getlogpartition(NaturalParametersSpace(), MatrixNormal, (n, p)),
+        nothing;
+        dims = (n, p)
+    )
+    return ExponentialFamilyDistribution(MatrixNormal, η, nothing, attrs)
+end
+
 BayesBase.default_prod_rule(::Type{MatrixNormal}, ::Type{MatrixNormal}) = PreserveTypeProd(MvNormalMeanCovariance)
 
 function BayesBase.prod(::PreserveTypeProd{MvNormalMeanCovariance}, left::MatrixNormal, right::MatrixNormal)
     Ui_l, Vi_l = invcov(left)
     Ui_r, Vi_r = invcov(right)
+
     # Combined precision on vec(X): Λ = (V_l⁻¹⊗U_l⁻¹) + (V_r⁻¹⊗U_r⁻¹)
     Λ = kron(Vi_l, Ui_l) + kron(Vi_r, Ui_r)
+
     # Combined weighted mean: ξ = U_l⁻¹ M_l V_l⁻¹ + U_r⁻¹ M_r V_r⁻¹ (vectorised)
     ξ = vec(Ui_l * mean(left) * Vi_l) + vec(Ui_r * mean(right) * Vi_r)
     Σ = cholinv(Λ)
+
     return MvNormalMeanCovariance(Σ * ξ, Σ)
 end
 
@@ -71,29 +90,6 @@ function (::NaturalToMean{MatrixNormal})(tuple_of_η::Tuple{Any, Any}, ::Nothing
     V = cholinv(Vi)
     M = U*reshape(η1, n, p)*V
     return (M, U, V)
-end
-
-# Natural parameterization
-
-isproper(::NaturalParametersSpace, ::Type{MatrixNormal}, η, conditioner) = isnothing(conditioner) && all(x -> !any(isinf, x) && !any(isnan, x), η)
-isproper(::DefaultParametersSpace, ::Type{MatrixNormal}, θ, conditioner) = isnothing(conditioner) && all(x -> !any(isinf, x) && !any(isnan, x), θ)
-
-isbasemeasureconstant(::Type{MatrixNormal}) = ConstantBaseMeasure()
-getbasemeasure(::Type{MatrixNormal}) = (x) -> oneunit(x)
-
-getnaturalparameters(::DefaultParametersSpace, ::Type{MatrixNormal}) = (θ) -> begin
-    (M, U, V) = θ
-    Ui = cholinv(U)
-    Vi = cholinv(V)
-    η1 = vec(Ui*M*Vi)
-    η2 = -1/2*kron(Vi, Ui)
-    return (η1, η2)
-end
-
-getsufficientstatistics(::Type{MatrixNormal}) = (X) -> begin
-    T1 = vec(X)
-    T2 = vec(X)*vec(X)'
-    return (T1, T2)
 end
 
 # Mean parametrization
@@ -123,3 +119,84 @@ getfisherinformation(::DefaultParametersSpace, ::Type{MatrixNormal}) = (Θ) -> b
     Vi = cholinv(V)
     return (kron(Ui, Vi), n/2*kron(Ui, Ui), p/2*kron(Vi, Vi))
 end
+
+# Natural parameterization
+
+isproper(::NaturalParametersSpace, ::Type{MatrixNormal}, η, conditioner) = isnothing(conditioner) && all(x -> !any(isinf, x) && !any(isnan, x), η)
+isproper(::DefaultParametersSpace, ::Type{MatrixNormal}, θ, conditioner) = isnothing(conditioner) && all(x -> !any(isinf, x) && !any(isnan, x), θ)
+
+isbasemeasureconstant(::Type{MatrixNormal}) = ConstantBaseMeasure()
+getbasemeasure(::Type{MatrixNormal}) = (x) -> oneunit(x)
+
+getnaturalparameters(::DefaultParametersSpace, ::Type{MatrixNormal}) = (θ) -> begin
+    (M, U, V) = θ
+    Ui = cholinv(U)
+    Vi = cholinv(V)
+    η1 = vec(Ui*M*Vi)
+    η2 = -1/2*kron(Vi, Ui)
+    return (η1, η2)
+end
+
+getsufficientstatistics(::Type{MatrixNormal}) = (
+    (X) -> vec(X),
+    (X) -> vec(X) * vec(X)'
+)
+
+function unpack_parameters(::Type{MatrixNormal}, η, dims::Tuple{Int, Int})
+    n, p = dims
+    np = n * p
+    i1 = np
+    i2 = i1 + np * np
+    @inbounds η₁ = view(η, 1:i1)
+    @inbounds η₂ = reshape(view(η, (i1+1):i2), np, np)
+    return (η₁, η₂)
+end
+
+unpack_parameters(::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{MatrixNormal}, packed, dims::Tuple{Int, Int}) =
+    unpack_parameters(MatrixNormal, packed, dims)
+
+ExponentialFamily.unpack_parameters(ef::ExponentialFamilyDistribution{MatrixNormal}) =
+    unpack_parameters(NaturalParametersSpace(), MatrixNormal, getnaturalparameters(ef), getdims(ef))
+
+function isproper(::NaturalParametersSpace, ::Type{MatrixNormal}, η, dims::Tuple{Int, Int})
+    n, p = dims
+    np = n * p
+    length(η) == np + np * np || return false
+    (any(isnan, η) || any(isinf, η)) && return false
+    _, η₂ = unpack_parameters(MatrixNormal, η, dims)
+    return isposdef(Symmetric(-2 * Matrix(η₂)))
+end
+
+ExponentialFamily.isproper(ef::ExponentialFamilyDistribution{MatrixNormal}) =
+    isproper(NaturalParametersSpace(), MatrixNormal, getnaturalparameters(ef), getdims(ef))
+
+BayesBase.insupport(::ExponentialFamilyDistribution{MatrixNormal}, ::AbstractMatrix) = true
+
+getlogpartition(::NaturalParametersSpace, ::Type{MatrixNormal}, dims::Tuple{Int, Int}) =
+    (η) -> begin
+        n, p = dims
+        np = n * p
+        η₁, η₂ = unpack_parameters(MatrixNormal, η, dims)
+        K = Symmetric(-2 * (η₂ + η₂') / 2)
+        Kinv = inv(K)
+        return (np/2) * log(2π) - (1/2) * logdet(K) + (1/2) * dot(η₁, Kinv, η₁)
+    end
+
+getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixNormal}, dims::Tuple{Int, Int}) =
+    (η) -> begin
+        η₁, η₂ = unpack_parameters(MatrixNormal, η, dims)
+        K = Symmetric(-2 * (η₂ + η₂') / 2)
+        Kinv = inv(K)
+        m = Kinv * η₁
+        grad_T2 = Kinv + m * m'
+        return vcat(m, vec(grad_T2))
+    end
+
+ExponentialFamily.getgradlogpartition(ef::ExponentialFamilyDistribution{MatrixNormal}) =
+    getgradlogpartition(NaturalParametersSpace(), MatrixNormal, getdims(ef))
+
+getfisherinformation(::NaturalParametersSpace, ::Type{MatrixNormal}, dims::Tuple{Int, Int}) =
+    (η) -> getfisherinformation(NaturalParametersSpace(), MvNormalMeanCovariance)(η)
+
+ExponentialFamily.getfisherinformation(ef::ExponentialFamilyDistribution{MatrixNormal}) =
+    getfisherinformation(NaturalParametersSpace(), MatrixNormal, getdims(ef))

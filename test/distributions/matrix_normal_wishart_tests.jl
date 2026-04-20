@@ -120,7 +120,6 @@ end
     @test η₃u ≈ η_tup[3]
     @test η₄u ≈ η_tup[4]
 
-    # Rectangular: n=2, p=3
     Mr = [1.0 2.0 3.0; 4.0 5.0 6.0]
     Ur = [2.0 0.5; 0.5 1.5]
     Vr = diagm([1.0, 2.0, 3.0])
@@ -206,7 +205,6 @@ end
         @test pdf(d, x) >= 0
         @test logpdf(d, x) ≈ log(pdf(d, x)) atol = 1e-10
 
-        # Consistency with the factored form p(X|Y) p(Y)
         X, Y = x
         logpdf_factored = logpdf(MatrixNormal(M, U, cholinv(Y)), X) +
                           logpdf(Wishart(ν, V), Y)
@@ -336,6 +334,25 @@ end
     @test same_result.M ≈ (M_l + M_r) / 2
     @test same_result.U ≈ U / 2
     @test same_result.ν ≈ ν_l + ν_r + n - p - 1
+end
+
+@testitem "MatrixNormalWishart: test_exponentialfamily_interface" begin
+    include("distributions_setuptests.jl")
+
+    for (M, U, V, ν) in (
+        ([1.0 0.5; -0.2 0.8], [1.3 0.2; 0.2 1.1], [0.9 0.1; 0.1 1.4], 5.0),
+        ([0.2 -0.4; 1.1 0.7; -0.3 0.5], [1.8 0.2 0.1; 0.2 1.4 -0.3; 0.1 -0.3 1.1], [0.9 0.2; 0.2 1.3], 6.5)
+    )
+        d = MatrixNormalWishart(M, U, V, ν)
+        test_exponentialfamily_interface(d;
+            test_parameters_conversion = false,
+            test_basic_functions = false,
+            test_fisherinformation_properties = false,
+            test_fisherinformation_against_hessian = false,
+            test_fisherinformation_against_jacobian = false,
+            option_assume_no_allocations = false
+        )
+    end
 end
 
 @testitem "MatrixNormalWishart: Fisher information matches Hessian of logpartition" begin
