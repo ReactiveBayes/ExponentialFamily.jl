@@ -339,9 +339,19 @@ end
 @testitem "MatrixNormalWishart: test_exponentialfamily_interface" begin
     include("distributions_setuptests.jl")
 
+    rng = StableRNG(42)
+    Mr_22 = randn(rng,2,2)
+    Ur_22 = randn(rng,2,2)
+    Vr_22 = randn(rng,2,2)
+    νr_22 = 100*rand()
+    Mr_32 = randn(rng,3,2)
+    Ur_32 = randn(rng,3,3)
+    Vr_32 = randn(rng,2,2)
+    νr_32 = 100*rand()
+
     for (M, U, V, ν) in (
-        ([1.0 0.5; -0.2 0.8], [1.3 0.2; 0.2 1.1], [0.9 0.1; 0.1 1.4], 5.0),
-        ([0.2 -0.4; 1.1 0.7; -0.3 0.5], [1.8 0.2 0.1; 0.2 1.4 -0.3; 0.1 -0.3 1.1], [0.9 0.2; 0.2 1.3], 6.5)
+        (Mr_22, Ur_22 * Ur_22' + diagm(1e-8*ones(2)), Vr_22 * Vr_22' + diagm(1e-8*ones(2)), νr_22),
+        (Mr_32, Ur_32 * Ur_32' + diagm(1e-8*ones(3)), Vr_32 * Vr_32' + diagm(1e-8*ones(2)), νr_32)
     )
         d = MatrixNormalWishart(M, U, V, ν)
         test_exponentialfamily_interface(d;
