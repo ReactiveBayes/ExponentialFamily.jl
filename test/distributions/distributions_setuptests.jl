@@ -410,11 +410,9 @@ function run_test_gradlogpartition_properties(distribution; nsamples = 6000, tes
     _, samples = ExponentialFamily.check_logpdf(ef, collection_of_samples)
     expectation_of_sufficient_statistics = mean((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
     gradient = gradlogpartition(ef)
-    fisher = fisherinformation(ef)
-    diff_vector =  gradient - expectation_of_sufficient_statistics
-    solve_lin = fisher \  diff_vector
+    inverse_fisher = cholinv(fisherinformation(ef))
     @test length(gradient) === length(η)
-    @test dot(diff_vector, solve_lin) ≈ 0 atol = 0.01
+    @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
 
     if test_against_forwardiff
         @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
