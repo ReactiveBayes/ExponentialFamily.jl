@@ -348,14 +348,14 @@ end
 
 @testitem "MatrixNormal: test_exponentialfamily_interface" begin
     include("../distributions_setuptests.jl")
-    
+
     rng = StableRNG(42)
-    Mr_22 = randn(rng,2,2)
-    Ur_22 = randn(rng,2,2)
-    Vr_22 = randn(rng,2,2)
-    Mr_32 = randn(rng,3,2)
-    Ur_32 = randn(rng,3,3)
-    Vr_32 = randn(rng,2,2)
+    Mr_22 = randn(rng, 2, 2)
+    Ur_22 = randn(rng, 2, 2)
+    Vr_22 = randn(rng, 2, 2)
+    Mr_32 = randn(rng, 3, 2)
+    Ur_32 = randn(rng, 3, 3)
+    Vr_32 = randn(rng, 2, 2)
 
     for (M, U, V) in (
         (Mr_22, Ur_22 * Ur_22' + diagm(1e-8*ones(2)), Vr_22 * Vr_22' + diagm(1e-8*ones(2))),

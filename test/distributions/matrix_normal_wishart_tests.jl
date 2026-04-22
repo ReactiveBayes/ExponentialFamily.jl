@@ -90,9 +90,9 @@ end
 
     Ui = inv(U)
     @test η₁ ≈ Ui * M
-    @test η₂ ≈ -1/2 * (inv(V) + M' * Ui * M)
+    @test ExponentialFamily._mnw_smat(η₂, p) ≈ -1/2 * (inv(V) + M' * Ui * M)
     @test η₃ ≈ (ν + n - p - 1) / 2
-    @test η₄ ≈ -1/2 * Ui
+    @test ExponentialFamily._mnw_smat(η₄, n) ≈ -1/2 * Ui
 
     Mr, Ur, Vr, νr = NaturalToMean(MatrixNormalWishart)(η_tup)
     @test Mr ≈ M
@@ -156,13 +156,15 @@ end
     X = [1.0 2.0; 3.0 4.0]
     Y = [2.0 0.5; 0.5 1.5]
     x = (X, Y)
+    p = size(Y, 1)
+    n = size(X, 1)
 
     T1, T2, T3, T4 = getsufficientstatistics(MatrixNormalWishart)
 
     @test T1(x) ≈ X * Y
-    @test T2(x) ≈ Y
+    @test ExponentialFamily._mnw_smat(T2(x), p) ≈ Y
     @test T3(x) ≈ logdet(Y)
-    @test T4(x) ≈ X * Y * X'
+    @test ExponentialFamily._mnw_smat(T4(x), n) ≈ X * Y * X'
 end
 
 @testitem "MatrixNormalWishart: getlogpartition consistency" begin
@@ -256,9 +258,9 @@ end
 
     Ui = inv(U)
     @test η₁ ≈ Ui * M
-    @test η₂ ≈ -1/2 * (inv(V) + M' * Ui * M)
+    @test ExponentialFamily._mnw_smat(η₂, p) ≈ -1/2 * (inv(V) + M' * Ui * M)
     @test η₃ ≈ (ν + n - p - 1) / 2
-    @test η₄ ≈ -1/2 * Ui
+    @test ExponentialFamily._mnw_smat(η₄, n) ≈ -1/2 * Ui
 
     d_back = convert(Distribution, ef)
     @test d_back isa MatrixNormalWishart
@@ -340,14 +342,14 @@ end
     include("distributions_setuptests.jl")
 
     rng = StableRNG(42)
-    Mr_22 = randn(rng,2,2)
-    Ur_22 = randn(rng,2,2)
-    Vr_22 = randn(rng,2,2)
-    νr_22 = 100*rand()
-    Mr_32 = randn(rng,3,2)
-    Ur_32 = randn(rng,3,3)
-    Vr_32 = randn(rng,2,2)
-    νr_32 = 100*rand()
+    Mr_22 = randn(rng, 2, 2)
+    Ur_22 = randn(rng, 2, 2)
+    Vr_22 = randn(rng, 2, 2)
+    νr_22 = 100*rand(rng)+10
+    Mr_32 = randn(rng, 3, 2)
+    Ur_32 = randn(rng, 3, 3)
+    Vr_32 = randn(rng, 2, 2)
+    νr_32 = 100*rand(rng)+10
 
     for (M, U, V, ν) in (
         (Mr_22, Ur_22 * Ur_22' + diagm(1e-8*ones(2)), Vr_22 * Vr_22' + diagm(1e-8*ones(2)), νr_22),

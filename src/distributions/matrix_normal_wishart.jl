@@ -4,6 +4,47 @@ import Base: convert
 import StatsFuns: logmvgamma
 using Random
 
+# --- svec/smat helpers ---
+# svec packs a symmetric p×p matrix into a length-p(p+1)/2 vector with √2 scaling
+# on off-diagonal entries, so that ⟨svec(A), svec(B)⟩ = tr(A*B) for symmetric A, B.
+# Ordering: column-major upper triangle: (1,1), (1,2), (2,2), (1,3), (2,3), (3,3), ...
+# Equivalently, idx(a, b) = a + b*(b-1)÷2 for 1 ≤ a ≤ b ≤ p.
+@inline _mnw_svec_len(p::Int) = (p * (p + 1)) ÷ 2
+@inline _mnw_svec_idx(a::Int, b::Int) = a ≤ b ? a + (b * (b - 1)) ÷ 2 : b + (a * (a - 1)) ÷ 2
+
+function _mnw_svec(S::AbstractMatrix{T}) where {T}
+    p = size(S, 1)
+    v = Vector{T}(undef, _mnw_svec_len(p))
+    s2 = sqrt(T(2))
+    idx = 1
+    @inbounds for b in 1:p
+        for a in 1:(b-1)
+            v[idx] = s2 * S[a, b]
+            idx += 1
+        end
+        v[idx] = S[b, b]
+        idx += 1
+    end
+    return v
+end
+
+function _mnw_smat(v::AbstractVector{T}, p::Int) where {T}
+    S = Matrix{T}(undef, p, p)
+    s2 = sqrt(T(2))
+    idx = 1
+    @inbounds for b in 1:p
+        for a in 1:(b-1)
+            val = v[idx] / s2
+            S[a, b] = val
+            S[b, a] = val
+            idx += 1
+        end
+        S[b, b] = v[idx]
+        idx += 1
+    end
+    return S
+end
+
 """
     MatrixNormalWishart{T, M, U, V, N}
 
@@ -119,13 +160,15 @@ function isproper(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, η, dim
         return false
     end
     n, p = dims
-    expected_len = n * p + p^2 + 1 + n^2
+    expected_len = n * p + _mnw_svec_len(p) + 1 + _mnw_svec_len(n)
     length(η) == expected_len || return false
     η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
-    neg2η₄ = Symmetric(-2 * Matrix(η₄))
+    η₂m = _mnw_smat(η₂, p)
+    η₄m = _mnw_smat(η₄, n)
+    neg2η₄ = Symmetric(-2 * η₄m)
     isposdef(neg2η₄) || return false
     U = cholinv(neg2η₄)
-    W = Symmetric(-2 * η₂ - η₁' * U * η₁)
+    W = Symmetric(-2 * η₂m - η₁' * U * η₁)
     return η₃ > (n - 2) / 2 && isposdef(W)
 end
 
@@ -149,7 +192,7 @@ function (::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any})
     η₂ = -one(eltype(M)) / 2 * (cholinv(V) + M' * Ui * M)
     η₃ = (ν + n - p - 1) / 2
     η₄ = -one(eltype(U)) / 2 * Ui
-    return (η₁, η₂, η₃, η₄)
+    return (η₁, _mnw_svec(η₂), η₃, _mnw_svec(η₄))
 end
 
 (t::MeanToNatural{MatrixNormalWishart})(tuple_of_θ::NTuple{4, Any}, ::Nothing) = t(tuple_of_θ)
@@ -160,9 +203,11 @@ end
 function (::NaturalToMean{MatrixNormalWishart})(tuple_of_η::NTuple{4, Any})
     η₁, η₂, η₃, η₄ = tuple_of_η
     n, p = size(η₁)
-    U = cholinv(-2 * η₄)
+    η₂m = _mnw_smat(η₂, p)
+    η₄m = _mnw_smat(η₄, n)
+    U = cholinv(-2 * η₄m)
     M = U * η₁
-    V = cholinv(-2 * η₂ - η₁' * U * η₁)
+    V = cholinv(-2 * η₂m - η₁' * U * η₁)
     ν = 2 * η₃ - n + p + 1
     return (M, U, V, ν)
 end
@@ -172,16 +217,18 @@ end
 (t::NaturalToMean{MatrixNormalWishart})(tuple_of_η::NTuple{4, Any}, _, ::Nothing) = t(tuple_of_η)
 
 function unpack_parameters(::Type{MatrixNormalWishart}, η, dims::Tuple{Int, Int})
-    "Packed layout: [vec(η₁) (n*p), vec(η₂) (p*p), η₃ (scalar), vec(η₄) (n*n)]"
+    "Packed layout: [vec(η₁) (n*p), svec(η₂) (p(p+1)/2), η₃ (scalar), svec(η₄) (n(n+1)/2)]"
     n, p = dims
+    ph = _mnw_svec_len(p)
+    nh = _mnw_svec_len(n)
     i1 = n * p
-    i2 = i1 + p * p
+    i2 = i1 + ph
     i3 = i2 + 1
-    i4 = i3 + n * n
+    i4 = i3 + nh
     @inbounds η₁ = reshape(view(η, 1:i1), n, p)
-    @inbounds η₂ = reshape(view(η, (i1+1):i2), p, p)
+    @inbounds η₂ = view(η, (i1+1):i2)
     @inbounds η₃ = η[i3]
-    @inbounds η₄ = reshape(view(η, (i3+1):i4), n, n)
+    @inbounds η₄ = view(η, (i3+1):i4)
     return (η₁, η₂, η₃, η₄)
 end
 
@@ -204,10 +251,12 @@ getlogbasemeasure(::Type{MatrixNormalWishart}) = (z) -> zero(Float64)
 
 function getsufficientstatistics(::Type{MatrixNormalWishart})
     """
-    T₁ = XY
-    T₂ = Y
-    T₃ = logdet(Y)
-    T₄ = XYX'
+    T₁ = XY                 (n×p)
+    T₂ = svec(Y)            (p(p+1)/2)
+    T₃ = logdet(Y)          (scalar)
+    T₄ = svec(XYX')         (n(n+1)/2)
+    The √2 off-diagonal scaling in svec ensures ⟨svec(η), svec(T)⟩ = tr(η*T)
+    for symmetric η, T, so the natural-parameter inner product is preserved.
     """
     return (
         (z) -> begin
@@ -216,7 +265,7 @@ function getsufficientstatistics(::Type{MatrixNormalWishart})
         end,
         (z) -> begin
             (_, Y) = z
-            Y
+            _mnw_svec(Y)
         end,
         (z) -> begin
             (_, Y) = z
@@ -224,105 +273,10 @@ function getsufficientstatistics(::Type{MatrixNormalWishart})
         end,
         (z) -> begin
             (X, Y) = z
-            X * Y * X'
+            _mnw_svec(X * Y * X')
         end
     )
 end
-
-getlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}) =
-    (η) -> begin
-        η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
-        n, p = dims
-        η₂s = (η₂ + η₂') / 2
-        η₄s = (η₄ + η₄') / 2
-        U = inv(-2 * η₄s)
-        V = inv(-2 * η₂s - η₁' * U * η₁)
-        ν = 2 * η₃ - n + p + 1
-        return (n*p/2)*log2π + (p/2)*logdet(U) + (ν/2)*logdet(V) + (ν*p/2)*log(2.0) + logmvgamma(p, ν/2)
-    end
-
-getfisherinformation(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}) =
-    (η) -> begin
-        n, p = dims
-        η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
-
-        U = cholinv(-2 * η₄)
-        M = U * η₁
-        V = cholinv(-2 * η₂ - η₁' * U * η₁)
-        ν = 2 * η₃ - n + p + 1
-
-        Q = M * V * M'
-        R = Q + U
-        N = M * V
-        UQ = U + Q
-
-        T = promote_type(eltype(η), eltype(M))
-        np, pp, nn = n * p, p * p, n * n
-        L = np + pp + 1 + nn
-        F = zeros(T, L, L)
-
-        o1 = 0
-        o2 = np
-        o3 = np + pp
-        o4 = np + pp + 1
-        idx1(i, a) = o1 + i + (a - 1) * n
-        idx2(a, b) = o2 + a + (b - 1) * p
-        idx4(i, j) = o4 + i + (j - 1) * n
-
-        @inbounds for a′ in 1:p, i′ in 1:n, a in 1:p, i in 1:n
-            F[idx1(i, a), idx1(i′, a′)] = ν * (V[a, a′] * UQ[i, i′] + N[i, a′] * N[i′, a])
-        end
-
-        @inbounds for d in 1:p, c in 1:p, b in 1:p, a in 1:p
-            F[idx2(a, b), idx2(c, d)] = ν * (V[a, c] * V[b, d] + V[a, d] * V[b, c])
-        end
-
-        F[o3+1, o3+1] = mvtrigamma(p, ν / 2)
-
-        @inbounds for l in 1:n, k in 1:n, j in 1:n, i in 1:n
-            F[idx4(i, j), idx4(k, l)] =
-                ν * (R[i, k] * R[j, l] + R[i, l] * R[j, k]) +
-                (p - ν) * (U[i, k] * U[j, l] + U[i, l] * U[j, k])
-        end
-
-        @inbounds for b′ in 1:p, a′ in 1:p, a in 1:p, i in 1:n
-            val = ν * (N[i, a′] * V[a, b′] + N[i, b′] * V[a, a′])
-            F[idx1(i, a), idx2(a′, b′)] = val
-            F[idx2(a′, b′), idx1(i, a)] = val
-        end
-
-        @inbounds for a in 1:p, i in 1:n
-            val                 = 2 * N[i, a]
-            F[idx1(i, a), o3+1] = val
-            F[o3+1, idx1(i, a)] = val
-        end
-
-        @inbounds for j′ in 1:n, i′ in 1:n, a in 1:p, i in 1:n
-            val = ν * (R[i, j′] * N[i′, a] + R[i, i′] * N[j′, a])
-            F[idx1(i, a), idx4(i′, j′)] = val
-            F[idx4(i′, j′), idx1(i, a)] = val
-        end
-
-        @inbounds for b in 1:p, a in 1:p
-            val                 = 2 * V[a, b]
-            F[idx2(a, b), o3+1] = val
-            F[o3+1, idx2(a, b)] = val
-        end
-
-        @inbounds for j in 1:n, i in 1:n, b in 1:p, a in 1:p
-            val = ν * (N[i, a] * N[j, b] + N[i, b] * N[j, a])
-            F[idx2(a, b), idx4(i, j)] = val
-            F[idx4(i, j), idx2(a, b)] = val
-        end
-
-        @inbounds for j in 1:n, i in 1:n
-            val                 = 2 * Q[i, j]
-            F[o3+1, idx4(i, j)] = val
-            F[idx4(i, j), o3+1] = val
-        end
-
-        return F
-    end
 
 getlogpartition(::DefaultParametersSpace, ::Type{MatrixNormalWishart}) =
     (θ) -> begin
@@ -331,16 +285,28 @@ getlogpartition(::DefaultParametersSpace, ::Type{MatrixNormalWishart}) =
         return (n*p/2)*log2π + (p/2)*logdet(U) + (ν/2)*logdet(V) + (ν*p/2)*log(2.0) + logmvgamma(p, ν/2)
     end
 
+getlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}) =
+    (η) -> begin
+        n, p = dims
+        η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
+        η₂m = _mnw_smat(η₂, p)
+        η₄m = _mnw_smat(η₄, n)
+        U = inv(-2 * η₄m)
+        V = inv(-2 * η₂m - η₁' * U * η₁)
+        ν = 2 * η₃ - n + p + 1
+        return (n*p/2)*log2π + (p/2)*logdet(U) + (ν/2)*logdet(V) + (ν*p/2)*log(2.0) + logmvgamma(p, ν/2)
+    end
+
 getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}) =
     (η) -> begin
         n, p = dims
         η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
 
-        η₂s = (η₂ + η₂') / 2
-        η₄s = (η₄ + η₄') / 2
-        U = inv(-2 * η₄s)
+        η₂m = _mnw_smat(η₂, p)
+        η₄m = _mnw_smat(η₄, n)
+        U = inv(-2 * η₄m)
         M = U * η₁
-        V = inv(-2 * η₂s - η₁' * U * η₁)
+        V = inv(-2 * η₂m - η₁' * U * η₁)
         ν = 2 * η₃ - n + p + 1
 
         grad_T1 = ν * (M * V)
@@ -348,7 +314,108 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims:
         grad_T3 = mvdigamma(ν / 2, p) + p * log(2.0) + logdet(V)
         grad_T4 = ν * (M * V * M') + p * U
 
-        return vcat(vec(grad_T1), vec(grad_T2), grad_T3, vec(grad_T4))
+        return vcat(vec(grad_T1), _mnw_svec(grad_T2), grad_T3, _mnw_svec(grad_T4))
+    end
+
+getfisherinformation(::NaturalParametersSpace, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}) =
+    (η) -> begin
+        # F = Cov(T) in the svec'd packed layout. With c(a,b) = (a == b ? 1 : √2),
+        # Cov(svec(S)_{(a,b)}, svec(S')_{(c,d)}) = c(a,b)·c(c,d)·Cov(S_{a,b}, S'_{c,d}).
+        # Let N = MV, Q = MVM', R = U + Q.
+        n, p = dims
+        η₁, η₂, η₃, η₄ = unpack_parameters(MatrixNormalWishart, η, dims)
+        η₂m = _mnw_smat(η₂, p)
+        η₄m = _mnw_smat(η₄, n)
+        U = inv(-2 * η₄m)
+        M = U * η₁
+        V = inv(-2 * η₂m - η₁' * U * η₁)
+        ν = 2 * η₃ - n + p + 1
+
+        N = M * V
+        Q = M * V * M'
+        R = U + Q
+
+        T = promote_type(eltype(η), Float64)
+        s2 = sqrt(T(2))
+        c2 = (a, b) -> (a == b ? one(T) : s2)
+
+        np = n * p
+        ph = _mnw_svec_len(p)
+        nh = _mnw_svec_len(n)
+        o2 = np
+        o3 = np + ph + 1
+        o4 = np + ph + 1
+        total = np + ph + 1 + nh
+        F = zeros(T, total, total)
+
+        idx1 = (i, a) -> i + (a - 1) * n
+        idx2 = (a, b) -> o2 + _mnw_svec_idx(a, b)
+        idx4 = (i, j) -> o4 + _mnw_svec_idx(i, j)
+
+        # (1,1): Cov(T₁_{ia}, T₁_{jb}) = ν (V_{ab} R_{ij} + N_{ib} N_{ja})
+        for a in 1:p, i in 1:n, b in 1:p, j in 1:n
+            F[idx1(i, a), idx1(j, b)] = ν * (V[a, b] * R[i, j] + N[i, b] * N[j, a])
+        end
+
+        # (1,2) / (2,1): c(c,d) · ν (N_{ic} V_{ad} + N_{id} V_{ac}), c ≤ d
+        for a in 1:p, i in 1:n, d in 1:p, c in 1:d
+            val = c2(c, d) * ν * (N[i, c] * V[a, d] + N[i, d] * V[a, c])
+            F[idx1(i, a), idx2(c, d)] = val
+            F[idx2(c, d), idx1(i, a)] = val
+        end
+
+        # (1,3) / (3,1): 2 N_{ia}
+        for a in 1:p, i in 1:n
+            val = 2 * N[i, a]
+            F[idx1(i, a), o3] = val
+            F[o3, idx1(i, a)] = val
+        end
+
+        # (1,4) / (4,1): c(k,l) · ν (R_{ik} N_{la} + R_{il} N_{ka}), k ≤ l
+        for a in 1:p, i in 1:n, l in 1:n, k in 1:l
+            val = c2(k, l) * ν * (R[i, k] * N[l, a] + R[i, l] * N[k, a])
+            F[idx1(i, a), idx4(k, l)] = val
+            F[idx4(k, l), idx1(i, a)] = val
+        end
+
+        # (2,2): c(a,b)·c(c,d) · ν (V_{ac} V_{bd} + V_{ad} V_{bc}), a ≤ b and c ≤ d
+        for b in 1:p, a in 1:b, d in 1:p, c in 1:d
+            F[idx2(a, b), idx2(c, d)] = c2(a, b) * c2(c, d) * ν * (V[a, c] * V[b, d] + V[a, d] * V[b, c])
+        end
+
+        # (2,3) / (3,2): c(a,b) · 2 V_{ab}, a ≤ b
+        for b in 1:p, a in 1:b
+            val = c2(a, b) * 2 * V[a, b]
+            F[idx2(a, b), o3] = val
+            F[o3, idx2(a, b)] = val
+        end
+
+        # (2,4) / (4,2): c(a,b)·c(k,l) · ν (N_{ka} N_{lb} + N_{kb} N_{la}), a ≤ b and k ≤ l
+        for b in 1:p, a in 1:b, l in 1:n, k in 1:l
+            val = c2(a, b) * c2(k, l) * ν * (N[k, a] * N[l, b] + N[k, b] * N[l, a])
+            F[idx2(a, b), idx4(k, l)] = val
+            F[idx4(k, l), idx2(a, b)] = val
+        end
+
+        # (3,3): mvtrigamma(p, ν/2)
+        F[o3, o3] = mvtrigamma(p, ν / 2)
+
+        # (3,4) / (4,3): c(k,l) · 2 Q_{kl}, k ≤ l
+        for l in 1:n, k in 1:l
+            val = c2(k, l) * 2 * Q[k, l]
+            F[o3, idx4(k, l)] = val
+            F[idx4(k, l), o3] = val
+        end
+
+        # (4,4): c(i,j)·c(k,l) · [ν(R_{ik}R_{jl} + R_{il}R_{jk}) + (p-ν)(U_{ik}U_{jl} + U_{il}U_{jk})],
+        # for i ≤ j and k ≤ l
+        for j in 1:n, i in 1:j, l in 1:n, k in 1:l
+            F[idx4(i, j), idx4(k, l)] = c2(i, j) * c2(k, l) * (
+                ν * (R[i, k]*R[j, l] + R[i, l]*R[j, k]) + (p - ν) * (U[i, k]*U[j, l] + U[i, l]*U[j, k])
+            )
+        end
+
+        return F
     end
 
 function ExponentialFamily._logpdf(ef::ExponentialFamilyDistribution{MatrixNormalWishart}, x::Tuple)
