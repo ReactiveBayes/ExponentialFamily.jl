@@ -342,7 +342,6 @@ end
     include("distributions_setuptests.jl")
 
     rng = StableRNG(42)
-<<<<<<< HEAD
     Mr_22 = randn(rng, 2, 2)
     Ur_22 = randn(rng, 2, 2)
     Vr_22 = randn(rng, 2, 2)
@@ -351,16 +350,6 @@ end
     Ur_32 = randn(rng, 3, 3)
     Vr_32 = randn(rng, 2, 2)
     νr_32 = 100*rand(rng)+10
-=======
-    Mr_22 = randn(rng,2,2)
-    Ur_22 = randn(rng,2,2)
-    Vr_22 = randn(rng,2,2)
-    νr_22 = 100*rand(rng)
-    Mr_32 = randn(rng,3,2)
-    Ur_32 = randn(rng,3,3)
-    Vr_32 = randn(rng,2,2)
-    νr_32 = 100*rand(rng)
->>>>>>> 58d748cde8a5cf2445a80161878247b956f8b105
 
     for (M, U, V, ν) in (
         (Mr_22, Ur_22 * Ur_22' + diagm(1e-8*ones(2)), Vr_22 * Vr_22' + diagm(1e-8*ones(2)), νr_22),
