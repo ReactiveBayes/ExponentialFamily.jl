@@ -76,5 +76,6 @@ include("distributions/chi_squared.jl")
 include("distributions/matrix_normal_wishart.jl")
 include("distributions/mv_normal_wishart.jl")
 include("distributions/normal_gamma.jl")
+include("distributions/mv_normal_gamma.jl")
 
 end
