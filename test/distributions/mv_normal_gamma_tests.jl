@@ -166,3 +166,55 @@ end
     @test getfisherinformation(NaturalParametersSpace(), MvNormalGamma)(ηmv) ≈
           getfisherinformation(NaturalParametersSpace(), NormalGamma)(collect(ηsc))
 end
+
+@testitem "MvNormalGamma: var/cov/std" begin
+    include("distributions_setuptests.jl")
+
+    μ = [0.5, -1.0]
+    Λ = [2.0 0.3; 0.3 1.5]
+    α, β = 3.0, 2.0
+    dist = MvNormalGamma(μ, Λ, α, β)
+
+    # Marginal covariance of `x` is (β / (α - 1)) Λ⁻¹; variance of `τ` is α / β².
+    cx_expected = (β / (α - 1)) * inv(Λ)
+    vτ_expected = α / β^2
+
+    cx, vτ = var(dist)
+    @test cx ≈ cx_expected
+    @test vτ ≈ vτ_expected
+
+    # `cov` aliases `var` for this distribution.
+    @test cov(dist) == var(dist)
+
+    sx, sτ = std(dist)
+    @test sx ≈ sqrt.(diag(cx_expected))
+    @test sτ ≈ sqrt(vτ_expected)
+
+    # `var`/`cov`/`std` are undefined for `α ≤ 1` (the marginal covariance diverges).
+    for bad_α in (1.0, 0.5)
+        bad = MvNormalGamma(μ, Λ, bad_α, β)
+        @test_throws ErrorException var(bad)
+        @test_throws ErrorException cov(bad)
+        @test_throws ErrorException std(bad)
+    end
+end
+
+@testitem "MvNormalGamma: insupport" begin
+    include("distributions_setuptests.jl")
+
+    for d in (1, 2, 3)
+        A = randn(StableRNG(d), d, d)
+        Λ = A * A' + d * I
+        dist = MvNormalGamma(randn(StableRNG(10d), d), Λ, 2.0, 1.0)
+        ef = convert(ExponentialFamilyDistribution, dist)
+
+        # A valid sample is a `(d + 1)`-vector `[x₁, …, x_d, τ]` with `τ > 0`.
+        @test insupport(ef, vcat(zeros(d), 0.5))
+        # Non-positive precision is out of support.
+        @test !insupport(ef, vcat(zeros(d), -0.5))
+        @test !insupport(ef, vcat(zeros(d), 0.0))
+        # Wrong-length vectors are out of support.
+        @test !insupport(ef, zeros(d))
+        @test !insupport(ef, vcat(zeros(d + 1), 0.5))
+    end
+end

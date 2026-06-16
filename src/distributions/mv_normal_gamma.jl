@@ -69,18 +69,18 @@ Base.length(d::MvNormalGamma) = length(d.μ) + 1
 Base.size(d::MvNormalGamma) = (length(d),)
 
 function BayesBase.var(d::MvNormalGamma)
-    d.α > one(d.α) || error("`var` of `MvNormalGamma` is not defined for `α < 1`")
+    d.α > one(d.α) || error("`var` of `MvNormalGamma` is not defined for `α ≤ 1`")
     # Marginal covariance of x is (β / (α-1)) Λ⁻¹ ; variance of τ is α/β²
     return (d.β / (d.α - one(d.α)) * cholinv(d.Λ), d.α / (d.β^2))
 end
 
 function BayesBase.cov(d::MvNormalGamma)
-    d.α > one(d.α) || error("`cov` of `MvNormalGamma` is not defined for `α < 1`")
+    d.α > one(d.α) || error("`cov` of `MvNormalGamma` is not defined for `α ≤ 1`")
     return var(d)
 end
 
 function BayesBase.std(d::MvNormalGamma)
-    d.α > one(d.α) || error("`std` of `MvNormalGamma` is not defined for `α < 1`")
+    d.α > one(d.α) || error("`std` of `MvNormalGamma` is not defined for `α ≤ 1`")
     cx, vτ = var(d)
     # Per-component standard deviations of `x` (sqrt of the marginal variances) and of `τ`.
     return (sqrt.(diag(cx)), sqrt(vτ))
@@ -106,7 +106,7 @@ function BayesBase.logpdf(dist::MvNormalGamma, x::AbstractVector{<:Real})
 
     constants = α * log(β) + (1 / 2) * logdet(Λ) - loggamma(α) - (d / 2) * log(twoπ)
     term1 = (α + d / 2 - 1) * log(τ) - β * τ
-    term2 = -τ * dot(diff, Λ, diff) / 2
+    term2 = -τ * dot3arg(diff, Λ, diff) / 2
 
     return constants + term1 + term2
 end
@@ -158,8 +158,8 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalGamma, r
     # (reduces to the scalar `NormalGamma` rule αˡ + αʳ − 1/2 when d = 1).
     α = αleft + αright + d / 2 - 1
     β =
-        βleft + βright + dot(μleft, Λleft, μleft) / 2 + dot(μright, Λright, μright) / 2 -
-        dot(μ, Λ, μ) / 2
+        βleft + βright + dot3arg(μleft, Λleft, μleft) / 2 + dot3arg(μright, Λright, μright) / 2 -
+        dot3arg(μ, Λ, μ) / 2
 
     return MvNormalGamma(μ, Λ, α, β)
 end
@@ -170,6 +170,15 @@ Base.eltype(::MvNormalGammaDomain) = AbstractVector
 Base.in(v, ::MvNormalGammaDomain) = length(v) >= 2 && all(isreal, v) && v[end] > 0
 
 BayesBase.support(::Type{MvNormalGamma}) = MvNormalGammaDomain()
+
+# The domain check above is dimension-agnostic. For a concrete exponential-family member we also
+# know the location dimension `d` (from the packed natural parameters of length `d² + d + 2`), so
+# a valid sample must be a `(d + 1)`-vector `[x₁, …, x_d, τ]` with `τ > 0`. Enforcing the exact
+# length here prevents out-of-bounds reads in `logpdf`/sufficient statistics for wrong-sized inputs.
+function BayesBase.insupport(ef::ExponentialFamilyDistribution{MvNormalGamma}, x)
+    d = _mvng_dim(length(getnaturalparameters(ef)))
+    return length(x) == d + 1 && all(isreal, x) && x[end] > 0
+end
 
 # Natural parametrization
 function isproper(::NaturalParametersSpace, ::Type{MvNormalGamma}, η, conditioner)
@@ -183,7 +192,7 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalGamma}, η, condition
     Λ = -2 * η2
     isposdef(Λ) || return false
     α = η3 - d / 2 + 1
-    β = -η4 - dot(η1, cholinv(Λ), η1) / 2
+    β = -η4 - dot3arg(η1, cholinv(Λ), η1) / 2
     return α > 0 && β > 0
 end
 
@@ -204,7 +213,7 @@ function (::MeanToNatural{MvNormalGamma})(tuple_of_θ::Tuple{Any, Any, Any, Any}
     η1 = Λ * μ
     η2 = -Λ / 2
     η3 = α + d / 2 - 1
-    η4 = -β - dot(μ, Λ, μ) / 2
+    η4 = -β - dot3arg(μ, Λ, μ) / 2
     return (η1, η2, η3, η4)
 end
 
@@ -215,7 +224,7 @@ function (::NaturalToMean{MvNormalGamma})(tuple_of_η::Tuple{Any, Any, Any, Any}
     Λinv = cholinv(Λ)
     μ = Λinv * η1
     α = η3 - d / 2 + 1
-    β = -η4 - dot(η1, Λinv, η1) / 2
+    β = -η4 - dot3arg(η1, Λinv, η1) / 2
     return (μ, Λ, α, β)
 end
 
@@ -252,7 +261,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalGamma}) = (η) -> begin
     d = length(η1)
     Λ = -2 * η2
     α = η3 - d / 2 + 1
-    β = -η4 - dot(η1, cholinv(Λ), η1) / 2
+    β = -η4 - dot3arg(η1, cholinv(Λ), η1) / 2
     return loggamma(α) - α * log(β) - (1 / 2) * logdet(Λ)
 end
 
@@ -263,7 +272,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalGamma}) = (η) -> b
     Λinv = cholinv(Λ)
     μ = Λinv * η1
     α = η3 - d / 2 + 1
-    β = -η4 - dot(η1, Λinv, η1) / 2
+    β = -η4 - dot3arg(η1, Λinv, η1) / 2
 
     # The gradient of the log-partition equals E[T(x,τ)]:
     #   E[τx]    = μ ⋅ α/β
@@ -296,7 +305,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalGamma}) = (η) -> 
     W = cholinv(Λ)
     μ = W * η1
     α = η3 - d / 2 + 1
-    β = -η4 - dot(η1, W, η1) / 2
+    β = -η4 - dot3arg(η1, W, η1) / 2
 
     J = _mvng_natural_to_mean_jacobian(μ, W, d, eltype(η))
     Fθ = _mvng_fisher_mean(Λ, W, α, β, d, eltype(η))
