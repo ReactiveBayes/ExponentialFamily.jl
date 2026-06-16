@@ -65,8 +65,8 @@ BayesBase.rate(d::MvNormalGamma)     = getindex(params(d), 4)
 BayesBase.mean(d::MvNormalGamma) = (d.μ, d.α / d.β)
 
 Base.eltype(::MvNormalGamma{T}) where {T} = T
-Base.length(d::MvNormalGamma)  = length(d.μ) + 1
-Base.size(d::MvNormalGamma)    = (length(d),)
+Base.length(d::MvNormalGamma) = length(d.μ) + 1
+Base.size(d::MvNormalGamma) = (length(d),)
 
 function BayesBase.var(d::MvNormalGamma)
     d.α > one(d.α) || error("`var` of `MvNormalGamma` is not defined for `α < 1`")
@@ -84,6 +84,15 @@ function BayesBase.std(d::MvNormalGamma)
     cx, vτ = var(d)
     # Per-component standard deviations of `x` (sqrt of the marginal variances) and of `τ`.
     return (sqrt.(diag(cx)), sqrt(vτ))
+end
+
+# Differential entropy H = −E[log p]. The base measure is constant, so this follows from the
+# joint moments: E[log τ] = ψ(α)−log β, E[τ] = α/β, and E[τ (x−μ)ᵀΛ(x−μ)] = tr(I_d) = d.
+function BayesBase.entropy(dist::MvNormalGamma)
+    (μ, Λ, α, β) = params(dist)
+    d = length(μ)
+    return loggamma(α) - α * log(β) - logdet(Λ) / 2 + (d / 2) * (one(α) + log(twoπ)) + α -
+           (α + d / 2 - one(α)) * (SpecialFunctions.digamma(α) - log(β))
 end
 
 # A sample is packed as a vector `[x₁, …, x_d, τ]`: the first `d` entries are the mean

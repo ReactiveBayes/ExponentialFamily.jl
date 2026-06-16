@@ -17,6 +17,23 @@
     @test eltype(dist) === Float64
 end
 
+@testitem "MvNormalGamma: entropy matches Monte Carlo" begin
+    include("distributions_setuptests.jl")
+
+    rng = StableRNG(7)
+    for d in (1, 2, 3)
+        A = randn(rng, d, d)
+        Λ = A * A' + d * I
+        μ = randn(rng, d)
+        α, β = 4.0 + rand(rng), 2.0 + rand(rng)
+        dist = MvNormalGamma(μ, Λ, α, β)
+
+        samples = rand(rng, dist, 500_000)
+        mc = -mean(logpdf(dist, s) for s in samples)
+        @test isapprox(entropy(dist), mc; rtol = 0.03, atol = 0.05)
+    end
+end
+
 @testitem "MvNormalGamma: type promotion" begin
     include("distributions_setuptests.jl")
     using ExponentialFamily: paramfloattype
@@ -147,5 +164,5 @@ end
     @test collect(ηmv) ≈ collect(ηsc)
 
     @test getfisherinformation(NaturalParametersSpace(), MvNormalGamma)(ηmv) ≈
-        getfisherinformation(NaturalParametersSpace(), NormalGamma)(collect(ηsc))
+          getfisherinformation(NaturalParametersSpace(), NormalGamma)(collect(ηsc))
 end
