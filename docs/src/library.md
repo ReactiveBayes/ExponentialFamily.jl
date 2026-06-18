@@ -20,6 +20,7 @@ ExponentialFamily.JointGaussian
 ExponentialFamily.WishartFast
 ExponentialFamily.InverseWishartFast
 ExponentialFamily.NormalGamma
+ExponentialFamily.MvNormalGamma
 ExponentialFamily.MvNormalWishart
 ExponentialFamily.MatrixNormalWishart
 ExponentialFamily.DirichletCollection
