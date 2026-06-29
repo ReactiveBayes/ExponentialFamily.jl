@@ -386,9 +386,18 @@ function Base.convert(::Type{NormalWeightedMeanPrecision}, dist::Normal)
     return NormalWeightedMeanPrecision(precision * mean, precision)
 end
 
-# Special case for `FullNormal` to `NormalWeightedMeanPrecision` from `Distributions`
-
-function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::FullNormal)
+# Special case for `FullNormal` to `MvNormalWeightedMeanPrecision` from `Distributions`.
+# We dispatch on the explicit `MvNormal` parametrization (dense `PDMat` covariance) rather than
+# on the `FullNormal` alias directly: since Distributions.jl 0.25.129 `FullNormal` became a
+# parametric `UnionAll` (`FullNormal{T} = MvNormal{T,<:PDMat{T},<:AbstractVector{T}}`), and a bare
+# `dist::FullNormal` method is no longer comparable to the generic `MultivariateNormalDistributionsFamily{T}`
+# conversion above (one is more specific on the covariance/mean, the other on the `T <: Real` bound),
+# producing a method ambiguity. Pinning `T <: Real` here makes this method strictly more specific so it
+# wins unambiguously, and the spelled-out signature works across the whole `Distributions = "0.25"` range.
+function Base.convert(
+    ::Type{MvNormalWeightedMeanPrecision},
+    dist::MvNormal{T, <:Distributions.PDMats.PDMat{T}, <:AbstractVector{T}}
+) where {T <: Real}
     mean, cov = mean_cov(dist)
     precision = cholinv(cov)
     return MvNormalWeightedMeanPrecision(precision * mean, precision)
