@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1]
+
+### Fixed
+- Resolve `convert` method ambiguity for `FullNormal` under Distributions 0.25.129 ([#288](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/288)).
+
+### Changed
+- Add beginner guides and fix spelling across documentation and docstrings ([#289](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/289)).
+
 ## [2.5.0]
 
 ### Added
