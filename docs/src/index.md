@@ -12,6 +12,15 @@ The package is built around several core principles:
 
 ## Table of Contents
 
+New to probability distributions or the exponential family? Start with the
+beginner-friendly **Getting Started** pages:
+
+* [What is a Probability Distribution?](@ref distributions-primer)
+* [What is the Exponential Family?](@ref exponential-family-primer)
+* [Comparison with Distributions.jl](@ref comparison-distributions)
+
+Then dive into the rest of the documentation:
+
 * [Interface](@ref interface)
 * [Examples](@ref examples)
 * [Library](@ref library)
