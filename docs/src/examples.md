@@ -92,7 +92,7 @@ basemeasure_of_laplace = getbasemeasure(Laplace, 2.0)
 basemeasure_of_laplace(1.0)
 ```
 
-The [`getlogpartition`](@ref) and [`getfisherinformation`](@ref) functions optionally accept a `space` parameter as the first argument. This `space` parameter specifies the parameterization `space`, such as [`DefaultParametersSpace`](@ref) or [`NaturalParametersSpace`]. The result obtained from these functions (in general) depends on the chosen parameter space:
+The [`getlogpartition`](@ref) and [`getfisherinformation`](@ref) functions optionally accept a `space` parameter as the first argument. This `space` parameter specifies the parameterization `space`, such as [`DefaultParametersSpace`](@ref) or [`NaturalParametersSpace`](@ref). The result obtained from these functions (in general) depends on the chosen parameter space:
 
 ```@example attributes-example
 logpartition_of_gamma_in_mean_space = getlogpartition(DefaultParametersSpace(), Gamma)
@@ -103,7 +103,7 @@ logpartition_of_gamma_in_mean_space(gamma_parameters_in_mean_space)
 ```
 
 ```@example attributes-example
-logparition_of_gamma_in_natural_space = getlogpartition(NaturalParametersSpace(), Gamma)
+logpartition_of_gamma_in_natural_space = getlogpartition(NaturalParametersSpace(), Gamma)
 
 gamma_parameters_in_natural_space = map(
     DefaultParametersSpace() => NaturalParametersSpace(), 
@@ -111,7 +111,7 @@ gamma_parameters_in_natural_space = map(
     gamma_parameters_in_mean_space
 )
 
-logparition_of_gamma_in_natural_space(gamma_parameters_in_natural_space)
+logpartition_of_gamma_in_natural_space(gamma_parameters_in_natural_space)
 ```
 
 The same principle applies to the Fisher information matrix:

@@ -94,7 +94,7 @@ And to convert back:
 tuple_of_θ = NaturalToMean(Bernoulli)(tuple_of_η)
 ```
 
-Alternatuvely, the following API is supported 
+Alternatively, the following API is supported
 
 ```@example dist-interfacing
 map(DefaultParametersSpace() => NaturalParametersSpace(), Bernoulli, tuple_of_θ)
@@ -156,7 +156,7 @@ ExponentialFamily.pack_parameters
 ExponentialFamily.unpack_parameters
 ```
 
-These functions are not exported by default, but it's important to note that the `ExponentialFamilyDistributions` type doesn't actually store the parameter tuple internally. Instead, the `getnaturalparameters` function returns the corresponding vectorized (packed) form of the natural parameters. In general, only the `ExponentialFamily.unpack_parameters` function must be implemented, as others could be implemented in a generic way.
+These functions are not exported by default, but it's important to note that the `ExponentialFamilyDistribution` type doesn't actually store the parameter tuple internally. Instead, the `getnaturalparameters` function returns the corresponding vectorized (packed) form of the natural parameters. In general, only the `ExponentialFamily.unpack_parameters` function must be implemented, as others could be implemented in a generic way.
 
 ### Attributes of the exponential family distribution based on `Distribution`
 
@@ -164,9 +164,9 @@ The `ExponentialFamilyDistribution{T} where { T <: Distribution }` type encompas
 
 
 ```@example dist-interfacing
-basemeasure_of_bernoilli = getbasemeasure(Bernoulli)
+basemeasure_of_bernoulli = getbasemeasure(Bernoulli)
 
-basemeasure_of_bernoilli(0)
+basemeasure_of_bernoulli(0)
 ```
 
 ```@docs

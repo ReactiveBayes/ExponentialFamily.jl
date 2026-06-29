@@ -84,7 +84,7 @@ getlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the logpartition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
@@ -96,7 +96,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) 
         if (conditioner !== length(η))
             throw(
                 DimensionMismatch(
-                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
+                    lazy"Cannot evaluate the logpartition of the `Categorical` with `conditioner = $(conditioner)` and vector of natural parameters `η = $(η)`"
                 )
             )
         end
@@ -136,7 +136,7 @@ getlogpartition(::DefaultParametersSpace, ::Type{Categorical}, conditioner) =
         if (conditioner !== length(θ))
             throw(
                 DimensionMismatch(
-                    lazy"Cannot evaluate the logparition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
+                    lazy"Cannot evaluate the logpartition of the `Categorical` with `conditioner = $(conditioner)` and vector of mean parameters `θ = $(θ)`"
                 )
             )
         end

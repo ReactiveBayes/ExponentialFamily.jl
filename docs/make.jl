@@ -10,6 +10,11 @@ makedocs(
     sitename = "ExponentialFamily.jl",
     pages    = [
     "Home"      => "index.md",
+    "Getting Started" => [
+        "What is a Probability Distribution?" => "distributions.md",
+        "What is the Exponential Family?"     => "exponential_family.md",
+        "Comparison with Distributions.jl"    => "comparison.md"
+    ],
     "Interface" => "interface.md",
     "Library"   => "library.md",
     "Examples"  => "examples.md"

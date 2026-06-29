@@ -204,11 +204,11 @@ Here:
 For a given member of exponential family: 
 
 - `getattributes` returns either `nothing` or `ExponentialFamilyDistributionAttributes`.
-- `getbasemeasure` returns a positive a valued function. 
+- `getbasemeasure` returns a positive-valued function.
 - `getsufficientstatistics` returns an iterable of functions such as [x, x^2] or [x, logx].
-- `getnaturalparameters` returns an iterable holding the values of the natural parameters. 
-- `getlogpartition` return a function that depends on the naturalparameters and it ensures that the distribution is normalized to 1. 
-- `getsupport` returns the set that the distribution is defined over. Could be real numbers, positive integers, 3d cube etc. Use ither the `∈` operator or the `insupport()` function to check if a value belongs to the support.
+- `getnaturalparameters` returns an iterable holding the values of the natural parameters.
+- `getlogpartition` returns a function that depends on the natural parameters and ensures that the distribution is normalized to 1.
+- `getsupport` returns the set that the distribution is defined over. For example, the real numbers, the positive integers, a 3D cube, etc. Use either the `∈` operator or the `insupport()` function to check if a value belongs to the support.
 
 !!! note
     The `attributes` can be `nothing`. In which case the package will try to derive the corresponding attributes from the type `T`.
@@ -296,7 +296,7 @@ getconditioner(ef::ExponentialFamilyDistribution) = ef.conditioner
 """
     getattributes(::ExponentialFamilyDistribution)
 
-Returns iether the attributes of the exponential family member or `nothing`.
+Returns either the attributes of the exponential family member or `nothing`.
 
 See also: [`ExponentialFamilyDistributionAttributes`](@ref)
 """
@@ -476,7 +476,7 @@ end
 """
     isproper([ space = NaturalParametersSpace() ], ::Type{T}, parameters, conditioner = nothing) where { T <: Distribution }
 
-A specific verion of `isproper` defined particularly for distribution types from `Distributions.jl` package.
+A specific version of `isproper` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
@@ -493,7 +493,7 @@ isproper(ef::ExponentialFamilyDistribution{T}) where {T <: Distribution} =
 """
     getbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
-A specific verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+A specific version of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 For conditional exponential family distributions requires an extra `conditioner` argument.
 """
@@ -502,7 +502,7 @@ getbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getbasemeasure(
 """
     getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
-A generic verion of `getlogbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+A generic version of `getlogbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
 Just computes log of basemeasure.
 """
 getlogbasemeasure(::Type{T}) where {T <: Distribution} = (x) -> log(getbasemeasure(T)(x))
@@ -510,7 +510,7 @@ getlogbasemeasure(::Type{T}) where {T <: Distribution} = (x) -> log(getbasemeasu
 """
     getlogbasemeasure(::Type{<:Distribution}, [ conditioner ])
 
-A generic verion of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
+A generic version of `getbasemeasure` defined particularly for distribution types from `Distributions.jl` package.
 For conditional exponential family distributions requires an extra `conditioner` argument. Just computes log of basemeasure.
 """
 getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbasemeasure(T)
@@ -518,7 +518,7 @@ getlogbasemeasure(::Type{T}, ::Nothing) where {T <: Distribution} = getlogbaseme
 """
     getsufficientstatistics(::Type{<:Distribution}, [ conditioner ])
 
-A specific verion of `getsufficientstatistics` defined particularly for distribution types from `Distributions.jl` package.
+A specific version of `getsufficientstatistics` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 For conditional exponential family distributions requires an extra `conditioner` argument.
 """
@@ -527,7 +527,7 @@ getsufficientstatistics(::Type{T}, ::Nothing) where {T <: Distribution} = getsuf
 """
     getlogpartition([ space = NaturalParametersSpace() ], ::Type{T}, [ conditioner ]) where { T <: Distribution }
 
-A specific verion of `getlogpartition` defined particularly for distribution types from `Distributions.jl` package.
+A specific version of `getlogpartition` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
@@ -545,7 +545,7 @@ getlogpartition(
 """
     getgradlogpartition([ space = NaturalParametersSpace() ], ::Type{T}, [ conditioner ]) where { T <: Distribution }
 
-A specific verion of `getgradlogpartition` defined particularly for distribution types from `Distributions.jl` package.
+A specific version of `getgradlogpartition` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
@@ -561,7 +561,7 @@ getgradlogpartition(
 """
     getfisherinformation([ space = NaturalParametersSpace() ], ::Type{T}) where { T <: Distribution }
 
-A specific verion of `getfisherinformation` defined particularly for distribution types from `Distributions.jl` package.
+A specific version of `getfisherinformation` defined particularly for distribution types from `Distributions.jl` package.
 Does not require an instance of the `ExponentialFamilyDistribution` and can be called directly with a specific distribution type instead.
 Optionally, accepts the `space` parameter, which defines the parameters space.
 For conditional exponential family distributions requires an extra `conditioner` argument.
@@ -615,12 +615,12 @@ function BayesBase.logpdf(ef::ExponentialFamilyDistribution, x)
 end
 
 """
-A trait object, signifying that the _logpdf method should treat it second argument as one point from the distrubution domain.
+A trait object, signifying that the `_logpdf` method should treat its second argument as one point from the distribution domain.
 """
 struct PointBasedLogpdfCall end
 
 """
-A trait object, signifying that the _logpdf method should treat it second argument as a container of points from the distrubution domain.
+A trait object, signifying that the `_logpdf` method should treat its second argument as a container of points from the distribution domain.
 """
 struct MapBasedLogpdfCall end
 
