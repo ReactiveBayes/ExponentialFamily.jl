@@ -67,7 +67,7 @@ function isproper(::DefaultParametersSpace, ::Type{NegativeBinomial}, θ, condit
 
     (p,) = unpack_parameters(NegativeBinomial, θ)
 
-    return !isnan(p) && !isinf(p) && (1 => p > 0)
+    return !isnan(p) && !isinf(p) && (p > 0)
 end
 
 function separate_conditioner(::Type{NegativeBinomial}, params)
@@ -128,12 +128,12 @@ end
 
 getlogpartition(::DefaultParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
     (p,) = unpack_parameters(NegativeBinomial, θ)
-    return -conditioner * log(one(p) - p)
+    return -conditioner * log(p)
 end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
-    (p,) = unpack_parameters(NegativeBinomial, η)
-    return SA[conditioner * inv(one(p) - p);]
+    (p,) = unpack_parameters(NegativeBinomial, θ)
+    return SA[-conditioner * inv(p);]   # d/dp of -r·log(p)
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{NegativeBinomial}, r) = (θ) -> begin
