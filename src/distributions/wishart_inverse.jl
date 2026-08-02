@@ -323,7 +323,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{InverseWishartFast}) =
 getlogpartition(::DefaultParametersSpace, ::Type{InverseWishartFast}) = (θ) -> begin
     (ν, S) = unpack_parameters(InverseWishartFast, θ)
     p = first(size(S))
-    return (ν / 2) * (p * log(2.0) - logdet(S)) + mvtrigamma(p, ν / 2)
+    return (ν / 2) * (p * log(2.0) - logdet(S)) + logmvgamma(p, ν / 2)
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{InverseWishartFast}) =
