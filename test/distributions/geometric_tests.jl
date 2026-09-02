@@ -61,3 +61,19 @@ end
         end
     end
 end
+
+# Regression test for issue #293: the default (mean) space gradient of the log-partition
+# must be the derivative of the default-space log-partition A(p) = -log(p), i.e. -1/p.
+# The previous implementation returned 1/(p^2 - p) = -1/(p(1-p)).
+@testitem "Geometric: default-space gradlogpartition consistency" begin
+    include("distributions_setuptests.jl")
+
+    logpartition_default = getlogpartition(DefaultParametersSpace(), Geometric)
+    gradlogpartition_default = getgradlogpartition(DefaultParametersSpace(), Geometric)
+
+    for p in (0.1, 0.3, 0.5, 0.8)
+        θ = [p]
+        @test gradlogpartition_default(θ) ≈ [-inv(p)]
+        @test gradlogpartition_default(θ) ≈ ForwardDiff.gradient(logpartition_default, θ)
+    end
+end
