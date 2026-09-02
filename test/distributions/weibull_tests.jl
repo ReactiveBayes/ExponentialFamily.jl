@@ -82,3 +82,26 @@ end
               1.0
     end
 end
+
+# Regression test for issue #292: the DefaultParametersSpace log-partition returned a
+# 1-element SVector with the wrong value (SA[k/λ]) instead of the scalar k·log λ − log k,
+# and the gradient referenced an undefined `η1` (UndefVarError).
+@testitem "Weibull: default-space helpers consistency" begin
+    include("distributions_setuptests.jl")
+
+    for k in (1.5, 2.0, 3.0), λ in (0.5, 1.5, 2.5)
+        θ = [λ]
+        η_tup = MeanToNatural(Weibull)((λ,), k)
+        η = pack_parameters(NaturalParametersSpace(), Weibull, η_tup)
+
+        lp_def = getlogpartition(DefaultParametersSpace(), Weibull, k)(θ)
+        lp_nat = getlogpartition(NaturalParametersSpace(), Weibull, k)(η)
+        @test lp_def isa Real
+        @test lp_def ≈ lp_nat
+        @test lp_def ≈ k * log(λ) - log(k)
+
+        g = getgradlogpartition(DefaultParametersSpace(), Weibull, k)(θ)
+        @test g ≈ ForwardDiff.gradient(getlogpartition(DefaultParametersSpace(), Weibull, k), θ)
+        @test g ≈ [k / λ]
+    end
+end
