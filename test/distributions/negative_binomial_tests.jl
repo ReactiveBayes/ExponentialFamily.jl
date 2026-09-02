@@ -69,3 +69,32 @@ end
         end
     end
 end
+
+# Regression test for issue #291: three defects in the DefaultParametersSpace block:
+#  (a) isproper returned a Pair (`1 => ...`), always truthy;
+#  (b) getgradlogpartition referenced an undefined `η` (UndefVarError);
+#  (c) the default-space log-partition (-r·log(1-p)) disagreed with natural (-r·log(p)).
+@testitem "NegativeBinomial: default-space helpers consistency" begin
+    include("distributions_setuptests.jl")
+
+    for r in (2.0, 3.0, 5.0), p in (0.2, 0.5, 0.8)
+        θ = [p]
+        η_tup = MeanToNatural(NegativeBinomial)((p,), r)
+        η = pack_parameters(NaturalParametersSpace(), NegativeBinomial, η_tup)
+
+        # (a) isproper must return a Bool and actually enforce p > 0
+        @test isproper(DefaultParametersSpace(), NegativeBinomial, θ, r) isa Bool
+        @test isproper(DefaultParametersSpace(), NegativeBinomial, θ, r)
+        @test !isproper(DefaultParametersSpace(), NegativeBinomial, [-0.5], r)
+
+        # (c) default-space log-partition must agree with natural-space
+        lp_def = getlogpartition(DefaultParametersSpace(), NegativeBinomial, r)(θ)
+        lp_nat = getlogpartition(NaturalParametersSpace(), NegativeBinomial, r)(η)
+        @test lp_def ≈ lp_nat
+
+        # (b) gradient must not crash and must match ForwardDiff of the log-partition
+        g = getgradlogpartition(DefaultParametersSpace(), NegativeBinomial, r)(θ)
+        @test g ≈ ForwardDiff.gradient(getlogpartition(DefaultParametersSpace(), NegativeBinomial, r), θ)
+        @test g ≈ [-r * inv(p)]
+    end
+end
