@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Implement `quantile` for the custom univariate `GammaShapeRate` and Normal (`NormalMeanVariance`, `NormalMeanPrecision`, `NormalWeightedMeanPrecision`) parametrizations, which previously threw a `MethodError` about `iterate` ([#268](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/268)).
+
+### Changed
+- Allow selecting a subset of test files from the command line via `make test test_args="..."` ([#266](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/266)).
+- Remove stale, non-discoverable work-in-progress test files under `test/distributions/wip/` ([#259](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/259)).
+
 ## [2.5.1]
 
 ### Fixed

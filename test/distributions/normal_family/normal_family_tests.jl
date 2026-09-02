@@ -505,3 +505,20 @@ end
         end
     end
 end
+
+@testitem "NormalFamily: quantile" begin
+    include("./normal_family_setuptests.jl")
+
+    for _ in 1:10
+        μ = randn()
+        var = rand(0.1:0.1:10.0)
+        base_dist = NormalMeanVariance(μ, var)
+        for normal_fam in (NormalMeanVariance, NormalMeanPrecision, NormalWeightedMeanPrecision)
+            d = convert(normal_fam, base_dist)
+            ground_truth_d = Normal(μ, sqrt(var))
+            for p in (0.001, 0.01, 0.25, 0.5, 0.75, 0.99, 0.999)
+                @test quantile(d, p) ≈ quantile(ground_truth_d, p)
+            end
+        end
+    end
+end

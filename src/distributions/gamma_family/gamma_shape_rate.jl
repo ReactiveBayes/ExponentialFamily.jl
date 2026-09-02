@@ -35,6 +35,7 @@ BayesBase.var(dist::GammaShapeRate)      = shape(dist) / abs2(rate(dist))
 BayesBase.params(dist::GammaShapeRate)   = (shape(dist), rate(dist))
 BayesBase.kurtosis(dist::GammaShapeRate) = kurtosis(convert(Gamma, dist))
 BayesBase.skewness(dist::GammaShapeRate) = skewness(convert(Gamma, dist))
+BayesBase.quantile(dist::GammaShapeRate, p::Real) = quantile(convert(Gamma, dist), p)
 
 BayesBase.mode(d::GammaShapeRate) =
     shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))

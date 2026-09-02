@@ -220,6 +220,7 @@ function BayesBase.convert_paramfloattype(::Type{T}, distribution::Truncated{<:N
 end
 
 BayesBase.cdf(dist::UnivariateNormalDistributionsFamily, x::Real) = normcdf(mean(dist), sqrt(var(dist)), x)
+BayesBase.quantile(dist::UnivariateNormalDistributionsFamily, p::Real) = quantile(convert(Normal, dist), p)
 # Variate forms promotion
 
 BayesBase.promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
