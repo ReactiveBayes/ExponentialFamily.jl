@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix `Categorical` natural-space gradient and Fisher information becoming `NaN` for large natural parameters; compute both via `softmax` ([#294](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/294)).
+
 ## [2.5.1]
 
 ### Fixed
