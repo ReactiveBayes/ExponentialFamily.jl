@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix `DirichletCollection` default-space `getlogpartition` returning `0` instead of the per-slice partition sum ([#300](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/300)).
+
 ## [2.5.1]
 
 ### Fixed
