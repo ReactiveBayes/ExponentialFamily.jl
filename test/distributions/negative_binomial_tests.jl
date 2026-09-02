@@ -65,7 +65,24 @@ end
             η_right = first(getnaturalparameters(efright))
             prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
 
-            @test sum(pdf(prod_dist, x) for x in 0:max(nleft, nright)) ≈ 1.0 atol = 1e-5
+            @test sum(pdf(prod_dist, x) for x in 0:3000) ≈ 1.0 atol = 1e-6
         end
+    end
+end
+
+# Regression test for issue #299: the NB×NB product normalizer used to truncate the
+# (infinite) support at 0:max(r₁,r₂), so the density was mis-normalized whenever mass
+# extended beyond that. Sum the density over a range far wider than max(r₁,r₂).
+@testitem "NegativeBinomial: prod normalization over infinite support" begin
+    include("distributions_setuptests.jl")
+
+    for (nleft, nright, p) in ((10, 12, 0.5), (5, 6, 0.2), (30, 35, 0.3), (3, 4, 0.6))
+        left = NegativeBinomial(nleft, p)
+        right = NegativeBinomial(nright, p)
+        prod_dist = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
+
+        @test sum(pdf(prod_dist, x) for x in 0:3000) ≈ 1.0 atol = 1e-6
+        # the truncated range the old implementation used no longer captures all the mass
+        @test sum(pdf(prod_dist, x) for x in 0:max(nleft, nright)) < 1.0
     end
 end
