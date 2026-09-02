@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix `Binomial` natural-space `getgradlogpartition` returning `NaN` for large logits; use `logistic` ([#297](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/297)).
+
 ## [2.5.1]
 
 ### Fixed
