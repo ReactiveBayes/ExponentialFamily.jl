@@ -85,3 +85,24 @@ end
         end
     end
 end
+
+# Regression test for issue #297: the natural-space gradient of the log-partition used
+# n·exp(η)/(1+exp(η)), which becomes NaN for large logits (η ≳ 709). The fix uses
+# n·logistic(η), consistent with the stable log1pexp log-partition.
+@testitem "Binomial: numerically stable gradlogpartition" begin
+    include("distributions_setuptests.jl")
+
+    n = 100
+    A = getlogpartition(NaturalParametersSpace(), Binomial, n)
+    grad = getgradlogpartition(NaturalParametersSpace(), Binomial, n)
+
+    # large logit used to produce NaN
+    @test isfinite(only(grad([1000.0])))
+    @test only(grad([1000.0])) ≈ n
+    @test grad([1000.0]) ≈ ForwardDiff.gradient(A, [1000.0])
+
+    for η1 in (-3.0, 0.0, 2.5)
+        @test grad([η1]) ≈ [n * logistic(η1)]
+        @test grad([η1]) ≈ ForwardDiff.gradient(A, [η1])
+    end
+end
