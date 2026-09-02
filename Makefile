@@ -34,7 +34,7 @@ endif
 ## Show help for each of the Makefile targets
 help:
 	@echo ''
-	@echo 'PLACEHOLDERNAME_CHANGE_MAKEFILE_LINE_22.jl Makefile ${YELLOW}targets${RESET}:'
+	@echo 'ExponentialFamily.jl Makefile ${YELLOW}targets${RESET}:'
 	@echo ''
 	@echo '${GREEN}Documentation commands:${RESET}'
 	@echo '  ${YELLOW}docs${RESET}                 Build the documentation'
@@ -46,7 +46,7 @@ help:
 	@echo '  ${YELLOW}deps${RESET}                 Install project dependencies'
 	@echo '  ${YELLOW}deps-docs${RESET}            Install documentation dependencies'
 	@echo '  ${YELLOW}deps-scripts${RESET}         Install script dependencies'
-	@echo '  ${YELLOW}test${RESET}                 Run project tests'
+	@echo '  ${YELLOW}test${RESET}                 Run project tests (test_args="path1 path2" runs a subset)'
 	@echo '  ${YELLOW}format${RESET}               Format Julia code'
 	@echo '  ${YELLOW}check-format${RESET}         Check Julia code formatting (does not modify files)'
 	@echo '  ${YELLOW}clean${RESET}                Clean all generated files'
@@ -85,8 +85,11 @@ deps-docs: ## Install documentation dependencies
 deps-scripts: ## Install script dependencies
 	$(JULIA) $(JULIAFLAGSSCRIPTS) -e 'using Pkg; Pkg.instantiate()'
 
-test: deps ## Run project tests
-	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'	
+# `test_args` selects a subset of the suite; each argument is a path to a test file or
+# directory, resolved against the package root and then `test/`. `Aqua` is skipped for such
+# runs unless `RUN_AQUA=true` is set. See `test/runtests.jl`.
+test: deps ## Run project tests (test_args="path1 path2" runs a subset)
+	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 # `JuliaFormatter` is pinned in `scripts/Project.toml`. Its output changes between
 # minor releases and `scripts/Manifest.toml` is gitignored, so leaving it unbounded

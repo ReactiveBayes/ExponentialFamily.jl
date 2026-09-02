@@ -505,3 +505,27 @@ end
         end
     end
 end
+
+@testitem "NormalFamily: quantile" begin
+    include("./normal_family_setuptests.jl")
+
+    # `quantile` used to fall through to `Statistics.quantile(itr, ::Real)` and fail with a
+    # `MethodError` about `iterate` for every parametrization (see issue #268). `Normal` is
+    # included to check that the method added on `UnivariateNormalDistributionsFamily` -- which
+    # the union contains -- does not shadow the more specific one in `Distributions.jl`.
+    for _ in 1:10
+        μ = randn()
+        var = rand(0.1:0.1:10.0)
+        base_dist = NormalMeanVariance(μ, var)
+        for normal_fam in (NormalMeanVariance, NormalMeanPrecision, NormalWeightedMeanPrecision, Normal)
+            d = convert(normal_fam, base_dist)
+            ground_truth_d = Normal(μ, sqrt(var))
+            for p in (0.001, 0.01, 0.25, 0.5, 0.75, 0.99, 0.999)
+                @test quantile(d, p) ≈ quantile(ground_truth_d, p)
+            end
+            @test quantile(d, 0.5) ≈ mean(d)
+            @test quantile(d, 0.0) == -Inf
+            @test quantile(d, 1.0) == Inf
+        end
+    end
+end

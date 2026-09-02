@@ -773,6 +773,14 @@ Evaluates and returns the cumulative distribution function of the exponential fa
 """
 BayesBase.cdf(ef::ExponentialFamilyDistribution{D}, x) where {D <: Distribution} = cdf(Base.convert(Distribution, ef), x)
 
+"""
+    quantile(ef::ExponentialFamilyDistribution{D}, p) where { D <: Distribution }
+
+Evaluates and returns the `p`-th quantile of the exponential family distribution.
+"""
+# `quantile` is not part of the `BayesBase` interface, so it is extended on `Distributions` directly.
+Distributions.quantile(ef::ExponentialFamilyDistribution{D}, p) where {D <: Distribution} = quantile(Base.convert(Distribution, ef), p)
+
 BayesBase.variate_form(::Type{<:ExponentialFamilyDistribution{D}}) where {D <: Distribution} = variate_form(D)
 BayesBase.variate_form(::Type{<:ExponentialFamilyDistribution{V}}) where {V <: VariateForm} = V
 
