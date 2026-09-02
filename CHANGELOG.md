@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix `Weibull` default-space `getlogpartition`/`getgradlogpartition` (wrong value and shape, and a crash) ([#292](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/292)).
+
 ## [2.5.1]
 
 ### Fixed
