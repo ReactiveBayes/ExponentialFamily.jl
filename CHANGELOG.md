@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix `Geometric` default-space `getgradlogpartition` returning the wrong derivative ([#293](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/293)).
+
 ## [2.5.1]
 
 ### Fixed
