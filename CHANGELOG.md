@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Normalize products of two `NegativeBinomial` distributions over their full infinite support ([#299](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/299)).
+
 ## [2.5.1]
 
 ### Fixed

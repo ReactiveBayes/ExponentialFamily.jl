@@ -1,6 +1,7 @@
 export NegativeBinomial
 import Distributions: NegativeBinomial, probs
 import StatsFuns: logit, logistic
+import LogExpFunctions: logsumexp
 import DomainSets: NaturalNumbers
 using StaticArrays
 
@@ -34,8 +35,26 @@ function BayesBase.prod(
         binomial_prod(p_x + p_left - 1, p_x + p_right - 1, p_x)
     end
 
+    # The NB×NB product has infinite support (x = 0, 1, 2, …), so the normalizer is an
+    # infinite sum. It is a terminating hypergeometric series only for special `r`; in
+    # general we sum until the terms become negligible. The summand is unimodal in `x`
+    # (log-binomials grow, `exp(η₁ x)` decays with η₁ < 0), so we accumulate in log-space
+    # and stop once a term falls a relative tolerance below the running peak.
     function logpartition(η)
-        return log(sum(binomial_prod(x + rleft - 1, x + rright - 1, x) * exp(η[1] * x) for x in 0:max(rright, rleft)))
+        η1 = η[1]
+        logtol = log(1e-12)
+        lterms = Float64[]
+        lmax = -Inf
+        x = 0
+        while true
+            lt = lchoose(x + rleft - 1, x) + lchoose(x + rright - 1, x) + η1 * x
+            push!(lterms, lt)
+            lmax = max(lmax, lt)
+            (x > 0 && lt < lmax + logtol) && break
+            x += 1
+            x > 1_000_000 && break # safety cap against a non-convergent (η₁ ≥ 0) input
+        end
+        return logsumexp(lterms)
     end
 
     supp = NaturalNumbers()
