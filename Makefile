@@ -44,7 +44,7 @@ help:
 	@echo '  ${YELLOW}deps${RESET}                 Install project dependencies'
 	@echo '  ${YELLOW}deps-docs${RESET}            Install documentation dependencies'
 	@echo '  ${YELLOW}deps-scripts${RESET}         Install script dependencies'
-	@echo '  ${YELLOW}test${RESET}                 Run project tests'
+	@echo '  ${YELLOW}test${RESET}                 Run project tests (test_args="path1 path2" runs a subset)'
 	@echo '  ${YELLOW}format${RESET}               Format Julia code'
 	@echo '  ${YELLOW}check-format${RESET}         Check Julia code formatting (does not modify files)'
 	@echo '  ${YELLOW}clean${RESET}                Clean all generated files'
@@ -83,8 +83,8 @@ deps-docs: ## Install documentation dependencies
 deps-scripts: ## Install script dependencies
 	$(JULIA) $(JULIAFLAGSSCRIPTS) -e 'using Pkg; Pkg.instantiate()'
 
-test: deps ## Run project tests
-	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'	
+test: deps ## Run project tests (use test_args="path1 path2" to run a subset, e.g. make test test_args="test/distributions/beta_tests.jl")
+	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
 format: deps-scripts ## Format Julia code
 	$(JULIA) $(JULIAFLAGSSCRIPTS) $(FORMATTER) --overwrite
