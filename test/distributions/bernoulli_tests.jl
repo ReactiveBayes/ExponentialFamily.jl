@@ -132,3 +132,19 @@ end
         end
     end
 end
+
+# Regression test for issue #298: the natural-space log-partition -log(logistic(-η))
+# overflows to Inf for large logits (η ≳ 709), even though A(η) = log1pexp(η) is finite.
+@testitem "Bernoulli: numerically stable logpartition" begin
+    include("distributions_setuptests.jl")
+
+    A = getlogpartition(NaturalParametersSpace(), Bernoulli)
+
+    # large logit used to overflow to Inf
+    @test isfinite(A([1000.0]))
+    @test A([1000.0]) ≈ 1000.0
+
+    for η1 in (-5.0, -0.5, 0.0, 3.0)
+        @test A([η1]) ≈ log1pexp(η1)
+    end
+end
