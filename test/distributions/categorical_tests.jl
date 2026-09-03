@@ -125,3 +125,27 @@ end
         end
     end
 end
+
+# Regression test for issue #294: the natural-space gradient and Fisher used raw exp(η),
+# which overflows to Inf/NaN for large natural parameters, even though the log-partition
+# is computed with the stable logsumexp. The fix uses softmax(η).
+@testitem "Categorical: numerically stable gradient & Fisher" begin
+    include("distributions_setuptests.jl")
+
+    A = getlogpartition(NaturalParametersSpace(), Categorical, 3)
+    grad = getgradlogpartition(NaturalParametersSpace(), Categorical, 3)
+    fisher = getfisherinformation(NaturalParametersSpace(), Categorical, 3)
+
+    # extreme natural parameters used to overflow exp() -> NaN
+    η = [800.0, 810.0, 0.0]
+    @test all(isfinite, grad(η))
+    @test all(isfinite, fisher(η))
+    @test grad(η) ≈ ForwardDiff.gradient(A, η)
+
+    # matches the intended definition (softmax) at modest parameters
+    ηm = [0.5, -1.0, 2.0]
+    p = exp.(ηm) ./ sum(exp.(ηm))
+    @test grad(ηm) ≈ p
+    @test fisher(ηm) ≈ Diagonal(p) - p * p'
+    @test fisher(ηm) ≈ ForwardDiff.hessian(A, ηm)
+end
