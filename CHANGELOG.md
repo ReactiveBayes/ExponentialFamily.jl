@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix `NegativeBinomial` default-space helpers: `isproper` return type, a `getgradlogpartition` crash, and a log-partition mismatch with natural space ([#291](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/291)).
+
 ## [2.5.1]
 
 ### Fixed
