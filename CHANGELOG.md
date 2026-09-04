@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement `logpdf`/`pdf`/`cdf` for `TruncatedExponentialFamilyDistribution`, which previously threw a `MethodError`; also remove an unused import ([#290](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/290)).
 - Fix `Binomial` natural-space `getgradlogpartition` returning `NaN` for large logits; use `logistic` ([#297](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/297)).
 - Fix `Bernoulli` natural-space `getlogpartition` overflowing to `Inf` for large logits; use `log1pexp` ([#298](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/298)).
+- Fix `InverseWishartFast` default-space `getlogpartition` using `mvtrigamma` instead of `logmvgamma` ([#295](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/295)).
 
 ## [2.5.1]
 
