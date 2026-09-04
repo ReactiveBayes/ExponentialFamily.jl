@@ -1,5 +1,5 @@
 export TruncatedExponentialFamilyDistribution
-import Distributions: _in_closed_interval, logsubexp
+import Distributions: _in_closed_interval
 
 struct TruncatedExponentialFamilyDistribution{
     D <: ExponentialFamilyDistribution{<:UnivariateDistribution},
@@ -138,3 +138,25 @@ function BayesBase.rand(rng::AbstractRNG, d::TruncatedExponentialFamilyDistribut
     end
 end
 
+
+### Density and distribution functions (issue #290)
+
+# Normalizing mass retained after truncation: P(l ≤ X ≤ u) = ucdf - lcdf.
+_truncated_lognorm(d::TruncatedExponentialFamilyDistribution) = log(d.ucdf - d.lcdf)
+
+# log-density of the truncated distribution. Outside the truncated support it is -Inf.
+function BayesBase.logpdf(d::TruncatedExponentialFamilyDistribution, x::Real)
+    if !insupport(d, x)
+        return convert(float(promote_type(typeof(x), typeof(d.lcdf))), -Inf)
+    end
+    return logpdf(d.untruncated, x) - _truncated_lognorm(d)
+end
+
+BayesBase.pdf(d::TruncatedExponentialFamilyDistribution, x::Real) = exp(logpdf(d, x))
+
+# cdf of the truncated distribution, clamped to [0, 1] so that values below the lower
+# bound map to 0 and values above the upper bound map to 1.
+function Distributions.cdf(d::TruncatedExponentialFamilyDistribution, x::Real)
+    result = (cdf(d.untruncated, x) - d.lcdf) / (d.ucdf - d.lcdf)
+    return clamp(result, zero(result), one(result))
+end

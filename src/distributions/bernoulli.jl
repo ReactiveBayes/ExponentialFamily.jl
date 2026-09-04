@@ -1,7 +1,7 @@
 export Bernoulli
 
 import Distributions: Bernoulli, succprob, failprob, logpdf
-import StatsFuns: logistic, logit
+import StatsFuns: logistic, logit, log1pexp
 
 BayesBase.vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 BayesBase.probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
@@ -91,7 +91,7 @@ getsufficientstatistics(::Type{Bernoulli}) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
     (η₁,) = unpack_parameters(Bernoulli, η)
-    return -log(logistic(-η₁))
+    return log1pexp(η₁)
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
