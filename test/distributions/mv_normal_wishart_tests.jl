@@ -11,6 +11,20 @@
     @test locationdim(dist) == 2
 end
 
+@testitem "MvNormalWishart: construction with mixed precision" begin
+    include("distributions_setuptests.jl")
+
+    m = rand(Float32, 2)
+    Ψ = [1.0 0.0; 0.0 1.0]
+    dist = MvNormalWishart(m, Ψ, 0.1, 3.0)
+    @test paramfloattype(dist) == Float64
+
+    m = rand(Float32, 2)
+    Ψ = [1.0f0 0.0f0; 0.0f0 1.0f0]
+    dist = MvNormalWishart(m, Ψ, 0.1f0, 3.0f0)
+    @test paramfloattype(dist) == Float32
+end
+
 @testitem "MvNormalWishart: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 

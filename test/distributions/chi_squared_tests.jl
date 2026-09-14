@@ -19,7 +19,7 @@
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Chisq, [Inf])
         @test !isproper(space, Chisq, [-1.0])
         @test !isproper(space, Chisq, [NaN])
@@ -27,8 +27,8 @@
         @test !isproper(space, Chisq, [0.5, 0.5], 1.0)
     end
 
-    ## mean parameter should be integer in the MeanParametersSpace
-    @test isproper(MeanParametersSpace(), Chisq, [0.1])
+    ## mean parameter should be integer in the DefaultParametersSpace
+    @test isproper(DefaultParametersSpace(), Chisq, [0.1])
     @test isproper(NaturalParametersSpace(), Chisq, [-0.5])
     @test !isproper(NaturalParametersSpace(), Chisq, [-1.5])
     @test convert(ExponentialFamilyDistribution, Chisq(0.5)) ≈ ExponentialFamilyDistribution(Chisq, [-0.75])

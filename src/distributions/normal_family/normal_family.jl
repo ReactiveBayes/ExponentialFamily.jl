@@ -23,7 +23,7 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base: prod, convert, ndims
 import Random: rand!
 import Distributions: logpdf
-import StatsFuns: invsqrt2π
+import StatsFuns: invsqrt2π, normcdf
 
 using StatsFuns: log2π
 using LinearAlgebra
@@ -219,6 +219,7 @@ function BayesBase.convert_paramfloattype(::Type{T}, distribution::Truncated{<:N
     return Truncated(convert_paramfloattype(T, distribution.untruncated), convert(T, distribution.lower), convert(T, distribution.upper))
 end
 
+BayesBase.cdf(dist::UnivariateNormalDistributionsFamily, x::Real) = normcdf(mean(dist), sqrt(var(dist)), x)
 # Variate forms promotion
 
 BayesBase.promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
@@ -385,9 +386,18 @@ function Base.convert(::Type{NormalWeightedMeanPrecision}, dist::Normal)
     return NormalWeightedMeanPrecision(precision * mean, precision)
 end
 
-# Special case for `FullNormal` to `NormalWeightedMeanPrecision` from `Distributions`
-
-function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::FullNormal)
+# Special case for `FullNormal` to `MvNormalWeightedMeanPrecision` from `Distributions`.
+# We dispatch on the explicit `MvNormal` parametrization (dense `PDMat` covariance) rather than
+# on the `FullNormal` alias directly: since Distributions.jl 0.25.129 `FullNormal` became a
+# parametric `UnionAll` (`FullNormal{T} = MvNormal{T,<:PDMat{T},<:AbstractVector{T}}`), and a bare
+# `dist::FullNormal` method is no longer comparable to the generic `MultivariateNormalDistributionsFamily{T}`
+# conversion above (one is more specific on the covariance/mean, the other on the `T <: Real` bound),
+# producing a method ambiguity. Pinning `T <: Real` here makes this method strictly more specific so it
+# wins unambiguously, and the spelled-out signature works across the whole `Distributions = "0.25"` range.
+function Base.convert(
+    ::Type{MvNormalWeightedMeanPrecision},
+    dist::MvNormal{T, <:Distributions.PDMats.PDMat{T}, <:AbstractVector{T}}
+) where {T <: Real}
     mean, cov = mean_cov(dist)
     precision = cholinv(cov)
     return MvNormalWeightedMeanPrecision(precision * mean, precision)
@@ -542,9 +552,9 @@ end
 # Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
 exponential_family_typetag(::UnivariateNormalDistributionsFamily) = NormalMeanVariance
 
-BayesBase.params(::MeanParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
+BayesBase.params(::DefaultParametersSpace, dist::UnivariateNormalDistributionsFamily) = mean_var(dist)
 
-function isproper(::MeanParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{NormalMeanVariance}, θ, conditioner)
     if length(θ) !== 2
         return false
     end
@@ -605,18 +615,18 @@ getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
 
 ### Univariate / mean parameters space
 
-getlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
     return μ / 2σ² + log(sqrt(σ²))
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{NormalMeanVariance}) =
+getgradlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) =
     (θ) -> begin
         (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
         return SA[μ/σ², -abs2(μ)/(2σ²^2)+1/σ²]
     end
 
-getfisherinformation(::MeanParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (_, σ²) = unpack_parameters(NormalMeanVariance, θ)
     return SA[inv(σ²) 0; 0 inv(2 * (σ²^2))]
 end
@@ -625,9 +635,9 @@ end
 
 getbasemeasure(::Type{<:UnivariateNormalDistributionsFamily}) = getbasemeasure(NormalMeanVariance)
 getsufficientstatistics(::Type{<:UnivariateNormalDistributionsFamily}) = getsufficientstatistics(NormalMeanVariance)
-getlogpartition(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+getlogpartition(space::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
     getlogpartition(space, NormalMeanVariance)
-getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
+getfisherinformation(space::Union{DefaultParametersSpace, NaturalParametersSpace}, ::Type{<:UnivariateNormalDistributionsFamily}) =
     getfisherinformation(space, NormalMeanVariance)
 
 ### Multivariate case
@@ -636,9 +646,9 @@ getfisherinformation(space::Union{MeanParametersSpace, NaturalParametersSpace}, 
 # Thus all convert to `ExponentialFamilyDistribution{NormalMeanVariance}`
 exponential_family_typetag(::MultivariateGaussianDistributionsFamily) = MvNormalMeanCovariance
 
-BayesBase.params(::MeanParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
+BayesBase.params(::DefaultParametersSpace, dist::MultivariateGaussianDistributionsFamily) = mean_cov(dist)
 
-function isproper(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}, θ, conditioner)
     k = div(-1 + isqrt(1 + 4 * length(θ)), 2)
     if length(θ) < 2 || (length(θ) !== (k + k^2))
         return false
@@ -653,7 +663,8 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}, η, 
         return false
     end
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
-    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isposdef(-η₂)
+    return isnothing(conditioner) && length(η₁) === size(η₂, 1) && (size(η₂, 1) === size(η₂, 2)) && isapprox(norm(η₂ - transpose(η₂)), 0.0; atol = 1e-10) &&
+           isposdef(Hermitian(-η₂))
 end
 
 function (::MeanToNatural{MvNormalMeanCovariance})(tuple_of_θ::Tuple{Any, Any})
@@ -696,11 +707,16 @@ isbasemeasureconstant(::Type{MvNormalMeanCovariance}) = ConstantBaseMeasure()
 getbasemeasure(::Type{MvNormalMeanCovariance}) = (x) -> (2π)^(length(x) / -2)
 getsufficientstatistics(::Type{MvNormalMeanCovariance}) = (identity, (x) -> x * x')
 
+"""
+Optimized implementation using a single Cholesky factorization and triangular solves.
+"""
 getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
     k = length(η₁)
-    Cinv, l = cholinv_logdet(-η₂)
-    return (dot(η₁, Cinv, η₁) / 2 - (k * log(2) + l)) / 2
+    F = FastCholesky.fastcholesky(-η₂)
+    l = logdet(F)
+    sol = F \ η₁
+    return (dot(η₁, sol) / 2 - (k * log(2) + l)) / 2
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
@@ -743,7 +759,7 @@ function PermutationMatrix(m, n)
     P
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
     μ, Σ = unpack_parameters(MvNormalMeanCovariance, θ)
     invΣ = cholinv(Σ)
     n = size(μ, 1)

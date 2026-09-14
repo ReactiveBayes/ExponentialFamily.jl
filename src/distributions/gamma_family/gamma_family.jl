@@ -44,11 +44,11 @@ function BayesBase.compute_logscale(
 end
 
 function Base.:(==)(left::GammaDistributionsFamily, right::GammaDistributionsFamily)
-    return params(MeanParametersSpace(), left) == params(MeanParametersSpace(), right)
+    return params(DefaultParametersSpace(), left) == params(DefaultParametersSpace(), right)
 end
 
 function Base.isapprox(left::GammaDistributionsFamily, right::GammaDistributionsFamily; kwargs...)
-    return all(isapprox.(params(MeanParametersSpace(), left), params(MeanParametersSpace(), right); kwargs...))
+    return all(isapprox.(params(DefaultParametersSpace(), left), params(DefaultParametersSpace(), right); kwargs...))
 end
 
 # Natural parametrization
@@ -57,9 +57,9 @@ end
 # Thus both convert to `ExponentialFamilyDistribution{Gamma}`
 exponential_family_typetag(::GammaDistributionsFamily) = Gamma
 
-BayesBase.params(::MeanParametersSpace, dist::GammaDistributionsFamily) = (shape(dist), scale(dist))
+BayesBase.params(::DefaultParametersSpace, dist::GammaDistributionsFamily) = (shape(dist), scale(dist))
 
-isproper(::MeanParametersSpace, ::Type{Gamma}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (all(>(0), θ))
+isproper(::DefaultParametersSpace, ::Type{Gamma}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (all(>(0), θ))
 
 function isproper(::NaturalParametersSpace, ::Type{Gamma}, η, conditioner)
     if length(η) !== 2
@@ -85,6 +85,12 @@ function unpack_parameters(::Type{Gamma}, packed)
     return (packed[fi], packed[si])
 end
 
+function BayesBase.mean(::typeof(inv), dist::GammaDistributionsFamily{T}) where {T}
+    α = shape(dist)
+    θ = rate(dist)
+    return (α > 1 ? θ / (α - 1) : T(Inf))
+end
+
 isbasemeasureconstant(::Type{Gamma}) = ConstantBaseMeasure()
 
 getbasemeasure(::Type{Gamma}) = (x) -> oneunit(x)
@@ -102,17 +108,17 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Gamma}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Gamma, η)
-    return SA[digamma(η₁+one(η₁))-log(-η₂), -(η₁+one(η₁))/η₂]
+    return SA[digamma(η₁ + one(η₁))-log(-η₂), -(η₁ + one(η₁))/η₂]
 end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Gamma}) = (θ) -> begin
     (shape, scale) = unpack_parameters(Gamma, θ)
     return loggamma(shape) + shape * log(scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Gamma}) = (θ) -> begin
     (shape, scale) = unpack_parameters(Gamma, θ)
     return SA[
         trigamma(shape) inv(scale)
@@ -120,7 +126,7 @@ getfisherinformation(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
     ]
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Gamma}) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Gamma}) = (θ) -> begin
     (shape, scale) = unpack_parameters(Gamma, θ)
     return SA[digamma(shape)-log(scale), -shape/scale]
 end

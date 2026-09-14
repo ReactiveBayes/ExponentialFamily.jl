@@ -41,6 +41,8 @@ import HCubature:
 import DomainSets:
     NaturalNumbers
 
+include("../allocations_setuptests.jl")
+
 union_types(x::Union) = (x.a, union_types(x.b)...)
 union_types(x::Type)  = (x,)
 
@@ -106,13 +108,13 @@ end
 function run_test_parameters_conversion(distribution)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
-    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(DefaultParametersSpace(), distribution))
 
-    @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(MeanParametersSpace(), distribution))
+    @test all(ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner) .== params(DefaultParametersSpace(), distribution))
 
-    @test_opt ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    @test_opt ExponentialFamily.separate_conditioner(T, params(DefaultParametersSpace(), distribution))
     @test_opt ExponentialFamily.join_conditioner(T, tuple_of_θ, conditioner)
-    @test_opt params(MeanParametersSpace(), distribution)
+    @test_opt params(DefaultParametersSpace(), distribution)
 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
@@ -123,22 +125,26 @@ function run_test_parameters_conversion(distribution)
 
     @test all(NaturalToMean(T)(tuple_of_η, conditioner) .≈ tuple_of_θ)
     @test all(MeanToNatural(T)(tuple_of_θ, conditioner) .≈ tuple_of_η)
-    @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
-    @test all(MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η))
+    @test all(
+        NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈ pack_parameters(DefaultParametersSpace(), T, tuple_of_θ)
+    )
+    @test all(
+        MeanToNatural(T)(pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner) .≈ pack_parameters(NaturalParametersSpace(), T, tuple_of_η)
+    )
 
     @test_opt NaturalToMean(T)(tuple_of_η, conditioner)
     @test_opt MeanToNatural(T)(tuple_of_θ, conditioner)
     @test_opt NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner)
-    @test_opt MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner)
+    @test_opt MeanToNatural(T)(pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner)
 
-    @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, tuple_of_η, conditioner) .≈ tuple_of_θ)
-    @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ, conditioner) .≈ tuple_of_η)
+    @test all(map(NaturalParametersSpace() => DefaultParametersSpace(), T, tuple_of_η, conditioner) .≈ tuple_of_θ)
+    @test all(map(DefaultParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ, conditioner) .≈ tuple_of_η)
     @test all(
-        map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈
-        pack_parameters(MeanParametersSpace(), T, tuple_of_θ)
+        map(NaturalParametersSpace() => DefaultParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .≈
+        pack_parameters(DefaultParametersSpace(), T, tuple_of_θ)
     )
     @test all(
-        map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .≈
+        map(DefaultParametersSpace() => NaturalParametersSpace(), T, pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner) .≈
         pack_parameters(NaturalParametersSpace(), T, tuple_of_η)
     )
 
@@ -150,37 +156,37 @@ function run_test_parameters_conversion(distribution)
         @test all(NaturalToMean(T)(_tuple_of_η) .≈ tuple_of_θ)
         @test all(NaturalToMean(T)(_tuple_of_η) .≈ tuple_of_θ)
         @test all(MeanToNatural(T)(tuple_of_θ) .≈ _tuple_of_η)
-        @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)) .≈ pack_parameters(MeanParametersSpace(), T, tuple_of_θ))
-        @test all(MeanToNatural(T)(pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .≈ pack_parameters(NaturalParametersSpace(), T, _tuple_of_η))
+        @test all(NaturalToMean(T)(pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)) .≈ pack_parameters(DefaultParametersSpace(), T, tuple_of_θ))
+        @test all(MeanToNatural(T)(pack_parameters(DefaultParametersSpace(), T, tuple_of_θ)) .≈ pack_parameters(NaturalParametersSpace(), T, _tuple_of_η))
 
-        @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
-        @test all(map(NaturalParametersSpace() => MeanParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
-        @test all(map(MeanParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ) .≈ _tuple_of_η)
+        @test all(map(NaturalParametersSpace() => DefaultParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
+        @test all(map(NaturalParametersSpace() => DefaultParametersSpace(), T, _tuple_of_η) .≈ tuple_of_θ)
+        @test all(map(DefaultParametersSpace() => NaturalParametersSpace(), T, tuple_of_θ) .≈ _tuple_of_η)
         @test all(
-            map(NaturalParametersSpace() => MeanParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)) .≈
-            pack_parameters(MeanParametersSpace(), T, tuple_of_θ)
+            map(NaturalParametersSpace() => DefaultParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)) .≈
+            pack_parameters(DefaultParametersSpace(), T, tuple_of_θ)
         )
         @test all(
-            map(MeanParametersSpace() => NaturalParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ)) .≈
+            map(DefaultParametersSpace() => NaturalParametersSpace(), T, pack_parameters(DefaultParametersSpace(), T, tuple_of_θ)) .≈
             pack_parameters(NaturalParametersSpace(), T, _tuple_of_η)
         )
     end
 
     @test all(unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner) .== tuple_of_η)
-    @test all(unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner) .== tuple_of_θ)
+    @test all(unpack_parameters(DefaultParametersSpace(), T, pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner) .== tuple_of_θ)
 
     @test_opt unpack_parameters(NaturalParametersSpace(), T, pack_parameters(NaturalParametersSpace(), T, tuple_of_η), conditioner)
-    @test_opt unpack_parameters(MeanParametersSpace(), T, pack_parameters(MeanParametersSpace(), T, tuple_of_θ), conditioner)
+    @test_opt unpack_parameters(DefaultParametersSpace(), T, pack_parameters(DefaultParametersSpace(), T, tuple_of_θ), conditioner)
 
     # Extra methods for conditioner free distributions
     if isnothing(conditioner)
         @test all(
-            params(MeanParametersSpace(), distribution) .≈
-            map(NaturalParametersSpace() => MeanParametersSpace(), T, params(NaturalParametersSpace(), distribution))
+            params(DefaultParametersSpace(), distribution) .≈
+            map(NaturalParametersSpace() => DefaultParametersSpace(), T, params(NaturalParametersSpace(), distribution))
         )
         @test all(
             params(NaturalParametersSpace(), distribution) .≈
-            map(MeanParametersSpace() => NaturalParametersSpace(), T, params(MeanParametersSpace(), distribution))
+            map(DefaultParametersSpace() => NaturalParametersSpace(), T, params(DefaultParametersSpace(), distribution))
         )
     end
 end
@@ -203,22 +209,22 @@ function run_test_distribution_conversion(distribution; assume_no_allocations = 
     @test_opt convert(Distribution, ef)
 
     if assume_no_allocations
-        @test @allocated(convert(Distribution, ef)) === 0
+        @test_no_allocations convert(Distribution, ef)
     end
 end
 
 function run_test_packing_unpacking(distribution)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
-    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    tuple_of_θ, conditioner = ExponentialFamily.separate_conditioner(T, params(DefaultParametersSpace(), distribution))
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     tuple_of_η = MeanToNatural(T)(tuple_of_θ, conditioner)
 
     @test all(unpack_parameters(ef) .≈ tuple_of_η)
-    @test @allocated(unpack_parameters(ef)) === 0
+    @test_no_allocations unpack_parameters(ef)
 
-    @test_opt ExponentialFamily.separate_conditioner(T, params(MeanParametersSpace(), distribution))
+    @test_opt ExponentialFamily.separate_conditioner(T, params(DefaultParametersSpace(), distribution))
     @test_opt unpack_parameters(ef)
 end
 
@@ -231,7 +237,7 @@ function run_test_isproper(distribution; assume_no_allocations = true)
     @test_opt isproper(exponential_family_form)
 
     if assume_no_allocations
-        @test @allocated(isproper(exponential_family_form)) === 0
+        @test_no_allocations isproper(exponential_family_form)
     end
 end
 
@@ -343,13 +349,13 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
 
         # Test that the selected methods do not allocate
         if assume_no_allocations
-            @test @allocated(logpdf(ef, x)) === 0
-            @test @allocated(pdf(ef, x)) === 0
-            @test @allocated(mean(ef)) === 0
-            @test @allocated(var(ef)) === 0
-            @test @allocated(basemeasure(ef, x)) === 0
-            @test @allocated(logbasemeasure(ef, x)) === 0
-            @test @allocated(sufficientstatistics(ef, x)) === 0
+            @test_no_allocations logpdf(ef, x)
+            @test_no_allocations pdf(ef, x)
+            @test_no_allocations mean(ef)
+            @test_no_allocations var(ef)
+            @test_no_allocations basemeasure(ef, x)
+            @test_no_allocations logbasemeasure(ef, x)
+            @test_no_allocations sufficientstatistics(ef, x)
         end
     end
 
@@ -379,10 +385,10 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
     end
 
     if test_properties_in_mean_space
-        θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
-        F = getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
+        θ = map(NaturalParametersSpace() => DefaultParametersSpace(), T, η, conditioner)
+        F = getfisherinformation(DefaultParametersSpace(), T, conditioner)(θ)
 
-        @test_opt getfisherinformation(MeanParametersSpace(), T, conditioner)(θ)
+        @test_opt getfisherinformation(DefaultParametersSpace(), T, conditioner)(θ)
 
         @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
         @test isposdef(F) || all(>(0), eigvals(F))
@@ -432,7 +438,7 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
     end
 
     if assume_no_allocations
-        @test @allocated(fisherinformation(ef)) === 0
+        @test_no_allocations fisherinformation(ef)
     end
 end
 
@@ -440,8 +446,8 @@ function run_test_fisherinformation_against_jacobian(
     distribution;
     assume_no_allocations = true,
     mappings = (
-        NaturalParametersSpace() => MeanParametersSpace(),
-        MeanParametersSpace() => NaturalParametersSpace()
+        NaturalParametersSpace() => DefaultParametersSpace(),
+        DefaultParametersSpace() => NaturalParametersSpace()
     )
 )
     T = ExponentialFamily.exponential_family_typetag(distribution)
@@ -449,13 +455,13 @@ function run_test_fisherinformation_against_jacobian(
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
-    θ = map(NaturalParametersSpace() => MeanParametersSpace(), T, η, conditioner)
+    θ = map(NaturalParametersSpace() => DefaultParametersSpace(), T, η, conditioner)
 
     # Check natural to mean Jacobian based FI computation
     # So here we check that the fisher information matrices are identical with respect to `J`, which is the jacobian of the 
     # transformation. For example if we have a mapping T : M -> N, the fisher information matrices computed in M and N 
     # respectively must follow this relation `Fₘ = J' * Fₙ * J`
-    for (M, N, parameters) in ((NaturalParametersSpace(), MeanParametersSpace(), η), (MeanParametersSpace(), NaturalParametersSpace(), θ))
+    for (M, N, parameters) in ((NaturalParametersSpace(), DefaultParametersSpace(), η), (DefaultParametersSpace(), NaturalParametersSpace(), θ))
         if (M => N) ∈ mappings
             mapping = getmapping(M => N, T)
             m = parameters
@@ -487,8 +493,11 @@ function run_test_fisherinformation_against_jacobian(
             end
 
             if assume_no_allocations
-                @test @allocated(getfisherinformation(M, T, conditioner)(m)) === 0
-                @test @allocated(getfisherinformation(N, T, conditioner)(n)) === 0
+                FIₘ = getfisherinformation(M, T, conditioner)
+                FIₙ = getfisherinformation(N, T, conditioner)
+
+                @test_no_allocations FIₘ(m)
+                @test_no_allocations FIₙ(n)
             end
         end
     end
@@ -549,7 +558,7 @@ function test_generic_simple_exponentialfamily_product(
 
         if test_inplace_assume_no_allocations
             let _similar = similar(efleft)
-                @test @allocated(prod!(_similar, efleft, efright)) === 0
+                @test_no_allocations prod!(_similar, efleft, efright)
             end
         end
     end

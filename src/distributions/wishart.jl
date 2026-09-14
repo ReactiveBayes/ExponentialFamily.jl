@@ -182,7 +182,7 @@ end
 
 # We do not define prod between `Wishart` from `Distributions.jl` for a reason
 # We want to compute `prod` only for `WishartFast` messages as they are significantly faster in creation
-BayesBase.params(::MeanParametersSpace, dist::WishartFast) = (dist.ν, dist.invS)
+BayesBase.params(::DefaultParametersSpace, dist::WishartFast) = (dist.ν, dist.invS)
 BayesBase.default_prod_rule(::Type{<:WishartFast}, ::Type{<:WishartFast}) = PreserveTypeProd(Distribution)
 
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::WishartFast, right::WishartFast)
@@ -223,7 +223,7 @@ function isproper(::NaturalParametersSpace, ::Type{WishartFast}, η, conditioner
     # return  η1 > 0 && isposdef(-η2)
     return η1 > 0
 end
-function isproper(::MeanParametersSpace, ::Type{WishartFast}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{WishartFast}, θ, conditioner)
     if !isnothing(conditioner) || length(θ) <= 4 || any(isnan, θ) || any(isinf, θ)
         return false
     end
@@ -291,13 +291,13 @@ getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     (ν, invS) = unpack_parameters(WishartFast, θ)
     p = first(size(invS))
     return (ν / 2) * (p * log(2.0) - logdet(invS)) + logmvgamma(p, ν / 2)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     ν, invS = unpack_parameters(WishartFast, θ)
     p = first(size(invS))
     term1 = ((p * log(2.0) - logdet(invS)) + mvdigamma(ν / 2, p)) / 2
@@ -306,7 +306,7 @@ getgradlogpartition(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     return [term1; term2]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{WishartFast}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{WishartFast}) = (θ) -> begin
     (df, invS) = unpack_parameters(WishartFast, θ)
     S = cholinv(invS)
     p = first(size(S))

@@ -60,7 +60,7 @@ function isproper(::NaturalParametersSpace, ::Type{NegativeBinomial}, η, condit
     return !isnan(η₁) && !isinf(η₁) && η₁ <= 0
 end
 
-function isproper(::MeanParametersSpace, ::Type{NegativeBinomial}, θ, conditioner::Number)
+function isproper(::DefaultParametersSpace, ::Type{NegativeBinomial}, θ, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1 || conditioner < 0
         return false
     end
@@ -126,17 +126,17 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
     (p,) = unpack_parameters(NegativeBinomial, θ)
     return -conditioner * log(one(p) - p)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{NegativeBinomial}, conditioner) = (θ) -> begin
     (p,) = unpack_parameters(NegativeBinomial, η)
     return SA[conditioner * inv(one(p) - p);]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{NegativeBinomial}, r) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{NegativeBinomial}, r) = (θ) -> begin
     (p,) = unpack_parameters(NegativeBinomial, θ)
     return SA[r / (p^2 * (one(p) - p));;]
 end

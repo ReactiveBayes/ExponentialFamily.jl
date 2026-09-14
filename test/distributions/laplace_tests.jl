@@ -29,7 +29,7 @@ end
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Laplace, [Inf], 1.0)
         @test !isproper(space, Laplace, [1.0], Inf)
         @test !isproper(space, Laplace, [NaN], 1.0)

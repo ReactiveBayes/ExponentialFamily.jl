@@ -34,7 +34,7 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{Beta}, η, conditioner) = isnothing(conditioner) && length(η) === 2 && all(>(-1), η)
-isproper(::MeanParametersSpace, ::Type{Beta}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ)
+isproper(::DefaultParametersSpace, ::Type{Beta}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ)
 
 function (::MeanToNatural{Beta})(tuple_of_θ::Tuple{Any, Any})
     (a, b) = tuple_of_θ
@@ -82,12 +82,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Beta}) = (θ) -> begin
     (a, b) = unpack_parameters(Beta, θ)
     return logbeta(a, b)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Beta}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Beta}) = (θ) -> begin
     (a, b) = unpack_parameters(Beta, θ)
     psia = trigamma(a)
     psib = trigamma(b)

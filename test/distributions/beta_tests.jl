@@ -53,9 +53,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Beta, [-1])
-    @test !isproper(MeanParametersSpace(), Beta, [1, -0.1])
-    @test !isproper(MeanParametersSpace(), Beta, [-0.1, 1])
+    @test !isproper(DefaultParametersSpace(), Beta, [-1])
+    @test !isproper(DefaultParametersSpace(), Beta, [1, -0.1])
+    @test !isproper(DefaultParametersSpace(), Beta, [-0.1, 1])
     @test !isproper(NaturalParametersSpace(), Beta, [-1.1])
     @test !isproper(NaturalParametersSpace(), Beta, [1, -1.1])
     @test !isproper(NaturalParametersSpace(), Beta, [-1.1, 1])

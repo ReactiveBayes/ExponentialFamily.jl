@@ -41,9 +41,9 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Erlang, [-1])
-    @test !isproper(MeanParametersSpace(), Erlang, [1, -0.1])
-    @test !isproper(MeanParametersSpace(), Erlang, [-0.1, 1])
+    @test !isproper(DefaultParametersSpace(), Erlang, [-1])
+    @test !isproper(DefaultParametersSpace(), Erlang, [1, -0.1])
+    @test !isproper(DefaultParametersSpace(), Erlang, [-0.1, 1])
     @test !isproper(NaturalParametersSpace(), Erlang, [-1.1])
     @test isproper(NaturalParametersSpace(), Erlang, [1, -1.1])
     @test !isproper(NaturalParametersSpace(), Erlang, [-1.1, 1])

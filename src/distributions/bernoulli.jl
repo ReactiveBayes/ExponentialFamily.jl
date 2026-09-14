@@ -1,7 +1,7 @@
 export Bernoulli
 
 import Distributions: Bernoulli, succprob, failprob, logpdf
-import StatsFuns: logistic, logit
+import StatsFuns: logistic, logit, log1pexp
 
 BayesBase.vague(::Type{<:Bernoulli}) = Bernoulli(0.5)
 BayesBase.probvec(dist::Bernoulli) = (failprob(dist), succprob(dist))
@@ -68,7 +68,7 @@ function BayesBase.insupport(::ExponentialFamilyDistribution{Bernoulli}, x)
 end
 
 isproper(::NaturalParametersSpace, ::Type{Bernoulli}, η, conditioner) = isnothing(conditioner) && (length(η) === 1) && (!isinf(first(η)))
-isproper(::MeanParametersSpace, ::Type{Bernoulli}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 1) && (0 <= first(θ) <= 1)
+isproper(::DefaultParametersSpace, ::Type{Bernoulli}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 1) && (0 <= first(θ) <= 1)
 
 function (::MeanToNatural{Bernoulli})(tuple_of_θ::Tuple{Any})
     (p,) = tuple_of_θ
@@ -91,7 +91,7 @@ getsufficientstatistics(::Type{Bernoulli}) = (identity,)
 
 getlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
     (η₁,) = unpack_parameters(Bernoulli, η)
-    return -log(logistic(-η₁))
+    return log1pexp(η₁)
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Bernoulli}) = (η) -> begin
@@ -107,12 +107,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
     (p,) = unpack_parameters(Bernoulli, θ)
     return -log(one(p) - p)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Bernoulli}) = (θ) -> begin
     (p,) = unpack_parameters(Bernoulli, θ)
     return SA[inv(p * (one(p) - p));;]
 end

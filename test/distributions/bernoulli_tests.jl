@@ -34,9 +34,15 @@ end
 @testitem "Bernoulli: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
+    if VERSION >= v"1.12"
+        option_assume_no_allocations = false
+    else
+        option_assume_no_allocations = true
+    end
+
     for p in 0.1:0.1:0.9
         @testset let d = Bernoulli(p)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = option_assume_no_allocations)
             η₁ = logit(p)
 
             for x in (0, 1)
@@ -56,8 +62,8 @@ end
     end
 
     # Test failing isproper cases
-    @test !isproper(MeanParametersSpace(), Bernoulli, [-1])
-    @test !isproper(MeanParametersSpace(), Bernoulli, [0.5, 0.5])
+    @test !isproper(DefaultParametersSpace(), Bernoulli, [-1])
+    @test !isproper(DefaultParametersSpace(), Bernoulli, [0.5, 0.5])
     @test !isproper(NaturalParametersSpace(), Bernoulli, [0.5, 0.5])
     @test !isproper(NaturalParametersSpace(), Bernoulli, [Inf])
 
@@ -79,9 +85,11 @@ end
         @test @inferred(prod(strategy, Categorical([0.5, 0.5]), Bernoulli(0.5))) ≈ Categorical([0.5, 0.5])
     end
 
-    @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
-    @test @allocated(prod(PreserveTypeProd(Distribution), Bernoulli(0.5), Bernoulli(0.5))) === 0
-    @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+    if VERSION < v"1.12"
+        @test @allocated(prod(ClosedProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(PreserveTypeProd(Distribution), Bernoulli(0.5), Bernoulli(0.5))) === 0
+        @test @allocated(prod(GenericProd(), Bernoulli(0.5), Bernoulli(0.5))) === 0
+    end
 end
 
 @testitem "Bernoulli: prod with Categorical" begin
@@ -102,6 +110,12 @@ end
 @testitem "Bernoulli: prod with ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
+    if VERSION >= v"1.12"
+        test_inplace_assume_no_allocations = false
+    else
+        test_inplace_assume_no_allocations = true
+    end
+
     for pleft in 0.1:0.1:0.9, pright in 0.1:0.1:0.9
         @testset let (left, right) = (Bernoulli(pleft), Bernoulli(pright))
             @test test_generic_simple_exponentialfamily_product(
@@ -112,8 +126,25 @@ end
                     GenericProd(),
                     PreserveTypeProd(ExponentialFamilyDistribution),
                     PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
-                )
+                ),
+                test_inplace_assume_no_allocations=test_inplace_assume_no_allocations
             )
         end
+    end
+end
+
+# Regression test for issue #298: the natural-space log-partition -log(logistic(-η))
+# overflows to Inf for large logits (η ≳ 709), even though A(η) = log1pexp(η) is finite.
+@testitem "Bernoulli: numerically stable logpartition" begin
+    include("distributions_setuptests.jl")
+
+    A = getlogpartition(NaturalParametersSpace(), Bernoulli)
+
+    # large logit used to overflow to Inf
+    @test isfinite(A([1000.0]))
+    @test A([1000.0]) ≈ 1000.0
+
+    for η1 in (-5.0, -0.5, 0.0, 3.0)
+        @test A([η1]) ≈ log1pexp(η1)
     end
 end

@@ -218,6 +218,34 @@ end
     end
 end
 
+@testitem "DirichletCollection: mode" begin
+    include("distributions_setuptests.jl")
+
+    for rank in (3, 5)
+        for d in (2, 5, 10)
+            for _ in 1:10
+                alpha = rand([d for _ in 1:rank]...) .+ 1.0
+                distribution = DirichletCollection(alpha)
+
+                mat_of_dir = Dirichlet.(eachslice(alpha, dims = Tuple(2:rank)))
+
+                temp = mode.(mat_of_dir)
+                mat_mode = similar(alpha)
+                for i in CartesianIndices(Base.tail(size(alpha)))
+                    mat_mode[:, i] = temp[i]
+                end
+                @test mode(distribution) ≈ mat_mode
+
+                # test that error is thrown if one entry is ≤ 1
+                idx = rand(eachindex(alpha))
+                alpha[idx] -= 1.0
+                distribution2 = DirichletCollection(alpha)
+                @test_throws "ArgumentError: The mode is ill-defined for a Dirichlet random variable if any of the parameters is ≤ 1." mode(distribution)
+            end
+        end
+    end
+end
+
 @testitem "DirichletCollection: ExponentialFamilyDistribution" begin
     include("distributions_setuptests.jl")
 
@@ -259,7 +287,7 @@ end
     dirichletCollection[:, 2, 1] .= c
     dirichletCollection[:, 2, 2] .= d
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test isproper(space, DirichletCollection, dirichletCollection)
         @test !isproper(space, DirichletCollection, Inf)
         dirichletCollection[:, 1, 1] .= nan_test
@@ -271,7 +299,7 @@ end
         dirichletCollection[:, 1, 1] .= a
     end
     dirichletCollection[:, 1, 1] = negative_num_natural_param_test
-    @test !isproper(MeanParametersSpace(), DirichletCollection, dirichletCollection)
+    @test !isproper(DefaultParametersSpace(), DirichletCollection, dirichletCollection)
     @test isproper(NaturalParametersSpace(), DirichletCollection, dirichletCollection)
 
     @test_throws Exception convert(ExponentialFamilyDistribution, DirichletCollection([Inf Inf; 2 3]))

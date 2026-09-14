@@ -24,7 +24,7 @@ end
 # Natural parametrization
 
 isproper(::NaturalParametersSpace, ::Type{LogNormal}, η, conditioner) = isnothing(conditioner) && (length(η) === 2) && (η[firstindex(η)+1] < 0)
-isproper(::MeanParametersSpace, ::Type{LogNormal}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (θ[firstindex(θ)+1] > 0)
+isproper(::DefaultParametersSpace, ::Type{LogNormal}, θ, conditioner) = isnothing(conditioner) && (length(θ) === 2) && (θ[firstindex(θ)+1] > 0)
 
 function (::MeanToNatural{LogNormal})(tuple_of_θ::Tuple{Any, Any})
     (μ, σ) = tuple_of_θ
@@ -68,19 +68,19 @@ getfisherinformation(::NaturalParametersSpace, ::Type{LogNormal}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
     return abs2(μ) / (2abs2(σ)) + log(σ)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
     dμ = abs(μ) / (abs2(σ))
     dσ = -abs2(μ) / (σ^3) + 1 / σ
     return SA[dμ, dσ]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{LogNormal}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
     invσ² = inv(abs2(σ))
     return SA[invσ² 0.0; 0.0 2invσ²]

@@ -31,28 +31,6 @@ end
 BayesBase.default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Laplace} =
     PreserveTypeProd(ExponentialFamilyDistribution{Laplace})
 
-function BayesBase.prod!(
-    container::ExponentialFamilyDistribution{Laplace},
-    left::ExponentialFamilyDistribution{Laplace},
-    right::ExponentialFamilyDistribution{Laplace}
-)
-    (η_container, conditioner_container) = (getnaturalparameters(container), getconditioner(container))
-    (η_left, conditioner_left) = (getnaturalparameters(left), getconditioner(left))
-    (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))
-
-    if isapprox(conditioner_left, conditioner_right) && isapprox(conditioner_left, conditioner_container)
-        map!(+, η_container, η_left, η_right)
-        return container
-    end
-
-    error("""
-        Cannot compute a closed product of two `Laplace` distribution in their natural parametrization with different conditioners (location parameter).
-        To compute a generic product in the natural parameters space, convert both distributions to the 
-        `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution)`
-        prod strategy.
-    """)
-end
-
 function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution{Laplace}},
     left::ExponentialFamilyDistribution{Laplace},
@@ -121,7 +99,7 @@ function isproper(::NaturalParametersSpace, ::Type{Laplace}, η, conditioner::Nu
     return !isnan(η₁) && !isinf(η₁) && η₁ < 0
 end
 
-function isproper(::MeanParametersSpace, ::Type{Laplace}, θ, conditioner::Number)
+function isproper(::DefaultParametersSpace, ::Type{Laplace}, θ, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1
         return false
     end
@@ -186,12 +164,12 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
     (scale,) = unpack_parameters(Laplace, θ)
     return log(2scale)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Laplace}, _) = (θ) -> begin
     (scale,) = unpack_parameters(Laplace, θ)
     return SA[inv(abs2(scale));;] # 1 / scale^2
 end

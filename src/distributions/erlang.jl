@@ -22,7 +22,8 @@ end
 
 isproper(::NaturalParametersSpace, ::Type{Erlang}, η, conditioner) =
     isnothing(conditioner) && length(η) === 2 && isinteger(η[1]) && (η[1] >= 0) && (-η[2] >= tiny) && all(!isinf, η)
-isproper(::MeanParametersSpace, ::Type{Erlang}, θ, conditioner) = isnothing(conditioner) && length(θ) === 2 && all(>(0), θ) && isinteger(θ[1]) && all(!isinf, θ)
+isproper(::DefaultParametersSpace, ::Type{Erlang}, θ, conditioner) =
+    isnothing(conditioner) && length(θ) === 2 && all(>(0), θ) && isinteger(θ[1]) && all(!isinf, θ)
 
 function (::MeanToNatural{Erlang})(tuple_of_θ::Tuple{Any, Any})
     (shape, scale) = tuple_of_θ
@@ -42,7 +43,7 @@ end
 
 function convert(::Type{Distribution}, ef::ExponentialFamilyDistribution{Erlang})
     tuple_of_η = unpack_parameters(ef)
-    params = map(NaturalParametersSpace() => MeanParametersSpace(), Erlang, tuple_of_η)
+    params = map(NaturalParametersSpace() => DefaultParametersSpace(), Erlang, tuple_of_η)
     return Erlang(Integer(params[1]), params[2])
 end
 
@@ -73,12 +74,12 @@ end
 
 # Mean parameterization
 
-getlogpartition(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Erlang}) = (θ) -> begin
     (k, β) = unpack_parameters(Erlang, θ)
     return k * log(β) + logfactorial(k - 1)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Erlang}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Erlang}) = (θ) -> begin
     (k, β) = unpack_parameters(Erlang, θ)
     return SA[trigamma(k) 1/β; 1/β k/β^2]
 end

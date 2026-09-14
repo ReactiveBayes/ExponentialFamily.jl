@@ -43,7 +43,7 @@ end
         end
     end
 
-    for space in (MeanParametersSpace(), NaturalParametersSpace())
+    for space in (DefaultParametersSpace(), NaturalParametersSpace())
         @test !isproper(space, Dirichlet, [Inf, Inf], 1.0)
         @test !isproper(space, Dirichlet, [1.0], Inf)
         @test !isproper(space, Dirichlet, [NaN], 1.0)

@@ -1,0 +1,28 @@
+# Changelog
+
+All notable changes to ExponentialFamily.jl will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Fixed
+
+- Fix `Categorical` natural-space gradient and Fisher information becoming `NaN` for large natural parameters; compute both via `softmax` ([#294](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/294)).
+- Implement `logpdf`/`pdf`/`cdf` for `TruncatedExponentialFamilyDistribution`, which previously threw a `MethodError`; also remove an unused import ([#290](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/290)).
+- Fix `Binomial` natural-space `getgradlogpartition` returning `NaN` for large logits; use `logistic` ([#297](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/297)).
+- Fix `Bernoulli` natural-space `getlogpartition` overflowing to `Inf` for large logits; use `log1pexp` ([#298](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/298)).
+
+## [2.5.1]
+
+### Fixed
+- Resolve `convert` method ambiguity for `FullNormal` under Distributions 0.25.129 ([#288](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/288)).
+
+### Changed
+- Add beginner guides and fix spelling across documentation and docstrings ([#289](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/289)).
+
+## [2.5.0]
+
+### Added
+- `MvNormalGamma` distribution — the multivariate generalization of `NormalGamma`, i.e. the joint conjugate prior over a Gaussian mean vector `θ` and a scalar precision `γ` (`θ ∣ γ ~ N(μ, (γΛ)⁻¹)`, `γ ~ Gamma(α, β)`). Includes the full `ExponentialFamily` interface (natural parameters, log-partition, gradient, Fisher information), `prod`, sampling, `logpdf`, and differential `entropy` ([#287](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/287)).

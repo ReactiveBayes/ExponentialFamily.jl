@@ -33,6 +33,7 @@ import Base: convert, promote_rule
 
 include("common.jl")
 include("exponential_family.jl")
+include("truncate_univariate.jl")
 
 include("distributions/bernoulli.jl")
 include("distributions/categorical.jl")
@@ -48,6 +49,7 @@ include("distributions/normal_family/mv_normal_weighted_mean_precision.jl")
 include("distributions/normal_family/mv_normal_mean_scale_precision.jl")
 include("distributions/normal_family/mv_normal_mean_scale_matrix_precision.jl")
 include("distributions/normal_family/normal_family.jl")
+include("distributions/normal_family/matrix_normal.jl")
 include("distributions/gamma_inverse.jl")
 include("distributions/geometric.jl")
 include("distributions/dirichlet.jl")
@@ -71,7 +73,9 @@ include("distributions/weibull.jl")
 include("distributions/laplace.jl")
 include("distributions/poisson.jl")
 include("distributions/chi_squared.jl")
+include("distributions/matrix_normal_wishart.jl")
 include("distributions/mv_normal_wishart.jl")
 include("distributions/normal_gamma.jl")
+include("distributions/mv_normal_gamma.jl")
 
 end

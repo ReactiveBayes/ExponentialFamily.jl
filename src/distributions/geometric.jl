@@ -19,7 +19,7 @@ getsupport(::Type{Geometric}) = DomainSets.NaturalNumbers()
 
 isproper(::NaturalParametersSpace, ::Type{Geometric}, η, conditioner) =
     isnothing(conditioner) && length(η) === 1 && all(!isinf, η) && all(!isnan, η) && all(<=(0), η)
-isproper(::MeanParametersSpace, ::Type{Geometric}, θ, conditioner) =
+isproper(::DefaultParametersSpace, ::Type{Geometric}, θ, conditioner) =
     isnothing(conditioner) && length(θ) === 1 && all(>(0), θ) && all(<=(1), θ) && all(!isinf, θ) && all(!isnan, θ)
 
 function (::MeanToNatural{Geometric})(tuple_of_θ::Tuple{Any})
@@ -56,17 +56,17 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Geometric}) = (θ) -> begin
     (p,) = unpack_parameters(Geometric, θ)
     return -log(p)
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Geometric}) = (θ) -> begin
     (p,) = unpack_parameters(Geometric, θ)
     return SA[one(p) / (p^2 * (one(p) - p));;]
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Geometric}) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Geometric}) = (θ) -> begin
     (p,) = unpack_parameters(Geometric, θ)
     return SA[one(p) / (p^2 - p);]
 end

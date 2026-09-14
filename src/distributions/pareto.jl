@@ -31,28 +31,6 @@ end
 BayesBase.default_prod_rule(::Type{<:ExponentialFamilyDistribution{T}}, ::Type{<:ExponentialFamilyDistribution{T}}) where {T <: Pareto} =
     PreserveTypeProd(ExponentialFamilyDistribution{Pareto})
 
-function BayesBase.prod!(
-    container::ExponentialFamilyDistribution{Pareto},
-    left::ExponentialFamilyDistribution{Pareto},
-    right::ExponentialFamilyDistribution{Pareto}
-)
-    (η_container, conditioner_container) = (getnaturalparameters(container), getconditioner(container))
-    (η_left, conditioner_left) = (getnaturalparameters(left), getconditioner(left))
-    (η_right, conditioner_right) = (getnaturalparameters(right), getconditioner(right))
-
-    if isapprox(conditioner_left, conditioner_right) && isapprox(conditioner_left, conditioner_container)
-        map!(+, η_container, η_left, η_right)
-        return container
-    end
-
-    error("""
-        Cannot compute a closed product of two `Pareto` distribution in their natural parametrization with different conditioners (location parameter).
-        To compute a generic product in the natural parameters space, convert both distributions to the 
-        `ExponentialFamilyDistribution` type and use the `PreserveTypeProd(ExponentialFamilyDistribution)`
-        prod strategy.
-    """)
-end
-
 function BayesBase.prod(
     ::PreserveTypeProd{ExponentialFamilyDistribution{Pareto}},
     left::ExponentialFamilyDistribution{Pareto},
@@ -103,7 +81,7 @@ function isproper(::NaturalParametersSpace, ::Type{Pareto}, η, conditioner::Num
     return !isnan(η₁) && !isinf(η₁) && η₁ < -1
 end
 
-function isproper(::MeanParametersSpace, ::Type{Pareto}, θ, conditioner::Number)
+function isproper(::DefaultParametersSpace, ::Type{Pareto}, θ, conditioner::Number)
     if isnan(conditioner) || isinf(conditioner) || length(θ) !== 1 || conditioner < 0
         return false
     end
@@ -165,17 +143,17 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (shape,) = unpack_parameters(Pareto, θ)
     return -log(shape) - shape * log(conditioner)
 end
 
-getgradlogpartition(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+getgradlogpartition(::DefaultParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (shape,) = unpack_parameters(Pareto, θ)
     return SA[-inv(shape) - log(conditioner);]
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{Pareto}, conditioner) = (θ) -> begin
     (α,) = unpack_parameters(Pareto, θ)
     ### Below fisher information is problematic if α is larger than conditioner as Pareto 
     ### does not satisfy regularity conditions

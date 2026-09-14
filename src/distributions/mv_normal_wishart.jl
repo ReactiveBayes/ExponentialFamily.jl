@@ -29,6 +29,18 @@ struct MvNormalWishart{T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Re
     ) where {T, M <: AbstractArray{T}, V <: AbstractMatrix{T}, K <: Real, N <: Real}
         new{T, M, V, K, N}(μ, Ψ, κ, ν)
     end
+
+    function MvNormalWishart(
+        μ::M,
+        Ψ::V,
+        κ::K,
+        ν::N
+    ) where {T1, T2, M <: AbstractArray{T1}, V <: AbstractMatrix{T2}, K <: Real, N <: Real}
+        T = promote_type(T1, T2)
+        μ_new = convert(AbstractArray{T}, μ)
+        Ψ_new = convert(AbstractMatrix{T}, Ψ)
+        return new{T, typeof(μ_new), typeof(Ψ_new), K, N}(μ_new, Ψ_new, κ, ν)
+    end
 end
 
 scatter(d::MvNormalWishart) = getindex(params(d), 2)
@@ -129,7 +141,7 @@ function isproper(::NaturalParametersSpace, ::Type{MvNormalWishart}, η, conditi
     return η3 < 0 && η4 > -1 / 2
 end
 
-function isproper(::MeanParametersSpace, ::Type{MvNormalWishart}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{MvNormalWishart}, θ, conditioner)
     if !isnothing(conditioner) || length(θ) <= 8 || any(isnan, θ) || any(isinf, θ)
         return false
     end
@@ -258,7 +270,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MvNormalWishart}) =
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
+getlogpartition(::DefaultParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     (μ, S, λ, ν) = unpack_parameters(MvNormalWishart, θ)
     d = length(μ)
 
@@ -270,7 +282,7 @@ getlogpartition(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     return term1 + term2 + term3 + term4 + (d / 2)log2π
 end
 
-getfisherinformation(::MeanParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
+getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalWishart}) = (θ) -> begin
     μ, T, κ, ν = unpack_parameters(MvNormalWishart, θ)
     d = length(μ)
 

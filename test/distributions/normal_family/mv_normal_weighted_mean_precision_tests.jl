@@ -157,3 +157,37 @@ end
         convert(MvNormalWeightedMeanPrecision, m, c) == MvNormalWeightedMeanPrecision(m, c)
     end
 end
+
+@testitem "MvNormalWeightedMeanPrecision: convert from Distributions FullNormal (no ambiguity)" begin
+    # Regression test for the method ambiguity exposed by Distributions.jl 0.25.129, which turned
+    # `FullNormal` from a concrete alias into the parametric `FullNormal{T} = MvNormal{T,<:PDMat{T},<:AbstractVector{T}}`.
+    # A bare `dist::FullNormal` convert method then clashed with the generic
+    # `MultivariateNormalDistributionsFamily{T}` conversion. See ReactiveBayes/RxInferBenchmarks.jl CI.
+    include("./normal_family_setuptests.jl")
+    using LinearAlgebra, Distributions, Test
+
+    m = [1.0, -2.0, 0.5]
+    c = [2.0 0.3 0.1; 0.3 3.0 0.2; 0.1 0.2 4.0]
+
+    # A `FullNormal` (dense `PDMat` covariance — Distributions wraps a dense matrix in a `PDMat`)
+    # must convert without an ambiguity error...
+    d = MvNormal(m, c)
+    @test d isa FullNormal
+    w = convert(MvNormalWeightedMeanPrecision, d)
+    @test w isa MvNormalWeightedMeanPrecision
+    @test mean(w) ≈ m
+    @test cov(w) ≈ c
+
+    # ...and Float32 covariances dispatch to the same method.
+    df = MvNormal(Float32.(m), Float32.(c))
+    @test df isa FullNormal
+    @test convert(MvNormalWeightedMeanPrecision, df) isa MvNormalWeightedMeanPrecision
+
+    # Guard: none of the surviving ambiguities touch this convert method.
+    ambs = Test.detect_ambiguities(ExponentialFamily; recursive = true)
+    offending = filter(
+        pair -> any(m -> occursin("MvNormalWeightedMeanPrecision", string(m.sig)), pair),
+        ambs
+    )
+    @test isempty(offending)
+end

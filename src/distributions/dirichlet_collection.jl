@@ -53,6 +53,16 @@ function BayesBase.pdf(dist::DirichletCollection, xs::AbstractVector)
     return map(x -> pdf(dist, x), xs)
 end
 
+function Distributions.mode(dist::DirichletCollection{T}) where {T}
+    alpha, alpha0 = dist.α, dist.α0
+    if !all(x -> x > one(x), alpha)
+        throw(ArgumentError("The mode is ill-defined for a Dirichlet random variable if any of the parameters is ≤ 1."))
+    end
+
+    d = first(size(alpha)) # dimension of the Dirichlet variables, converted to the right type
+    return (alpha .- one(T)) ./ (alpha0 .- d)
+end
+
 BayesBase.params(dist::DirichletCollection) = (dist.α,)
 
 function unpack_parameters(::Type{DirichletCollection}, packed, conditioner)
@@ -185,7 +195,7 @@ end
 function isproper(::NaturalParametersSpace, ::Type{DirichletCollection}, η, conditioner)
     return length(η) > 1 && all(isless.(-1, η)) && all(!isinf, η) && all(!isnan, η)
 end
-function isproper(::MeanParametersSpace, ::Type{DirichletCollection}, θ, conditioner)
+function isproper(::DefaultParametersSpace, ::Type{DirichletCollection}, θ, conditioner)
     return length(θ) > 1 && all(>(0), θ) && all(!isinf, θ)
 end
 
@@ -267,15 +277,15 @@ end
 
 # Mean parametrization
 
-getlogpartition(::MeanParametersSpace, ::Type{DirichletCollection}, conditioner) =
+getlogpartition(::DefaultParametersSpace, ::Type{DirichletCollection}, conditioner) =
     (η) -> begin
-        return mapreduce(x -> getlogpartition(MeanParametersSpace(), Dirichlet)(x), +, η)
+        return mapreduce(x -> getlogpartition(DefaultParametersSpace(), Dirichlet)(x), +, η)
     end
 
-function getgradlogpartition(::MeanParametersSpace, ::Type{DirichletCollection}, conditioner::NTuple{N, Int}) where {N}
+function getgradlogpartition(::DefaultParametersSpace, ::Type{DirichletCollection}, conditioner::NTuple{N, Int}) where {N}
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
-    dirichlet_gradlogpartition = getgradlogpartition(MeanParametersSpace(), Dirichlet)
+    dirichlet_gradlogpartition = getgradlogpartition(DefaultParametersSpace(), Dirichlet)
 
     return function (θ::AbstractVector{T}) where {T}
         # Preallocate the output
@@ -293,10 +303,10 @@ function getgradlogpartition(::MeanParametersSpace, ::Type{DirichletCollection},
     end
 end
 
-function getfisherinformation(::MeanParametersSpace, ::Type{DirichletCollection}, conditioner::NTuple{N, Int}) where {N}
+function getfisherinformation(::DefaultParametersSpace, ::Type{DirichletCollection}, conditioner::NTuple{N, Int}) where {N}
     k = conditioner[1]  # Number of parameters per distribution
     n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
-    dirichlet_fisher = getfisherinformation(MeanParametersSpace(), Dirichlet)
+    dirichlet_fisher = getfisherinformation(DefaultParametersSpace(), Dirichlet)
 
     return function (θ::AbstractVector{T}) where {T}
         # Create blocks for block diagonal matrix
