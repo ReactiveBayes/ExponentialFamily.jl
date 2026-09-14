@@ -100,7 +100,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin
     (η₁,) = unpack_parameters(Binomial, η)
-    return SA[ntrials*exp(η₁)/(one(η₁)+exp(η₁))]
+    return SA[ntrials * logistic(η₁)]
 end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Binomial}, ntrials) = (η) -> begin

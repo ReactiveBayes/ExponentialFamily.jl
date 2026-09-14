@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Normalize products of two `NegativeBinomial` distributions over their full infinite support ([#299](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/299)).
+- Fix `Categorical` natural-space gradient and Fisher information becoming `NaN` for large natural parameters; compute both via `softmax` ([#294](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/294)).
+- Implement `logpdf`/`pdf`/`cdf` for `TruncatedExponentialFamilyDistribution`, which previously threw a `MethodError`; also remove an unused import ([#290](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/290)).
+- Fix `Binomial` natural-space `getgradlogpartition` returning `NaN` for large logits; use `logistic` ([#297](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/297)).
+- Fix `Bernoulli` natural-space `getlogpartition` overflowing to `Inf` for large logits; use `log1pexp` ([#298](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/298)).
 
 ## [2.5.1]
 
