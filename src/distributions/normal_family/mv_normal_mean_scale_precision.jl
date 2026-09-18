@@ -222,12 +222,6 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
         return -dot(η1, 1 / 4 * Cinv, η1) - (k / 2) * log(-2 * η2)
     end
 
-getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
-    (θ) -> begin
-        μ, γ = unpack_parameters(MvNormalMeanScalePrecision, θ)
-        return (γ * dot(μ, μ) - length(μ) * log(γ)) / 2
-    end
-
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (η) -> begin
         η1 = @view η[1:(end-1)]
@@ -267,5 +261,5 @@ getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision
 getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
     (θ) -> begin
         μ, γ = unpack_parameters(MvNormalMeanScalePrecision, θ)
-    return (γ * dot(μ, μ) - length(μ) * log(γ)) / 2
-end
+        return (γ * dot(μ, μ) - length(μ) * log(γ)) / 2
+    end
