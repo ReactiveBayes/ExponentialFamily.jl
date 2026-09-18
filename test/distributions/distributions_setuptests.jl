@@ -247,7 +247,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
-
+    θ = NaturalToMean(T)(η, conditioner)
     # ! do not use `rand(distribution, nsamples)`
     # ! do not use fixed RNG
     samples = [rand(distribution) for _ in 1:nsamples]
@@ -305,6 +305,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T, conditioner)(x)
         @test logbasemeasure(ef, x) ≈ log(basemeasure(ef, x)) atol = 1e-8
         @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T, conditioner)))
+        @test logpartition(ef) ≈ getlogpartition(DefaultParametersSpace(), T, conditioner)(θ)
         @test @inferred(logpartition(ef)) == getlogpartition(T, conditioner)(η)
         @test @inferred(gradlogpartition(ef)) == getgradlogpartition(NaturalParametersSpace(), T, conditioner)(η)
         @test @inferred(fisherinformation(ef)) == getfisherinformation(T, conditioner)(η)
