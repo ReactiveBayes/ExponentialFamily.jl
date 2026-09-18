@@ -105,3 +105,15 @@ end
         @test g ≈ [k / λ]
     end
 end
+
+@testitem "Weibull: default-space gradlogpartition consistency" begin
+    include("distributions_setuptests.jl")
+
+    logpartition_default = getlogpartition(DefaultParametersSpace(), Weibull, 2.0)
+    gradlogpartition_default = getgradlogpartition(DefaultParametersSpace(), Weibull, 2.0)
+
+    for λ in (0.5, 1.5, 2.5)
+        θ = [λ]
+        @test gradlogpartition_default(θ) ≈ ForwardDiff.gradient(logpartition_default, θ)
+    end
+end
