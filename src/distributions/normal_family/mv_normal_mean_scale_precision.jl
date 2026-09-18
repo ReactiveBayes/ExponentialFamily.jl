@@ -257,3 +257,9 @@ getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision
         matrix[k+1] = k * inv(2abs2(γ))
         return Diagonal(matrix)
     end
+
+getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+    (θ) -> begin
+        μ, γ = unpack_parameters(MvNormalMeanScalePrecision, θ)
+    return (γ * dot(μ, μ) - length(μ) * log(γ)) / 2
+end
