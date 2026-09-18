@@ -100,8 +100,7 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{Categorical}, conditioner) 
                 )
             )
         end
-        sumη = mapreduce(exp, +, η)
-        return map(d -> exp(d) / sumη, η)
+        return softmax(η)
     end
 
 getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner) =
@@ -113,19 +112,8 @@ getfisherinformation(::NaturalParametersSpace, ::Type{Categorical}, conditioner)
                 )
             )
         end
-        I = Matrix{eltype(η)}(undef, length(η), length(η))
-        ∑expη = sum(exp, η)
-        ∑expη² = abs2(∑expη)
-        @inbounds for i in 1:length(η)
-            expηᵢ = exp(η[i])
-            I[i, i] = expηᵢ * (∑expη - expηᵢ) / ∑expη²
-            for j in 1:(i-1)
-                offv = -expηᵢ * exp(η[j]) / ∑expη²
-                I[i, j] = offv
-                I[j, i] = offv
-            end
-        end
-        return I
+        p = softmax(η)
+        return Diagonal(p) - p * p'
     end
 
 # Mean parametrization

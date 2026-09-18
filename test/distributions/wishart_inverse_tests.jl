@@ -262,3 +262,24 @@ end
         end
     end
 end
+
+# Regression test for issue #295: the default (mean) space log-partition of
+# `InverseWishartFast` must equal the natural-space log-partition, since both
+# parametrizations describe the same distribution. The previous implementation used
+# `mvtrigamma` (sum of trigammas) instead of `logmvgamma`.
+@testitem "InverseWishartFast: default-space logpartition consistency" begin
+    include("distributions_setuptests.jl")
+    import ExponentialFamily: InverseWishartFast
+
+    for (ν, S) in ((6.0, [3.0 0.5; 0.5 2.0]), (9.0, [4.0 1.0 0.0; 1.0 3.0 0.5; 0.0 0.5 2.0]))
+        θ_tup = (ν, S)
+        η_tup = MeanToNatural(InverseWishartFast)(θ_tup)
+
+        θ = pack_parameters(DefaultParametersSpace(), InverseWishartFast, θ_tup)
+        η = pack_parameters(NaturalParametersSpace(), InverseWishartFast, η_tup)
+
+        lp_def = getlogpartition(DefaultParametersSpace(), InverseWishartFast)(θ)
+        lp_nat = getlogpartition(NaturalParametersSpace(), InverseWishartFast)(η)
+        @test lp_def ≈ lp_nat
+    end
+end
