@@ -86,7 +86,7 @@ function isproper(::DefaultParametersSpace, ::Type{NegativeBinomial}, θ, condit
 
     (p,) = unpack_parameters(NegativeBinomial, θ)
 
-    return !isnan(p) && !isinf(p) && (p > zero(p)) && (p < one(p))
+    return !isnan(p) && !isinf(p) && (p > zero(p)) && (p <= one(p))
 end
 
 function separate_conditioner(::Type{NegativeBinomial}, params)
