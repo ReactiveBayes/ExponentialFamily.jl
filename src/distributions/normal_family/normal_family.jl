@@ -617,7 +617,7 @@ getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
 
 getlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
-    return μ / 2σ² + log(sqrt(σ²))
+    return abs2(μ) / (2 * σ²) + log(σ²) / 2
 end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) =
@@ -717,6 +717,12 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η)
     l = logdet(F)
     sol = F \ η₁
     return (dot(η₁, sol) / 2 - (k * log(2) + l)) / 2
+end
+
+getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+    (μ, Σ) = unpack_parameters(MvNormalMeanCovariance, θ)
+    F = FastCholesky.fastcholesky(Σ)
+    return (dot(μ, F \ μ) + logdet(F)) / 2
 end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
