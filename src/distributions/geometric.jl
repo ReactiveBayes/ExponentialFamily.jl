@@ -68,5 +68,5 @@ end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{Geometric}) = (θ) -> begin
     (p,) = unpack_parameters(Geometric, θ)
-    return SA[one(p) / (p^2 - p);]
+    return SA[-inv(p);]
 end
