@@ -86,6 +86,7 @@ end
         @test isproper(DefaultParametersSpace(), NegativeBinomial, θ, r) isa Bool
         @test isproper(DefaultParametersSpace(), NegativeBinomial, θ, r)
         @test !isproper(DefaultParametersSpace(), NegativeBinomial, [-0.5], r)
+        @test !isproper(DefaultParametersSpace(), NegativeBinomial, [1.5], r)  # p > 1 should be improper
 
         # (c) default-space log-partition must agree with natural-space
         lp_def = getlogpartition(DefaultParametersSpace(), NegativeBinomial, r)(θ)
