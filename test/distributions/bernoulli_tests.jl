@@ -127,7 +127,7 @@ end
                     PreserveTypeProd(ExponentialFamilyDistribution),
                     PreserveTypeProd(ExponentialFamilyDistribution{Bernoulli})
                 ),
-                test_inplace_assume_no_allocations=test_inplace_assume_no_allocations
+                test_inplace_assume_no_allocations = test_inplace_assume_no_allocations
             )
         end
     end
