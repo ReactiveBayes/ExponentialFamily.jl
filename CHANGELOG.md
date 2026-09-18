@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- Fix `NegativeBinomial` default-space helpers: `isproper` return type, a `getgradlogpartition` crash, and a log-partition mismatch with natural space ([#291](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/291)).
 - Fix `Weibull` default-space `getlogpartition`/`getgradlogpartition` (wrong value and shape, and a crash) ([#292](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/292)).
 - Fix `DirichletCollection` default-space `getlogpartition` returning `0` instead of the per-slice partition sum ([#300](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/300)).
 - Fix `InverseWishartFast` `getlogpartition` in `DefaultParametersSpace`.
