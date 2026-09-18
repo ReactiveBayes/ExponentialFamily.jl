@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Fixed `InverseWishartFast` `getlogpartition` in `DefaultParametersSpace`.
 
 ### Fixed
+- Fixed `InverseWishartFast` `getlogpartition` in `DefaultParametersSpace`.
 - Normalize products of two `NegativeBinomial` distributions over their full infinite support ([#299](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/299)).
 - Fix `Categorical` natural-space gradient and Fisher information becoming `NaN` for large natural parameters; compute both via `softmax` ([#294](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/294)).
 - Implement `logpdf`/`pdf`/`cdf` for `TruncatedExponentialFamilyDistribution`, which previously threw a `MethodError`; also remove an unused import ([#290](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/290)).
