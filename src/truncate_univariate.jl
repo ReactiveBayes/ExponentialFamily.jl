@@ -138,7 +138,6 @@ function BayesBase.rand(rng::AbstractRNG, d::TruncatedExponentialFamilyDistribut
     end
 end
 
-
 ### Density and distribution functions (issue #290)
 
 # Normalizing mass retained after truncation: P(l ≤ X ≤ u) = ucdf - lcdf.
