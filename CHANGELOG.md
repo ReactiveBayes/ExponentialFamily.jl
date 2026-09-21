@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1]
+
 ### Fixed
 - Fix `Gamma` default-space `getgradlogpartition` returning both components with flipped signs ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
 - Fix `NormalMeanVariance` default-space `getgradlogpartition` returning `1/σ²` instead of `1/(2σ²)` in its second component ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
