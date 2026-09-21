@@ -270,7 +270,9 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> beg
     η1, η2 = unpack_parameters(WishartFast, η)
     p = first(size(η2))
     term1 = -logdet(-η2) + mvdigamma(η1 + (p + one(η1)) / 2, p)
-    term2 = vec(((η1 + (p + one(p)) / 2)) * cholinv(η2))
+    # `-η2` is the positive definite one, so it is the matrix to factorize: since
+    # `∂/∂η₂ logdet(-η₂) = inv(η₂)`, the term is `-c * inv(η₂) = c * inv(-η₂)`.
+    term2 = vec(((η1 + (p + one(p)) / 2)) * cholinv(-η2))
 
     return [term1; term2]
 end
@@ -279,7 +281,8 @@ getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
     (η) -> begin
         η1, η2 = unpack_parameters(WishartFast, η)
         p = first(size(η2))
-        invη2 = cholinv(η2)
+        # As above: factorize `-η2`, which is positive definite. `invη2` is `inv(-η2)`.
+        invη2 = cholinv(-η2)
         vinvη2 = -view(invη2, :)
         fimatrix = Matrix{Float64}(undef, p^2 + 1, p^2 + 1)
         @inbounds fimatrix[1, 1] = mvtrigamma(p, (η1 + (p + one(η1)) / 2))
