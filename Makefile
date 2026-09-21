@@ -8,7 +8,9 @@ SCRIPTSRC = scripts
 FORMATTER = $(SCRIPTSRC)/format.jl
 BENCHMARK = $(SCRIPTSRC)/benchmark.jl
 
-JULIA ?= julia
+# `--startup-file=no` keeps an error in a contributor's `~/.julia/config/startup.jl`
+# from taking down unrelated targets such as `make format` with a confusing stacktrace
+JULIA ?= julia --startup-file=no
 JULIAFLAGS ?= --project=.
 JULIAFLAGSDOCS ?= --project=$(DOCSRC)
 JULIAFLAGSSCRIPTS ?= --project=$(SCRIPTSRC)
@@ -86,6 +88,14 @@ deps-scripts: ## Install script dependencies
 test: deps ## Run project tests
 	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'	
 
+# `JuliaFormatter` is pinned in `scripts/Project.toml`. Its output changes between
+# minor releases and `scripts/Manifest.toml` is gitignored, so leaving it unbounded
+# meant every contributor resolved whatever version was newest when they first ran
+# this target, and two people formatting the same untouched file got different diffs.
+# It also parses through `JuliaSyntax`, so its output can shift with the Julia minor
+# version independently of the formatter version -- which is why the CI job that runs
+# `check-format` pins its Julia version to the top of the test matrix.
+# Bump the pin intentionally and run `make format` over the whole repo in the same commit.
 format: deps-scripts ## Format Julia code
 	$(JULIA) $(JULIAFLAGSSCRIPTS) $(FORMATTER) --overwrite
 
