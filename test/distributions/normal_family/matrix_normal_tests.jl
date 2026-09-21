@@ -369,6 +369,10 @@ end
             test_fisherinformation_properties = false,
             test_fisherinformation_against_hessian = false,
             test_fisherinformation_against_jacobian = false,
+            # `MatrixNormal` consumes and returns tuples of matrices in the
+            # `DefaultParametersSpace` rather than packed vectors, so the generic check
+            # does not apply, see the dedicated test above instead
+            test_gradlogpartition_default_space = false,
             option_assume_no_allocations = false
         )
     end

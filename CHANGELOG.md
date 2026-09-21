@@ -5,6 +5,17 @@ All notable changes to ExponentialFamily.jl will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Fix `Gamma` default-space `getgradlogpartition` returning both components with flipped signs ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
+- Fix `NormalMeanVariance` default-space `getgradlogpartition` returning `1/σ²` instead of `1/(2σ²)` in its second component ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
+- Fix `LogNormal` default-space `getgradlogpartition` using `abs(μ)`, which gave the wrong sign for negative `μ` ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
+
+### Added
+- Add a generic `getgradlogpartition` check in `DefaultParametersSpace` to the distribution test harness, cross-validated against the natural space via the jacobian of the parameter mapping and against `ForwardDiff` ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
+- Test against Julia `1.13` in CI.
+
 ## [2.6.0]
 
 ### Fixed

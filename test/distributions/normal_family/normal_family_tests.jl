@@ -228,7 +228,7 @@ end
 
     for μ in -10.0:5.0:10.0, σ² in 0.1:1.0:5.0, T in union_types(UnivariateNormalDistributionsFamily)
         @testset let d = convert(T, NormalMeanVariance(μ, σ²))
-            ef = test_exponentialfamily_interface(d)
+            ef = test_exponentialfamily_interface(d; test_gradlogpartition_default_space = true)
 
             (η₁, η₂) = (mean(d) / var(d), -1 / 2var(d))
 
