@@ -8,4 +8,8 @@ StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
-ExponentialFamily = {path = "../"}
+ExponentialFamily = {path = ".."}
+
+[compat]
+# Pinned deliberately -- see the `format` target in the Makefile for why.
+JuliaFormatter = "~2.14"
