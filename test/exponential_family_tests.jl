@@ -348,3 +348,22 @@ end
     θ_ref    = map(NaturalParametersSpace() => DefaultParametersSpace(), ArbitraryDistributionFromExponentialFamily, [2.0, 3.0])
     @test θ_mapped == θ_ref
 end
+
+@testitem "cdf and quantile for ExponentialFamilyDistribution" begin
+    include("./exponential_family_setuptests.jl")
+
+    # Both delegate to the corresponding `Distributions.jl` type. Before the `quantile` method
+    # existed the call fell through to `Statistics.quantile(itr, ::Real)` and failed with a
+    # `MethodError` about `iterate` (see issue #268).
+    for distribution in (Normal(-2.0, 3.0), Gamma(2.0, 0.5), Beta(2.0, 5.0), Exponential(1.5), Poisson(4.0))
+        ef = convert(ExponentialFamilyDistribution, distribution)
+
+        for p in (0.001, 0.01, 0.25, 0.5, 0.75, 0.99, 0.999)
+            @test quantile(ef, p) ≈ quantile(distribution, p)
+        end
+
+        for x in quantile.(Ref(distribution), (0.1, 0.5, 0.9))
+            @test cdf(ef, x) ≈ cdf(distribution, x)
+        end
+    end
+end

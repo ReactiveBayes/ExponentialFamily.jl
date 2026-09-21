@@ -83,6 +83,28 @@ end
     @test pdf(dist, 86.2027941354432) == 0.07400338986721687
 end
 
+@testitem "GammaShapeRate: cdf and quantile" begin
+    include("./gamma_family_setuptests.jl")
+
+    for (a, b) in ((1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (3.5, 0.75))
+        dist = GammaShapeRate(a, b)
+        ground_truth = Gamma(a, inv(b)) # `Distributions.Gamma` is shape-scale parametrized
+
+        for x in (0.0, 0.1, 0.5, 1.0, 2.5, 10.0)
+            @test cdf(dist, x) ≈ cdf(ground_truth, x)
+        end
+
+        for p in (0.001, 0.01, 0.25, 0.5, 0.75, 0.99, 0.999)
+            @test quantile(dist, p) ≈ quantile(ground_truth, p)
+        end
+
+        # `quantile` is the reason issue #268 was opened: it used to fall through to
+        # `Statistics.quantile(itr, ::Real)` and fail with a `MethodError` about `iterate`.
+        @test quantile(dist, 0.0) ≈ 0.0
+        @test isinf(quantile(dist, 1.0))
+    end
+end
+
 @testitem "GammaShapeRate: prod" begin
     include("./gamma_family_setuptests.jl")
 

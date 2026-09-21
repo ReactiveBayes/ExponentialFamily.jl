@@ -11,10 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `Gamma` default-space `getgradlogpartition` returning both components with flipped signs ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
 - Fix `NormalMeanVariance` default-space `getgradlogpartition` returning `1/σ²` instead of `1/(2σ²)` in its second component ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
 - Fix `LogNormal` default-space `getgradlogpartition` using `abs(μ)`, which gave the wrong sign for negative `μ` ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
+- Implement `quantile` for the custom univariate `GammaShapeRate` and Normal (`NormalMeanVariance`, `NormalMeanPrecision`, `NormalWeightedMeanPrecision`) parametrizations, and generically for any `ExponentialFamilyDistribution` backed by a `Distribution`. All of these previously threw a `MethodError` about `iterate` ([#268](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/268)).
 
 ### Added
 - Add a generic `getgradlogpartition` check in `DefaultParametersSpace` to the distribution test harness, cross-validated against the natural space via the jacobian of the parameter mapping and against `ForwardDiff` ([#315](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315)).
 - Test against Julia `1.13` in CI.
+- Implement `cdf` for `GammaShapeRate`, which had no method, for symmetry with the other univariate parametrizations.
+
+### Changed
+- Allow selecting a subset of test files from the command line via `make test test_args="..."`. `Aqua` checks are skipped for such runs unless `RUN_AQUA=true` is set ([#266](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/266)).
+- Remove stale, non-discoverable work-in-progress test files under `test/distributions/wip/` ([#259](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/259)).
 
 ## [2.6.0]
 

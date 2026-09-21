@@ -36,6 +36,11 @@ BayesBase.params(dist::GammaShapeRate)   = (shape(dist), rate(dist))
 BayesBase.kurtosis(dist::GammaShapeRate) = kurtosis(convert(Gamma, dist))
 BayesBase.skewness(dist::GammaShapeRate) = skewness(convert(Gamma, dist))
 
+# As above, both delegate to the native `Gamma`. `quantile` is not part of the `BayesBase`
+# interface, so it is extended on `Distributions` directly.
+BayesBase.cdf(dist::GammaShapeRate, x::Real)          = cdf(convert(Gamma, dist), x)
+Distributions.quantile(dist::GammaShapeRate, p::Real) = quantile(convert(Gamma, dist), p)
+
 BayesBase.mode(d::GammaShapeRate) =
     shape(d) >= 1 ? mode(Gamma(shape(d), scale(d))) : throw(error("Gamma has no mode when shape < 1"))
 

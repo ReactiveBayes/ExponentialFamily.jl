@@ -23,7 +23,7 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base: prod, convert, ndims
 import Random: rand!
 import Distributions: logpdf
-import StatsFuns: invsqrt2π, normcdf
+import StatsFuns: invsqrt2π, normcdf, norminvcdf
 
 using StatsFuns: log2π
 using LinearAlgebra
@@ -220,6 +220,8 @@ function BayesBase.convert_paramfloattype(::Type{T}, distribution::Truncated{<:N
 end
 
 BayesBase.cdf(dist::UnivariateNormalDistributionsFamily, x::Real) = normcdf(mean(dist), sqrt(var(dist)), x)
+# `quantile` is not part of the `BayesBase` interface, so it is extended on `Distributions` directly.
+Distributions.quantile(dist::UnivariateNormalDistributionsFamily, p::Real) = norminvcdf(mean(dist), sqrt(var(dist)), p)
 # Variate forms promotion
 
 BayesBase.promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
