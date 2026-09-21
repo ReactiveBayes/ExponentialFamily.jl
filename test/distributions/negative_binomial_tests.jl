@@ -26,7 +26,7 @@ end
 
     for p in (0.1, 0.4), r in (2, 3, 4)
         @testset let d = NegativeBinomial(r, p)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_gradlogpartition_default_space = true)
             for x in 2:4
                 @test @inferred(isbasemeasureconstant(ef)) === NonConstantBaseMeasure()
                 @test @inferred(basemeasure(ef, x)) === binomial(Int(x + r - 1), x)

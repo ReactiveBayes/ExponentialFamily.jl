@@ -7,7 +7,7 @@
 
     @testset for p in 0.1:0.2:1.0
         @testset let d = Geometric(p)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true, test_gradlogpartition_default_space = true)
             η1 = first(getnaturalparameters(ef))
 
             for x in (1, 3, 5)

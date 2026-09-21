@@ -7,7 +7,7 @@
 
     for shape in (5.0, 6.0, 7.0), scale in (0.25, 0.5, 2.0)
         @testset let d = Pareto(shape, scale)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_gradlogpartition_default_space = true)
             η1 = -shape - 1
             for x in scale:1.0:(scale+3.0)
                 @test @inferred(isbasemeasureconstant(ef)) === ConstantBaseMeasure()

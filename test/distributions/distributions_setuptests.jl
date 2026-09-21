@@ -66,6 +66,11 @@ function test_exponentialfamily_interface(distribution;
     test_isproper = true,
     test_basic_functions = true,
     test_gradlogpartition_properties = true,
+    # Not all distributions implement `getgradlogpartition` in the `DefaultParametersSpace`,
+    # see https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315
+    # Flip this default to `true` once all of them do, so that newly added
+    # implementations are picked up automatically
+    test_gradlogpartition_default_space = false,
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
@@ -88,6 +93,7 @@ function test_exponentialfamily_interface(distribution;
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
     test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
     test_gradlogpartition_properties && run_test_gradlogpartition_properties(distribution, nsamples = nsamples_for_gradlogpartition_properties)
+    test_gradlogpartition_default_space && run_test_gradlogpartition_default_space(distribution)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
@@ -417,6 +423,47 @@ function run_test_gradlogpartition_properties(distribution; nsamples = 6000, tes
 
     if test_against_forwardiff
         @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
+    end
+end
+
+function run_test_gradlogpartition_default_space(
+    distribution;
+    test_against_natural_space = true,
+    test_against_forwarddiff = true,
+    rtol = 1e-6
+)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
+
+    ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
+
+    (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
+    θ = NaturalToMean(T)(η, conditioner)
+
+    grad = getgradlogpartition(DefaultParametersSpace(), T, conditioner)(θ)
+
+    @test length(grad) === length(θ)
+    @test all(isfinite, grad)
+
+    # Chain rule against the `NaturalParametersSpace`, which is itself checked against
+    # `E[T(x)]`, `ForwardDiff` and the fisher information in `run_test_gradlogpartition_properties`
+    # If we have a mapping `T : M -> N` then the gradients of the log-partition functions computed
+    # in `M` and `N` respectively must follow the relation `∇ₘ = J' * ∇ₙ`, where `J` is the jacobian
+    # of the transformation
+    if test_against_natural_space
+        mapping = getmapping(DefaultParametersSpace() => NaturalParametersSpace(), T)
+        J = ForwardDiff.jacobian(Base.Fix2(mapping, conditioner), θ)
+        @test collect(grad) ≈ J' * getgradlogpartition(NaturalParametersSpace(), T, conditioner)(η) rtol = rtol
+    end
+
+    # Self-consistency with the `DefaultParametersSpace` log-partition, which in turn is checked
+    # against its `NaturalParametersSpace` counterpart in `run_test_basic_functions`
+    if test_against_forwarddiff
+        @test collect(grad) ≈ ForwardDiff.gradient(getlogpartition(DefaultParametersSpace(), T, conditioner), θ) rtol = rtol
+    end
+
+    # Double check the `conditioner` free methods
+    if isnothing(conditioner)
+        @test collect(getgradlogpartition(DefaultParametersSpace(), T)(θ)) ≈ collect(grad) rtol = rtol
     end
 end
 

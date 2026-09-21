@@ -128,5 +128,5 @@ end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{Gamma}) = (θ) -> begin
     (shape, scale) = unpack_parameters(Gamma, θ)
-    return SA[digamma(shape)-log(scale), -shape/scale]
+    return SA[digamma(shape)+log(scale), shape/scale]
 end

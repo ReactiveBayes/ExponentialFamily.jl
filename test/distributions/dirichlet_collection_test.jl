@@ -254,7 +254,8 @@ end
         let d = DirichletCollection(α)
             ef = test_exponentialfamily_interface(d;
                 option_assume_no_allocations = false,
-                nsamples_for_gradlogpartition_properties = 20000)
+                nsamples_for_gradlogpartition_properties = 20000,
+                test_gradlogpartition_default_space = true)
             η1 = getnaturalparameters(ef)
             conditioner = getconditioner(ef)
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]

@@ -7,7 +7,7 @@
 
     for σ in 10rand(4)
         @testset let d = Rayleigh(σ)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true, test_gradlogpartition_default_space = true)
             η1 = first(getnaturalparameters(ef))
 
             for x in 10rand(4)

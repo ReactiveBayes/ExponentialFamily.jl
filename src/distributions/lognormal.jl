@@ -75,7 +75,7 @@ end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{LogNormal}) = (θ) -> begin
     (μ, σ) = unpack_parameters(LogNormal, θ)
-    dμ = abs(μ) / (abs2(σ))
+    dμ = μ / (abs2(σ))
     dσ = -abs2(μ) / (σ^3) + 1 / σ
     return SA[dμ, dσ]
 end

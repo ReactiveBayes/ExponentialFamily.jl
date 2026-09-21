@@ -7,7 +7,12 @@
 
     for shape in (1.0, 2.0, 3.0), scale in (0.25, 0.5, 2.0)
         @testset let d = Weibull(shape, scale)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_jacobian = false)
+            ef = test_exponentialfamily_interface(
+                d;
+                option_assume_no_allocations = false,
+                test_fisherinformation_against_jacobian = false,
+                test_gradlogpartition_default_space = true
+            )
             η1 = first(getnaturalparameters(ef))
             run_test_fisherinformation_against_jacobian(
                 d;
