@@ -14,6 +14,22 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
+  format:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Pinned deliberately. `JuliaFormatter` parses through `JuliaSyntax`, so its output
+      # can shift with the Julia minor version independently of the formatter version
+      # itself. Leaving this as `'1'` would let CI float to whatever Julia was latest that
+      # day while contributors run something else locally, producing format diffs with no
+      # code change. Keep this in step with the highest version in the test matrix below.
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v3
+      - run: make check-format
+
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
