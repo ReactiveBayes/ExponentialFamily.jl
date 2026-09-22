@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.2]
+
+### Fixed
+- Factorize `-η₂` rather than `η₂` in the `WishartFast` `getgradlogpartition` and `getfisherinformation`. The Wishart natural parameter `η₂` is negative definite and has no Cholesky factorization; the previous code produced correct values only by relying on an undocumented `FastCholesky` fallback that happened to factorize `-η₂`, and broke under alternative Cholesky implementations ([#321](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/321)).
+
+### Changed
+- Simplify the `VonMisesFisher` natural-space `getfisherinformation` to a single Bessel ratio, making it faster than the `ForwardDiff` baseline ([#321](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/321)).
+- Use `@belapsed` instead of `@elapsed` in the distribution test harness timing comparisons for more reliable measurements.
+
 ## [2.6.1]
 
 ### Fixed
