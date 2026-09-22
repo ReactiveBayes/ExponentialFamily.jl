@@ -1,5 +1,6 @@
 using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET, SpecialFunctions
+using BenchmarkTools: @belapsed
 
 import BayesBase: compute_logscale
 
@@ -482,7 +483,11 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
     end
 
     if assume_ours_faster
-        @test @elapsed(fisherinformation(ef)) < (@elapsed(ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T, conditioner)(η), η)))
+        # Sample repeatedly to reduce timing noise; Ref prevents constant folding of the inputs.
+        f = getlogpartition(NaturalParametersSpace(), T, conditioner)
+        ours = @belapsed fisherinformation($(Ref(ef))[]) samples = 100 evals = 10 seconds = 0.1 gctrial = false
+        reference = @belapsed ForwardDiff.hessian($f, $(Ref(η))[]) samples = 100 evals = 10 seconds = 0.1 gctrial = false
+        @test ours < reference
     end
 
     if assume_no_allocations
