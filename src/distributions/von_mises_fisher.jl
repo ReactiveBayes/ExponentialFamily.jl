@@ -102,25 +102,11 @@ end
 getfisherinformation(::NaturalParametersSpace, ::Type{VonMisesFisher}) = (η) -> begin
     u = norm(η)
     p = length(η)
+    ratio = besseli(p / 2, u) / besseli(p / 2 - 1, u)
+    ratio_over_u = ratio / u
+    radial_coefficient = one(ratio) - ratio^2 - p * ratio_over_u
 
-    bessel3 = besseli(p / 2 - 3, u)
-    bessel2 = besseli(p / 2 - 2, u)
-    bessel1 = besseli(p / 2 - 1, u)
-    bessel0 = besseli(p / 2, u)
-    bessel4 = besseli(p / 2 + 1, u)
-
-    f1 = (1 / 2) * (bessel0 + bessel2)
-    f2 = inv(bessel1)
-    f3 = (p / 2 - 1) / u
-    f4 = η / u
-
-    delu = η' / u
-    df1  = (1 / 4) * (bessel4 + 2 * bessel1 + bessel3) * delu
-    df2  = ((-1 / 2) * (bessel2 + bessel0) / bessel1^2) * delu
-    df3  = (-(p / 2 - 1) / u^2) * delu
-    df4  = Eye(p) / u - η * η' / u^3
-
-    return f4 * df1 * f2 + f4 * f1 * df2 + f1 * f2 * df4 - f4 * df3 - f3 * df4
+    return ratio_over_u * Eye(p) + radial_coefficient * (η * η') / u^2
 end
 
 # Mean parametrization
