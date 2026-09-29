@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.3]
+
+### Changed
+- Allow `StatsFuns` 2 in compat. Its only breaking change removes the Rmath-based `RFunctions` submodule, which ExponentialFamily does not use ([#323](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/323)).
+
 ## [2.6.2]
 
 ### Fixed
