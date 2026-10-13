@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.4]
+
+### Changed
+- Allow `DomainSets` 0.8 in compat. All `DomainSets` symbols ExponentialFamily uses (`HalfLine`, `NaturalNumbers`, `ProductDomain`, `VectorDomain`, `FullSpace`) still exist/export in 0.8, and 0.8 keeps `IntervalSets` at 0.7.4, already within the existing compat ([#325](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/325)).
+
 ## [2.6.3]
 
 ### Changed
