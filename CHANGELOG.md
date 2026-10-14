@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.6.4]
+## [2.7.0]
 
 ### Changed
 - Allow `DomainSets` 0.8 in compat. All `DomainSets` symbols ExponentialFamily uses (`HalfLine`, `NaturalNumbers`, `ProductDomain`, `VectorDomain`, `FullSpace`) still exist/export in 0.8, and 0.8 keeps `IntervalSets` at 0.7.4, already within the existing compat ([#325](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/325)).
-- Raise the lower `julia` compat bound from 1.9 to 1.10. This was already required in practice — `BlockArrays` 1.3 and `DomainSets` 0.8 both need Julia 1.10, and CI only tests 1.10+ — but the stale `julia = "1.9"` bound made the package unresolvable on 1.9 and blocked registration.
+- Raise the lower `julia` compat bound from 1.9 to 1.10. This was already required in practice — `BlockArrays` 1.3 and `DomainSets` 0.8 both need Julia 1.10, and CI only tests 1.10+ — but the stale `julia = "1.9"` bound made the package unresolvable on 1.9 and blocked registration. Bumped as a minor release since narrowing the supported Julia range is not allowed in a patch release.
 
 ## [2.6.3]
 
