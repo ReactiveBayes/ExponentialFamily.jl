@@ -1,7 +1,7 @@
 name = "ExponentialFamily"
 uuid = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 authors = ["Ismail Senoz <i.senoz@tue.nl>", "Dmitry Bagaev <d.v.bagaev@tue.nl>"]
-version = "2.7.0"
+version = "2.7.1"
 
 [deps]
 BayesBase = "b4ee3484-f114-42fe-b91c-797d54a0c67e"
@@ -40,7 +40,7 @@ HypergeometricFunctions = "0.3"
 IntervalSets = "0.6, 0.7"
 IrrationalConstants = "0.1, 0.2"
 LinearAlgebra = "1.9"
-LogExpFunctions = "0.3"
+LogExpFunctions = "0.3, 1"
 PositiveFactorizations = "0.2"
 Random = "1.9"
 RecursiveArrayTools = "3.26"

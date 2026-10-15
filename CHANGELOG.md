@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.1]
+
+### Changed
+- Allow `LogExpFunctions` 1 in compat. Its only breaking change relaxes the documented implementation of `log2mexp`, which ExponentialFamily does not use.
+
 ## [2.7.0]
 
 ### Changed
