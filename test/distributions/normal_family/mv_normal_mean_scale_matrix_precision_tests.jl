@@ -147,8 +147,8 @@ end
         @test prod(strategy, MvNormalMeanScaleMatrixPrecision([-1, -1], 2, Matrix(I, 2, 2)), MvNormalMeanPrecision([1, 1], [2, 4])) ≈
               MvNormalWeightedMeanPrecision([0, 2], [4, 6])
 
-        μ   = [1.0, 2.0, 3.0]
-        γ   = 2.0
+        μ    = [1.0, 2.0, 3.0]
+        γ    = 2.0
         G    = Matrix(I, 3, 3)
         dist = MvNormalMeanScaleMatrixPrecision(μ, γ, G)
 

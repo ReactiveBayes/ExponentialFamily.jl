@@ -133,7 +133,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixNormalWish
     Λl = cholinv(Ul)
     Λr = cholinv(Ur)
     Λ  = Λl + Λr
-    U   = cholinv(Λ)
+    U  = cholinv(Λ)
 
     ΛlMl = Λl * Ml
     ΛrMr = Λr * Mr
@@ -143,7 +143,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixNormalWish
     Ωl = cholinv(Vl)
     Ωr = cholinv(Vr)
     Ω  = Ωl + Ωr + Ml' * ΛlMl + Mr' * ΛrMr - rhs' * M
-    V   = cholinv(Ω)
+    V  = cholinv(Ω)
 
     n, p = size(Ml)
     ν = νl + νr + n - p - 1
