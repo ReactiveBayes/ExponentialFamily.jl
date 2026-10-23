@@ -8,6 +8,7 @@
 
     include("distributions/distributions_setuptests.jl")
     using ExponentialFamily: WishartFast, InverseWishartFast
+    using BenchmarkTools: @ballocated
     using StaticArrays
 
     rng = StableRNG(812)
@@ -77,7 +78,14 @@
         buffer = FisherMulBuffer(ef, v)
         fishermul!(w, ef, v, buffer)
         @test w ≈ fisherinformation(ef) * v rtol = 100eps(R) atol = 100eps(R)
-        @test_no_allocations fishermul!(w, ef, v, buffer)
+        if VERSION < v"1.12" && d isa Union{VonMises, VonMisesFisher}
+            # SpecialFunctions.besseli allocates a 16-byte Ref per call on Julia
+            # 1.10/1.11: four calls for VonMises, two for VonMisesFisher.
+            allocation_budget = d isa VonMises ? 64 : 32
+            @test (@ballocated fishermul!($w, $ef, $v, $buffer) samples = 1 evals = 1) <= allocation_budget
+        else
+            @test_no_allocations fishermul!(w, ef, v, buffer)
+        end
     end
     for d in simple
         run_test_fishermul(d)

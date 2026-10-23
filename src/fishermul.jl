@@ -27,6 +27,9 @@ With a compatible buffer, built-in families allocate no heap memory on warmed-up
 calls with valid dense Float32/Float64 arrays. This guarantee excludes other numeric
 types, error paths, and user-defined Fisher implementations. A buffer constructor
 is not supplied for generic allocating Fisher-matrix fallbacks.
+
+On Julia 1.10/1.11, `VonMises` and `VonMisesFisher` incur small fixed allocations
+inside `SpecialFunctions.besseli` (64 and 32 bytes per product, respectively).
 """
 struct FisherMulBuffer{Space, Family, R, C, B}
     conditioner::C
