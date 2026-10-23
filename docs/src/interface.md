@@ -42,6 +42,8 @@ getsufficientstatistics
 getlogpartition
 getgradlogpartition
 getfisherinformation
+getfishermul
+getfishermul!
 getsupport
 basemeasure
 logbasemeasure
@@ -49,6 +51,9 @@ sufficientstatistics
 logpartition
 gradlogpartition
 fisherinformation
+fishermul
+fishermul!
+FisherMulBuffer
 isbasemeasureconstant
 ConstantBaseMeasure
 NonConstantBaseMeasure

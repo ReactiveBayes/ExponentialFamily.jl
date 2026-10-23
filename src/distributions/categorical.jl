@@ -2,7 +2,7 @@ export Categorical
 export logpartition
 
 import Distributions: Categorical, probs
-import LogExpFunctions: logsumexp
+import LogExpFunctions: logsumexp, softmax!
 import FillArrays: OneElement
 
 BayesBase.vague(::Type{<:Categorical}, dims::Int) = Categorical(ones(dims) ./ dims)
@@ -142,3 +142,16 @@ getfisherinformation(::DefaultParametersSpace, ::Type{Categorical}, conditioner)
         end
         return Diagonal(map(inv, θ))
     end
+
+# Fisher products use the diagonal-minus-rank-one softmax covariance.
+_fishermul_return(::Type{Categorical}, c, η, v) = _fishermul_return_direct(Categorical, c, η, v)
+_fishermul_storage(::Type{Categorical}, c, η, ::Type{R}) where {R} = nothing
+function _fishermul_kernel!(w, ::Type{Categorical}, c, η, v, ::Nothing)
+    c === length(η) || throw(DimensionMismatch("The Categorical conditioner must equal the packed length."))
+    softmax!(w, η)
+    weighted = dot(w, v)
+    @inbounds for i in eachindex(w)
+        w[i] *= v[i] - weighted
+    end
+    return w
+end

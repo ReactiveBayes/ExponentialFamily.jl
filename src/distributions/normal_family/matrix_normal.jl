@@ -200,3 +200,12 @@ getfisherinformation(::NaturalParametersSpace, ::Type{MatrixNormal}, dims::Tuple
 
 ExponentialFamily.getfisherinformation(ef::ExponentialFamilyDistribution{MatrixNormal}) =
     getfisherinformation(NaturalParametersSpace(), MatrixNormal, getdims(ef))
+
+getfishermul(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormal}) = getfishermul(space, MatrixNormal, getdims(ef))
+getfishermul!(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormal}) = getfishermul!(space, MatrixNormal, getdims(ef))
+FisherMulBuffer(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormal}, η::AbstractVector, v::AbstractVector) =
+    _fishermul_buffer(space, MatrixNormal, getdims(ef), η, v)
+_fishermul_return(::Type{MatrixNormal}, c::Tuple{Int, Int}, η, v) = _fishermul_return_direct(MatrixNormal, c, η, v)
+_fishermul_storage(::Type{MatrixNormal}, c::Tuple{Int, Int}, η, ::Type{R}) where {R} = _fishermul_storage(MvNormalMeanCovariance, nothing, η, R)
+_fishermul_kernel!(w, ::Type{MatrixNormal}, c::Tuple{Int, Int}, η, v, b::NamedTuple) =
+    _fishermul_kernel!(w, MvNormalMeanCovariance, nothing, η, v, b)
