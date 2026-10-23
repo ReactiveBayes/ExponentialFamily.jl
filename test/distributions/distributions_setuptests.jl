@@ -75,6 +75,7 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
+    test_fishermul = true,
     test_plogpdf_interface = true,
     option_assume_no_allocations = false,
     nsamples_for_gradlogpartition_properties = 6000
@@ -98,8 +99,49 @@ function test_exponentialfamily_interface(distribution;
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_fishermul && run_test_fishermul(distribution)
     test_plogpdf_interface && run_test_plogpdf_interface(distribution)
     return ef
+end
+
+function run_test_fishermul(distribution)
+    ef = convert(ExponentialFamilyDistribution, distribution)
+    η = getnaturalparameters(ef)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
+    c = isnothing(getdims(ef)) ? getconditioner(ef) : getdims(ef)
+    space = NaturalParametersSpace()
+    F = fisherinformation(ef)
+    rng = StableRNG(104)
+    v = randn(rng, length(η))
+    w = similar(v)
+    buffer = @inferred FisherMulBuffer(space, ef, v)
+    f = getfishermul(space, T, c)
+    f! = getfishermul!(space, T, c)
+    η_before = copy(η)
+    for direction in (v, zeros(length(v)))
+        expected = F * direction
+        @test @inferred(fishermul(ef, direction)) ≈ expected
+        @test @inferred(fishermul(space, ef, η, direction)) ≈ expected
+        @test @inferred(getfishermul(ef)(η, direction)) ≈ expected
+        @test @inferred(f(η, direction)) ≈ expected
+        @test @inferred(fishermul!(w, ef, direction)) === w
+        @test w ≈ expected
+        @test @inferred(fishermul!(w, space, ef, η, direction, buffer)) === w
+        @test w ≈ expected
+        @test @inferred(f!(w, η, direction, buffer)) === w
+        @test w ≈ expected
+        @test getfishermul(T, c)(η, direction) ≈ expected
+        @test getfishermul!(T, c)(w, η, direction, buffer) ≈ expected
+        if isnothing(c)
+            @test getfishermul(T)(η, direction) ≈ expected
+            @test getfishermul!(T)(w, η, direction, buffer) ≈ expected
+        end
+    end
+    @test η == η_before
+    @test v == randn(StableRNG(104), length(η))
+    @test_opt fishermul(ef, v)
+    @test_opt fishermul!(w, ef, v, buffer)
+    return nothing
 end
 
 function run_test_plogpdf_interface(distribution)
