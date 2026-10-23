@@ -137,6 +137,18 @@ end
     ef32 = ExponentialFamilyDistribution(Categorical, Float32.(η), 3, nothing)
     @test_throws ArgumentError fishermul!(w, ef, v, FisherMulBuffer(ef32, v32))
 
+    # Equal packed lengths do not make different shapes or conditioners compatible.
+    collection = convert(ExponentialFamilyDistribution, DirichletCollection(fill(2.0, 2, 3)))
+    reshaped = convert(ExponentialFamilyDistribution, DirichletCollection(fill(2.0, 3, 2)))
+    @test_throws DimensionMismatch("The Fisher buffer has an incompatible shape.") fishermul!(
+        zeros(6), collection, ones(6), FisherMulBuffer(reshaped, ones(6))
+    )
+    binomial_ef = convert(ExponentialFamilyDistribution, Binomial(7, 0.3))
+    more_trials = convert(ExponentialFamilyDistribution, Binomial(8, 0.3))
+    @test_throws ArgumentError("The Fisher buffer has an incompatible conditioner.") fishermul!(
+        zeros(1), binomial_ef, ones(1), FisherMulBuffer(more_trials, ones(1))
+    )
+
     # Skew-symmetric packed matrix directions must not be silently symmetrized.
     for d in (MvNormalMeanCovariance([0.4, -0.2], [2.0 0.3; 0.3 1.5]),
         MvNormalGamma([0.4, -0.2], [2.0 0.3; 0.3 1.5], 3.0, 2.0),
@@ -146,6 +158,26 @@ end
         direction[4], direction[5] = 1, -1
         @test fishermul(q, direction) ≈ fisherinformation(q) * direction
     end
+end
+
+@testitem "Fisher products: generic numeric types" begin
+    using ExponentialFamily, LinearAlgebra
+
+    # BigFloat uses the generic Cholesky inverse instead of the BLAS inverse.
+    ef = convert(ExponentialFamilyDistribution, MvNormalMeanCovariance(BigFloat[1, -2], BigFloat[2 1; 1 3]))
+    η = getnaturalparameters(ef)
+    v = BigFloat[1, -2, 3, -1, 2, 4]
+    η_before, v_before = copy(η), copy(v)
+    expected = fisherinformation(ef) * v
+    result = fishermul(ef, v)
+    @test eltype(result) === BigFloat
+    @test result ≈ expected
+    w = similar(v)
+    buffer = FisherMulBuffer(ef, v)
+    @test fishermul!(w, ef, v, buffer) === w
+    @test w ≈ expected
+    @test η == η_before
+    @test v == v_before
 end
 
 @testitem "Fisher products: extension fallback" begin

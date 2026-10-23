@@ -126,6 +126,8 @@ function run_test_fishermul(distribution)
         @test @inferred(f(η, direction)) ≈ expected
         @test @inferred(fishermul!(w, ef, direction)) === w
         @test w ≈ expected
+        @test @inferred(getfishermul!(ef)(w, η, direction)) === w
+        @test w ≈ expected
         @test @inferred(fishermul!(w, space, ef, η, direction, buffer)) === w
         @test w ≈ expected
         @test @inferred(f!(w, η, direction, buffer)) === w
