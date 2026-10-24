@@ -135,3 +135,16 @@ getfisherinformation(::DefaultParametersSpace, ::Type{VonMisesFisher}) =
         tmp2 = (1 - Ap * p / k - Ap^2) * μ * μ' + inv(k) * Ap * Eye(p)
         return [k^2*tmp2 -Ap*μ; -Ap*μ' tmp]
     end
+
+_fishermul_storage(::Type{VonMisesFisher}, c, η, ::Type{R}) where {R} = nothing
+function _fishermul_kernel!(w, ::Type{VonMisesFisher}, c, η, v, ::Nothing)
+    u = norm(η)
+    p = length(η)
+    ratio = besseli(p / 2, u) / besseli(p / 2 - 1, u)
+    diagonal = ratio / u
+    radial = (one(ratio) - ratio^2 - p * diagonal) * dot(η, v) / u^2
+    @inbounds for i in eachindex(w)
+        w[i] = diagonal * v[i] + radial * η[i]
+    end
+    return w
+end

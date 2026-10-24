@@ -1,5 +1,52 @@
 # [Examples](@id examples)
 
+## Fisher-information–vector products
+
+Use [`fishermul`](@ref) to apply the Fisher information in natural parameter space.
+For scalable built-in families this avoids constructing the full Fisher matrix,
+including when that matrix is singular, as for Categorical distributions.
+
+```@example fishermul
+using ExponentialFamily, Distributions
+
+q = convert(ExponentialFamilyDistribution, Dirichlet([2.0, 3.0, 4.0]))
+v = [1.0, -2.0, 0.5]
+fishermul(q, v) ≈ fisherinformation(q) * v
+```
+
+The explicit parameter space is the first argument; omitting it selects
+`NaturalParametersSpace()`. `DefaultParametersSpace()` is not implemented yet.
+An explicit parameter vector can be supplied before the direction:
+
+```@example fishermul
+space = NaturalParametersSpace()
+η = getnaturalparameters(q)
+f = getfishermul(space, q)
+f(η, v) ≈ fishermul(space, q, η, v)
+```
+
+For repeated calls, allocate the destination and workspace once:
+
+```@example fishermul
+w = similar(v, float(promote_type(eltype(η), eltype(v))))
+buffer = FisherMulBuffer(space, q, v)
+fishermul!(w, space, q, v, buffer)
+w ≈ fishermul(q, v)
+```
+
+[`fishermul!`](@ref) overwrites and returns `w`. The destination must not overlap
+the parameters or direction. Calls without a buffer create temporary workspace
+internally when needed. A compatible buffer eliminates heap allocations in
+warmed-up calls for built-in families with valid dense Float32/Float64 arrays. Generic
+custom-family fallbacks and other numeric types do not carry that guarantee.
+
+The buffer can be reused when parameter and direction values change, provided
+their dimensions and promoted numeric type, family, space, and conditioner stay
+compatible. Parameter-dependent workspace is refreshed on every call. Each
+concurrent call needs a separate buffer. The callable returned by
+`getfishermul!(space, q)` accepts `(w, η, v, buffer = nothing)` and holds no mutable
+cache. The default allocating wrapper calls it with the buffer omitted.
+
 ## [Product of two probability distributions over the same variable](@id examples-product)
 
 In this example, we'll show you how to use the ExponentialFamily package to calculate the product of probability distributions that both relate to the same variable "X". 

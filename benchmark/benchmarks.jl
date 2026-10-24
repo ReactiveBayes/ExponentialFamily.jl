@@ -5,6 +5,7 @@ using ExponentialFamily.BayesBase
 const SUITE = BenchmarkGroup()
 
 include("benchmarks/bernoulli.jl")
+include("benchmarks/fishermul.jl")
 include("benchmarks/dirichlet_collection.jl")
 include("benchmarks/normal_family/mv_normal_mean_covariance.jl")
 include("benchmarks/normal_family/mv_normal_mean_precision.jl")

@@ -4,5 +4,8 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 ExponentialFamily = "62312e5e-252a-4322-ace9-a5f4bf9b357b"
 
+[sources]
+ExponentialFamily = {path = ".."}
+
 [compat]
 Documenter = "1.0.0"
