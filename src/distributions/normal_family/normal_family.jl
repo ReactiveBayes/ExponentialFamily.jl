@@ -776,7 +776,6 @@ getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}) =
     [invΣ offdiag; offdiag' G]
 end
 
-_fishermul_return(::Type{MvNormalMeanCovariance}, c, η, v) = _fishermul_return_direct(MvNormalMeanCovariance, c, η, v)
 function _fishermul_storage(::Type{MvNormalMeanCovariance}, c, η, ::Type{R}) where {R}
     n = div(isqrt(1 + 4length(η)) - 1, 2)
     return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n),

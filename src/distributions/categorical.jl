@@ -144,7 +144,6 @@ getfisherinformation(::DefaultParametersSpace, ::Type{Categorical}, conditioner)
     end
 
 # Fisher products use the diagonal-minus-rank-one softmax covariance.
-_fishermul_return(::Type{Categorical}, c, η, v) = _fishermul_return_direct(Categorical, c, η, v)
 _fishermul_storage(::Type{Categorical}, c, η, ::Type{R}) where {R} = nothing
 function _fishermul_kernel!(w, ::Type{Categorical}, c, η, v, ::Nothing)
     c === length(η) || throw(DimensionMismatch("The Categorical conditioner must equal the packed length."))
