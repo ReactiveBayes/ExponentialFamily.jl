@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0]
+
+### Added
+- Added `fishermul`/`fishermul!` interfaces to smartly apply fisher matrix to vectors.
+
 ## [2.7.1]
 
 ### Changed
