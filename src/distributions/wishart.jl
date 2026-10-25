@@ -323,3 +323,22 @@ getfisherinformation(::DefaultParametersSpace, ::Type{WishartFast}) = (θ) -> be
 
     return fimatrix
 end
+
+function _fishermul_storage(::Type{WishartFast}, c, η, ::Type{R}) where {R}
+    n = isqrt(length(η) - 1)
+    return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n))
+end
+function _fishermul_kernel!(w, ::Type{WishartFast}, c, η, v, b::NamedTuple)
+    η1, η2 = unpack_parameters(WishartFast, η)
+    v1, V = unpack_parameters(WishartFast, v)
+    _, W = unpack_parameters(WishartFast, w)
+    S = _fishermul_inverse!(b.S, η2, -1)
+    a = η1 + (size(S, 1) + 1) / 2
+    mul!(b.tmp, S, V)
+    mul!(b.product, b.tmp, S)
+    w[1] = mvtrigamma(size(S, 1), a) * v1 - dot(S, V)
+    @inbounds for i in eachindex(W)
+        W[i] = a * b.product[i] - v1 * S[i]
+    end
+    return w
+end

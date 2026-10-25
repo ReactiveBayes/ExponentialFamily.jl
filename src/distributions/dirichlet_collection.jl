@@ -340,3 +340,14 @@ end
 
 _scalarproduct(::Type{DirichletCollection}, η, statistics, conditioner::NTuple{N, Int}) where {N} =
     _scalarproduct(ArrayLikeVariate{N}, DirichletCollection, η, statistics, conditioner)
+
+_fishermul_storage(::Type{DirichletCollection}, c, η, ::Type{R}) where {R} = nothing
+function _fishermul_kernel!(w, ::Type{DirichletCollection}, c, η, v, ::Nothing)
+    prod(c) == length(η) || throw(DimensionMismatch("The DirichletCollection shape must match the packed length."))
+    k = first(c)
+    for start in 1:k:length(η)
+        stop = start + k - 1
+        _fishermul_kernel!(view(w, start:stop), Dirichlet, nothing, view(η, start:stop), view(v, start:stop), nothing)
+    end
+    return w
+end

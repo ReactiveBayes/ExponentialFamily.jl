@@ -339,3 +339,19 @@ getfisherinformation(::DefaultParametersSpace, ::Type{InverseWishartFast}) =
         @inbounds hessian[2:(p^2+1), 2:(p^2+1)] = (ν / 2) * kron(invscale, invscale)
         return hessian
     end
+
+_fishermul_storage(::Type{InverseWishartFast}, c, η, ::Type{R}) where {R} = _fishermul_storage(WishartFast, c, η, R)
+function _fishermul_kernel!(w, ::Type{InverseWishartFast}, c, η, v, b::NamedTuple)
+    η1, η2 = unpack_parameters(InverseWishartFast, η)
+    v1, V = unpack_parameters(InverseWishartFast, v)
+    _, W = unpack_parameters(InverseWishartFast, w)
+    S = _fishermul_inverse!(b.S, η2, -1)
+    a = -(η1 + (size(S, 1) + 1) / 2)
+    mul!(b.tmp, S, V)
+    mul!(b.product, b.tmp, S)
+    w[1] = mvtrigamma(size(S, 1), a) * v1 + dot(S, V)
+    @inbounds for i in eachindex(W)
+        W[i] = a * b.product[i] + v1 * S[i]
+    end
+    return w
+end

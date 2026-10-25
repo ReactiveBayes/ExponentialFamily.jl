@@ -370,3 +370,39 @@ getlogpartition(::DefaultParametersSpace, ::Type{MvNormalGamma}) = (θ) -> begin
     (_, Λ, α, β) = unpack_parameters(MvNormalGamma, θ)
     return loggamma(α) - α * log(β) - (1 / 2) * logdet(Λ)
 end
+
+function _fishermul_storage(::Type{MvNormalGamma}, c, η, ::Type{R}) where {R}
+    n = _mvng_dim(length(η))
+    return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n),
+        μ = Vector{R}(undef, n), u = Vector{R}(undef, n), x = Vector{R}(undef, n))
+end
+function _fishermul_kernel!(w, ::Type{MvNormalGamma}, c, η, v, b::NamedTuple)
+    η1, η2, η3, η4 = unpack_parameters(MvNormalGamma, η)
+    v1, V, v3, v4 = unpack_parameters(MvNormalGamma, v)
+    w1, W, _, _ = unpack_parameters(MvNormalGamma, w)
+    n = length(η1)
+    S = _fishermul_inverse!(b.S, η2, -2)
+    mul!(b.μ, S, η1)
+    α = η3 - n / 2 + 1
+    β = -η4 - dot(η1, b.μ) / 2
+    mul!(b.u, V, b.μ)
+    dβ = -v4 - dot(b.μ, v1) - dot(b.μ, b.u)
+    @inbounds for i in eachindex(b.u)
+        b.u[i] = v1[i] + 2b.u[i]
+    end
+    mul!(b.x, S, b.u)
+    mul!(b.tmp, S, V)
+    mul!(b.product, b.tmp, S)
+    # Apply J' Fθ J using its block actions, never materializing J or Fθ.
+    βpart = -v3 / β + α * dβ / β^2
+    ratio = α / β
+    @inbounds for i in eachindex(w1)
+        w1[i] = ratio * b.x[i] - b.μ[i] * βpart
+    end
+    @inbounds for j in axes(W, 2), i in axes(W, 1)
+        W[i, j] = 2ratio * b.x[i] * b.μ[j] + 2b.product[i, j] - b.μ[i] * b.μ[j] * βpart
+    end
+    w[end-1] = trigamma(α) * v3 - dβ / β
+    w[end] = -βpart
+    return w
+end
