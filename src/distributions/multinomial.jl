@@ -71,18 +71,21 @@ end
 getsufficientstatistics(::Type{Multinomial}, _) = (identity,)
 isbasemeasureconstant(::Type{Multinomial}) = NonConstantBaseMeasure()
 
-function _multinomial_logbasemeasure(n, x)
-    R = promote_type(Float64, eltype(x))
+# Keep R a static parameter: capturing a local DataType in the reduction's
+# closure loses inference on Julia 1.10.
+_multinomial_logbasemeasure(n, x) = _multinomial_logbasemeasure(promote_type(Float64, eltype(x)), n, x)
+function _multinomial_logbasemeasure(::Type{R}, n, x) where {R}
     return loggamma(R(n) + 1) - sum(xi -> loggamma(R(xi) + 1), x)
 end
-function _multinomial_basemeasure(n, x)
+
+_multinomial_basemeasure(n, x) = _multinomial_basemeasure(promote_type(Float64, eltype(x)), n, x)
+function _multinomial_basemeasure(::Type{R}, n, x) where {R}
     # Gamma ratios retain exact small coefficients, including 5!/(1!2!2!) = 30.
     # Beyond this range even gamma(n + 1) overflows, although the ratio may not.
     if n <= 170
-        R = promote_type(Float64, eltype(x))
         return gamma(R(n) + 1) / prod(xi -> gamma(R(xi) + 1), x)
     end
-    return exp(_multinomial_logbasemeasure(n, x))
+    return exp(_multinomial_logbasemeasure(R, n, x))
 end
 
 getbasemeasure(::Type{Multinomial}, n) = Base.Fix1(_multinomial_basemeasure, n)
