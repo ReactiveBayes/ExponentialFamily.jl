@@ -44,6 +44,10 @@ jobs:
 
             - name: Load this and run the downstream tests
               shell: julia --project=downstream {0}
+              env:
+                  # `Pkg.develop` below rewrites the downstream Project.toml, which makes
+                  # Aqua's hygiene checks (stale deps, compat) meaningless there.
+                  RUN_AQUA: "false"
               run: |
                   using Pkg
                   try
