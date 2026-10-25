@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Complete the `Multinomial` exponential-family interface in natural and default parameter spaces, including stable derivatives and buffered Fisher-vector products. Products use an exact log-space convolution normalizer, with documentation and literature references.
+
 ## [2.8.0]
 
 ### Added

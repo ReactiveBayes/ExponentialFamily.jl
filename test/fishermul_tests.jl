@@ -66,7 +66,7 @@
         end
     end
 
-    simple = (Categorical([0.2, 0.3, 0.5]), Dirichlet([2.0, 3.0, 4.0]),
+    simple = (Categorical([0.2, 0.3, 0.5]), Multinomial(7, [0.2, 0.3, 0.5]), Dirichlet([2.0, 3.0, 4.0]),
         DirichletCollection(reshape(collect(1.0:12.0), 3, 2, 2)),
         VonMisesFisher(normalize([1.0, 2.0, 3.0]), 2.0))
     for d in (scalar_distributions..., simple...), R in (Float32, Float64)
@@ -238,4 +238,34 @@ end
     gamma = convert(ExponentialFamilyDistribution, NormalGamma(0.4, 1.7, 3.0, 2.0))
     mvgamma = convert(ExponentialFamilyDistribution, MvNormalGamma([0.4], fill(1.7, 1, 1), 3.0, 2.0))
     @test fishermul(gamma, [0.2, -0.6, 0.8, 0.1]) ≈ fishermul(mvgamma, [0.2, -0.6, 0.8, 0.1])
+end
+
+@testitem "Multinomial Fisher products: buffer reuse and validation" begin
+    include("distributions/distributions_setuptests.jl")
+    using StaticArrays
+
+    for R in (Float32, Float64)
+        ef = convert(ExponentialFamilyDistribution, Multinomial(7, R[0.2, 0.3, 0.5]))
+        η = getnaturalparameters(ef)
+        v = R[1, 2, -3]
+        w = similar(v)
+        buffer = FisherMulBuffer(ef, v)
+        η_before, v_before = copy(η), copy(v)
+        for parameters in (η, R[1000, 999, -1000]), direction in (v, R[-2, 1, 3], ones(R, 3))
+            expected = fisherinformation(ef, parameters) * direction
+            @test fishermul!(w, ef, parameters, direction, buffer) === w
+            @test w ≈ expected rtol = 200eps(R) atol = 200eps(R)
+            @test_no_allocations fishermul!(w, ef, parameters, direction, buffer)
+        end
+        @test η == η_before
+        @test v == v_before
+        @test fishermul(ef, SVector{3}(v)) ≈ fisherinformation(ef) * v
+        @test_throws ArgumentError fishermul!(v, ef, v, buffer)
+        @test_throws ArgumentError fishermul!(η, ef, v, buffer)
+        @test_throws DimensionMismatch fishermul!(w, ef, ones(R, 2), buffer)
+        other_trials = convert(ExponentialFamilyDistribution, Multinomial(8, R[0.2, 0.3, 0.5]))
+        @test_throws ArgumentError fishermul!(w, other_trials, v, buffer)
+        larger = convert(ExponentialFamilyDistribution, Multinomial(7, fill(R(0.25), 4)))
+        @test_throws DimensionMismatch fishermul!(zeros(R, 4), larger, ones(R, 4), buffer)
+    end
 end

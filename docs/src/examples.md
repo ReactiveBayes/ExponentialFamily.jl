@@ -138,6 +138,115 @@ Note that the result does not correspond to the `Laplace` distribution and retur
 This approach ensures consistency and compatibility, especially when dealing with a wide range of probability distributions.
 Refer to the [`BayesBase`](https://github.com/ReactiveBayes/BayesBase.jl) for the documentation about available product strategies.
 
+### [Multinomial products](@id examples-multinomial-product)
+
+Two `Multinomial` distributions over the same count vector must have the same
+trial count and number of categories. Their normalized product is a generic
+multivariate `ExponentialFamilyDistribution`, with a squared multinomial base
+measure. For example:
+
+```@example multinomial-product
+using ExponentialFamily, Distributions, BayesBase
+
+left = Multinomial(5, [0.2, 0.3, 0.5])
+right = Multinomial(5, [0.4, 0.4, 0.2])
+product = prod(PreserveTypeProd(ExponentialFamilyDistribution), left, right)
+pdf(product, [1, 2, 2])
+```
+
+Let ``\eta`` be the sum of the two natural-parameter vectors. The product's
+normalizer is
+
+```math
+Z_n(\eta) = \sum_{\substack{x_1+\cdots+x_K=n\\x_i\geq 0}}
+    \left(\frac{n!}{x_1!\cdots x_K!}\right)^2
+    \exp\!\left(\sum_{i=1}^K \eta_i x_i\right),
+\qquad A(\eta)=\log Z_n(\eta).
+```
+
+This is the **Conway–Maxwell–multinomial** family with dispersion ``\nu=2``.
+Morris, Raim and Sellers (2020), §3, equations (3)–(4) in the
+[preprint](https://arxiv.org/pdf/1911.02131), define its PMF and normalizer
+``C(p,\nu;n)``. Their probability parameter is ``p=\operatorname{softmax}(\eta)``,
+so ``Z_n(\eta)=(\sum_i e^{\eta_i})^n C(p,2;n)``. For input probability vectors
+``a`` and ``b``, the product therefore has ``p_i=a_i b_i/\sum_j a_j b_j``.
+
+#### Exact evaluation by convolution
+
+The following recurrence is derived from that normalizer; it is not an algorithm
+claimed by the cited paper. Write ``Z_j(m)`` for the normalizer with the first
+``j`` categories and ``m`` trials. Factoring the multinomial coefficient as
+
+```math
+\binom{m}{x_1,\ldots,x_{j-1},r}
+=\binom mr\binom{m-r}{x_1,\ldots,x_{j-1}}
+```
+
+gives
+
+```math
+Z_1(m)=e^{m\eta_1},\qquad
+Z_j(m)=\sum_{r=0}^{m}\binom mr^2 e^{r\eta_j}Z_{j-1}(m-r).
+```
+
+The implementation evaluates ``L_j(m)=\log Z_j(m)`` with `logaddexp` and
+log-binomial coefficients computed from `loggamma`. It returns ``L_K(n)`` using
+``O(Kn^2)`` time and ``O(n)`` workspace. This sums the full support up to floating
+point rounding, with no random sampling or truncation. Workspace is private to
+each evaluation, and derivatives of the product log-partition are available
+through ForwardDiff. Categories with zero weight are omitted from the convolution;
+a product with no positive mass is rejected. With zero trials, the sole outcome
+is the all-zero count vector and its mass is one.
+
+There is also a special-function identity, obtained by matching coefficients in
+the definition of Lauricella's ``F_C`` in Srivastava and Exton (1974), equation (2):
+
+```math
+Z_n(\eta)=e^{n\eta_K}
+F_C^{(K-1)}\!\left(-n,-n;1,\ldots,1;
+e^{\eta_1-\eta_K},\ldots,e^{\eta_{K-1}-\eta_K}\right).
+```
+
+For finite ``\eta`` and ``K\geq2``, this series terminates because its first
+two parameters are ``-n``. For ``K=2`` it reduces to
+``e^{n\eta_2}{}_2F_1(-n,-n;1;e^{\eta_1-\eta_2})``. The implementation uses the
+convolution recurrence, so no multivariate special-function dependency is needed.
+
+#### Parameter conventions and Fisher information
+
+The ordinary Multinomial interface retains all ``K`` log weights. For positive
+probabilities, conversion uses ``\eta_i=\log p_i-\log p_K``; when ``p_K=0``,
+the last positive category is used as the reference. Zero probabilities correspond
+to ``-\infty`` log weights, with zero counts contributing zero to the log density.
+
+The natural-space Fisher matrix is ``n(\operatorname{Diag}(p)-pp^\mathsf{T})``.
+For positive probabilities and ``n>0``, it has rank ``K-1`` and null direction
+``\boldsymbol{1}``. The default-space matrix, on normalized probabilities, is
+``n(\operatorname{Diag}(1/p)-\boldsymbol{1}\boldsymbol{1}^\mathsf{T})`` and has
+null direction ``p``. These are singular because the coordinates are redundant;
+inversion requires restricting to the identifiable subspace. Default-space Fisher
+evaluation requires strictly positive probabilities. `fishermul!` applies the
+natural-space matrix without constructing it and supports reusable buffers.
+
+The default-space log-partition retains the term ``n\log(\sum_i p_i)`` even
+though it vanishes on the simplex. This ensures its derivatives agree with the
+log-ratio parameter mapping when coordinates are differentiated independently.
+
+References:
+
+- D. S. Morris, A. M. Raim and K. F. Sellers (2020), *A Conway–Maxwell–multinomial
+  distribution for flexible modeling of clustered categorical data*, Journal of
+  Multivariate Analysis **179**, 104651.
+  [DOI: 10.1016/j.jmva.2020.104651](https://doi.org/10.1016/j.jmva.2020.104651).
+- H. M. Srivastava and H. Exton (1974), *A transformation formula relating two
+  Lauricella functions*, Rendiconti dell'Accademia Nazionale dei Lincei,
+  Classe di Scienze Fisiche, Matematiche e Naturali, series 8, **56**(1), 38–42.
+  [Article, equation (2)](https://www.bdim.eu/item?fmt=pdf&id=RLINA_1974_8_56_1_38_0).
+
+```@docs
+ExponentialFamily.__compute_logpartition_multinomial_product
+```
+
 ## Computing various useful attributes of an exponential family member
 
 The package implements attributes of many well known exponential family members, which are defined in [this table](https://en.wikipedia.org/wiki/Exponential_family#Table_of_distributions).
