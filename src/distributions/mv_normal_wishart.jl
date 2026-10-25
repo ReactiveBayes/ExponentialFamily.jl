@@ -185,15 +185,15 @@ function getsufficientstatistics(::Type{MvNormalWishart})
             (x, S) = z
             return S * x
         end, (z) -> begin
-            (_, S) = z
-            return S
-        end, (z) -> begin
-            (x, S) = z
-            return dot3arg(x, S, x)
-        end, (z) -> begin
-            (_, S) = z
-            return logdet(S)
-        end
+        (_, S) = z
+        return S
+    end, (z) -> begin
+        (x, S) = z
+        return dot3arg(x, S, x)
+    end, (z) -> begin
+        (_, S) = z
+        return logdet(S)
+    end
     )
 end
 
@@ -324,4 +324,42 @@ end
 
 function _pdf(ef::ExponentialFamilyDistribution{MvNormalWishart}, x)
     exp(_logpdf(ef, x))
+end
+
+function _fishermul_storage(::Type{MvNormalWishart}, c, η, ::Type{R}) where {R}
+    n = div(isqrt(4length(η) - 7) - 1, 2)
+    return (S = Matrix{R}(undef, n, n), Z = Matrix{R}(undef, n, n),
+        tmp = Matrix{R}(undef, n, n), Y = Matrix{R}(undef, n, n),
+        g = Vector{R}(undef, n), x = Vector{R}(undef, n))
+end
+function _fishermul_kernel!(w, ::Type{MvNormalWishart}, conditioner, η, v, b::NamedTuple)
+    η1, η2, t, η4 = unpack_parameters(MvNormalWishart, η)
+    v1, V, s, z = unpack_parameters(MvNormalWishart, v)
+    w1, W, _, _ = unpack_parameters(MvNormalWishart, w)
+    n = length(η1)
+    c = -(n + 2η4) / 2
+    @inbounds for j in 1:n, i in 1:n
+        b.S[i, j] = -2η2[i, j] + η1[i] * η1[j] / (2t)
+        b.Z[i, j] = 2V[i, j] - (η1[i] * v1[j] + v1[i] * η1[j]) / (2t) + s * η1[i] * η1[j] / (2t^2)
+    end
+    S = _fishermul_inverse!(b.S)
+    mul!(b.tmp, S, b.Z)
+    mul!(b.Y, b.tmp, S)
+    mul!(b.g, S, η1)
+    mul!(b.x, S, v1)
+    a = dot(η1, b.g)
+    @inbounds for i in 1:n
+        ly = zero(eltype(b.Y))
+        for j in 1:n
+            ly += (b.Y[i, j] + b.Y[j, i]) * η1[j]
+        end
+        w1[i] = c * ly / (2t) + c * b.x[i] / t - (c * s / t + z) * b.g[i] / t
+    end
+    @inbounds for i in eachindex(W)
+        W[i] = -2c * b.Y[i] + 2z * S[i]
+    end
+    w[end-1] = -c * _fishermul_bilinear(η1, b.Y, η1) / (2t^2) -
+               c * dot(v1, b.g) / t^2 + s * (c * a / t^3 + n / (2t^2)) + z * a / (2t^2)
+    w[end] = dot(S, b.Z) + mvtrigamma(n, -c) * z
+    return w
 end

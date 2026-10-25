@@ -49,7 +49,7 @@
 
             #Test parameters
             new_params = params(d_trunc)
-            old_params = params(d);
+            old_params = params(d)
             @test all(isapprox.(new_params[1:(end-2)], old_params[1:end])) #converting back and forth introduces some small deviation 
 
             #Test sampling mechanism

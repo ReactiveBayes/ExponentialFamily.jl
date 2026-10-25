@@ -28,7 +28,7 @@ end
     for len in 3:5
         α = rand(rng, len)
         @testset let d = Dirichlet(α)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_gradlogpartition_default_space = true)
             η1 = getnaturalparameters(ef)
 
             for x in [rand(rng, len) for _ in 1:3]

@@ -23,7 +23,7 @@ const GaussianDistributionsFamily             = NormalDistributionsFamily
 import Base: prod, convert, ndims
 import Random: rand!
 import Distributions: logpdf
-import StatsFuns: invsqrt2π, normcdf
+import StatsFuns: invsqrt2π, normcdf, norminvcdf
 
 using StatsFuns: log2π
 using LinearAlgebra
@@ -220,6 +220,8 @@ function BayesBase.convert_paramfloattype(::Type{T}, distribution::Truncated{<:N
 end
 
 BayesBase.cdf(dist::UnivariateNormalDistributionsFamily, x::Real) = normcdf(mean(dist), sqrt(var(dist)), x)
+# `quantile` is not part of the `BayesBase` interface, so it is extended on `Distributions` directly.
+Distributions.quantile(dist::UnivariateNormalDistributionsFamily, p::Real) = norminvcdf(mean(dist), sqrt(var(dist)), p)
 # Variate forms promotion
 
 BayesBase.promote_variate_type(::Type{Univariate}, ::Type{F}) where {F <: UnivariateNormalDistributionsFamily}     = F
@@ -617,13 +619,13 @@ getfisherinformation(::NaturalParametersSpace, ::Type{NormalMeanVariance}) =
 
 getlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
     (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
-    return μ / 2σ² + log(sqrt(σ²))
+    return abs2(μ) / (2 * σ²) + log(σ²) / 2
 end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{NormalMeanVariance}) =
     (θ) -> begin
         (μ, σ²) = unpack_parameters(NormalMeanVariance, θ)
-        return SA[μ/σ², -abs2(μ)/(2σ²^2)+1/σ²]
+        return SA[μ/σ², -abs2(μ)/(2σ²^2)+1/(2σ²)]
     end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{NormalMeanVariance}) = (θ) -> begin
@@ -719,6 +721,12 @@ getlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) = (η)
     return (dot(η₁, sol) / 2 - (k * log(2) + l)) / 2
 end
 
+getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}) = (θ) -> begin
+    (μ, Σ) = unpack_parameters(MvNormalMeanCovariance, θ)
+    F = FastCholesky.fastcholesky(Σ)
+    return (dot(μ, F \ μ) + logdet(F)) / 2
+end
+
 getgradlogpartition(::NaturalParametersSpace, ::Type{MvNormalMeanCovariance}) =
     (η) -> begin
         (η₁, η₂) = unpack_parameters(MvNormalMeanCovariance, η)
@@ -766,4 +774,34 @@ getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanCovariance}) =
     offdiag = zeros(n, n^2)
     G = (1 / 2) * kron(invΣ, invΣ)
     [invΣ offdiag; offdiag' G]
+end
+
+function _fishermul_storage(::Type{MvNormalMeanCovariance}, c, η, ::Type{R}) where {R}
+    n = div(isqrt(1 + 4length(η)) - 1, 2)
+    return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n),
+        g = Vector{R}(undef, n), h = Vector{R}(undef, n), r = Vector{R}(undef, n),
+        t = Vector{R}(undef, n), scratch = Vector{R}(undef, n))
+end
+
+function _fishermul_kernel!(w, ::Type{MvNormalMeanCovariance}, c, η, v, b::NamedTuple)
+    η1, η2 = unpack_parameters(MvNormalMeanCovariance, η)
+    v1, V = unpack_parameters(MvNormalMeanCovariance, v)
+    w1, W = unpack_parameters(MvNormalMeanCovariance, w)
+    S = _fishermul_inverse!(b.S, η2, -1)
+    mul!(b.g, S, η1)
+    mul!(b.h, S, v1)
+    mul!(b.tmp, S, V)
+    mul!(b.product, b.tmp, S)
+    mul!(b.r, b.tmp, b.g)
+    mul!(b.scratch, transpose(V), b.g)
+    mul!(b.t, S, b.scratch)
+    @inbounds for i in eachindex(w1)
+        w1[i] = b.h[i] / 2 + (b.r[i] + b.t[i]) / 4
+    end
+    # Preserve the full packed-matrix convention, including nonsymmetric V.
+    @inbounds for j in axes(W, 2), i in axes(W, 1)
+        W[i, j] = b.product[i, j] / 2 +
+                  (b.g[i] * b.t[j] + b.r[i] * b.g[j] + b.g[i] * b.h[j] + b.h[i] * b.g[j]) / 4
+    end
+    return w
 end

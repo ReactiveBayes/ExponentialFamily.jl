@@ -270,7 +270,9 @@ getgradlogpartition(::NaturalParametersSpace, ::Type{WishartFast}) = (η) -> beg
     η1, η2 = unpack_parameters(WishartFast, η)
     p = first(size(η2))
     term1 = -logdet(-η2) + mvdigamma(η1 + (p + one(η1)) / 2, p)
-    term2 = vec(((η1 + (p + one(p)) / 2)) * cholinv(η2))
+    # `-η2` is the positive definite one, so it is the matrix to factorize: since
+    # `∂/∂η₂ logdet(-η₂) = inv(η₂)`, the term is `-c * inv(η₂) = c * inv(-η₂)`.
+    term2 = vec(((η1 + (p + one(p)) / 2)) * cholinv(-η2))
 
     return [term1; term2]
 end
@@ -279,7 +281,8 @@ getfisherinformation(::NaturalParametersSpace, ::Type{WishartFast}) =
     (η) -> begin
         η1, η2 = unpack_parameters(WishartFast, η)
         p = first(size(η2))
-        invη2 = cholinv(η2)
+        # As above: factorize `-η2`, which is positive definite. `invη2` is `inv(-η2)`.
+        invη2 = cholinv(-η2)
         vinvη2 = -view(invη2, :)
         fimatrix = Matrix{Float64}(undef, p^2 + 1, p^2 + 1)
         @inbounds fimatrix[1, 1] = mvtrigamma(p, (η1 + (p + one(η1)) / 2))
@@ -319,4 +322,23 @@ getfisherinformation(::DefaultParametersSpace, ::Type{WishartFast}) = (θ) -> be
     @inbounds fimatrix[2:end, 2:end] = (df / 2) * kron(S, S)
 
     return fimatrix
+end
+
+function _fishermul_storage(::Type{WishartFast}, c, η, ::Type{R}) where {R}
+    n = isqrt(length(η) - 1)
+    return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n))
+end
+function _fishermul_kernel!(w, ::Type{WishartFast}, c, η, v, b::NamedTuple)
+    η1, η2 = unpack_parameters(WishartFast, η)
+    v1, V = unpack_parameters(WishartFast, v)
+    _, W = unpack_parameters(WishartFast, w)
+    S = _fishermul_inverse!(b.S, η2, -1)
+    a = η1 + (size(S, 1) + 1) / 2
+    mul!(b.tmp, S, V)
+    mul!(b.product, b.tmp, S)
+    w[1] = mvtrigamma(size(S, 1), a) * v1 - dot(S, V)
+    @inbounds for i in eachindex(W)
+        W[i] = a * b.product[i] - v1 * S[i]
+    end
+    return w
 end

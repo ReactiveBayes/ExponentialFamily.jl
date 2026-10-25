@@ -7,7 +7,7 @@
 
     @testset for p in 0.1:0.2:1.0
         @testset let d = Geometric(p)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true, test_gradlogpartition_default_space = true)
             η1 = first(getnaturalparameters(ef))
 
             for x in (1, 3, 5)
@@ -59,5 +59,21 @@ end
                 )
             )
         end
+    end
+end
+
+# Regression test for issue #293: the default (mean) space gradient of the log-partition
+# must be the derivative of the default-space log-partition A(p) = -log(p), i.e. -1/p.
+# The previous implementation returned 1/(p^2 - p) = -1/(p(1-p)).
+@testitem "Geometric: default-space gradlogpartition consistency" begin
+    include("distributions_setuptests.jl")
+
+    logpartition_default = getlogpartition(DefaultParametersSpace(), Geometric)
+    gradlogpartition_default = getgradlogpartition(DefaultParametersSpace(), Geometric)
+
+    for p in (0.1, 0.3, 0.5, 0.8)
+        θ = [p]
+        @test gradlogpartition_default(θ) ≈ [-inv(p)]
+        @test gradlogpartition_default(θ) ≈ ForwardDiff.gradient(logpartition_default, θ)
     end
 end

@@ -80,7 +80,12 @@ end
     for dim in (3, 4), invS in rand(rng, Wishart(10, Array(Eye(dim))), 2)
         ν = dim + 2
         @testset let (d = WishartFast(ν, invS))
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = false, test_fisherinformation_against_hessian = false)
+            ef = test_exponentialfamily_interface(
+                d;
+                option_assume_no_allocations = false,
+                test_fisherinformation_against_hessian = false,
+                test_gradlogpartition_default_space = true
+            )
             (η1, η2) = unpack_parameters(WishartFast, getnaturalparameters(ef))
 
             for x in (Eye(dim), Diagonal(ones(dim)), Array(Eye(dim)))

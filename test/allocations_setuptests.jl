@@ -32,10 +32,10 @@ macro test_no_allocations(expr::Expr)
         # We first check with the standard `@allocated` to see if the function does not allocate
         # sometimes it reports spurious allocations, also depends on Julia version and OS
         $alloc_symbol = min(@allocated($expr), @allocated(($expr_lambda)()))
-        
+
         # Then we try to use internal Base.GC_Diff, since this is what popular 
         # benchmarking packages are using
-        $gcstats_allocd_symbol = begin 
+        $gcstats_allocd_symbol = begin
             $gcstats0_symbol = Base.gc_num()
             Core.donotdelete($expr)
             $gcstats1_symbol = Base.gc_num()

@@ -8,7 +8,9 @@ SCRIPTSRC = scripts
 FORMATTER = $(SCRIPTSRC)/format.jl
 BENCHMARK = $(SCRIPTSRC)/benchmark.jl
 
-JULIA ?= julia
+# `--startup-file=no` keeps an error in a contributor's `~/.julia/config/startup.jl`
+# from taking down unrelated targets such as `make format` with a confusing stacktrace
+JULIA ?= julia --startup-file=no
 JULIAFLAGS ?= --project=.
 JULIAFLAGSDOCS ?= --project=$(DOCSRC)
 JULIAFLAGSSCRIPTS ?= --project=$(SCRIPTSRC)
@@ -32,7 +34,7 @@ endif
 ## Show help for each of the Makefile targets
 help:
 	@echo ''
-	@echo 'PLACEHOLDERNAME_CHANGE_MAKEFILE_LINE_22.jl Makefile ${YELLOW}targets${RESET}:'
+	@echo 'ExponentialFamily.jl Makefile ${YELLOW}targets${RESET}:'
 	@echo ''
 	@echo '${GREEN}Documentation commands:${RESET}'
 	@echo '  ${YELLOW}docs${RESET}                 Build the documentation'
@@ -44,7 +46,7 @@ help:
 	@echo '  ${YELLOW}deps${RESET}                 Install project dependencies'
 	@echo '  ${YELLOW}deps-docs${RESET}            Install documentation dependencies'
 	@echo '  ${YELLOW}deps-scripts${RESET}         Install script dependencies'
-	@echo '  ${YELLOW}test${RESET}                 Run project tests'
+	@echo '  ${YELLOW}test${RESET}                 Run project tests (test_args="path1 path2" runs a subset)'
 	@echo '  ${YELLOW}format${RESET}               Format Julia code'
 	@echo '  ${YELLOW}check-format${RESET}         Check Julia code formatting (does not modify files)'
 	@echo '  ${YELLOW}clean${RESET}                Clean all generated files'
@@ -83,9 +85,20 @@ deps-docs: ## Install documentation dependencies
 deps-scripts: ## Install script dependencies
 	$(JULIA) $(JULIAFLAGSSCRIPTS) -e 'using Pkg; Pkg.instantiate()'
 
-test: deps ## Run project tests
-	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'	
+# `test_args` selects a subset of the suite; each argument is a path to a test file or
+# directory, resolved against the package root and then `test/`. `Aqua` is skipped for such
+# runs unless `RUN_AQUA=true` is set. See `test/runtests.jl`.
+test: deps ## Run project tests (test_args="path1 path2" runs a subset)
+	$(JULIA) $(JULIAFLAGS) -e 'using Pkg; Pkg.test(test_args = split("$(test_args)") .|> string)'
 
+# `JuliaFormatter` is pinned in `scripts/Project.toml`. Its output changes between
+# minor releases and `scripts/Manifest.toml` is gitignored, so leaving it unbounded
+# meant every contributor resolved whatever version was newest when they first ran
+# this target, and two people formatting the same untouched file got different diffs.
+# It also parses through `JuliaSyntax`, so its output can shift with the Julia minor
+# version independently of the formatter version -- which is why the CI job that runs
+# `check-format` pins its Julia version to the top of the test matrix.
+# Bump the pin intentionally and run `make format` over the whole repo in the same commit.
 format: deps-scripts ## Format Julia code
 	$(JULIA) $(JULIAFLAGSSCRIPTS) $(FORMATTER) --overwrite
 

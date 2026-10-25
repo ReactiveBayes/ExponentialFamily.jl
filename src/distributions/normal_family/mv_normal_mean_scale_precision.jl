@@ -257,3 +257,26 @@ getfisherinformation(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision
         matrix[k+1] = k * inv(2abs2(γ))
         return Diagonal(matrix)
     end
+
+getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
+    (θ) -> begin
+        μ, γ = unpack_parameters(MvNormalMeanScalePrecision, θ)
+        return (γ * dot(μ, μ) - length(μ) * log(γ)) / 2
+    end
+
+_fishermul_storage(::Type{MvNormalMeanScalePrecision}, c, η, ::Type{R}) where {R} = nothing
+function _fishermul_kernel!(w, ::Type{MvNormalMeanScalePrecision}, c, η, v, ::Nothing)
+    k = length(η) - 1
+    η2 = η[end]
+    diagonal = -inv(2η2)
+    cross = inv(2η2^2)
+    ηnorm = zero(eltype(η))
+    weighted = zero(promote_type(eltype(η), eltype(v)))
+    @inbounds for i in 1:k
+        ηnorm += η[i]^2
+        weighted += η[i] * v[i]
+        w[i] = diagonal * v[i] + cross * η[i] * v[end]
+    end
+    w[end] = cross * weighted + (k * cross - ηnorm / (2η2^3)) * v[end]
+    return w
+end

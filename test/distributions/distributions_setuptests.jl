@@ -1,5 +1,6 @@
 using ExponentialFamily, BayesBase, FastCholesky, Distributions, LinearAlgebra, TinyHugeNumbers
 using Test, ForwardDiff, Random, StatsFuns, StableRNGs, FillArrays, JET, SpecialFunctions
+using BenchmarkTools: @belapsed
 
 import BayesBase: compute_logscale
 
@@ -66,9 +67,15 @@ function test_exponentialfamily_interface(distribution;
     test_isproper = true,
     test_basic_functions = true,
     test_gradlogpartition_properties = true,
+    # Not all distributions implement `getgradlogpartition` in the `DefaultParametersSpace`,
+    # see https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/315
+    # Flip this default to `true` once all of them do, so that newly added
+    # implementations are picked up automatically
+    test_gradlogpartition_default_space = false,
     test_fisherinformation_properties = true,
     test_fisherinformation_against_hessian = true,
     test_fisherinformation_against_jacobian = true,
+    test_fishermul = true,
     test_plogpdf_interface = true,
     option_assume_no_allocations = false,
     nsamples_for_gradlogpartition_properties = 6000
@@ -88,11 +95,55 @@ function test_exponentialfamily_interface(distribution;
     test_isproper && run_test_isproper(distribution; assume_no_allocations = option_assume_no_allocations)
     test_basic_functions && run_test_basic_functions(distribution; assume_no_allocations = option_assume_no_allocations)
     test_gradlogpartition_properties && run_test_gradlogpartition_properties(distribution, nsamples = nsamples_for_gradlogpartition_properties)
+    test_gradlogpartition_default_space && run_test_gradlogpartition_default_space(distribution)
     test_fisherinformation_properties && run_test_fisherinformation_properties(distribution)
     test_fisherinformation_against_hessian && run_test_fisherinformation_against_hessian(distribution; assume_no_allocations = option_assume_no_allocations)
     test_fisherinformation_against_jacobian && run_test_fisherinformation_against_jacobian(distribution; assume_no_allocations = option_assume_no_allocations)
+    test_fishermul && run_test_fishermul(distribution)
     test_plogpdf_interface && run_test_plogpdf_interface(distribution)
     return ef
+end
+
+function run_test_fishermul(distribution)
+    ef = convert(ExponentialFamilyDistribution, distribution)
+    η = getnaturalparameters(ef)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
+    c = isnothing(getdims(ef)) ? getconditioner(ef) : getdims(ef)
+    space = NaturalParametersSpace()
+    F = fisherinformation(ef)
+    rng = StableRNG(104)
+    v = randn(rng, length(η))
+    w = similar(v)
+    buffer = @inferred FisherMulBuffer(space, ef, v)
+    f = getfishermul(space, T, c)
+    f! = getfishermul!(space, T, c)
+    η_before = copy(η)
+    for direction in (v, zeros(length(v)))
+        expected = F * direction
+        @test @inferred(fishermul(ef, direction)) ≈ expected
+        @test @inferred(fishermul(space, ef, η, direction)) ≈ expected
+        @test @inferred(getfishermul(ef)(η, direction)) ≈ expected
+        @test @inferred(f(η, direction)) ≈ expected
+        @test @inferred(fishermul!(w, ef, direction)) === w
+        @test w ≈ expected
+        @test @inferred(getfishermul!(ef)(w, η, direction)) === w
+        @test w ≈ expected
+        @test @inferred(fishermul!(w, space, ef, η, direction, buffer)) === w
+        @test w ≈ expected
+        @test @inferred(f!(w, η, direction, buffer)) === w
+        @test w ≈ expected
+        @test getfishermul(T, c)(η, direction) ≈ expected
+        @test getfishermul!(T, c)(w, η, direction, buffer) ≈ expected
+        if isnothing(c)
+            @test getfishermul(T)(η, direction) ≈ expected
+            @test getfishermul!(T)(w, η, direction, buffer) ≈ expected
+        end
+    end
+    @test η == η_before
+    @test v == randn(StableRNG(104), length(η))
+    @test_opt fishermul(ef, v)
+    @test_opt fishermul!(w, ef, v, buffer)
+    return nothing
 end
 
 function run_test_plogpdf_interface(distribution)
@@ -247,7 +298,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
 
     (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
-
+    θ = NaturalToMean(T)(η, conditioner)
     # ! do not use `rand(distribution, nsamples)`
     # ! do not use fixed RNG
     samples = [rand(distribution) for _ in 1:nsamples]
@@ -305,6 +356,7 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
         @test @inferred(logbasemeasure(ef, x)) == getlogbasemeasure(T, conditioner)(x)
         @test logbasemeasure(ef, x) ≈ log(basemeasure(ef, x)) atol = 1e-8
         @test all(@inferred(sufficientstatistics(ef, x)) .== map(f -> f(x), getsufficientstatistics(T, conditioner)))
+        @test logpartition(ef) ≈ getlogpartition(DefaultParametersSpace(), T, conditioner)(θ)
         @test @inferred(logpartition(ef)) == getlogpartition(T, conditioner)(η)
         @test @inferred(gradlogpartition(ef)) == getgradlogpartition(NaturalParametersSpace(), T, conditioner)(η)
         @test @inferred(fisherinformation(ef)) == getfisherinformation(T, conditioner)(η)
@@ -419,6 +471,47 @@ function run_test_gradlogpartition_properties(distribution; nsamples = 6000, tes
     end
 end
 
+function run_test_gradlogpartition_default_space(
+    distribution;
+    test_against_natural_space = true,
+    test_against_forwarddiff = true,
+    rtol = 1e-6
+)
+    T = ExponentialFamily.exponential_family_typetag(distribution)
+
+    ef = @inferred(convert(ExponentialFamilyDistribution, distribution))
+
+    (η, conditioner) = (getnaturalparameters(ef), getconditioner(ef))
+    θ = NaturalToMean(T)(η, conditioner)
+
+    grad = getgradlogpartition(DefaultParametersSpace(), T, conditioner)(θ)
+
+    @test length(grad) === length(θ)
+    @test all(isfinite, grad)
+
+    # Chain rule against the `NaturalParametersSpace`, which is itself checked against
+    # `E[T(x)]`, `ForwardDiff` and the fisher information in `run_test_gradlogpartition_properties`
+    # If we have a mapping `T : M -> N` then the gradients of the log-partition functions computed
+    # in `M` and `N` respectively must follow the relation `∇ₘ = J' * ∇ₙ`, where `J` is the jacobian
+    # of the transformation
+    if test_against_natural_space
+        mapping = getmapping(DefaultParametersSpace() => NaturalParametersSpace(), T)
+        J = ForwardDiff.jacobian(Base.Fix2(mapping, conditioner), θ)
+        @test collect(grad) ≈ J' * getgradlogpartition(NaturalParametersSpace(), T, conditioner)(η) rtol = rtol
+    end
+
+    # Self-consistency with the `DefaultParametersSpace` log-partition, which in turn is checked
+    # against its `NaturalParametersSpace` counterpart in `run_test_basic_functions`
+    if test_against_forwarddiff
+        @test collect(grad) ≈ ForwardDiff.gradient(getlogpartition(DefaultParametersSpace(), T, conditioner), θ) rtol = rtol
+    end
+
+    # Double check the `conditioner` free methods
+    if isnothing(conditioner)
+        @test collect(getgradlogpartition(DefaultParametersSpace(), T)(θ)) ≈ collect(grad) rtol = rtol
+    end
+end
+
 function run_test_fisherinformation_against_hessian(distribution; assume_ours_faster = true, assume_no_allocations = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -434,7 +527,11 @@ function run_test_fisherinformation_against_hessian(distribution; assume_ours_fa
     end
 
     if assume_ours_faster
-        @test @elapsed(fisherinformation(ef)) < (@elapsed(ForwardDiff.hessian(η -> getlogpartition(NaturalParametersSpace(), T, conditioner)(η), η)))
+        # Sample repeatedly to reduce timing noise; Ref prevents constant folding of the inputs.
+        f = getlogpartition(NaturalParametersSpace(), T, conditioner)
+        ours = @belapsed fisherinformation($(Ref(ef))[]) samples = 100 evals = 10 seconds = 0.1 gctrial = false
+        reference = @belapsed ForwardDiff.hessian($f, $(Ref(η))[]) samples = 100 evals = 10 seconds = 0.1 gctrial = false
+        @test ours < reference
     end
 
     if assume_no_allocations

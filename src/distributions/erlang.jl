@@ -76,7 +76,7 @@ end
 
 getlogpartition(::DefaultParametersSpace, ::Type{Erlang}) = (θ) -> begin
     (k, β) = unpack_parameters(Erlang, θ)
-    return k * log(β) + logfactorial(k - 1)
+    return k * log(β) + loggamma(k)
 end
 
 getfisherinformation(::DefaultParametersSpace, ::Type{Erlang}) = (θ) -> begin

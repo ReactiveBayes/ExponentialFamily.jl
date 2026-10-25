@@ -46,7 +46,7 @@ end
 
     for μ in 10randn(4), σ in 10rand(4)
         @testset let d = LogNormal(μ, σ)
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true, test_gradlogpartition_default_space = true)
 
             (η₁, η₂) = (μ / abs2(σ) - 1, -1 / (2abs2(σ)))
 

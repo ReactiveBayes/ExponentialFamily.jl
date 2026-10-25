@@ -254,7 +254,8 @@ end
         let d = DirichletCollection(α)
             ef = test_exponentialfamily_interface(d;
                 option_assume_no_allocations = false,
-                nsamples_for_gradlogpartition_properties = 20000)
+                nsamples_for_gradlogpartition_properties = 20000,
+                test_gradlogpartition_default_space = true)
             η1 = getnaturalparameters(ef)
             conditioner = getconditioner(ef)
             for x in [rand(1.0:2.0, len, len) for _ in 1:3]
@@ -503,5 +504,27 @@ end
             [0.19999999999999996 3.4000000000000004; 5.0 11.0; 0.19999999999999996 0.6000000000000001]
         )
         @test @inferred(prod(strategy, d2, d3)) ≈ DirichletCollection([1.2000000000000002 3.3; 4.0 5.0; 2.0 1.1])
+    end
+end
+
+# Regression test for issue #300: the default (mean) space log-partition iterated over the
+# flattened parameter vector element-by-element, feeding scalars to the multivariate
+# Dirichlet log-partition, so it identically returned 0. It must slice per-distribution and
+# agree with the natural-space log-partition.
+@testitem "DirichletCollection: default-space logpartition consistency" begin
+    include("distributions_setuptests.jl")
+
+    for α in ([1.2 3.3; 4.0 5.0; 2.0 1.1], rand(3, 4) .+ 1.0, rand(2, 3, 2) .+ 0.5)
+        d = DirichletCollection(α)
+        ef = convert(ExponentialFamilyDistribution, d)
+        η = getnaturalparameters(ef)
+        conditioner = getconditioner(ef)
+        θ = η .+ 1  # mean parameters (concentrations) = natural + 1
+
+        lp_nat = getlogpartition(NaturalParametersSpace(), DirichletCollection, conditioner)(η)
+        lp_def = getlogpartition(DefaultParametersSpace(), DirichletCollection, conditioner)(θ)
+
+        @test lp_def ≈ lp_nat
+        @test lp_def ≉ 0  # the previous implementation returned exactly 0
     end
 end

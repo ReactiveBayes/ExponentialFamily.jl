@@ -108,7 +108,7 @@ end
 
 getgradlogpartition(::NaturalParametersSpace, ::Type{Gamma}) = (η) -> begin
     (η₁, η₂) = unpack_parameters(Gamma, η)
-    return SA[digamma(η₁ + one(η₁))-log(-η₂), -(η₁ + one(η₁))/η₂]
+    return SA[digamma(η₁+one(η₁))-log(-η₂), -(η₁+one(η₁))/η₂]
 end
 
 # Mean parametrization
@@ -128,5 +128,5 @@ end
 
 getgradlogpartition(::DefaultParametersSpace, ::Type{Gamma}) = (θ) -> begin
     (shape, scale) = unpack_parameters(Gamma, θ)
-    return SA[digamma(shape)-log(scale), -shape/scale]
+    return SA[digamma(shape)+log(scale), shape/scale]
 end

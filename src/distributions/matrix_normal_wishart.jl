@@ -133,7 +133,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixNormalWish
     Λl = cholinv(Ul)
     Λr = cholinv(Ur)
     Λ  = Λl + Λr
-    U   = cholinv(Λ)
+    U  = cholinv(Λ)
 
     ΛlMl = Λl * Ml
     ΛrMr = Λr * Mr
@@ -143,7 +143,7 @@ function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MatrixNormalWish
     Ωl = cholinv(Vl)
     Ωr = cholinv(Vr)
     Ω  = Ωl + Ωr + Ml' * ΛlMl + Mr' * ΛrMr - rhs' * M
-    V   = cholinv(Ω)
+    V  = cholinv(Ω)
 
     n, p = size(Ml)
     ν = νl + νr + n - p - 1
@@ -441,4 +441,121 @@ function Base.convert(::Type{ExponentialFamilyDistribution}, dist::MatrixNormalW
         dims = (n, p)
     )
     return ExponentialFamilyDistribution(MatrixNormalWishart, η, nothing, attrs)
+end
+
+getfishermul(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormalWishart}) = getfishermul(space, MatrixNormalWishart, getdims(ef))
+getfishermul!(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormalWishart}) = getfishermul!(space, MatrixNormalWishart, getdims(ef))
+FisherMulBuffer(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormalWishart}, η::AbstractVector, v::AbstractVector) =
+    _fishermul_buffer(space, MatrixNormalWishart, getdims(ef), η, v)
+function _fishermul_storage(::Type{MatrixNormalWishart}, c::Tuple{Int, Int}, η, ::Type{R}) where {R}
+    n, p = c
+    n * p + _mnw_svec_len(p) + 1 + _mnw_svec_len(n) == length(η) ||
+        throw(DimensionMismatch("The MatrixNormalWishart shape must match the packed length."))
+    return (U = Matrix{R}(undef, n, n), V = Matrix{R}(undef, p, p),
+        M = Matrix{R}(undef, n, p), N = Matrix{R}(undef, n, p),
+        Q = Matrix{R}(undef, n, n), R = Matrix{R}(undef, n, n),
+        B = Matrix{R}(undef, p, p), D = Matrix{R}(undef, n, n),
+        tmpnp = Matrix{R}(undef, n, p), tmpnp2 = Matrix{R}(undef, n, p),
+        tmpnn = Matrix{R}(undef, n, n), tmppp = Matrix{R}(undef, p, p),
+        out2 = Matrix{R}(undef, p, p), out4 = Matrix{R}(undef, n, n))
+end
+
+function _fishermul_smat!(A, v)
+    s2 = sqrt(eltype(A)(2))
+    k = 1
+    @inbounds for j in axes(A, 2)
+        for i in 1:(j-1)
+            A[i, j] = A[j, i] = v[k] / s2
+            k += 1
+        end
+        A[j, j] = v[k]
+        k += 1
+    end
+    return A
+end
+
+function _fishermul_svec!(v, A)
+    s2 = sqrt(eltype(A)(2))
+    k = 1
+    @inbounds for j in axes(A, 2)
+        for i in 1:(j-1)
+            v[k] = s2 * A[i, j]
+            k += 1
+        end
+        v[k] = A[j, j]
+        k += 1
+    end
+    return v
+end
+
+function _fishermul_addtranspose!(A)
+    @inbounds for j in axes(A, 2)
+        for i in 1:(j-1)
+            A[i, j] = A[j, i] = A[i, j] + A[j, i]
+        end
+        A[j, j] *= 2
+    end
+    return A
+end
+
+function _fishermul_kernel!(w, ::Type{MatrixNormalWishart}, dims::Tuple{Int, Int}, η, v, b::NamedTuple)
+    n, p = dims
+    η1, η2, η3, η4 = unpack_parameters(MatrixNormalWishart, η, dims)
+    X, v2, s, v4 = unpack_parameters(MatrixNormalWishart, v, dims)
+    w1, w2, _, w4 = unpack_parameters(MatrixNormalWishart, w, dims)
+    _fishermul_smat!(b.U, η4)
+    b.U .*= -2
+    _fishermul_inverse!(b.U)
+    mul!(b.M, b.U, η1)
+    _fishermul_smat!(b.V, η2)
+    mul!(b.tmppp, transpose(η1), b.M)
+    @. b.V = -2 * b.V - b.tmppp
+    # The Schur complement is symmetric; remove multiplication roundoff before
+    # factorization (particularly important for Float32 and strict symmetry checks).
+    @inbounds for j in 1:p, i in 1:(j-1)
+        b.V[i, j] = b.V[j, i] = b.V[i, j] / 2 + b.V[j, i] / 2
+    end
+    _fishermul_inverse!(b.V)
+    mul!(b.N, b.M, b.V)
+    mul!(b.Q, b.N, transpose(b.M))
+    @. b.R = b.U + b.Q
+    _fishermul_smat!(b.B, v2)
+    _fishermul_smat!(b.D, v4)
+    ν = 2η3 - n + p + 1
+
+    # Covariance blocks acting on X, smat(v2), s, and smat(v4).
+    mul!(b.tmpnp, b.R, X)
+    mul!(w1, b.tmpnp, b.V, ν, 0)
+    mul!(b.tmppp, transpose(X), b.N)
+    mul!(w1, b.N, b.tmppp, ν, 1)
+    mul!(b.tmpnp, b.N, b.B)
+    mul!(w1, b.tmpnp, b.V, 2ν, 1)
+    mul!(b.tmpnp, b.D, b.N)
+    mul!(b.tmpnp2, b.R, b.tmpnp)
+    @. w1 += 2ν * b.tmpnp2 + 2s * b.N
+
+    mul!(b.tmpnp, X, b.V)
+    mul!(b.out2, transpose(b.N), b.tmpnp, ν, 0)
+    _fishermul_addtranspose!(b.out2)
+    mul!(b.tmppp, b.B, b.V)
+    mul!(b.out2, b.V, b.tmppp, 2ν, 1)
+    mul!(b.tmpnp, b.D, b.N)
+    mul!(b.out2, transpose(b.N), b.tmpnp, 2ν, 1)
+    @. b.out2 += 2s * b.V
+
+    mul!(b.tmpnp, b.R, X)
+    mul!(b.out4, b.tmpnp, transpose(b.N), ν, 0)
+    _fishermul_addtranspose!(b.out4)
+    mul!(b.tmpnp, b.N, b.B)
+    mul!(b.out4, b.tmpnp, transpose(b.N), 2ν, 1)
+    mul!(b.tmpnn, b.D, b.R)
+    mul!(b.out4, b.R, b.tmpnn, 2ν, 1)
+    mul!(b.tmpnn, b.D, b.U)
+    mul!(b.out4, b.U, b.tmpnn, 2(p - ν), 1)
+    @. b.out4 += 2s * b.Q
+
+    _fishermul_svec!(w2, b.out2)
+    _fishermul_svec!(w4, b.out4)
+    w[n*p+length(v2)+1] = 2 * (dot(b.N, X) + dot(b.V, b.B) + dot(b.Q, b.D)) + mvtrigamma(p, ν / 2) * s
+    return w
 end

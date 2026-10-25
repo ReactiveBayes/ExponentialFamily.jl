@@ -23,7 +23,7 @@ end
 
     for k in (0.1, 2.0, 5.0), θ in (0.1, 2.0, 5.0), T in union_types(GammaDistributionsFamily{Float64})
         @testset let d = convert(T, GammaShapeScale(k, θ))
-            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true)
+            ef = test_exponentialfamily_interface(d; option_assume_no_allocations = true, test_gradlogpartition_default_space = true)
 
             (η₁, η₂) = (shape(d) - 1, -inv(scale(d)))
 

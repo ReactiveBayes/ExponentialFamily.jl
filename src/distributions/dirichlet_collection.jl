@@ -277,10 +277,23 @@ end
 
 # Mean parametrization
 
-getlogpartition(::DefaultParametersSpace, ::Type{DirichletCollection}, conditioner) =
-    (η) -> begin
-        return mapreduce(x -> getlogpartition(DefaultParametersSpace(), Dirichlet)(x), +, η)
+function getlogpartition(::DefaultParametersSpace, ::Type{DirichletCollection}, conditioner::NTuple{N, Int}) where {N}
+    k = conditioner[1]  # Number of parameters per distribution
+    n_distributions = prod(Base.tail(conditioner))  # Total number of distributions
+    dirichlet_logpartition = getlogpartition(DefaultParametersSpace(), Dirichlet)
+
+    return function (θ::AbstractVector)
+        result = zero(eltype(θ))
+        for i in 1:n_distributions
+            idx_start = (i - 1) * k + 1
+            idx_end = i * k
+            @views params = θ[idx_start:idx_end]
+            result += dirichlet_logpartition(params)
+        end
+
+        return result
     end
+end
 
 function getgradlogpartition(::DefaultParametersSpace, ::Type{DirichletCollection}, conditioner::NTuple{N, Int}) where {N}
     k = conditioner[1]  # Number of parameters per distribution
@@ -327,3 +340,14 @@ end
 
 _scalarproduct(::Type{DirichletCollection}, η, statistics, conditioner::NTuple{N, Int}) where {N} =
     _scalarproduct(ArrayLikeVariate{N}, DirichletCollection, η, statistics, conditioner)
+
+_fishermul_storage(::Type{DirichletCollection}, c, η, ::Type{R}) where {R} = nothing
+function _fishermul_kernel!(w, ::Type{DirichletCollection}, c, η, v, ::Nothing)
+    prod(c) == length(η) || throw(DimensionMismatch("The DirichletCollection shape must match the packed length."))
+    k = first(c)
+    for start in 1:k:length(η)
+        stop = start + k - 1
+        _fishermul_kernel!(view(w, start:stop), Dirichlet, nothing, view(η, start:stop), view(v, start:stop), nothing)
+    end
+    return w
+end
