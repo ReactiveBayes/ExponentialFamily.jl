@@ -46,6 +46,45 @@ compatible. Parameter-dependent workspace is refreshed on every call. Each
 concurrent call needs a separate buffer. The callable returned by
 `getfishermul!(space, q)` accepts `(w, η, v, buffer)` and holds no mutable cache.
 
+### Using fishermul to compute the natural gradient
+
+The natural gradient is a popular technique in optimization and variational inference.
+
+The natural gradient can be understood as preconditioning the ordinary gradient with the inverse of the Fisher information matrix, which accounts for the geometry of the parameter space. You can read more about it in [Information Geometry of Variational Bayes](https://arxiv.org/abs/2509.15641) by Mohammad Emtiyaz Khan (2025).
+
+Given a Euclidean gradient ``v`` with respect to the natural parameters ``\eta``, the natural gradient is ``F(\eta)^{-1}v``, where ``F(\eta)`` is the Fisher information matrix at ``\eta``.
+
+For example, for the Dirichlet distribution, we can use `fishermul!` with conjugate gradients to compute the natural gradient without explicitly inverting the Fisher information matrix. Below, we use a random vector `v` as an example Euclidean gradient in 10 dimensions and compare the results and timings of both methods.
+
+```@example fishermul
+using LinearAlgebra, Random
+using Krylov, LinearOperators
+using FastCholesky, BenchmarkTools
+
+d = 10
+v = randn(MersenneTwister(42), d)
+ef = convert(ExponentialFamilyDistribution, Dirichlet(ones(d)))
+Fv = LinearOperator(
+    Float64, d, d, true, true,
+    (y, x) -> fishermul!(y, NaturalParametersSpace(), ef, x)
+)
+
+# Check the result and warm up both methods before timing.
+F = fisherinformation(ef)
+g_dense = cholinv(F) * v
+g, stats = cg(Fv, v; atol = 1e-10, rtol = 1e-8, itmax = 200)
+@assert stats.solved
+@assert isapprox(g, g_dense; atol = 1e-10, rtol = 1e-8)
+@assert norm(F * g - v) <= 1e-10 + 1e-8 * norm(v)
+
+dense_time = @belapsed cholinv(fisherinformation($ef)) * $v seconds = 1
+cg_time = @belapsed cg($Fv, $v; atol = 1e-10, rtol = 1e-8, itmax = 200) seconds = 1
+
+(dense_ns = dense_time * 1e9, cg_ns = cg_time * 1e9)
+```
+
+If you are interested in benchmarks across different dimensions, see the plot and full example in [PR #326](https://github.com/ReactiveBayes/ExponentialFamily.jl/pull/326).
+
 ## [Product of two probability distributions over the same variable](@id examples-product)
 
 In this example, we'll show you how to use the ExponentialFamily package to calculate the product of probability distributions that both relate to the same variable "X". 
