@@ -340,7 +340,6 @@ getfisherinformation(::DefaultParametersSpace, ::Type{InverseWishartFast}) =
         return hessian
     end
 
-_fishermul_return(::Type{InverseWishartFast}, c, η, v) = _fishermul_return_direct(InverseWishartFast, c, η, v)
 _fishermul_storage(::Type{InverseWishartFast}, c, η, ::Type{R}) where {R} = _fishermul_storage(WishartFast, c, η, R)
 function _fishermul_kernel!(w, ::Type{InverseWishartFast}, c, η, v, b::NamedTuple)
     η1, η2 = unpack_parameters(InverseWishartFast, η)

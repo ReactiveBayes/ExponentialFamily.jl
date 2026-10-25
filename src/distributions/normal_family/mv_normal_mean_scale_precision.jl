@@ -264,7 +264,6 @@ getlogpartition(::DefaultParametersSpace, ::Type{MvNormalMeanScalePrecision}) =
         return (γ * dot(μ, μ) - length(μ) * log(γ)) / 2
     end
 
-_fishermul_return(::Type{MvNormalMeanScalePrecision}, c, η, v) = _fishermul_return_direct(MvNormalMeanScalePrecision, c, η, v)
 _fishermul_storage(::Type{MvNormalMeanScalePrecision}, c, η, ::Type{R}) where {R} = nothing
 function _fishermul_kernel!(w, ::Type{MvNormalMeanScalePrecision}, c, η, v, ::Nothing)
     k = length(η) - 1

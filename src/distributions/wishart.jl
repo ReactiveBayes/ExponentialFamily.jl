@@ -324,7 +324,6 @@ getfisherinformation(::DefaultParametersSpace, ::Type{WishartFast}) = (θ) -> be
     return fimatrix
 end
 
-_fishermul_return(::Type{WishartFast}, c, η, v) = _fishermul_return_direct(WishartFast, c, η, v)
 function _fishermul_storage(::Type{WishartFast}, c, η, ::Type{R}) where {R}
     n = isqrt(length(η) - 1)
     return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n))

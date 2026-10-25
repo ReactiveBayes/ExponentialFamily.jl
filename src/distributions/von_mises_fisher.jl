@@ -136,7 +136,6 @@ getfisherinformation(::DefaultParametersSpace, ::Type{VonMisesFisher}) =
         return [k^2*tmp2 -Ap*μ; -Ap*μ' tmp]
     end
 
-_fishermul_return(::Type{VonMisesFisher}, c, η, v) = _fishermul_return_direct(VonMisesFisher, c, η, v)
 _fishermul_storage(::Type{VonMisesFisher}, c, η, ::Type{R}) where {R} = nothing
 function _fishermul_kernel!(w, ::Type{VonMisesFisher}, c, η, v, ::Nothing)
     u = norm(η)

@@ -6,7 +6,11 @@ export fishermul, fishermul!, getfishermul, getfishermul!, FisherMulBuffer
 Return the Fisher-information–vector product `F(η) * v` in packed parameter
 coordinates. Omitted `η` defaults to `getnaturalparameters(ef)`. Only
 [`NaturalParametersSpace`](@ref) is currently implemented. Scalable built-in
-families apply the Fisher matrix without constructing it.
+families apply the Fisher matrix without constructing it. By default, each call
+allocates an output with element type `float(promote_type(eltype(η), eltype(v)))`
+and delegates to [`getfishermul!`](@ref), which allocates workspace when needed.
+Static directions on the default matrix fallback retain direct matrix
+multiplication and its result type and allocation behavior.
 
 See also [`fishermul!`](@ref), [`getfishermul`](@ref), [`FisherMulBuffer`](@ref).
 """
@@ -19,7 +23,8 @@ fishermul(space, ef::ExponentialFamilyDistribution, η::AbstractVector, v::Abstr
 
 Allocate reusable workspace for [`fishermul!`](@ref). The buffer is tied to the
 parameter space, family, conditioner/dimensions, packed length, and promoted
-element type of `η` and `v`. Parameter and direction values may change between
+element type `float(promote_type(eltype(η), eltype(v)))`, shared with the default
+allocating API. Parameter and direction values may change between
 calls; all parameter-dependent workspace is refreshed. Do not share a buffer
 between concurrent calls or access its internal storage.
 
@@ -78,26 +83,25 @@ end
 
 Return a callable `(η, v) -> F(η) * v`. Dispatch follows [`getfisherinformation`](@ref),
 including conditioners and shape metadata for matrix families. Only natural
-space is currently implemented.
+space is currently implemented. The default getter resolves [`getfishermul!`](@ref)
+once and allocates a fresh output and any required workspace on every invocation;
+it does not cache mutable buffers. Specializing `getfishermul!` therefore supplies
+the default allocating behavior. Explicit `getfishermul` specializations still
+take precedence. See [`fishermul`](@ref) for element-type promotion and the static
+matrix-fallback exception.
 """
 getfishermul(ef::ExponentialFamilyDistribution) = getfishermul(NaturalParametersSpace(), ef)
 getfishermul(::Type{T}, conditioner = nothing) where {T <: Distribution} = getfishermul(NaturalParametersSpace(), T, conditioner)
 getfishermul(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution) = _getfishermul(space, getattributes(ef), ef)
 _getfishermul(space, ::Nothing, ef::ExponentialFamilyDistribution{T}) where {T} = getfishermul(space, T, getconditioner(ef))
-function _getfishermul(::NaturalParametersSpace, ::ExponentialFamilyDistributionAttributes, ef)
-    F = getfisherinformation(ef)
-    return (η, v) -> begin
-        _check_fishermul_inputs(η, v)
-        F(η) * v
-    end
-end
+_getfishermul(space::NaturalParametersSpace, ::ExponentialFamilyDistributionAttributes, ef) = _fishermul_getter(getfishermul!(space, ef))
 getfishermul(space::NaturalParametersSpace, ::Type{T}, ::Nothing) where {T <: Distribution} = getfishermul(space, T)
-getfishermul(::NaturalParametersSpace, ::Type{T}) where {T <: Distribution} = _fishermul_getter(T, nothing)
-getfishermul(::NaturalParametersSpace, ::Type{T}, conditioner) where {T <: Distribution} = _fishermul_getter(T, conditioner)
-function _fishermul_getter(::Type{T}, conditioner) where {T}
+getfishermul(space::NaturalParametersSpace, ::Type{T}) where {T <: Distribution} = _fishermul_getter(getfishermul!(space, T))
+getfishermul(space::NaturalParametersSpace, ::Type{T}, conditioner) where {T <: Distribution} = _fishermul_getter(getfishermul!(space, T, conditioner))
+function _fishermul_getter(f!)
     return (η, v) -> begin
         _check_fishermul_inputs(η, v)
-        _fishermul_return(T, conditioner, η, v)
+        _fishermul_return(f!, η, v)
     end
 end
 
@@ -107,7 +111,10 @@ end
 
 Return a callable `(w, η, v, buffer = nothing)` with the contract of
 [`fishermul!`](@ref). The callable does not own mutable workspace; callers may
-provide a [`FisherMulBuffer`](@ref).
+provide a [`FisherMulBuffer`](@ref). Specialize this getter to also supply the
+default [`getfishermul`](@ref) implementation. Its allocating wrapper calls
+`f!(w, η, v)` with the default `nothing` buffer, so extensions must support that
+form and allocate any required temporary workspace per call.
 """
 getfishermul!(ef::ExponentialFamilyDistribution) = getfishermul!(NaturalParametersSpace(), ef)
 getfishermul!(::Type{T}, conditioner = nothing) where {T <: Distribution} = getfishermul!(NaturalParametersSpace(), T, conditioner)
@@ -125,8 +132,18 @@ end
 getfishermul!(space::NaturalParametersSpace, ::Type{T}, ::Nothing) where {T <: Distribution} = getfishermul!(space, T)
 getfishermul!(space::NaturalParametersSpace, ::Type{T}) where {T <: Distribution} = _fishermul_getter!(space, T, nothing)
 getfishermul!(space::NaturalParametersSpace, ::Type{T}, conditioner) where {T <: Distribution} = _fishermul_getter!(space, T, conditioner)
+# Identify the package default so the static fast path cannot bypass extensions.
+struct _FisherMulDefault{S, T, C}
+    space::S
+    conditioner::C
+end
+
+function (f!::_FisherMulDefault{S, T})(w, η, v, buffer = nothing) where {S, T}
+    return _fishermul_apply!(w, f!.space, T, f!.conditioner, η, v, buffer)
+end
+
 function _fishermul_getter!(space::NaturalParametersSpace, ::Type{T}, conditioner) where {T}
-    return (w, η, v, buffer = nothing) -> _fishermul_apply!(w, space, T, conditioner, η, v, buffer)
+    return _FisherMulDefault{typeof(space), T, typeof(conditioner)}(space, conditioner)
 end
 
 @inline function _check_fishermul_inputs(η, v)
@@ -145,11 +162,24 @@ end
 
 _fishermul_eltype(η, v) = float(promote_type(eltype(η), eltype(v)))
 
-# The generic path preserves StaticArrays multiplication for fixed-size families.
-_fishermul_return(::Type{T}, c, η, v) where {T} = getfisherinformation(NaturalParametersSpace(), T, c)(η) * v
-function _fishermul_return_direct(::Type{T}, c, η, v) where {T}
+function _fishermul_return(f!, η, v)
     w = similar(v, _fishermul_eltype(η, v))
-    return _fishermul_apply!(w, NaturalParametersSpace(), T, c, η, v, nothing)
+    f!(w, η, v)
+    return w
+end
+
+function _fishermul_return(f!::_FisherMulDefault{S, T}, η, v::StaticVector) where {S, T}
+    R = _fishermul_eltype(η, v)
+    c = f!.conditioner
+    storage = _fishermul_storage(T, c, η, R)
+    if storage isa _FisherMulFallback
+        return getfisherinformation(f!.space, T, c)(η) * v
+    end
+    # Reuse the workspace allocated while selecting the path for this invocation.
+    buffer = FisherMulBuffer{S, T, R, typeof(c), typeof(storage)}(c, length(η), storage)
+    w = similar(v, R)
+    f!(w, η, v, buffer)
+    return w
 end
 
 struct _FisherMulFallback end

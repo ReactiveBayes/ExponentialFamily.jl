@@ -447,7 +447,6 @@ getfishermul(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{Ma
 getfishermul!(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormalWishart}) = getfishermul!(space, MatrixNormalWishart, getdims(ef))
 FisherMulBuffer(space::NaturalParametersSpace, ef::ExponentialFamilyDistribution{MatrixNormalWishart}, η::AbstractVector, v::AbstractVector) =
     _fishermul_buffer(space, MatrixNormalWishart, getdims(ef), η, v)
-_fishermul_return(::Type{MatrixNormalWishart}, c::Tuple{Int, Int}, η, v) = _fishermul_return_direct(MatrixNormalWishart, c, η, v)
 function _fishermul_storage(::Type{MatrixNormalWishart}, c::Tuple{Int, Int}, η, ::Type{R}) where {R}
     n, p = c
     n * p + _mnw_svec_len(p) + 1 + _mnw_svec_len(n) == length(η) ||

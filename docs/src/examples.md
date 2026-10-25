@@ -28,7 +28,7 @@ f(η, v) ≈ fishermul(space, q, η, v)
 For repeated calls, allocate the destination and workspace once:
 
 ```@example fishermul
-w = similar(v)
+w = similar(v, float(promote_type(eltype(η), eltype(v))))
 buffer = FisherMulBuffer(space, q, v)
 fishermul!(w, space, q, v, buffer)
 w ≈ fishermul(q, v)
@@ -44,7 +44,8 @@ The buffer can be reused when parameter and direction values change, provided
 their dimensions and promoted numeric type, family, space, and conditioner stay
 compatible. Parameter-dependent workspace is refreshed on every call. Each
 concurrent call needs a separate buffer. The callable returned by
-`getfishermul!(space, q)` accepts `(w, η, v, buffer)` and holds no mutable cache.
+`getfishermul!(space, q)` accepts `(w, η, v, buffer = nothing)` and holds no mutable
+cache. The default allocating wrapper calls it with the buffer omitted.
 
 ### Using fishermul to compute the natural gradient
 

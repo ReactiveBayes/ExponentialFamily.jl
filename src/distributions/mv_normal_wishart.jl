@@ -326,7 +326,6 @@ function _pdf(ef::ExponentialFamilyDistribution{MvNormalWishart}, x)
     exp(_logpdf(ef, x))
 end
 
-_fishermul_return(::Type{MvNormalWishart}, c, η, v) = _fishermul_return_direct(MvNormalWishart, c, η, v)
 function _fishermul_storage(::Type{MvNormalWishart}, c, η, ::Type{R}) where {R}
     n = div(isqrt(4length(η) - 7) - 1, 2)
     return (S = Matrix{R}(undef, n, n), Z = Matrix{R}(undef, n, n),

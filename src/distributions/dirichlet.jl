@@ -97,7 +97,6 @@ getgradlogpartition(::DefaultParametersSpace, ::Type{Dirichlet}) = (θ) -> begin
     return digamma.(α) .- digamma(sum(α))
 end
 
-_fishermul_return(::Type{Dirichlet}, c, η, v) = _fishermul_return_direct(Dirichlet, c, η, v)
 _fishermul_storage(::Type{Dirichlet}, c, η, ::Type{R}) where {R} = nothing
 function _fishermul_kernel!(w, ::Type{Dirichlet}, c, η, v, ::Nothing)
     correction = trigamma(sum(η) + length(η)) * sum(v)

@@ -371,7 +371,6 @@ getlogpartition(::DefaultParametersSpace, ::Type{MvNormalGamma}) = (θ) -> begin
     return loggamma(α) - α * log(β) - (1 / 2) * logdet(Λ)
 end
 
-_fishermul_return(::Type{MvNormalGamma}, c, η, v) = _fishermul_return_direct(MvNormalGamma, c, η, v)
 function _fishermul_storage(::Type{MvNormalGamma}, c, η, ::Type{R}) where {R}
     n = _mvng_dim(length(η))
     return (S = Matrix{R}(undef, n, n), tmp = Matrix{R}(undef, n, n), product = Matrix{R}(undef, n, n),
