@@ -417,6 +417,34 @@ function run_test_basic_functions(distribution; nsamples = 10, test_gradients = 
     end
 end
 
+# Most families use independent coordinates. Multinomial retains K coordinates
+# for a (K - 1)-dimensional family; test its known nullspace explicitly instead
+# of skipping Fisher properties or requiring an inverse that cannot exist.
+test_fisher_nullvector(distribution, space, parameters) = nothing
+test_fisher_nullvector(::Multinomial, ::NaturalParametersSpace, parameters) = ones(eltype(parameters), length(parameters))
+test_fisher_nullvector(::Multinomial, ::DefaultParametersSpace, parameters) = parameters
+
+function test_fisher_matrix_properties(F, nullvector)
+    @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
+    @test size(F, 1) === size(F, 2)
+    @test size(F, 1) === isqrt(length(F))
+    if isnothing(nullvector)
+        @test isposdef(F) || all(>(0), eigvals(F))
+        @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
+    else
+        T = eltype(F)
+        tolerance = 100 * size(F, 1) * eps(T) * max(opnorm(F), one(T))
+        eigenvalues = eigvals(Symmetric(F))
+        @test minimum(eigenvalues) >= -tolerance
+        @test count(>(tolerance), eigenvalues) == size(F, 1) - 1
+        @test norm(F * normalize(nullvector)) <= tolerance
+        Q = nullspace(reshape(nullvector, 1, :))
+        reduced = Symmetric(Q' * F * Q)
+        @test isposdef(reduced)
+        @test (inv(cholesky(reduced)) * reduced ≈ I) rtol = 1e-2
+    end
+end
+
 function run_test_fisherinformation_properties(distribution; test_properties_in_natural_space = true, test_properties_in_mean_space = true)
     T = ExponentialFamily.exponential_family_typetag(distribution)
 
@@ -429,11 +457,7 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
 
         @test_opt getfisherinformation(NaturalParametersSpace(), T, conditioner)(η)
 
-        @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
-        @test isposdef(F) || all(>(0), eigvals(F))
-        @test size(F, 1) === size(F, 2)
-        @test size(F, 1) === isqrt(length(F))
-        @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
+        test_fisher_matrix_properties(F, test_fisher_nullvector(distribution, NaturalParametersSpace(), η))
     end
 
     if test_properties_in_mean_space
@@ -442,11 +466,7 @@ function run_test_fisherinformation_properties(distribution; test_properties_in_
 
         @test_opt getfisherinformation(DefaultParametersSpace(), T, conditioner)(θ)
 
-        @test issymmetric(F) || (LowerTriangular(F) ≈ (UpperTriangular(F)'))
-        @test isposdef(F) || all(>(0), eigvals(F))
-        @test size(F, 1) === size(F, 2)
-        @test size(F, 1) === isqrt(length(F))
-        @test (inv(fastcholesky(F)) * F ≈ Diagonal(ones(size(F, 1)))) rtol = 1e-2
+        test_fisher_matrix_properties(F, test_fisher_nullvector(distribution, DefaultParametersSpace(), θ))
     end
 end
 
@@ -462,9 +482,20 @@ function run_test_gradlogpartition_properties(distribution; nsamples = 6000, tes
     _, samples = ExponentialFamily.check_logpdf(ef, collection_of_samples)
     expectation_of_sufficient_statistics = mean((s) -> ExponentialFamily.pack_parameters(ExponentialFamily.sufficientstatistics(ef, s)), samples)
     gradient = gradlogpartition(ef)
-    inverse_fisher = cholinv(fisherinformation(ef))
     @test length(gradient) === length(η)
-    @test dot(gradient - expectation_of_sufficient_statistics, inverse_fisher, gradient - expectation_of_sufficient_statistics) ≈ 0 atol = 0.01
+    difference = gradient - expectation_of_sufficient_statistics
+    nullvector = test_fisher_nullvector(distribution, NaturalParametersSpace(), η)
+    if isnothing(nullvector)
+        inverse_fisher = cholinv(fisherinformation(ef))
+        @test dot(difference, inverse_fisher, difference) ≈ 0 atol = 0.01
+    else
+        tolerance = 100 * length(η) * eps(eltype(η)) * max(norm(gradient), one(eltype(η)))
+        @test abs(dot(normalize(nullvector), difference)) <= tolerance
+        Q = nullspace(reshape(nullvector, 1, :))
+        reduced = Symmetric(Q' * fisherinformation(ef) * Q)
+        projected = Q' * difference
+        @test dot(projected, reduced \ projected) ≈ 0 atol = 0.01
+    end
 
     if test_against_forwardiff
         @test gradient ≈ ForwardDiff.gradient((η) -> getlogpartition(ef)(η), getnaturalparameters(ef))
