@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.1]
+
+### Fixed
+- Fix loading with Distributions v0.25.133, which removed the internal `Distributions.distrname` ([JuliaStats/Distributions.jl#2092](https://github.com/JuliaStats/Distributions.jl/pull/2092)). ExponentialFamily no longer overloads `distrname` for `MatrixNormal` and the `MvNormal*` parametrizations; their display now comes from Distributions' default, which uses the type name.
+
 ## [2.9.0]
 
 ### Added

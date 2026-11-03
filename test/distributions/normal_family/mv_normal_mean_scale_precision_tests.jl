@@ -62,12 +62,6 @@ end
     @test_throws DimensionMismatch prod(PreserveTypeProd(Distribution), left, right)
 end
 
-@testitem "MvNormalMeanScalePrecision: distrname" begin
-    include("./normal_family_setuptests.jl")
-
-    @test ExponentialFamily.distrname(MvNormalMeanScalePrecision(zeros(2))) === "MvNormalMeanScalePrecision"
-end
-
 @testitem "MvNormalMeanScalePrecision: ExponentialFamilyDistribution" begin
     include("../distributions_setuptests.jl")
 
