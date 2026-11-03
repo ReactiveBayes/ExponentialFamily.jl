@@ -124,7 +124,6 @@ function Base.convert(::Type{MvNormalWeightedMeanPrecision}, dist::MvNormalMeanS
     return MvNormalWeightedMeanPrecision(C * m, C)
 end
 
-
 BayesBase.weightedmean(dist::MvNormalMeanScalePrecision) = precision(dist) * mean(dist)
 
 BayesBase.mean(dist::MvNormalMeanScalePrecision)      = dist.μ

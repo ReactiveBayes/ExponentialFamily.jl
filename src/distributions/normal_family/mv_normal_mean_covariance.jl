@@ -42,7 +42,6 @@ function MvNormalMeanCovariance(μ::AbstractVector{T1}, Σ::UniformScaling{T2}) 
     return MvNormalMeanCovariance(μ_new, Σ_new)
 end
 
-
 function BayesBase.weightedmean(dist::MvNormalMeanCovariance)
     z = fastcholesky(cov(dist))
     return z \ mean(dist)

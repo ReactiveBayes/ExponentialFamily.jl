@@ -7,7 +7,6 @@ import ForwardDiff
 using DomainSets
 using LinearAlgebra
 
-
 Base.eltype(::MatrixNormal{T}) where {T} = T
 Base.precision(d::MatrixNormal) = invcov(d)
 

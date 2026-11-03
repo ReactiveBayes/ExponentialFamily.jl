@@ -42,7 +42,6 @@ function MvNormalMeanPrecision(μ::AbstractVector{T1}, Λ::UniformScaling{T2}) w
     return MvNormalMeanPrecision(μ_new, Λ_new)
 end
 
-
 BayesBase.weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
 
 BayesBase.mean(dist::MvNormalMeanPrecision)      = dist.μ

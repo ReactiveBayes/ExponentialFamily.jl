@@ -41,7 +41,6 @@ function MvNormalWeightedMeanPrecision(xi::AbstractVector{T1}, Λ::UniformScalin
     return MvNormalWeightedMeanPrecision(xi_new, Λ_new)
 end
 
-
 BayesBase.weightedmean(dist::MvNormalWeightedMeanPrecision) = dist.xi
 
 function BayesBase.mean_cov(dist::MvNormalWeightedMeanPrecision)
