@@ -1,6 +1,6 @@
 export MvNormalMeanCovariance
 
-import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
+import Distributions: logdetcov, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
 import Base: ndims, precision, length, size, prod
 
@@ -42,7 +42,6 @@ function MvNormalMeanCovariance(μ::AbstractVector{T1}, Σ::UniformScaling{T2}) 
     return MvNormalMeanCovariance(μ_new, Σ_new)
 end
 
-Distributions.distrname(::MvNormalMeanCovariance) = "MvNormalMeanCovariance"
 
 function BayesBase.weightedmean(dist::MvNormalMeanCovariance)
     z = fastcholesky(cov(dist))

@@ -19,12 +19,6 @@
     @test MvNormalMeanScaleMatrixPrecision([1, 2, 3, 4], 7.0, Matrix(I, 4, 4)) == MvNormalMeanScaleMatrixPrecision([1.0, 2.0, 3.0, 4.0], 7.0, Matrix(I, 4, 4))
 end
 
-@testitem "MvNormalMeanScaleMatrixPrecision: distrname" begin
-    include("./normal_family_setuptests.jl")
-
-    @test ExponentialFamily.distrname(MvNormalMeanScaleMatrixPrecision(zeros(2))) === "MvNormalMeanPrecision"
-end
-
 @testitem "MvNormalMeanScaleMatrixPrecision: is alias to MvNormalMeanPrecision" begin
     include("../distributions_setuptests.jl")
 

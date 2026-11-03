@@ -1,6 +1,6 @@
 export MvNormalMeanPrecision
 
-import Distributions: logdetcov, distrname, sqmahal, sqmahal!, AbstractMvNormal
+import Distributions: logdetcov, sqmahal, sqmahal!, AbstractMvNormal
 import LinearAlgebra: diag, Diagonal, dot
 import Base: ndims, precision, length, size, prod
 
@@ -42,7 +42,6 @@ function MvNormalMeanPrecision(μ::AbstractVector{T1}, Λ::UniformScaling{T2}) w
     return MvNormalMeanPrecision(μ_new, Λ_new)
 end
 
-Distributions.distrname(::MvNormalMeanPrecision) = "MvNormalMeanPrecision"
 
 BayesBase.weightedmean(dist::MvNormalMeanPrecision) = precision(dist) * mean(dist)
 

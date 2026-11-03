@@ -18,13 +18,6 @@
     @test size(MatrixNormal(M2, U2, V2)) == (2, 3)
 end
 
-@testitem "MatrixNormal: distrname" begin
-    include("./normal_family_setuptests.jl")
-
-    d = MatrixNormal([1.0 2.0; 3.0 4.0], [2.0 0.5; 0.5 1.5], [1.5 0.3; 0.3 2.0])
-    @test ExponentialFamily.distrname(d) == "MatrixNormal"
-end
-
 @testitem "MatrixNormal: vague" begin
     include("./normal_family_setuptests.jl")
 

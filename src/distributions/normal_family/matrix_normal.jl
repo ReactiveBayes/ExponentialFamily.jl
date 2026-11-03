@@ -1,13 +1,12 @@
 export MatrixNormal
 
-import Distributions: entropy, distrname, AbstractMvNormal
+import Distributions: entropy, AbstractMvNormal
 import Base: convert
 import ForwardDiff
 
 using DomainSets
 using LinearAlgebra
 
-Distributions.distrname(::MatrixNormal) = "MatrixNormal"
 
 Base.eltype(::MatrixNormal{T}) where {T} = T
 Base.precision(d::MatrixNormal) = invcov(d)

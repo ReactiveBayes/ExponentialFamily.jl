@@ -20,12 +20,6 @@
     @test MvNormalMeanCovariance([1, 2, 3, 4], 7.0I) == MvNormalMeanCovariance([1.0, 2.0, 3.0, 4.0], Diagonal(7.0 * ones(4)))
 end
 
-@testitem "MvNormalMeanCovariance: distrname" begin
-    include("./normal_family_setuptests.jl")
-
-    @test ExponentialFamily.distrname(MvNormalMeanCovariance(zeros(2))) === "MvNormalMeanCovariance"
-end
-
 @testitem "MvNormalMeanCovariance: Stats methods" begin
     include("./normal_family_setuptests.jl")
 
