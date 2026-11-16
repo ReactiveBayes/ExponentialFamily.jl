@@ -2,7 +2,6 @@ export Gamma, GammaShapeScale, GammaDistributionsFamily
 
 import SpecialFunctions: loggamma, digamma
 import Distributions: shape, scale, cov
-import StatsFuns: log2π
 using IntervalSets
 using StaticArrays
 
@@ -23,11 +22,6 @@ const GammaShapeScale = Gamma
 function BayesBase.mean(::typeof(log), dist::GammaShapeScale)
     k, θ = params(dist)
     return digamma(k) + log(θ)
-end
-
-function BayesBase.mean(::typeof(loggamma), dist::GammaShapeScale)
-    k, θ = params(dist)
-    return 0.5 * (log2π - (digamma(k) + log(θ))) + mean(dist) * (-one(k) + digamma(k + one(k)) + log(θ))
 end
 
 function BayesBase.mean(::typeof(xtlog), dist::GammaShapeScale)

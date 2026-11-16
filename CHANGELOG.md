@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2]
+
+### Fixed
+- `mean(loggamma, d)` for `GammaShapeRate` and `GammaShapeScale` is exact. It was the expectation of Stirling's leading terms alone, too low by the expectation of Binet's remainder: by 0.13 at shape 2 and rate 2, and by 49 at shape 0.01 and rate 1. Stirling's part keeps its closed form; Binet's remainder is added by quadrature, accurate to about 1e-14 and differentiable with ForwardDiff. `QuadGK` is a new dependency.
+
 ## [2.9.1]
 
 ### Fixed
