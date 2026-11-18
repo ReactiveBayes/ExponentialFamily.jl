@@ -45,10 +45,10 @@ function BayesBase.compute_logscale(
     return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
 
-# `E[log Γ(x)]` has no closed form. Stirling's formula `log Γ(x) = (x - 1/2) log x - x + log(2π)/2 + μ(x)`
-# has a closed-form expectation, and the remainder `E[μ(x)]` is computed by quadrature in `w = log(x / E[x])`.
-# There the log-density `a (1 + w - eʷ) + log(a)/2 - log(2π)/2 - μ(a)` has no cancellation for large shapes `a`,
-# and `μ(x) ~ -log(x)/2` near zero is smooth in `w`.
+# `E[log Γ(x)]` has no closed form. Stirling's formula writes `log Γ(x) = (x - 1/2) log x - x + log(2π)/2 + μ(x)`,
+# where `μ` is Binet's remainder. The leading terms have a closed-form expectation, and `E[μ(x)]` is computed by
+# quadrature in `w = log(x / E[x])`. In `w`, the log-density `a (1 + w - eʷ) + log(a)/2 - log(2π)/2 - μ(a)` has no
+# cancellation for large shapes `a`, and `μ(x) ~ -log(x)/2` near zero is smooth.
 function BayesBase.mean(::typeof(loggamma), dist::GammaDistributionsFamily)
     a, θ = shape(dist), scale(dist)
     m = mean(dist)
