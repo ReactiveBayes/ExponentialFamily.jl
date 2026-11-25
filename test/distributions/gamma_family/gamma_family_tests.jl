@@ -109,12 +109,17 @@ end
         (0.5, 1e-4) => 11.173821543382113,
         (1e3, 1e-3) => 0.0008224774237053027,
         (1e6, 1.0) => 1.2815505069147779e7,
-        (1e6, 1e-6) => 8.22467043821409e-7
+        (1e6, 1e-6) => 8.22467043821409e-7,
+        (1e-4, 1e3) => 9994.204173040449,
+        (1e-6, 0.5) => 1.0000012703610621e6,
+        (1e-9, 2.0) => 9.999999998840684e8,
+        (1e-12, 1.0) => 1.0000000000005773e12
     ]
 
+    # Where `E[log Γ(x)]` is close to zero, the closed-form terms cancel to about 1e-14
     for ((k, θ), expected) in references, T in union_types(GammaDistributionsFamily{Float64})
         @testset let d = convert(T, GammaShapeScale(k, θ))
-            @test mean(loggamma, d) ≈ expected rtol = 1e-13 atol = 1e-15
+            @test mean(loggamma, d) ≈ expected rtol = 1e-13 atol = 1e-14
         end
     end
 
@@ -135,6 +140,15 @@ end
         @test ForwardDiff.derivative(b -> f(a, b), b) ≈ (f(a, b * (1 + h)) - f(a, b * (1 - h))) / (2h * b) rtol = 1e-6
     end
 
+    # At small shapes, `d/da E[log Γ(x)] ≈ -1/a²`
+    @test ForwardDiff.derivative(a -> mean(loggamma, GammaShapeRate(a, 1.0)), 1e-9) ≈ -9.999999999061807e17 rtol = 1e-8
+
     @test mean(loggamma, GammaShapeRate(2.0f0, 2.0f0)) isa Float32
     @test mean(loggamma, GammaShapeRate(2.0f0, 2.0f0)) ≈ 0.41564637083354294 rtol = 1e-5
+    for k in (1.0f-6, 1.0f-4, 1.0f-3, 0.1f0, 30.0f0), θ in (0.01f0, 1.0f0, 100.0f0)
+        @testset let d = GammaShapeScale(k, θ)
+            @test @inferred(mean(loggamma, d)) isa Float32
+            @test mean(loggamma, d) ≈ mean(loggamma, GammaShapeScale(Float64(k), Float64(θ))) rtol = 1e-5 atol = 1e-5
+        end
+    end
 end

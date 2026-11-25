@@ -55,15 +55,37 @@ function BayesBase.mean(::typeof(loggamma), dist::GammaDistributionsFamily)
     stirling = (log2π - mean(log, dist)) / 2 + m * (digamma(a + 1) + log(θ) - 1)
     logm = log(m)
     lognorm = (log(a) - log2π) / 2 - binet_remainder(a, log(a))
-    s = quadrature_breakpoint(sqrt(inv(a) + inv(a)^2)) # the standard deviation of `w`, roughly
-    T = typeof(s)
-    remainder, _ = quadgk(T(-Inf), -40s, -6s, zero(T), 6s, 40s, T(Inf); rtol = eps(T)^(3 // 4)) do w
+    integrand = w -> begin
         logp = a * (w - expm1(w)) + lognorm
         # `exp(-Inf)` would multiply infinite partial derivatives by zero
         isfinite(logp) || return zero(logp)
         return exp(logp) * binet_remainder(m * exp(w), w + logm)
     end
+    points = quadrature_breakpoints(quadrature_breakpoint(a), quadrature_breakpoint(logm))
+    T = eltype(points)
+    # `μ` is only needed to the accuracy of the sum, which also stops the quadrature at huge shapes, where rounding
+    # in the log-density keeps the relative error of `E[μ(x)]` from reaching `rtol`
+    rtol, atol = max(eps(T)^(3 // 4), T(1.0e-14)), eps(T) * quadrature_breakpoint(abs(stirling))
+    # One call per segment, the tails included: in a single call over `(-∞, ∞)`, QuadGK's change of variables
+    # squeezes the finite segments next to an endpoint, where they are lost at small shapes
+    remainder = sum(zip(points[1:(end-1)], points[2:end])) do (lower, upper)
+        return first(quadgk(integrand, lower, upper; rtol, atol, maxevals = 10^4))
+    end
     return stirling + remainder
+end
+
+# Where the density of `w` lives, and where its integrand changes: within a few standard deviations `s` of zero on
+# the left, which at small shapes is long and is split on a logarithmic scale; at a shape below one, until `a eʷ`
+# grows past one at `w = -log(a)` on the right; and around `x = 1`, at `w = -log(E[x])`, where `μ(x)` turns from
+# `-log(x)/2` to `1/(12x)`
+function quadrature_breakpoints(a, logm)
+    s = sqrt(inv(a) + inv(a)^2) # the standard deviation of `w`, roughly
+    T = typeof(s)
+    points = T[-Inf, -40s, -6s, 0, Inf]
+    a < 1 ? append!(points, (-s, -sqrt(s), -1, -log(a), 2 - log(a), 5 - log(a))) : append!(points, (6s, 40s))
+    upper = a < 1 ? 5 - log(a) : 40s
+    -40s < -logm < upper && append!(points, (-logm - 2, -logm, -logm + 2))
+    return unique!(sort!(filter!(w -> isinf(w) || -40s <= w <= upper, points)))
 end
 
 # Binet's remainder `μ(x) = log Γ(x) - (x - 1/2) log x + x - log(2π)/2`, given `z = log(x)`
