@@ -137,3 +137,21 @@ end
               NormalWeightedMeanPrecision(1.0, 3 / 5)
     end
 end
+
+@testitem "NormalMeanVariance: prod with a zero, a vague or an infinite variance" begin
+    include("./normal_family_setuptests.jl")
+
+    for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+        informative = NormalMeanVariance(0.3, 2.0)
+        # A zero variance (a deterministic message) fixes the result to its mean
+        @test prod(strategy, NormalMeanVariance(1.5, 0.0), informative) ≈ NormalMeanVariance(1.5, 0.0)
+        @test prod(strategy, informative, NormalMeanVariance(1.5, 0.0)) ≈ NormalMeanVariance(1.5, 0.0)
+        # A vague or an infinite variance leaves the other factor unchanged
+        for uninformative in (vague(NormalMeanVariance), NormalMeanVariance(0.0, Inf))
+            @test prod(strategy, uninformative, informative) ≈ informative rtol = 1e-9
+            @test prod(strategy, informative, uninformative) ≈ informative rtol = 1e-9
+        end
+        # Integer parameters
+        @test prod(strategy, NormalMeanVariance(1, 1), NormalMeanVariance(3, 1)) ≈ NormalMeanVariance(2.0, 0.5)
+    end
+end
