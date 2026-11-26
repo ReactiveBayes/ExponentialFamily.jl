@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.2]
+
 ### Fixed
 - The products `MvNormalMeanCovariance × MvNormalMeanCovariance` and `NormalMeanVariance × NormalMeanVariance` are computed in covariance form, which inverts only `Σₗ + Σᵣ`. In precision form they were wrong when one factor had a singular covariance, such as the message out of `z := A * ω` with `A` taller than wide, and `NaN` for a zero variance ([#330](https://github.com/ReactiveBayes/ExponentialFamily.jl/issues/330)). A `PreserveTypeProd(Distribution)` product of these types now returns the mean-covariance form instead of the weighted-mean-precision form.
 
