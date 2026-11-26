@@ -64,8 +64,20 @@ Base.convert(::Type{NormalMeanVariance{T}}, μ::Real, v::Real) where {T <: Real}
 BayesBase.vague(::Type{<:NormalMeanVariance}) = NormalMeanVariance(0.0, huge)
 BayesBase.default_prod_rule(::Type{<:NormalMeanVariance}, ::Type{<:NormalMeanVariance}) = PreserveTypeProd(Distribution)
 
+# The product is computed in variance form, which stays exact when one of the variances is zero,
+# as is the message out of a deterministic node whose constant input is zero; in precision form
+# that message has an infinite precision and the product is `NaN`. The gain `k = vₗ / (vₗ + vᵣ)`
+# is computed from the smaller variance, so that an infinite variance, which carries no
+# information, leaves the other factor unchanged instead of giving `Inf / Inf`.
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::NormalMeanVariance, right::NormalMeanVariance)
-    xi = mean(left) / var(left) + mean(right) / var(right)
-    w = 1 / var(left) + 1 / var(right)
-    return NormalWeightedMeanPrecision(xi, w)
+    μ_left, v_left = mean_var(left)
+    μ_right, v_right = mean_var(right)
+    if v_left <= v_right
+        k = v_left / (v_left + v_right)
+        v = (1 - k) * v_left
+    else
+        k = 1 - v_right / (v_left + v_right)
+        v = k * v_right
+    end
+    return NormalMeanVariance(μ_left + k * (μ_right - μ_left), v)
 end

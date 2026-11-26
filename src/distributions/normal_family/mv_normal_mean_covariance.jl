@@ -93,10 +93,21 @@ BayesBase.vague(::Type{<:MvNormalMeanCovariance}, dims::Int) =
 
 BayesBase.default_prod_rule(::Type{<:MvNormalMeanCovariance}, ::Type{<:MvNormalMeanCovariance}) = PreserveTypeProd(Distribution)
 
+# The product is computed in covariance form, which inverts only `Σₗ + Σᵣ`:
+#
+#     K = Σₗ (Σₗ + Σᵣ)⁻¹,    μ = μₗ + K (μᵣ - μₗ),    Σ = K Σᵣ.
+#
+# It stays exact when one of the covariances is singular, as is the message out of a linear map
+# to a higher dimension (`z = A * x` with `A` taller than wide). Such a message has no precision
+# matrix, and a product in precision form returns a wrong mean and covariance. `K Σᵣ` is used
+# instead of `Σₗ - K Σₗ`, which cancels catastrophically when `Σₗ` is vague.
 function BayesBase.prod(::PreserveTypeProd{Distribution}, left::MvNormalMeanCovariance, right::MvNormalMeanCovariance)
-    xi_left, W_left = weightedmean_precision(left)
-    xi_right, W_right = weightedmean_precision(right)
-    return MvNormalWeightedMeanPrecision(xi_left + xi_right, W_left + W_right)
+    μ_left, Σ_left = mean_cov(left)
+    μ_right, Σ_right = mean_cov(right)
+    K = (fastcholesky(Σ_left + Σ_right) \ Σ_left)' # Σₗ (Σₗ + Σᵣ)⁻¹, as Σₗ is symmetric
+    μ = μ_left + K * (μ_right - μ_left)
+    Σ = K * Σ_right
+    return MvNormalMeanCovariance(μ, (Σ + Σ') / 2)
 end
 
 function BayesBase.prod(
@@ -104,11 +115,23 @@ function BayesBase.prod(
     left::MvNormalMeanCovariance{T, <:Vector, <:Matrix},
     right::MvNormalMeanCovariance{T, <:Vector, <:Matrix}
 ) where {T <: LinearAlgebra.BlasFloat}
-    xi, W = weightedmean_precision(left)
+    μ_left, Σ_left = mean_cov(left)
+    μ_right, Σ_right = mean_cov(right)
+    LinearAlgebra.checksquare(Σ_left) == LinearAlgebra.checksquare(Σ_right) == length(μ_left) == length(μ_right) ||
+        throw(DimensionMismatch("cannot multiply Gaussians of dimensions $(length(μ_left)) and $(length(μ_right))"))
 
-    W_right = precision(right)
-    W .+= W_right
+    # G = (Σₗ + Σᵣ)⁻¹ Σₗ = Kᵀ
+    G = LinearAlgebra.ldiv!(fastcholesky!(Σ_left + Σ_right), copy(Σ_left))
 
-    xi = BLAS.gemv!('N', one(T), W_right, mean(right), one(T), xi)
-    return MvNormalWeightedMeanPrecision(xi, W)
+    # μ = μₗ + Gᵀ (μᵣ - μₗ)
+    μ = BLAS.gemv!('T', one(T), G, μ_right - μ_left, one(T), copy(μ_left))
+
+    # Σ = Gᵀ Σᵣ, symmetrized in place
+    Σ = BLAS.gemm('T', 'N', G, Σ_right)
+    n = size(Σ, 1)
+    @inbounds for j in 1:n, i in (j+1):n
+        Σ[i, j] = Σ[j, i] = (Σ[i, j] + Σ[j, i]) / 2
+    end
+
+    return MvNormalMeanCovariance(μ, Σ)
 end
