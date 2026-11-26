@@ -92,3 +92,63 @@ end
     # Test that the mean of the inverse is Inf when the shape is less than 1
     @test mean(inv, GammaShapeScale(0.5, 1.0)) == Inf
 end
+
+@testitem "GammaFamily: mean(::typeof(loggamma))" begin
+    include("./gamma_family_setuptests.jl")
+
+    import QuadGK: quadgk
+
+    # (shape, scale) => E[log Γ(x)], computed by a 256-bit quadrature of `log Γ(x)` against the density
+    references = [
+        (0.01, 1.0) => 100.56014626169652,
+        (0.3, 2.0) => 3.0284013650363115,
+        (1.0, 1.0) => 0.843302107531978,
+        (2.0, 0.5) => 0.41564637083354294,
+        (10.0, 0.1) => 0.08236877619855938,
+        (5.0, 100.0) => 2653.507430149158,
+        (0.5, 1e-4) => 11.173821543382113,
+        (1e3, 1e-3) => 0.0008224774237053027,
+        (1e6, 1.0) => 1.2815505069147779e7,
+        (1e6, 1e-6) => 8.22467043821409e-7,
+        (1e-4, 1e3) => 9994.204173040449,
+        (1e-6, 0.5) => 1.0000012703610621e6,
+        (1e-9, 2.0) => 9.999999998840684e8,
+        (1e-12, 1.0) => 1.0000000000005773e12
+    ]
+
+    # Where `E[log Γ(x)]` is close to zero, the closed-form terms cancel to about 1e-14
+    for ((k, θ), expected) in references, T in union_types(GammaDistributionsFamily{Float64})
+        @testset let d = convert(T, GammaShapeScale(k, θ))
+            @test mean(loggamma, d) ≈ expected rtol = 1e-13 atol = 1e-14
+        end
+    end
+
+    # An independent check by quadrature of `log Γ(x)` itself
+    for k in (0.7, 3.0, 40.0), θ in (0.05, 1.0, 20.0)
+        d = GammaShapeScale(k, θ)
+        m, sd = mean(d), std(d)
+        points = filter(>(0), [m - 6sd, m - 2sd, m, m + 2sd, m + 6sd])
+        expected, _ = quadgk(x -> pdf(d, x) * loggamma(x), 0.0, points..., Inf; rtol = 1e-12)
+        @test mean(loggamma, d) ≈ expected rtol = 1e-9
+    end
+
+    # Differentiable in both parameters
+    for (a, b) in ((2.0, 0.5), (0.01, 3.0), (1e5, 1e-3))
+        f(a, b) = mean(loggamma, GammaShapeRate(a, b))
+        h = 1e-6
+        @test ForwardDiff.derivative(a -> f(a, b), a) ≈ (f(a * (1 + h), b) - f(a * (1 - h), b)) / (2h * a) rtol = 1e-6
+        @test ForwardDiff.derivative(b -> f(a, b), b) ≈ (f(a, b * (1 + h)) - f(a, b * (1 - h))) / (2h * b) rtol = 1e-6
+    end
+
+    # At small shapes, `d/da E[log Γ(x)] ≈ -1/a²`
+    @test ForwardDiff.derivative(a -> mean(loggamma, GammaShapeRate(a, 1.0)), 1e-9) ≈ -9.999999999061807e17 rtol = 1e-8
+
+    @test mean(loggamma, GammaShapeRate(2.0f0, 2.0f0)) isa Float32
+    @test mean(loggamma, GammaShapeRate(2.0f0, 2.0f0)) ≈ 0.41564637083354294 rtol = 1e-5
+    for k in (1.0f-6, 1.0f-4, 1.0f-3, 0.1f0, 30.0f0), θ in (0.01f0, 1.0f0, 100.0f0)
+        @testset let d = GammaShapeScale(k, θ)
+            @test @inferred(mean(loggamma, d)) isa Float32
+            @test mean(loggamma, d) ≈ mean(loggamma, GammaShapeScale(Float64(k), Float64(θ))) rtol = 1e-5 atol = 1e-5
+        end
+    end
+end

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.3]
+
+### Fixed
+- Fix `mean(loggamma, d)` for `GammaShapeRate` and `GammaShapeScale`. It returned the expectation of the leading terms of Stirling's formula only, so it was too low by the expectation of Binet's remainder: by 0.13 at shape 2 and rate 2, and by 49 at shape 0.01 and rate 1. The leading terms keep their closed form, and the expectation of the remainder is now computed by quadrature. Against a 256-bit quadrature, the relative error is below 1e-13 for shapes from 1e-12 to 1e8 and scales from 1e-8 to 1e8, and the absolute error is about 1e-14 where `E[log Γ(x)]` is close to zero. Float32 parameters give a Float32 result, accurate to about 3e-7 down to shape 1e-6. A call takes 2–10 μs, and the result can be differentiated with ForwardDiff. `QuadGK` is a new dependency.
+
 ## [2.9.2]
 
 ### Fixed

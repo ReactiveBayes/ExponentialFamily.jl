@@ -1,3 +1,5 @@
+import QuadGK: quadgk
+
 const GammaDistributionsFamily{T} = Union{GammaShapeScale{T}, GammaShapeRate{T}}
 
 BayesBase.cov(dist::GammaDistributionsFamily) = var(dist)
@@ -42,6 +44,64 @@ function BayesBase.compute_logscale(
     az, bz = shape(right_dist), rate(right_dist)
     return loggamma(ay) - loggamma(ax) - loggamma(az) + ax * log(bx) + az * log(bz) - ay * log(by)
 end
+
+# `E[log Γ(x)]` has no closed form. Stirling's formula writes `log Γ(x) = (x - 1/2) log x - x + log(2π)/2 + μ(x)`,
+# where `μ` is Binet's remainder. The leading terms have a closed-form expectation, and `E[μ(x)]` is computed by
+# quadrature in `w = log(x / E[x])`. In `w`, the log-density `a (1 + w - eʷ) + log(a)/2 - log(2π)/2 - μ(a)` has no
+# cancellation for large shapes `a`, and `μ(x) ~ -log(x)/2` near zero is smooth.
+function BayesBase.mean(::typeof(loggamma), dist::GammaDistributionsFamily)
+    a, θ = shape(dist), scale(dist)
+    m = mean(dist)
+    stirling = (log2π - mean(log, dist)) / 2 + m * (digamma(a + 1) + log(θ) - 1)
+    logm = log(m)
+    lognorm = (log(a) - log2π) / 2 - binet_remainder(a, log(a))
+    integrand = w -> begin
+        logp = a * (w - expm1(w)) + lognorm
+        # `exp(-Inf)` would multiply infinite partial derivatives by zero
+        isfinite(logp) || return zero(logp)
+        return exp(logp) * binet_remainder(m * exp(w), w + logm)
+    end
+    points = quadrature_breakpoints(quadrature_breakpoint(a), quadrature_breakpoint(logm))
+    T = eltype(points)
+    # `μ` is only needed to the accuracy of the sum, which also stops the quadrature at huge shapes, where rounding
+    # in the log-density keeps the relative error of `E[μ(x)]` from reaching `rtol`
+    rtol, atol = max(eps(T)^(3 // 4), T(1.0e-14)), eps(T) * quadrature_breakpoint(abs(stirling))
+    # One call per segment, the tails included: in a single call over `(-∞, ∞)`, QuadGK's change of variables
+    # squeezes the finite segments next to an endpoint, where they are lost at small shapes
+    remainder = sum(zip(points[1:(end-1)], points[2:end])) do (lower, upper)
+        return first(quadgk(integrand, lower, upper; rtol, atol, maxevals = 10^4))
+    end
+    return stirling + remainder
+end
+
+# Where the density of `w` lives, and where its integrand changes: within a few standard deviations `s` of zero on
+# the left, which at small shapes is long and is split on a logarithmic scale; at a shape below one, until `a eʷ`
+# grows past one at `w = -log(a)` on the right; and around `x = 1`, at `w = -log(E[x])`, where `μ(x)` turns from
+# `-log(x)/2` to `1/(12x)`
+function quadrature_breakpoints(a, logm)
+    s = sqrt(inv(a) + inv(a)^2) # the standard deviation of `w`, roughly
+    T = typeof(s)
+    points = T[-Inf, -40s, -6s, 0, Inf]
+    a < 1 ? append!(points, (-s, -sqrt(s), -1, -log(a), 2 - log(a), 5 - log(a))) : append!(points, (6s, 40s))
+    upper = a < 1 ? 5 - log(a) : 40s
+    -40s < -logm < upper && append!(points, (-logm - 2, -logm, -logm + 2))
+    return unique!(sort!(filter!(w -> isinf(w) || -40s <= w <= upper, points)))
+end
+
+# Binet's remainder `μ(x) = log Γ(x) - (x - 1/2) log x + x - log(2π)/2`, given `z = log(x)`
+function binet_remainder(x, z)
+    if x >= 10
+        r = inv(x)
+        r2 = r * r
+        return r / 12 - r * r2 / 360 + r * r2^2 / 1260 - r * r2^3 / 1680 + r * r2^4 / 1188
+    end
+    return loggamma(x + 1) + x - ((2x + 1) * z + log2π) / 2
+end
+
+# Breakpoints only place the quadrature nodes, so they drop the dual parts of `ForwardDiff` numbers
+quadrature_breakpoint(x::AbstractFloat) = x
+quadrature_breakpoint(x::ForwardDiff.Dual) = quadrature_breakpoint(ForwardDiff.value(x))
+quadrature_breakpoint(x::Real) = float(x)
 
 function Base.:(==)(left::GammaDistributionsFamily, right::GammaDistributionsFamily)
     return params(DefaultParametersSpace(), left) == params(DefaultParametersSpace(), right)
