@@ -122,8 +122,11 @@ end
               MvNormalWeightedMeanPrecision([0, -1 / 4], [1, 3 / 4])
         for (label, left, right) in cases
             res = prod(strategy, left, right)
-            xiL, WL = weightedmean_precision(left)
-            xiR, WR = weightedmean_precision(right)
+            # The reference is computed in Float64, as the product promotes to the wider type
+            # of its two arguments; a reference in the precision of `Float16` would be off by 1e-4
+            to_f64(d) = MvNormalMeanCovariance(Float64.(collect(mean(d))), Float64.(collect(cov(d))))
+            xiL, WL = weightedmean_precision(to_f64(left))
+            xiR, WR = weightedmean_precision(to_f64(right))
             expected = MvNormalWeightedMeanPrecision(xiL + xiR, WL + WR)
 
             @test res ≈ expected
@@ -136,6 +139,38 @@ end
     left  = mk_dense(Float64)  # d=3
     right = MvNormalMeanCovariance(Float64[1, 2], diagm(Float64[2, 3])) # d=2
     @test_throws DimensionMismatch prod(PreserveTypeProd(Distribution), left, right)
+end
+
+@testitem "MvNormalMeanCovariance: prod with a singular or a vague covariance" begin
+    include("./normal_family_setuptests.jl")
+    using LinearAlgebra, StaticArrays
+
+    # The message out of `z = A * x` with `x ~ N(0, I)` and `A` taller than wide has the singular
+    # covariance `A * A'`; its product with `N(y, Λ)` is the posterior of `z = A * x` given `y`.
+    A = [1.0 0.0; 0.0 1.0; 1.0 1.0]
+    y = [1.0, 2.0, 0.5]
+    Λ = Matrix(2.0I, 3, 3)
+    C = inv(I + A' * (Λ \ A))
+    expected = MvNormalMeanCovariance(A * C * A' * (Λ \ y), A * C * A')
+
+    for strategy in (ClosedProd(), PreserveTypeProd(Distribution), GenericProd())
+        for (left, right) in (
+            (MvNormalMeanCovariance(zeros(3), A * A'), MvNormalMeanCovariance(y, Λ)),
+            (MvNormalMeanCovariance(SVector{3}(zeros(3)), SMatrix{3, 3}(A * A')), MvNormalMeanCovariance(SVector{3}(y), SMatrix{3, 3}(Λ)))
+        )
+            for result in (prod(strategy, left, right), prod(strategy, right, left))
+                @test result ≈ expected atol = 1e-12
+                @test issymmetric(cov(result))
+            end
+        end
+    end
+
+    # A vague factor leaves the other one unchanged
+    informative = MvNormalMeanCovariance([1.0, -2.0], [2.0 0.5; 0.5 1.0])
+    for vague_factor in (vague(MvNormalMeanCovariance, 2), MvNormalMeanCovariance(zeros(2), Diagonal(fill(1e12, 2))))
+        @test prod(PreserveTypeProd(Distribution), vague_factor, informative) ≈ informative rtol = 1e-9
+        @test prod(PreserveTypeProd(Distribution), informative, vague_factor) ≈ informative rtol = 1e-9
+    end
 end
 
 @testitem "MvNormalMeanCovariance: convert" begin
